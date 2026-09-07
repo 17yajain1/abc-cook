@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(gh repo *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(cd ~/code/abc-cook && ls -la *.md)",
+      "Read(//c/Users/ashya/code/abc-cook/**)"
+    ]
+  }
+}
