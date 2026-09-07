@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "abc-cook-api"
+version = "0.1.0"
+description = "ABC Cook API — cooking graph schema, scheduler, and routes."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["abc_cook"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["A", "B", "C4", "D", "E", "F", "I", "N", "PT", "RUF", "SIM", "UP", "W"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "llm: hits a real LLM provider; excluded from the default run (COOKING_GRAPH.md §7)",
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["abc_cook"]
+ignore_missing_imports = true
+# Global-only flags; mypy rejects these in a per-module override.
+warn_redundant_casts = true
+warn_unused_configs = true
+
+# `abc_cook/schema` and `abc_cook/schedule` are held to --strict (CLAUDE.md § Conventions).
+# The flags are enumerated rather than using `strict = true`, which mypy does not accept
+# in a per-module override.
+[[tool.mypy.overrides]]
+module = ["abc_cook.schema.*", "abc_cook.schedule.*"]
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+extra_checks = true
+no_implicit_reexport = true
+strict_equality = true
+warn_return_any = true
+warn_unused_ignores = true

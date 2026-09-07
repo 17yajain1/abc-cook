@@ -9,7 +9,9 @@
       "Bash(git branch *)",
       "Bash(git push *)",
       "Bash(cd ~/code/abc-cook && ls -la *.md)",
-      "Read(//c/Users/ashya/code/abc-cook/**)"
+      "Read(//c/Users/ashya/code/abc-cook/**)",
+      "Bash(py -3.12 --version)",
+      "PowerShell(winget *)"
     ]
   }
 }

@@ -8,11 +8,15 @@ is building six half-features.
 
 ## M0 — Scaffold  ·  ~1 evening
 
-Repo, `apps/api` (FastAPI), `apps/web` (the Figma Make export, running locally), lint
-and test wired, `.env.example`, this docs folder committed.
+Repo, `apps/api` (FastAPI), `apps/web` (React + Vite + Tailwind, running locally), lint
+and test wired, this docs folder committed. The web app is a blank scaffold at this stage.
 
-**Exit:** `make dev` brings up both; the Figma prototype renders on your phone over
-local network.
+**Exit:** `make dev` brings up both servers; web app is reachable on your phone over LAN
+at http://<local-ip>:5173.
+
+*Note: UI implementation (PlanView, StageCard, cooking screens) is M2. M0 and M1 are
+infrastructure: the servers must work together, and the scheduler must be proven on golden
+fixtures. Only then do you build the UI that depends on `CookingPlan`.*
 
 ---
 
