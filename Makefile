@@ -3,12 +3,12 @@ WEB_DIR := apps/web
 
 # The venv lives in apps/api/.venv on both platforms; only the bin dir name differs.
 ifeq ($(OS),Windows_NT)
-	VENV_BIN := .venv/Scripts
+	VENV_BIN := .venv\Scripts
+	PY := $(VENV_BIN)\python
 else
 	VENV_BIN := .venv/bin
+	PY := $(VENV_BIN)/python
 endif
-
-PY := $(VENV_BIN)/python
 API_PORT ?= 8000
 
 .PHONY: help install dev api web lint test types clean
