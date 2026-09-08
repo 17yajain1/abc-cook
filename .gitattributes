@@ -1,0 +1,31 @@
+# Normalize line endings. The API runs on Linux (Cloud Run) and the golden
+# fixtures are compared as exact bytes in tests, so everything textual is LF
+# in the repo regardless of the checkout platform.
+* text=auto eol=lf
+
+# Golden fixtures: LF, and never touched by any "smart" filter.
+apps/api/tests/fixtures/** text eol=lf
+
+# Explicit for the common source/config types.
+*.py    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+Makefile text eol=lf
+
+# Binaries: leave alone.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.ico   binary
+*.woff2 binary
+*.pdf   binary
