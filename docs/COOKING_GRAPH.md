@@ -146,14 +146,16 @@ class CookingPlan(BaseModel):
 
 ## 3. Worked example — Kadai Paneer
 
-The graph (abridged):
+The graph (abridged — `typical` column only; the full `duration_min / typical / max`
+triples, ingredients, and `consumes`/`produces` live in
+`apps/api/tests/fixtures/kadai-paneer.graph.json`):
 
 | id | kind | attention | typical | station | depends_on |
 |---|---|---|---|---|---|
 | `chop_onion` | prep | hands_on | 3 | counter | — |
 | `chop_tomato` | prep | hands_on | 2 | counter | — |
 | `saute_onion` | active | hands_on | 5 | burner | `chop_onion` |
-| `cook_tomato_base` | passive | periodic | 7 | burner | `saute_onion`, `chop_tomato` |
+| `cook_tomato_base` | passive | periodic | 12 | burner | `saute_onion`, `chop_tomato` |
 | `chop_capsicum` | prep | hands_on | 5 | counter | — |
 | `cube_paneer` | prep | hands_on | 2 | counter | — |
 | `make_kadai_masala` | prep | hands_on | 2 | counter | — |
@@ -161,7 +163,7 @@ The graph (abridged):
 | `add_paneer` | active | hands_on | 5 | burner | `add_veggies`, `cube_paneer` |
 | `finish` | finish | hands_on | 2 | burner | `add_paneer` |
 
-Serial baseline: 3+2+5+7+5+2+2+5+5+2 = **38 min**.
+Serial baseline (sum of `duration_typical`): 3+2+5+12+5+2+2+5+5+2 = **43 min**.
 
 Scheduled:
 
@@ -179,7 +181,7 @@ t=22   add_veggies       (cook busy 22–27)
 t=27   add_paneer        (cook busy 27–32)
 t=32   finish            (cook busy 32–34)
 
-total_min = 34    serial_min = 38    saved_min = 4
+total_min = 34    serial_min = 43    saved_min = 9
 ```
 
 Note that the UI copy from the design — **"9 min prep · fits in 12 min"** — falls
@@ -240,7 +242,7 @@ single most likely source of subtle bugs in this codebase.
         Start it.
      d. Advance t to the next completion event; move finished nodes to done.
 5. Derive wait windows (§4.3) from the resulting timeline.
-6. Assign ranks within each window (§4.4), run safety checks (§4.5).
+6. Assign tasks to each window and rank them (§4.4), run safety checks (§4.5).
 ```
 
 ### 4.2 The one heuristic that matters
@@ -269,34 +271,59 @@ Usable capacity:
 | host `attention` | capacity | max single task |
 |---|---|---|
 | `unattended` | `duration_typical × 0.9` | no cap |
-| `periodic` | `duration_typical × 0.75` | 3 min, and `interruptible` only |
+| `periodic` | `duration_typical × 0.75` | `interruptible` task: up to `capacity_min` · non-`interruptible` task: 3 min |
 
 The multipliers are safety margin: the user is a human in a kitchen, not a CPU. Never
 pack a window to 100%. A plan that tells someone to do nine minutes of chopping inside
 a nine-minute simmer will burn the base, and they will not trust the app again.
 
-The `periodic` cap exists because "stir occasionally" means the cook must return every
-couple of minutes.
+The `0.75` factor already encodes "the cook must return every couple of minutes", so an
+`interruptible` task — chopping, measuring, anything you can set down mid-stroke to go
+stir — may use the window up to its full `capacity_min`. §3's 5-minute `chop_capsicum`
+inside a 9-minute capacity is deliberately fine. The separate 3-minute ceiling applies
+only to non-`interruptible` tasks, which must complete in one uninterrupted run.
 
-### 4.4 Ranking tasks within a window
+### 4.4 Assigning and ranking tasks within a window
 
-`rank 0` is the one the UI promotes to *"Start with this."* Order by:
+**Assignment.** Walk the ready prep nodes in the ranking order below (`duration_typical`
+descending, then `node_id` ascending) and add each to the window while the running sum
+of `duration_typical` stays ≤ `capacity_min`. Stop at the first task that would exceed
+it — do not skip ahead to a smaller one; the fixed order is what makes the plan
+reproducible.
 
-1. Tasks the **next** stage depends on (finishing these unblocks progress).
-2. Longest duration first (they're the ones at risk of not fitting).
-3. Tasks with a tight `max_lead_min` last (freshness — §4.5).
+**Ranking.** `rank 0` is the task the UI promotes as *"Start with this."* Order the
+assigned tasks by:
+
+1. `duration_typical` descending — the longest task is the one most at risk of not
+   fitting, and "start with the big one" is the right instinct at the stove.
+2. `node_id` ascending — a deterministic tie-break.
+
+Freshness is not a ranking input: a task whose `max_lead_min` is tighter than its lead
+time to its consumer is kept out of the window entirely (§4.5), not ranked last.
 
 ### 4.5 Safety checks — emit into `plan.warnings`
 
-- **Overrun risk**: assigned task's `duration_max` exceeds the window's remaining
-  capacity → drop it from the window, schedule it serially, warn.
+- **Overrun risk**: an assigned task's `duration_max` exceeds the window's total
+  `capacity_min` → drop it from the window, schedule it serially, warn.
+
+  Packing (§4.4) and this check are **two independent rules**, deliberately:
+  - *Packing* accumulates `duration_typical` and stops when the running sum would
+    exceed `capacity_min`. It decides which tasks go in the window.
+  - *Overrun* tests each already-assigned task's `duration_max` against the total
+    `capacity_min` — not the running remainder, and not the typical sum. It is a
+    per-task pessimistic-duration safety net on top of the packing decision.
+
+  A window packed to exactly its `duration_typical` capacity (§3's `w1`: used 9.0 of
+  9.0) is the expected case and does not by itself warn; a task only trips overrun if
+  its own `duration_max` alone is larger than the whole window.
 - **Freshness**: a node with `max_lead_min = 10` scheduled 30 minutes before its
   consumer is wrong (whipped cream, cut avocado, tempering). Move it later or drop it
   from the window.
 - **Station contention**: two nodes on `burner` at once. If the recipe genuinely needs
   two burners, that's fine — but say so in the plan ("uses 2 burners"), because plenty
   of kitchens don't have one free.
-- **Non-interruptible in a `periodic` window**: reject the assignment.
+- **Non-interruptible task over 3 min in a `periodic` window**: reject the assignment
+  (§4.3). A non-interruptible task of 3 min or less may stay.
 - **No windows found**: not a warning, a fact. The UI shows a plain step-by-step plan
   and says nothing about parallelism. Never fabricate filler tasks like "clean your
   countertop" to fill a window — the design mockups did this and it cheapens the

@@ -31,9 +31,10 @@ expected plan. Then add the other four fixtures.
 Do this first because it's the moat, it's the part you're best at, and every downstream
 decision depends on the shape of `CookingPlan`.
 
-**Exit:** `pytest` green on five golden fixtures, including `maggi-2min` degrading
-quietly and `homemade-donuts` filling a 60-minute rise window without violating any
-freshness limit.
+**Exit:** `pytest` green on five golden fixtures — including `kadai-paneer` scheduling
+to `total_min` 34 / `serial_min` 43 / `saved_min` 9, `maggi-2min` degrading quietly,
+and `homemade-donuts` filling a 60-minute rise window without violating any freshness
+limit.
 
 ---
 
