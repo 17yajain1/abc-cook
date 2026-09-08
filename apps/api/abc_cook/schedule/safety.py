@@ -14,14 +14,13 @@ def check_plan(
 ) -> list[str]:
     """Run the §4.5 checks over a scheduled plan.
 
-    Covers overrun risk (a single assigned task whose `duration_max` alone exceeds the
-    whole window's `capacity_min`), freshness violations (`max_lead_min`), station
-    contention, and non-`interruptible` tasks over 3 min in a `periodic` window.
+    Covers freshness violations (`max_lead_min`), station contention (`uses N burners`),
+    and non-`interruptible` tasks over 3 min in a `periodic` window.
 
-    Packing (§4.4) and the overrun check are independent: packing sums `duration_typical`
-    against `capacity_min` to decide membership; this check tests each member's
-    `duration_max` against the total capacity as a pessimistic-duration safety net. A
-    window packed to exactly its typical capacity is expected and does not warn.
+    Worst-case window fit is NOT checked here: `duration_max` is an eligibility gate
+    during assignment (§4.4), so a window never claims a task it cannot safely hold and
+    there is nothing to drop or warn about afterwards. A prep task that no window can
+    hold is simply a serial step.
 
     Finding no windows is not a warning — it is a fact about the recipe. The UI shows a
     plain step-by-step plan and says nothing about parallelism. Never fabricate filler
@@ -43,12 +42,6 @@ def check_plan(
         host = nodes[window.host_node_id]
         for node_id in window.assigned:
             node = nodes[node_id]
-
-            if node.duration_max > window.capacity_min:
-                warnings.append(
-                    f"{node_id}: worst case {node.duration_max} min may overrun the "
-                    f"{window.capacity_min:g}-min window {window.id}",
-                )
 
             if node.max_lead_min is not None:
                 consumer_starts = [
@@ -74,16 +67,34 @@ def check_plan(
                     f"cannot sit in periodic window {window.id}",
                 )
 
-    stationed = [s for s in scheduled if nodes[s.node_id].station != "none"]
-    for i, first in enumerate(stationed):
-        for second in stationed[i + 1 :]:
-            station = nodes[first.node_id].station
-            if nodes[second.node_id].station != station:
-                continue
-            if first.start_min < second.end_min and second.start_min < first.end_min:
-                warnings.append(
-                    f"{station}: {first.node_id} and {second.node_id} run at once "
-                    f"(needs 2 {station}s)",
-                )
-
+    warnings.extend(_station_notes(graph, scheduled))
     return warnings
+
+
+def _station_notes(graph: CookingGraph, scheduled: list[ScheduledNode]) -> list[str]:
+    """One deterministic `"uses N Xs"` note per station the plan runs two-deep or more.
+
+    N is the peak simultaneous count on that station. This fires whenever the finished
+    timeline overlaps — including when `burner_capacity` (§4.6) permitted it — because a
+    plan that assumes two free rings must say so. Nodes that only touch at a boundary
+    (one ends exactly as the next starts) are not counted as overlapping.
+    """
+    station_of = {n.id: n.station for n in graph.nodes}
+    events: dict[str, list[tuple[float, int]]] = {}
+    for placed in scheduled:
+        station = station_of[placed.node_id]
+        if station == "none":
+            continue
+        events.setdefault(station, []).extend(
+            ((placed.start_min, 1), (placed.end_min, -1)),
+        )
+
+    notes: list[str] = []
+    for name in sorted(events):
+        peak = current = 0
+        for _, delta in sorted(events[name], key=lambda e: (e[0], e[1])):
+            current += delta
+            peak = max(peak, current)
+        if peak >= 2:
+            notes.append(f"uses {peak} {name}s")
+    return notes

@@ -223,7 +223,12 @@ If you find yourself writing `if node.kind == "passive"` in the scheduler, stop 
 almost certainly mean `if node.attention in ("unattended", "periodic")`. This is the
 single most likely source of subtle bugs in this codebase.
 
-### 4.1 Algorithm
+### 4.1 The list scheduler — the global stage
+
+This stage places **every** node on the timeline. It is distinct from §4.4: §4.1 runs
+the clock and answers *"when does each node run?"*; §4.4 runs afterwards on the finished
+timeline and only answers *"which window owns this prep task, and how does the UI order
+them?"*. Never let logic from one leak into the other.
 
 ```
 1. Validate the graph (§5). Reject or repair before scheduling.
@@ -232,18 +237,29 @@ single most likely source of subtle bugs in this codebase.
 3. t = 0; running = {}; done = {}
 4. Loop until all nodes are done:
      a. ready = nodes whose depends_on ⊆ done, not started
-     b. Start every ready `unattended` node whose station is free.
-        (Do this FIRST — see 4.2.)
-     c. If the cook is free, pick one ready node needing the cook, by priority:
-          i.   station is free
-          ii.  highest `level`               (critical path first)
-          iii. `active` before `prep`        (unblock downstream cooking)
-          iv.  longest duration_typical first (better window packing)
-        Start it.
+     b. Start every ready node whose `attention` is `unattended` or `periodic` and
+        whose station has capacity (§4.6). Do this FIRST — see §4.2. These nodes
+        do not occupy the cook.
+     c. If the cook is free, start ONE ready `hands_on` node whose station has
+        capacity. Choose it:
+          — while a wait window is open (some unattended/periodic node is running):
+            by the §4.4 key — longest `duration_typical` first, then `node_id`.
+            The cook is filling time; critical-path rank does not apply here.
+          — otherwise: highest `level` (critical path first), then a cooking node
+            (`active` / `combine` / `finish`) before `prep`, then longest
+            `duration_typical`, then `node_id`.
      d. Advance t to the next completion event; move finished nodes to done.
 5. Derive wait windows (§4.3) from the resulting timeline.
-6. Assign tasks to each window and rank them (§4.4), run safety checks (§4.5).
+6. Assign each window's tasks and rank them (§4.4); drop empty windows and
+   renumber; run the safety checks (§4.5).
 ```
+
+**Trade-off this accepts.** Inside an open window the cook takes the *longest* ready
+prep, not the one that unblocks the most downstream work. On `chicken-biryani` this
+starts a 3-minute marinade mix after two longer chops, delaying the chicken chain and
+making the plan ~7 min longer than its critical path (66 vs 59). Deliberate: the rule
+stays generic and predictable instead of growing recipe-specific priority special
+cases.
 
 ### 4.2 The one heuristic that matters
 
@@ -283,51 +299,93 @@ stir — may use the window up to its full `capacity_min`. §3's 5-minute `chop_
 inside a 9-minute capacity is deliberately fine. The separate 3-minute ceiling applies
 only to non-`interruptible` tasks, which must complete in one uninterrupted run.
 
-### 4.4 Assigning and ranking tasks within a window
+`capacity_min`, `used_min`, and `slack_min` are rounded to `0.01` min: the `× 0.9`
+factor is not exactly representable in binary and golden-plan comparison is exact.
+Two-decimal minutes is finer than any kitchen needs.
 
-**Assignment.** Walk the ready prep nodes in the ranking order below (`duration_typical`
-descending, then `node_id` ascending) and add each to the window while the running sum
-of `duration_typical` stays ≤ `capacity_min`. Stop at the first task that would exceed
-it — do not skip ahead to a smaller one; the fixed order is what makes the plan
-reproducible.
+A window whose assigned list ends up empty is **dropped** from `plan.windows`; the
+survivors are renumbered `w1…wN` in `(host start, host id)` order. An empty window is
+dead time, not a "while this cooks" opportunity — never surface one (`maggi-2min` is
+the case that exercises this).
 
-**Ranking.** `rank 0` is the task the UI promotes as *"Start with this."* Order the
-assigned tasks by:
+### 4.4 Windowed prep — ownership, order, and rank (the post-timeline stage)
 
-1. `duration_typical` descending — the longest task is the one most at risk of not
-   fitting, and "start with the big one" is the right instinct at the stove.
-2. `node_id` ascending — a deterministic tie-break.
+This runs on the finished timeline from §4.1. **It never moves a node in time.** One
+ordering key throughout — `duration_typical` descending, then `node_id` ascending:
 
-Freshness is not a ranking input: a task whose `max_lead_min` is tighter than its lead
+1. **Pick order (feeds §4.1.c).** While a wait window is open, the list scheduler
+   chooses the cook's next `hands_on` task by this key — nothing else.
+
+2. **Ownership.** Walk windows in `(host start, host id)` order. For each window, take
+   the still-unclaimed `hands_on` nodes that ran fully inside its host's interval, in
+   key order, and claim each one that passes **both** gates:
+
+   - **Typical-duration packing:** `used_typical + task.duration_typical ≤ capacity_min`,
+     where `used_typical` is the running sum of what this window has already claimed.
+   - **Maximum-duration safety eligibility:** `task.duration_max ≤ capacity_min`.
+
+   A task that fails **either** gate is not claimed by this window and stays available
+   for later, roomier windows. A task claimed by an earlier window is never offered to
+   a later one — **one task, one window**. A task that no window can safely hold is
+   simply a serial step; that is normal, not a warning.
+
+   The two gates are different questions. Packing keeps the *expected* workload inside
+   the window. The safety gate keeps out a task whose *worst case* would blow the
+   window — `chicken-biryani`'s `slice_onions` (typical 4, max 6) packs into the
+   5.4-min boil window but is not safe there, so it drops through to the 18-min soak
+   window, where both gates pass.
+
+3. **Rank.** `rank_in_window` 0 is the task the UI promotes as *"Start with this."*
+   Same key.
+
+Why "longest first": the longest task is the one most at risk of not fitting, and
+"start with the big one" is the right instinct at the stove.
+
+Freshness is not an input here: a task whose `max_lead_min` is tighter than its lead
 time to its consumer is kept out of the window entirely (§4.5), not ranked last.
 
 ### 4.5 Safety checks — emit into `plan.warnings`
 
-- **Overrun risk**: an assigned task's `duration_max` exceeds the window's total
-  `capacity_min` → drop it from the window, schedule it serially, warn.
-
-  Packing (§4.4) and this check are **two independent rules**, deliberately:
-  - *Packing* accumulates `duration_typical` and stops when the running sum would
-    exceed `capacity_min`. It decides which tasks go in the window.
-  - *Overrun* tests each already-assigned task's `duration_max` against the total
-    `capacity_min` — not the running remainder, and not the typical sum. It is a
-    per-task pessimistic-duration safety net on top of the packing decision.
-
-  A window packed to exactly its `duration_typical` capacity (§3's `w1`: used 9.0 of
-  9.0) is the expected case and does not by itself warn; a task only trips overrun if
-  its own `duration_max` alone is larger than the whole window.
+- **Worst-case window fit** is not a check here. `duration_max` is an *eligibility
+  gate during assignment* (§4.4): a window never claims a task whose `duration_max`
+  exceeds its `capacity_min`, so there is nothing to drop or warn about after the fact.
+  A prep task that fits no window by that gate is just a serial step.
 - **Freshness**: a node with `max_lead_min = 10` scheduled 30 minutes before its
   consumer is wrong (whipped cream, cut avocado, tempering). Move it later or drop it
   from the window.
-- **Station contention**: two nodes on `burner` at once. If the recipe genuinely needs
-  two burners, that's fine — but say so in the plan ("uses 2 burners"), because plenty
-  of kitchens don't have one free.
+- **Station contention**: the scheduler may run up to `burner_capacity` (§4.6) burner
+  nodes at once; every other station is capacity 1. Whenever the finished timeline has
+  two or more nodes sharing a station at any instant, emit one note per station:
+  `"uses N burners"`, where N is the peak simultaneous count. This fires **even when
+  the overlap was allowed by configuration** — a plan that assumes two free rings must
+  say so, because plenty of kitchens don't have them. (Nodes that merely touch at a
+  boundary — one ends exactly as the next starts — do not overlap.)
 - **Non-interruptible task over 3 min in a `periodic` window**: reject the assignment
   (§4.3). A non-interruptible task of 3 min or less may stay.
 - **No windows found**: not a warning, a fact. The UI shows a plain step-by-step plan
   and says nothing about parallelism. Never fabricate filler tasks like "clean your
   countertop" to fill a window — the design mockups did this and it cheapens the
   feature.
+
+### 4.6 Kitchen configuration
+
+`schedule(graph, *, burner_capacity: int = 1)`. **The recipe graph does not know how
+many burners the kitchen has.** A `station == "burner"` node only declares that it
+needs a ring; how many rings exist is a property of the cook's kitchen, passed in
+separately:
+
+- Default `burner_capacity = 1` — burner nodes are serialised.
+- `burner_capacity = 2` — the scheduler may overlap burner nodes two-deep. It still
+  never overlaps two `hands_on` burner nodes: the single cook can't work two pans.
+
+Where the value comes from in production — an API parameter, a saved kitchen profile —
+is deferred past M1. For now it is a keyword argument defaulting to 1, and a golden
+fixture that needs a non-default value carries it alongside its graph
+(`<slug>.kitchen.json`).
+
+Do not add burner counts, oven counts, or other kitchen inventory to the schema. When
+a second contended resource genuinely needs configuring, revisit this as one small
+`KitchenConfig`, not a scatter of keyword arguments.
 
 ---
 
@@ -391,7 +449,7 @@ assumption:
 |---|---|
 | `kadai-paneer` | The canonical case. Branch → merge, one `periodic` window. |
 | `homemade-donuts` | A 60-minute `unattended` rise. Huge window, freshness limits. |
-| `chicken-biryani` | Two independent chains (rice, chicken) merging at layering. Two burners. |
+| `chicken-biryani` | Two independent chains (rice, chicken) merging at layering. Runs at `burner_capacity=2`; plan emits `uses 2 burners`. Multiple overlapping windows, single-claim ownership. |
 | `maggi-2min` | Nothing to parallelise. Plan must degrade gracefully and stay quiet. |
 | `strawberry-shortcake` | `max_lead_min` matters — whipped cream and cut fruit can't be done early. |
 

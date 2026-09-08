@@ -18,6 +18,13 @@ PERIODIC_MAX_TASK_MIN = 3.0
 encodes the stir-tax, and a task you can set down mid-stroke can absorb it.
 """
 
+MINUTE_DP = 2
+"""Decimal places every minute value in the plan is rounded to (§4.3).
+
+`duration_typical * 0.9` is not exactly representable in binary and golden-plan
+comparison is exact; 0.01 min is finer than any kitchen needs.
+"""
+
 # The multipliers are safety margin, not arithmetic. The user is a human in a kitchen,
 # not a CPU: nine minutes of chopping inside a nine-minute simmer burns the base.
 # Never pack a window to 100%.
@@ -38,9 +45,9 @@ def capacity_for(graph: CookingGraph, host_node_id: str) -> float:
     """
     node = next(n for n in graph.nodes if n.id == host_node_id)
     if node.attention == "unattended":
-        return node.duration_typical * UNATTENDED_CAPACITY_FACTOR
+        return round(node.duration_typical * UNATTENDED_CAPACITY_FACTOR, MINUTE_DP)
     if node.attention == "periodic":
-        return node.duration_typical * PERIODIC_CAPACITY_FACTOR
+        return round(node.duration_typical * PERIODIC_CAPACITY_FACTOR, MINUTE_DP)
     msg = f"{host_node_id} is {node.attention}; only unattended/periodic nodes host windows"
     raise ValueError(msg)
 
