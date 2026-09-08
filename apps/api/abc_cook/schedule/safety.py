@@ -35,28 +35,12 @@ def check_plan(
         Human-readable warnings, empty when the plan is clean.
     """
     nodes = {n.id: n for n in graph.nodes}
-    placed = {s.node_id: s for s in scheduled}
     warnings: list[str] = []
 
     for window in windows:
         host = nodes[window.host_node_id]
         for node_id in window.assigned:
             node = nodes[node_id]
-
-            if node.max_lead_min is not None:
-                consumer_starts = [
-                    placed[c.id].start_min
-                    for c in graph.nodes
-                    if node_id in c.depends_on and c.id in placed
-                ]
-                if consumer_starts:
-                    lead = min(consumer_starts) - placed[node_id].end_min
-                    if lead > node.max_lead_min:
-                        warnings.append(
-                            f"{node_id}: ready {lead:g} min before it is needed "
-                            f"(max lead {node.max_lead_min} min)",
-                        )
-
             if (
                 host.attention == "periodic"
                 and not node.interruptible
@@ -67,8 +51,36 @@ def check_plan(
                     f"cannot sit in periodic window {window.id}",
                 )
 
+    warnings.extend(_freshness_notes(graph, scheduled))
     warnings.extend(_station_notes(graph, scheduled))
     return warnings
+
+
+def _freshness_notes(graph: CookingGraph, scheduled: list[ScheduledNode]) -> list[str]:
+    """Warn when a `max_lead_min` node finished too long before a consumer starts (§4.5).
+
+    The scheduler withholds fresh nodes to run them just-in-time; this is the safety
+    net for when resource contention pushed the consumer later anyway. Checked for
+    every consumer, so it also covers the deferred multi-consumer case.
+    """
+    placed = {s.node_id: s for s in scheduled}
+    consumers: dict[str, list[str]] = {}
+    for consumer in graph.nodes:
+        for dep in consumer.depends_on:
+            consumers.setdefault(dep, []).append(consumer.id)
+
+    notes: list[str] = []
+    for node in graph.nodes:
+        if node.max_lead_min is None:
+            continue
+        for consumer_id in consumers.get(node.id, []):
+            lead = placed[consumer_id].start_min - placed[node.id].end_min
+            if lead > node.max_lead_min:
+                notes.append(
+                    f"{node.id}: ready {lead:g} min before {consumer_id} needs it "
+                    f"(max lead {node.max_lead_min} min)",
+                )
+    return notes
 
 
 def _station_notes(graph: CookingGraph, scheduled: list[ScheduledNode]) -> list[str]:

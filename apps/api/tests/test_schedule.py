@@ -25,7 +25,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/.
 # Grows to the full five from COOKING_GRAPH.md §7 as each is authored.
-GOLDEN = ["kadai-paneer", "maggi-2min", "chicken-biryani"]
+GOLDEN = ["kadai-paneer", "maggi-2min", "chicken-biryani", "homemade-donuts"]
 
 
 @pytest.fixture(params=GOLDEN)
@@ -224,6 +224,122 @@ def test_duration_max_gate_rejects_then_a_roomier_window_claims() -> None:
     assert plan.warnings == []
 
 
+def _backfill_graph() -> CookingGraph:
+    """A window where the second task in key order overflows but the third fits.
+
+    `long_bake` (unattended, 30) hosts a window of capacity 30 x 0.9 = 27.0. The three
+    prep tasks run 0-14, 14-28, 28-29 — all inside the bake — so all are window-
+    eligible. Ownership walks them big-first: `prep_a` (14) fits; `prep_b` (14) would
+    make 28 > 27 and is skipped; `prep_c` (1) backfills to 15. Stop-at-first-miss would
+    give `["prep_a"]` only.
+    """
+    src = SourceRef(kind="text", value="backfill test", imported_at=datetime.now(UTC))
+    common = {
+        "stage": "s",
+        "consumes": [],
+        "doneness_cue": None,
+        "tip": None,
+        "max_lead_min": None,
+    }
+    prep = {
+        "kind": "prep",
+        "attention": "hands_on",
+        "station": "counter",
+        "depends_on": [],
+        "interruptible": True,
+    }
+    return CookingGraph(
+        id="backfill",
+        title="Backfill",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=[
+            Node(
+                id="long_bake",
+                label="Long bake",
+                instruction="Bake a long time.",
+                kind="passive",
+                attention="unattended",
+                duration_min=25,
+                duration_typical=30,
+                duration_max=40,
+                station="none",
+                depends_on=[],
+                produces="comp_bake",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="prep_a",
+                label="Prep A",
+                instruction="Big prep A.",
+                duration_min=12,
+                duration_typical=14,
+                duration_max=16,
+                produces="comp_a",
+                **prep,
+                **common,
+            ),
+            Node(
+                id="prep_b",
+                label="Prep B",
+                instruction="Big prep B.",
+                duration_min=12,
+                duration_typical=14,
+                duration_max=16,
+                produces="comp_b",
+                **prep,
+                **common,
+            ),
+            Node(
+                id="prep_c",
+                label="Prep C",
+                instruction="Tiny prep C.",
+                duration_min=1,
+                duration_typical=1,
+                duration_max=2,
+                produces="comp_c",
+                **prep,
+                **common,
+            ),
+            Node(
+                id="plate",
+                label="Plate",
+                instruction="Plate it.",
+                kind="finish",
+                attention="hands_on",
+                duration_min=1,
+                duration_typical=2,
+                duration_max=3,
+                station="none",
+                depends_on=["long_bake", "prep_a", "prep_b", "prep_c"],
+                produces=None,
+                interruptible=False,
+                **common,
+            ),
+        ],
+    )
+
+
+def test_window_backfills_a_smaller_task_after_a_capacity_miss() -> None:
+    plan = schedule(_backfill_graph())
+    placed = {s.node_id: s for s in plan.scheduled}
+    (window,) = plan.windows
+
+    # prep_b (14) overflows the 27.0 window after prep_a (14); the walk continues and
+    # prep_c (1) backfills. Stop-at-first-miss would give ["prep_a"] only (§4.4).
+    assert window.capacity_min == 27.0
+    assert window.assigned == ["prep_a", "prep_c"]
+    assert window.used_min == 15.0
+    assert placed["prep_b"].window_id is None
+    assert placed["prep_c"].window_id == window.id
+    assert placed["prep_c"].rank_in_window == 1
+
+
 def test_chicken_biryani_max_gate_and_two_burners() -> None:
     graph = _graph("chicken-biryani")
     plan = schedule(graph, burner_capacity=2)
@@ -241,3 +357,117 @@ def test_chicken_biryani_max_gate_and_two_burners() -> None:
     # The overlap is real and reported exactly once, deterministically.
     assert plan.warnings == ["uses 2 burners"]
     assert not any("overrun" in w or "slice_onions" in w for w in plan.warnings)
+
+
+# --- Freshness: withhold-until-JIT + warning safety net (F3, §4.5) ------------------
+
+
+def test_freshness_node_is_not_scheduled_absurdly_early() -> None:
+    graph = _graph("homemade-donuts")
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+
+    # make_glaze has no graph dependencies, so a naive scheduler would start it at t=0.
+    # The freshness delay keeps it well after the 60-min rise window has closed.
+    assert placed["make_glaze"].start_min > placed["first_rise"].end_min
+    assert placed["make_glaze"].window_id is None
+    assert "make_glaze" not in {nid for w in plan.windows for nid in w.assigned}
+
+
+def test_freshness_node_runs_just_in_time() -> None:
+    graph = _graph("homemade-donuts")
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+
+    # make_glaze becomes eligible only once its consumer's other dependency (fry_donuts)
+    # is done, and the cook picks it up immediately.
+    assert placed["make_glaze"].start_min == placed["fry_donuts"].end_min
+
+
+def test_freshness_lead_is_within_limit_for_donuts() -> None:
+    graph = _graph("homemade-donuts")
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+    make_glaze = _node(graph, "make_glaze")
+
+    lead = placed["glaze_donuts"].start_min - placed["make_glaze"].end_min
+    assert make_glaze.max_lead_min is not None
+    assert 0 <= lead <= make_glaze.max_lead_min
+    assert plan.warnings == []
+
+
+def _freshness_warning_graph() -> CookingGraph:
+    """Synthetic: a fresh node placed JIT, but a higher-priority task then steals the
+    cook and pushes the consumer past `max_lead_min` (the F3 safety net).
+
+    `slow_base` (assemble's non-fresh dep) frees `fresh_topping` at t=10; the cook runs
+    it 10-12. `slow_parallel` finishes at 12 and frees `gate2`, which outranks
+    `assemble` and holds the cook 12-22, so `assemble` starts at 22 — 10 min after the
+    3-min-lead topping was ready. `gate2` is intentionally terminal (unit-test graph,
+    not extraction-invariant-clean).
+    """
+    src = SourceRef(kind="text", value="freshness warning", imported_at=datetime.now(UTC))
+    common = {"stage": "s", "consumes": [], "doneness_cue": None, "tip": None}
+    return CookingGraph(
+        id="fresh-warn",
+        title="Freshness warning",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=[
+            Node(
+                id="slow_base", label="Slow base", instruction="Wait.",
+                kind="passive", attention="unattended",
+                duration_min=8, duration_typical=10, duration_max=14,
+                station="none", depends_on=[], produces="comp_base",
+                interruptible=True, max_lead_min=None, **common,
+            ),
+            Node(
+                id="slow_parallel", label="Slow parallel", instruction="Wait more.",
+                kind="passive", attention="unattended",
+                duration_min=10, duration_typical=12, duration_max=16,
+                station="none", depends_on=[], produces="comp_par",
+                interruptible=True, max_lead_min=None, **common,
+            ),
+            Node(
+                id="fresh_topping", label="Fresh topping", instruction="Make it fresh.",
+                kind="prep", attention="hands_on",
+                duration_min=1, duration_typical=2, duration_max=3,
+                station="counter", depends_on=[], produces="comp_topping",
+                interruptible=True, max_lead_min=3, **common,
+            ),
+            Node(
+                id="gate2", label="Gate two", instruction="Long distracting task.",
+                kind="active", attention="hands_on",
+                duration_min=8, duration_typical=10, duration_max=12,
+                station="counter", depends_on=["slow_parallel"], produces="comp_g2",
+                interruptible=False, max_lead_min=None, **common,
+            ),
+            Node(
+                id="assemble", label="Assemble", instruction="Top and serve.",
+                kind="finish", attention="hands_on",
+                duration_min=2, duration_typical=3, duration_max=4,
+                station="counter", depends_on=["fresh_topping", "slow_base"],
+                produces=None, interruptible=False, max_lead_min=None, **common,
+            ),
+        ],
+    )
+
+
+def test_freshness_warning_fires_when_consumer_is_delayed() -> None:
+    graph = _freshness_warning_graph()
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+
+    # Withheld until slow_base (assemble's other dep) is done, not started at t=0.
+    assert placed["fresh_topping"].start_min == placed["slow_base"].end_min
+
+    # gate2 steals the cook, so assemble starts well after the topping was ready.
+    lead = placed["assemble"].start_min - placed["fresh_topping"].end_min
+    assert lead > 3
+    assert plan.warnings == [
+        f"fresh_topping: ready {lead:g} min before assemble needs it (max lead 3 min)",
+    ]

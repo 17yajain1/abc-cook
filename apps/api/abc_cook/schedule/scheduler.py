@@ -102,6 +102,11 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
     levels = compute_levels(graph)
     capacity_of = {"burner": burner_capacity}
 
+    consumers: dict[str, list[str]] = {}
+    for consumer in graph.nodes:
+        for dep in consumer.depends_on:
+            consumers.setdefault(dep, []).append(consumer.id)
+
     start: dict[str, float] = {}
     end: dict[str, float] = {}
     done: set[str] = set()
@@ -114,6 +119,25 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
         cap = capacity_of.get(node.station, 1)
         active = sum(1 for r in running if nodes[r].station == node.station)
         return active < cap
+
+    def freshness_ready(node: Node) -> bool:
+        """Withhold a `max_lead_min` node until its consumer's last other dep is done.
+
+        M1 scope (§4.5): only the canonical single-consumer case delays. A fresh node
+        with zero or several consumers schedules normally — the post-hoc lead warning
+        in `check_plan` still covers it.
+        """
+        if node.max_lead_min is None:
+            return True
+        downstream = consumers.get(node.id, [])
+        if len(downstream) != 1:
+            return True
+        other_deps = nodes[downstream[0]].depends_on
+        return all(
+            dep in done
+            for dep in other_deps
+            if dep != node.id and nodes[dep].max_lead_min is None
+        )
 
     def begin(node: Node, at: float) -> None:
         start[node.id] = at
@@ -142,9 +166,15 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
             not _occupies_cook(nodes[r]) and start[r] <= now < end[r] for r in running
         )
 
-        # (c) If the cook is free, start one ready hands-on node (§4.1.c).
+        # (c) If the cook is free, start one ready hands-on node (§4.1.c). Freshness-
+        #     constrained nodes are withheld until they are their consumer's last
+        #     outstanding dependency (§4.5).
         if not cook_busy:
-            candidates = [n for n in ready() if _occupies_cook(n) and station_has_room(n)]
+            candidates = [
+                n
+                for n in ready()
+                if _occupies_cook(n) and station_has_room(n) and freshness_ready(n)
+            ]
             if candidates:
                 begin(_cook_choice(candidates, levels, window_open=window_open), now)
 

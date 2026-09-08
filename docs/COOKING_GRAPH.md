@@ -241,7 +241,7 @@ them?"*. Never let logic from one leak into the other.
         whose station has capacity (§4.6). Do this FIRST — see §4.2. These nodes
         do not occupy the cook.
      c. If the cook is free, start ONE ready `hands_on` node whose station has
-        capacity. Choose it:
+        capacity and that is not being withheld for freshness (§4.5). Choose it:
           — while a wait window is open (some unattended/periodic node is running):
             by the §4.4 key — longest `duration_typical` first, then `node_id`.
             The cook is filling time; critical-path rank does not apply here.
@@ -260,6 +260,14 @@ starts a 3-minute marinade mix after two longer chops, delaying the chicken chai
 making the plan ~7 min longer than its critical path (66 vs 59). Deliberate: the rule
 stays generic and predictable instead of growing recipe-specific priority special
 cases.
+
+**`total_min` is the scheduled makespan, not the graph's critical path.** The critical
+path is the longest *dependency* chain (`plan.critical_path`, weighted by
+`duration_typical`). The makespan can exceed it whenever a resource forces off-path
+work to run in series — the single cook (biryani, above), a contended station, or a
+**freshness delay** (§4.5), where a fresh task is deliberately held back and run
+just-in-time. None of these delays are added to `critical_path`; the two numbers
+answer different questions and are not expected to match.
 
 ### 4.2 The one heuristic that matters
 
@@ -329,6 +337,11 @@ ordering key throughout — `duration_typical` descending, then `node_id` ascend
    a later one — **one task, one window**. A task that no window can safely hold is
    simply a serial step; that is normal, not a warning.
 
+   The walk does **not** stop at the first task that overflows `capacity_min`; it
+   continues, and a smaller task later in the key order may take the room the
+   overflowing one could not use (first-fit). The fixed key order keeps this
+   deterministic.
+
    The two gates are different questions. Packing keeps the *expected* workload inside
    the window. The safety gate keeps out a task whose *worst case* would blow the
    window — `chicken-biryani`'s `slice_onions` (typical 4, max 6) packs into the
@@ -341,8 +354,10 @@ ordering key throughout — `duration_typical` descending, then `node_id` ascend
 Why "longest first": the longest task is the one most at risk of not fitting, and
 "start with the big one" is the right instinct at the stove.
 
-Freshness is not an input here: a task whose `max_lead_min` is tighter than its lead
-time to its consumer is kept out of the window entirely (§4.5), not ranked last.
+Freshness is not an input here. A task with `max_lead_min` set never reaches an early
+window in the first place — §4.5 withholds it from scheduling until it is its
+consumer's last outstanding dependency, so it runs just before the consumer, long
+after any earlier window has closed.
 
 ### 4.5 Safety checks — emit into `plan.warnings`
 
@@ -350,9 +365,23 @@ time to its consumer is kept out of the window entirely (§4.5), not ranked last
   gate during assignment* (§4.4): a window never claims a task whose `duration_max`
   exceeds its `capacity_min`, so there is nothing to drop or warn about after the fact.
   A prep task that fits no window by that gate is just a serial step.
-- **Freshness**: a node with `max_lead_min = 10` scheduled 30 minutes before its
-  consumer is wrong (whipped cream, cut avocado, tempering). Move it later or drop it
-  from the window.
+- **Freshness** (`max_lead_min`): whipped cream, a cut avocado, a tempered spice lose
+  their point if they sit. A node with `max_lead_min` set is **withheld from
+  scheduling** — step (c) will not start it — until it is the *last* thing its consumer
+  is waiting on: every other dependency of that consumer that is not itself
+  freshness-constrained is `done`. It then runs just-in-time, right before the
+  consumer, and is structurally incapable of landing in an earlier wait window.
+
+  If resource contention still makes the consumer start more than `max_lead_min` after
+  the fresh node finishes — a higher-priority task grabbed the cook in between — that
+  is a real problem the scheduler could not prevent: emit a warning naming the node,
+  the consumer, and the actual lead.
+
+  **M1 scope:** the withholding rule is defined only for the canonical case — a
+  freshness-constrained node with a **single consumer**. A fresh node with zero or
+  several consumers is scheduled normally (no delay); the post-hoc lead warning still
+  fires for every consumer. Multi-consumer freshness scheduling — which consumer to
+  time against — is **deferred until explicitly specified**.
 - **Station contention**: the scheduler may run up to `burner_capacity` (§4.6) burner
   nodes at once; every other station is capacity 1. Whenever the finished timeline has
   two or more nodes sharing a station at any instant, emit one note per station:
