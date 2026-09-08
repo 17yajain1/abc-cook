@@ -11,7 +11,19 @@
       "Bash(cd ~/code/abc-cook && ls -la *.md)",
       "Read(//c/Users/ashya/code/abc-cook/**)",
       "Bash(py -3.12 --version)",
-      "PowerShell(winget *)"
+      "PowerShell(winget *)",
+      "Bash(.venv/Scripts/ruff check *)",
+      "Bash(.venv/Scripts/python -m pytest -m \"not llm\" -q)",
+      "Bash(.venv/Scripts/python -c \"import pydantic; print\\(pydantic.VERSION\\)\")",
+      "Bash(.venv/Scripts/python scripts/export_schema.py)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"=== tsc exit $? ===\")",
+      "Bash(npx vite *)",
+      "Bash(echo \"=== build exit $? ===\")",
+      "Bash(.venv/Scripts/python -c ' *)",
+      "Bash(node -e ' *)"
     ]
   }
 }
