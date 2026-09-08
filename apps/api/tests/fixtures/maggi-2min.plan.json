@@ -1,0 +1,15 @@
+{
+  "graph_id": "maggi-2min",
+  "scheduled": [
+    { "node_id": "boil_water", "start_min": 0.0, "end_min": 3.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "add_noodles_masala", "start_min": 3.0, "end_min": 4.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "cook_noodles", "start_min": 4.0, "end_min": 6.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "serve", "start_min": 6.0, "end_min": 7.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [],
+  "total_min": 7.0,
+  "serial_min": 7.0,
+  "saved_min": 0.0,
+  "critical_path": ["boil_water", "add_noodles_masala", "cook_noodles", "serve"],
+  "warnings": []
+}

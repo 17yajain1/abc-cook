@@ -178,6 +178,13 @@ def schedule(graph: CookingGraph) -> CookingPlan:
         window.assigned = rank_window_tasks(graph, window)
         window.used_min = used
         window.slack_min = window.capacity_min - used
+
+    # A window with nothing in it is dead time, not a parallel-work opportunity. Drop
+    # it and renumber so `plan.windows` only ever holds windows the UI would show
+    # ("while this cooks …"). Never surface an empty window or invent filler to fill one.
+    windows = [w for w in windows if w.assigned]
+    for index, window in enumerate(windows, start=1):
+        window.id = f"w{index}"
         for rank, node_id in enumerate(window.assigned):
             placed[node_id].window_id = window.id
             placed[node_id].rank_in_window = rank

@@ -21,7 +21,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/.
 # Grows to the full five from COOKING_GRAPH.md §7 as each is authored.
-GOLDEN = ["kadai-paneer"]
+GOLDEN = ["kadai-paneer", "maggi-2min"]
 
 
 @pytest.fixture(params=GOLDEN)
