@@ -15,7 +15,7 @@ import pytest
 
 from abc_cook.schedule import schedule
 from abc_cook.schedule.scheduler import serial_minutes
-from abc_cook.schema import CookingGraph, CookingPlan
+from abc_cook.schema import CookingGraph, CookingPlan, Node
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -35,6 +35,10 @@ def _graph(slug: str) -> CookingGraph:
 
 def _expected_plan(slug: str) -> CookingPlan:
     return CookingPlan.model_validate_json((FIXTURES / f"{slug}.plan.json").read_text())
+
+
+def _node(graph: CookingGraph, node_id: str) -> Node:
+    return next(n for n in graph.nodes if n.id == node_id)
 
 
 def test_fixture_files_are_well_formed(slug: str) -> None:
@@ -76,10 +80,6 @@ def test_schedule_matches_golden_plan(slug: str) -> None:
 def test_schedule_is_deterministic(slug: str) -> None:
     graph = _graph(slug)
     assert schedule(graph) == schedule(graph)
-
-
-def _node(graph: CookingGraph, node_id: str):  # noqa: ANN202 - test helper
-    return next(n for n in graph.nodes if n.id == node_id)
 
 
 def test_plan_json_round_trips(slug: str) -> None:
