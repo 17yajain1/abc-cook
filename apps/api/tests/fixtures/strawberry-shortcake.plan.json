@@ -1,0 +1,28 @@
+{
+  "graph_id": "strawberry-shortcake",
+  "scheduled": [
+    { "node_id": "mix_dough", "start_min": 0.0, "end_min": 6.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "bake_shortcakes", "start_min": 6.0, "end_min": 24.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "hull_and_slice_berries", "start_min": 6.0, "end_min": 11.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
+    { "node_id": "macerate_berries", "start_min": 11.0, "end_min": 31.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "cool_shortcakes", "start_min": 24.0, "end_min": 34.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "whip_cream", "start_min": 34.0, "end_min": 38.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "slice_garnish_berries", "start_min": 38.0, "end_min": 41.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "assemble_shortcakes", "start_min": 41.0, "end_min": 47.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "bake_shortcakes",
+      "capacity_min": 16.2,
+      "assigned": ["hull_and_slice_berries"],
+      "used_min": 5.0,
+      "slack_min": 11.2
+    }
+  ],
+  "total_min": 47.0,
+  "serial_min": 72.0,
+  "saved_min": 25.0,
+  "critical_path": ["mix_dough", "bake_shortcakes", "cool_shortcakes", "assemble_shortcakes"],
+  "warnings": []
+}

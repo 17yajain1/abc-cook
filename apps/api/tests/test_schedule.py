@@ -23,9 +23,15 @@ from abc_cook.schema import CookingGraph, CookingPlan, Node, SourceRef, Stage
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-# Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/.
-# Grows to the full five from COOKING_GRAPH.md §7 as each is authored.
-GOLDEN = ["kadai-paneer", "maggi-2min", "chicken-biryani", "homemade-donuts"]
+# Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/ — the five
+# golden recipes from COOKING_GRAPH.md §7.
+GOLDEN = [
+    "kadai-paneer",
+    "maggi-2min",
+    "chicken-biryani",
+    "homemade-donuts",
+    "strawberry-shortcake",
+]
 
 
 @pytest.fixture(params=GOLDEN)
@@ -393,6 +399,32 @@ def test_freshness_lead_is_within_limit_for_donuts() -> None:
     lead = placed["glaze_donuts"].start_min - placed["make_glaze"].end_min
     assert make_glaze.max_lead_min is not None
     assert 0 <= lead <= make_glaze.max_lead_min
+    assert plan.warnings == []
+
+
+def test_two_fresh_nodes_one_consumer_both_held_then_placed_back_to_back() -> None:
+    graph = _graph("strawberry-shortcake")
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+
+    # whip_cream and slice_garnish_berries both feed assemble_shortcakes. Each waits
+    # only on the consumer's NON-fresh deps (cool_shortcakes, macerate_berries), never
+    # on the other fresh node — so neither deadlocks and both release together.
+    release = max(placed["cool_shortcakes"].end_min, placed["macerate_berries"].end_min)
+    assert placed["whip_cream"].start_min == release
+    assert placed["slice_garnish_berries"].start_min == placed["whip_cream"].end_min
+
+    # Neither is stuffed into the earlier bake (16.2) or macerate (18.0) windows.
+    assert placed["whip_cream"].window_id is None
+    assert placed["slice_garnish_berries"].window_id is None
+    assert {w.host_node_id for w in plan.windows} == {"bake_shortcakes"}
+
+    # Both land within their lead limits; no warning.
+    for fresh in ("whip_cream", "slice_garnish_berries"):
+        node = _node(graph, fresh)
+        assert node.max_lead_min is not None
+        lead = placed["assemble_shortcakes"].start_min - placed[fresh].end_min
+        assert 0 <= lead <= node.max_lead_min
     assert plan.warnings == []
 
 

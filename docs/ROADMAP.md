@@ -33,8 +33,8 @@ decision depends on the shape of `CookingPlan`.
 
 **Exit:** `pytest` green on five golden fixtures — including `kadai-paneer` scheduling
 to `total_min` 34 / `serial_min` 43 / `saved_min` 9, `maggi-2min` degrading quietly,
-and `homemade-donuts` filling a 60-minute rise window without violating any freshness
-limit.
+and `homemade-donuts` keeping the glaze out of the 60-minute rise window rather than
+filling it (freshness).
 
 ---
 
