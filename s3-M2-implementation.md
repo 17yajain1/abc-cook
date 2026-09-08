@@ -154,6 +154,37 @@ No prototype demo values (`8 min` prep, 3-task Cook Base, 7:32 timer) appear any
 
 ---
 
+## Q&A from the session
+
+**Q (owner, after seeing it on a device): "I hope our app and graph aren't limited to
+just these 5 recipes — these are initial examples?"**
+
+Correct — the five are **test fixtures, not the product's menu**. Hand-authored
+`CookingGraph` JSON in `apps/api/tests/fixtures/`, each chosen to break a different
+scheduler assumption (branch→merge, nothing-to-parallelise, two chains merging, a
+60-minute unattended window, freshness limits). Scaffolding to prove the engine.
+
+Nothing in the scheduler or renderer knows what "Kadai Paneer" is. The pipeline is
+generic: `any recipe → [LLM once] → CookingGraph → [scheduler] → CookingPlan →
+renderer`. The schema is deliberately dish-agnostic (CLAUDE.md: this is not a recipe
+database). Feed it any graph and it schedules and renders the same way.
+
+What's missing is the **front door**, and it's on the roadmap:
+
+- **M4 — Import**: the LLM adapter turning a URL / pasted text / Instagram screenshot
+  into a `CookingGraph`. Today the only way a graph enters is a fixture file, and the
+  API deliberately reads `tests/fixtures/`.
+- **M5 — Persistence**: Supabase, so imported recipes are saved per user.
+- **M2.75 — the Map view**: the actual visual dependency *graph* (USP #1). What's on
+  screen now is the Plan view (vertical stages). The graph is a separate SVG renderer
+  over the same generic `CookingPlan`.
+
+The generality is designed in; it's just not wired to real input yet. The honest open
+question M4 answers is *extraction quality* on messy real-world recipes (its exit bar:
+≥80% of 20 varied recipes schedulable on the first pass).
+
+---
+
 ## Next: M2.5 — Design direction
 
 Per `ROADMAP.md`: one evening with the `frontend-design` skill loaded, reacting to the
