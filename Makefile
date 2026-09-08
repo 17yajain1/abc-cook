@@ -1,14 +1,16 @@
 API_DIR := apps/api
 WEB_DIR := apps/web
+SCHEMA_DIR := packages/schema
 
 # The venv lives in apps/api/.venv on both platforms; only the bin dir name differs.
+# Forward slashes throughout: Windows accepts them, and this stays correct whether
+# make's shell ends up being cmd or an sh (Git Bash) that would eat backslashes.
 ifeq ($(OS),Windows_NT)
-	VENV_BIN := .venv\Scripts
-	PY := $(VENV_BIN)\python
+	VENV_BIN := .venv/Scripts
 else
 	VENV_BIN := .venv/bin
-	PY := $(VENV_BIN)/python
 endif
+PY := $(VENV_BIN)/python
 API_PORT ?= 8000
 
 .PHONY: help install dev api web lint test types clean
@@ -27,6 +29,7 @@ install:
 	cd $(API_DIR) && python -m venv .venv
 	cd $(API_DIR) && $(PY) -m pip install --upgrade pip
 	cd $(API_DIR) && $(PY) -m pip install -e ".[dev]"
+	cd $(SCHEMA_DIR) && npm install
 	cd $(WEB_DIR) && npm install
 
 # Both servers, in parallel. Ctrl-C stops both.
@@ -47,10 +50,15 @@ lint:
 
 test:
 	cd $(API_DIR) && $(VENV_BIN)/pytest -m "not llm"
+	cd $(WEB_DIR) && npm test
 
+# Pydantic models -> JSON Schema -> packages/schema/index.ts, plus the frozen
+# RecipePlanResponse fixtures the web unit tests run against. All committed so the web
+# build never needs Python. Re-run after any abc_cook/schema or scheduler change.
 types:
-	@echo "Not wired yet. M1: emit JSON Schema from abc_cook/schema and generate packages/schema."
-	@exit 1
+	cd $(API_DIR) && $(PY) scripts/export_schema.py
+	cd $(SCHEMA_DIR) && npm run build
+	cd $(API_DIR) && $(PY) scripts/export_web_fixtures.py
 
 clean:
 	cd $(API_DIR) && rm -rf .pytest_cache .mypy_cache .ruff_cache **/__pycache__

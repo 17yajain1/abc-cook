@@ -1,0 +1,241 @@
+{
+  "graph": {
+    "id": "maggi-2min",
+    "title": "2-Minute Maggi",
+    "servings": 1,
+    "cuisine": "Indian instant",
+    "source": {
+      "kind": "text",
+      "value": "Hand-authored for the M1 golden-fixture suite: a recipe with nothing to parallelise.",
+      "imported_at": "2026-09-08T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_water",
+        "name": "Water",
+        "qty": 1.5,
+        "unit": "cup",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_maggi_cake",
+        "name": "Maggi noodle cake",
+        "qty": 1.0,
+        "unit": "cake",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_tastemaker",
+        "name": "Tastemaker sachet",
+        "qty": 1.0,
+        "unit": "sachet",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "boil_water",
+        "stage": "boil",
+        "label": "Boil water",
+        "instruction": "Bring the water to a rolling boil in a small pan.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "burner",
+        "depends_on": [],
+        "consumes": [
+          "ing_water"
+        ],
+        "produces": "comp_boiling_water",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "a rolling boil, not just steaming",
+        "tip": null
+      },
+      {
+        "id": "add_noodles_masala",
+        "stage": "cook",
+        "label": "Add noodles and masala",
+        "instruction": "Break the noodle cake into the boiling water and stir in the tastemaker.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "burner",
+        "depends_on": [
+          "boil_water"
+        ],
+        "consumes": [
+          "comp_boiling_water",
+          "ing_maggi_cake",
+          "ing_tastemaker"
+        ],
+        "produces": "comp_raw_maggi",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "cook_noodles",
+        "stage": "cook",
+        "label": "Cook noodles",
+        "instruction": "Cook for 2 minutes, stirring now and then, until the noodles soften and most of the water is absorbed.",
+        "kind": "active",
+        "attention": "periodic",
+        "duration_min": 2,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "burner",
+        "depends_on": [
+          "add_noodles_masala"
+        ],
+        "consumes": [
+          "comp_raw_maggi"
+        ],
+        "produces": "comp_cooked_maggi",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "noodles soft, a little water left as sauce",
+        "tip": null
+      },
+      {
+        "id": "serve",
+        "stage": "serve",
+        "label": "Serve",
+        "instruction": "Tip into a bowl and eat while hot.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "none",
+        "depends_on": [
+          "cook_noodles"
+        ],
+        "consumes": [
+          "comp_cooked_maggi"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "boil",
+        "label": "Boil",
+        "color_key": "prep"
+      },
+      {
+        "id": "cook",
+        "label": "Cook",
+        "color_key": "cook_base"
+      },
+      {
+        "id": "serve",
+        "label": "Serve",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": null
+  },
+  "plan": {
+    "graph_id": "maggi-2min",
+    "scheduled": [
+      {
+        "node_id": "boil_water",
+        "start_min": 0.0,
+        "end_min": 3.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "add_noodles_masala",
+        "start_min": 3.0,
+        "end_min": 4.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "cook_noodles",
+        "start_min": 4.0,
+        "end_min": 6.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "serve",
+        "start_min": 6.0,
+        "end_min": 7.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [],
+    "total_min": 7.0,
+    "serial_min": 7.0,
+    "saved_min": 0.0,
+    "critical_path": [
+      "boil_water",
+      "add_noodles_masala",
+      "cook_noodles",
+      "serve"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "boil",
+      "start_min": 0.0,
+      "end_min": 3.0,
+      "elapsed_min": 3.0,
+      "work_min": 3.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 3.0,
+      "node_ids": [
+        "boil_water"
+      ]
+    },
+    {
+      "stage_id": "cook",
+      "start_min": 3.0,
+      "end_min": 6.0,
+      "elapsed_min": 3.0,
+      "work_min": 3.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 3.0,
+      "node_ids": [
+        "add_noodles_masala",
+        "cook_noodles"
+      ]
+    },
+    {
+      "stage_id": "serve",
+      "start_min": 6.0,
+      "end_min": 7.0,
+      "elapsed_min": 1.0,
+      "work_min": 1.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 1.0,
+      "node_ids": [
+        "serve"
+      ]
+    }
+  ]
+}
