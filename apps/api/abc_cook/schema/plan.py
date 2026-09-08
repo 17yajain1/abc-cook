@@ -43,6 +43,34 @@ class WaitWindow(BaseModel):
     slack_min: float = Field(description="Unused capacity.")
 
 
+class StageSpan(BaseModel):
+    """A stage's footprint on the scheduled timeline.
+
+    Deliberately NOT part of `CookingPlan`: it is a view over a finished plan, computed
+    by `abc_cook.schedule.rollup`, and adding it to the plan would rewrite all five
+    golden fixtures for a rendering convenience.
+
+    It exists because the Plan view shows a per-stage minute count, and the frontend is
+    forbidden from deriving one (CLAUDE.md). Stages interleave — in Kadai Paneer `prep`
+    spans 0-19 while `cook_base` spans 3-22 — so a stage is a span, not a block.
+    """
+
+    stage_id: str = Field(description="Id of the stage in the source graph.")
+    start_min: float = Field(description="Earliest start among this stage's nodes.")
+    end_min: float = Field(description="Latest end among this stage's nodes.")
+    elapsed_min: float = Field(
+        description="Wall-clock span of the stage. Overlaps other stages' spans.",
+    )
+    work_min: float = Field(description="Sum of `duration_typical` over the stage's nodes.")
+    windowed_work_min: float = Field(
+        description="Of `work_min`, the minutes absorbed into another stage's wait window.",
+    )
+    inline_work_min: float = Field(
+        description="`work_min - windowed_work_min`. What the stage's own card still shows.",
+    )
+    node_ids: list[str] = Field(description="This stage's nodes, in scheduled order.")
+
+
 class CookingPlan(BaseModel):
     """The scheduled, renderable output the user sees."""
 

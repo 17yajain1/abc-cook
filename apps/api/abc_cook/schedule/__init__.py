@@ -11,6 +11,7 @@ here, you almost certainly mean `if node.attention in ("unattended", "periodic")
 See docs/COOKING_GRAPH.md §4.
 """
 
+from abc_cook.schedule.rollup import stage_spans
 from abc_cook.schedule.scheduler import schedule
 
-__all__ = ["schedule"]
+__all__ = ["schedule", "stage_spans"]
