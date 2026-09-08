@@ -9,12 +9,15 @@ from abc_cook.schema import CookingGraph, WaitWindow
 def rank_window_tasks(graph: CookingGraph, window: WaitWindow) -> list[str]:
     """Order a window's assigned tasks so rank 0 is the one to start with.
 
-    Ordered by: tasks the next stage depends on first (finishing them unblocks
-    progress), then longest duration first (those are at risk of not fitting), then
-    tasks with a tight `max_lead_min` last (freshness).
+    Ordered by `duration_typical` descending — the longest task is the one most at risk
+    of not fitting, and "start with the big one" is the right instinct at the stove —
+    then `node_id` ascending as a deterministic tie-break.
 
-    The UI promotes rank 0 as "Start with: …" and shows the rest as secondary — the
-    list is ranked, never flat.
+    Freshness is not an input here: a task whose `max_lead_min` is too tight is kept out
+    of the window entirely by the §4.5 checks, not merely ranked last.
+
+    The UI promotes rank 0 as "Start with: …" and shows the rest as secondary — the list
+    is ranked, never flat.
 
     Args:
         graph: The graph the window's nodes belong to.
@@ -23,4 +26,5 @@ def rank_window_tasks(graph: CookingGraph, window: WaitWindow) -> list[str]:
     Returns:
         The assigned node ids, best-first.
     """
-    raise NotImplementedError("M1: see docs/COOKING_GRAPH.md §4.4")
+    duration = {n.id: n.duration_typical for n in graph.nodes}
+    return sorted(window.assigned, key=lambda node_id: (-duration[node_id], node_id))

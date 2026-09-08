@@ -1,0 +1,31 @@
+{
+  "graph_id": "homemade-donuts",
+  "scheduled": [
+    { "node_id": "bloom_yeast", "start_min": 0.0, "end_min": 4.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "mix_dough", "start_min": 4.0, "end_min": 10.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "knead_dough", "start_min": 10.0, "end_min": 18.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "first_rise", "start_min": 18.0, "end_min": 78.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "grease_pan", "start_min": 18.0, "end_min": 21.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
+    { "node_id": "shape_and_cut", "start_min": 78.0, "end_min": 88.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "heat_oil", "start_min": 88.0, "end_min": 100.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "proof_donuts", "start_min": 88.0, "end_min": 113.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "fry_donuts", "start_min": 113.0, "end_min": 127.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "make_glaze", "start_min": 127.0, "end_min": 132.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "glaze_donuts", "start_min": 132.0, "end_min": 138.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "first_rise",
+      "capacity_min": 54.0,
+      "assigned": ["grease_pan"],
+      "used_min": 3.0,
+      "slack_min": 51.0
+    }
+  ],
+  "total_min": 138.0,
+  "serial_min": 153.0,
+  "saved_min": 15.0,
+  "critical_path": ["bloom_yeast", "mix_dough", "knead_dough", "first_rise", "shape_and_cut", "proof_donuts", "fry_donuts", "glaze_donuts"],
+  "warnings": []
+}

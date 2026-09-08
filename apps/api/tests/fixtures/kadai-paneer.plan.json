@@ -1,0 +1,30 @@
+{
+  "graph_id": "kadai-paneer",
+  "scheduled": [
+    { "node_id": "chop_onion", "start_min": 0.0, "end_min": 3.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "saute_onion", "start_min": 3.0, "end_min": 8.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "chop_tomato", "start_min": 8.0, "end_min": 10.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "chop_capsicum", "start_min": 10.0, "end_min": 15.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
+    { "node_id": "cook_tomato_base", "start_min": 10.0, "end_min": 22.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "cube_paneer", "start_min": 15.0, "end_min": 17.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 1 },
+    { "node_id": "make_kadai_masala", "start_min": 17.0, "end_min": 19.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 2 },
+    { "node_id": "add_veggies", "start_min": 22.0, "end_min": 27.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "add_paneer", "start_min": 27.0, "end_min": 32.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "finish", "start_min": 32.0, "end_min": 34.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "cook_tomato_base",
+      "capacity_min": 9.0,
+      "assigned": ["chop_capsicum", "cube_paneer", "make_kadai_masala"],
+      "used_min": 9.0,
+      "slack_min": 0.0
+    }
+  ],
+  "total_min": 34.0,
+  "serial_min": 43.0,
+  "saved_min": 9.0,
+  "critical_path": ["chop_onion", "saute_onion", "cook_tomato_base", "add_veggies", "add_paneer", "finish"],
+  "warnings": []
+}

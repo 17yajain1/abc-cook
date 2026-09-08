@@ -1,0 +1,42 @@
+{
+  "graph_id": "chicken-biryani",
+  "scheduled": [
+    { "node_id": "boil_spiced_water", "start_min": 0.0, "end_min": 6.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "slice_onions", "start_min": 0.0, "end_min": 4.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
+    { "node_id": "soak_rice", "start_min": 0.0, "end_min": 20.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "chop_mint_coriander", "start_min": 4.0, "end_min": 7.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 1 },
+    { "node_id": "fry_birista", "start_min": 4.0, "end_min": 14.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "mix_marinade", "start_min": 7.0, "end_min": 10.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 2 },
+    { "node_id": "marinate_chicken", "start_min": 10.0, "end_min": 25.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "soak_saffron", "start_min": 10.0, "end_min": 11.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 3 },
+    { "node_id": "parboil_rice", "start_min": 20.0, "end_min": 27.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "cook_chicken", "start_min": 25.0, "end_min": 37.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "drain_rice", "start_min": 27.0, "end_min": 29.0, "occupies_cook": true, "window_id": "w2", "rank_in_window": 0 },
+    { "node_id": "layer_biryani", "start_min": 37.0, "end_min": 43.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "dum", "start_min": 43.0, "end_min": 63.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "rest_and_serve", "start_min": 63.0, "end_min": 66.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "soak_rice",
+      "capacity_min": 18.0,
+      "assigned": ["slice_onions", "chop_mint_coriander", "mix_marinade", "soak_saffron"],
+      "used_min": 11.0,
+      "slack_min": 7.0
+    },
+    {
+      "id": "w2",
+      "host_node_id": "cook_chicken",
+      "capacity_min": 9.0,
+      "assigned": ["drain_rice"],
+      "used_min": 2.0,
+      "slack_min": 7.0
+    }
+  ],
+  "total_min": 66.0,
+  "serial_min": 112.0,
+  "saved_min": 46.0,
+  "critical_path": ["mix_marinade", "marinate_chicken", "cook_chicken", "layer_biryani", "dum", "rest_and_serve"],
+  "warnings": ["uses 2 burners"]
+}
