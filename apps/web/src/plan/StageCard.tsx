@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
+import { roundMin } from '@/lib/duration'
+import { stageColor } from '@/lib/stageColor'
+
 import type { RenderStage } from './derive'
-import { stageColor } from './stageColor'
 import { WaitWindowBlock } from './WaitWindowBlock'
 
 /**
@@ -57,7 +59,7 @@ export function StageCard({
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-base font-bold text-ink">{stage.label}</span>
               <span className="tabular rounded-full bg-surface-raised px-2 py-0.5 text-xs text-ink-muted">
-                ~{Math.round(stage.span.inline_work_min)} min
+                ~{roundMin(stage.span.inline_work_min)} min
               </span>
             </span>
             {summary && !expanded && (

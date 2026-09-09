@@ -1,5 +1,7 @@
+import { roundMin } from '@/lib/duration'
+import { stageColor } from '@/lib/stageColor'
+
 import type { RenderWindow } from './derive'
-import { stageColor } from './stageColor'
 
 /**
  * The signature component (docs/DESIGN_SYSTEM.md). "While this cooks": the prep the
@@ -20,17 +22,17 @@ export function WaitWindowBlock({ window }: { window: RenderWindow }) {
           ⚡ While this cooks
         </p>
         <p className="tabular mt-0.5 text-xs text-ink-dim">
-          {round(window.usedMin)} min prep · fits in {round(window.hostDurationTypical)} min
+          {roundMin(window.usedMin)} min prep · fits in {roundMin(window.hostDurationTypical)} min
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 bg-window px-4 py-2.5 text-xs">
         <Chip tone="cook">
-          🔥 <b className="tabular">{round(window.hostDurationTypical)}</b>&nbsp;min cooking
+          🔥 <b className="tabular">{roundMin(window.hostDurationTypical)}</b>&nbsp;min cooking
         </Chip>
         <span className="text-ink-dim">›</span>
         <Chip tone="prep">
-          ✓ <b className="tabular">{round(window.usedMin)}</b>&nbsp;min prep
+          ✓ <b className="tabular">{roundMin(window.usedMin)}</b>&nbsp;min prep
         </Chip>
       </div>
 
@@ -43,8 +45,8 @@ export function WaitWindowBlock({ window }: { window: RenderWindow }) {
 
       <p className="bg-verified-tint px-4 py-2 text-xs text-verified-ink">
         {window.slackMin <= 0
-          ? `All this prep fits inside the ${round(window.hostDurationTypical)} min cook`
-          : `Fits with ${round(window.slackMin)} min to spare`}
+          ? `All this prep fits inside the ${roundMin(window.hostDurationTypical)} min cook`
+          : `Fits with ${roundMin(window.slackMin)} min to spare`}
       </p>
     </section>
   )
@@ -102,9 +104,4 @@ function Chip({
       {children}
     </span>
   )
-}
-
-/** Trim the scheduler's 0.01-min rounding quantum for display. Not a computation. */
-function round(min: number): number {
-  return Math.round(min)
 }

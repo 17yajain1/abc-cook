@@ -1,3 +1,5 @@
+import { formatMinutes } from '@/lib/duration'
+
 import type { RenderPlan } from './derive'
 
 /**
@@ -38,13 +40,4 @@ export function RecipeHeader({ plan }: { plan: RenderPlan }) {
       </div>
     </header>
   )
-}
-
-/** "34 min", "1 hr 18 min". Presentational only — the value is `plan.total_min`. */
-function formatMinutes(min: number): string {
-  const whole = Math.round(min)
-  if (whole < 60) return `${whole} min`
-  const hours = Math.floor(whole / 60)
-  const rest = whole % 60
-  return rest ? `${hours} hr ${rest} min` : `${hours} hr`
 }
