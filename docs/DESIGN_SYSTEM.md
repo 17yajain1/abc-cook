@@ -1,92 +1,264 @@
 # Design System
 
-Derived from the Figma Make prototype and the Kadai Paneer storyboards. **When the
-Figma Make export lands in `apps/web/`, reconcile these values against the real
-`index.css` and treat the export as authoritative for exact hex codes.** The
-*structure* below — what a token is for — is what should survive.
+> **Status: the direction is chosen (M2.5).** Everything below is derived from the design
+> brief in the next section. It replaces the provisional dark "spice cabinet" palette that
+> M2 ported from the Figma Make prototype — that palette was inherited, not chosen, and
+> M2.5 exists to spend that debt.
+>
+> The rule for this file from here on: **the brief is the source, the tokens are the
+> derivation.** If a token can't be traced back to a line in the brief, it is decoration
+> and should be cut rather than kept "for now."
 
-> **Status: provisional.** The token *structure* is sound. The values below were
-> updated in M2 to the dark "spice cabinet" palette from the Figma Make prototype
-> (`tED8srEMVSRjmWs13UfBOW`) — a deliberate move off the generic cream-and-green
-> default, but **not** the considered design direction. That is still M2.5's job, done
-> with the `frontend-design` skill and real screens on a real phone. When it lands,
-> write the brief into the section directly below and re-derive these tokens from it.
->
-> M2 kept the system font stack (the no-webfont rule below still holds) and deferred
-> all typography decisions to M2.5.
->
-> ## Design brief
->
-> _(To be written. Should be ~10 lines: the subject and audience, a 4–6 value named
-> palette, the typefaces and their roles, the layout concept, and the two or three
-> principles that make this product's look its own. Everything below should then be
-> re-derived from it rather than patched.)_
+---
+
+## Design brief
+
+**Subject.** One person, one dish, a phone propped against something in a home kitchen.
+They already know how to cook — what they don't know is *when* to do what. Indian home
+cooking is the centre of gravity; the engine is cuisine-agnostic.
+
+**Concept — a cooking plan is a timetable.** Not a recipe card, not a feed: a schedule
+with a measured time axis, parallel lanes, a mainline you must not wander off, and
+junctions where work merges. Rail schedules solved this exact display problem — several
+things moving at once, against one clock, where the reader needs *when* and *what's
+concurrent* in a glance. We take that grammar because our content is the same shape,
+not because it looks good.
+
+**Three principles.**
+
+1. **Time is measured, not labelled.** A duration that matters occupies space
+   proportional to itself. A sixty-minute rise must dwarf a two-minute chop, because it
+   does.
+2. **One signal colour.** The critical path — the thing you cannot walk away from — is
+   the only saturated mark on screen. Everything else is ink on paper.
+3. **Absence has a shape.** Unattended work is drawn hollow. The empty space inside the
+   mark *is* the room you have to do something else, and the parallel work is drawn
+   running through it.
+
+**Voice.** Printed, not rendered. Flat ink, true rules, tabular figures, no elevation.
+A board tells you facts; it doesn't congratulate you.
+
+---
 
 ## Canvas
 
 - Target: **390 × 844** (iPhone 14 class). Design here first.
 - Safe area bottom: 34px. The primary CTA is fixed above it.
-- Content gutter: 16px. Card radius: 16px. Card gap: 12px.
+- Content gutter: 16px. Card gap: 12px.
 - Tap targets: **≥ 44 × 44**. Cooking happens with greasy fingers.
+- A light ground is also the legible choice in a bright kitchen, which the previous dark
+  ground was not. This is a happy coincidence, not the reason.
 
-## Color
+## Colour
 
-Dark ground, warm cream ink, saffron for anything the cook acts on. The live source of
-truth is the `@theme` block in `apps/web/src/index.css`; this table is the intent.
-
-```css
---color-ground:          #1C1109;   /* deep espresso — the page */
---color-surface:         #241708;   /* cards, task rows */
---color-surface-raised:  #2C1E0F;   /* pills, disabled CTA */
---color-line:            #3A2810;   /* hairline dividers */
---color-line-strong:     #6B4A1C;   /* card borders, connectors */
-
---color-ink:             #F5EDD8;   /* primary text */
---color-ink-muted:       #B8A888;   /* secondary text, meta */
---color-ink-dim:         #7A6650;   /* tertiary, timestamps */
-
---color-saffron:         #E8A020;   /* every primary CTA, active tab, ⚡ wait-window chrome */
---color-saffron-tint:    #3A2010;   /* saffron chip background */
---color-terracotta:      #C4521A;   /* heat / urgency accent (unused until M3) */
-
---color-verified:        #4CAF7D;   /* "this fits", completion */
---color-verified-tint:   #152C1E;
-
---color-window:          #211409;   /* wait-window body */
---color-window-head:     #2C1A0A;   /* wait-window header */
-```
-
-**Stage colors.** Each stage gets one hue from a fixed six, assigned by the stage's
-**index** in `graph.stages` (`index % 6`), never by `Stage.color_key` — recipes have
-arbitrary stages. Used as a short vertical accent bar on each task and the numbered
-badge. Saffron is *not* in this ramp; it is reserved for CTAs and wait-window chrome.
+Four core values — **paper, ink, rule, signal** — plus two recessed tints and a muted
+stage family. Nothing else. The live source of truth is the `@theme` block in
+`apps/web/src/index.css`; this table is the intent.
 
 ```css
---stage-0: #F2B134;  --stage-1: #D4622A;  --stage-2: #7FB069;
---stage-3: #A78BFA;  --stage-4: #4EA8DE;  --stage-5: #DE7BA0;
+--color-paper:        #EFEEEA;   /* the board */
+--color-paper-sunk:   #E4E2DC;   /* time gutter, recessed bands, pressed rows */
+
+--color-ink:          #000000;   /* rules and primary type */
+--color-ink-2:        #55534C;   /* instructions, doneness cues, secondary */
+--color-ink-3:        #6E6B62;   /* durations, meta, the time ruler */
+--color-rule:         #C9C5BB;   /* hairlines */
+
+--color-signal:       #C42F16;   /* critical path, the live thing, the primary CTA */
+--color-signal-sunk:  #F5DED8;   /* signal fill behind a chip or an active row */
 ```
+
+**Contrast, checked not assumed.** Against `--color-paper`: `ink-2` 6.5:1, `ink-3`
+4.6:1, `signal` 4.8:1 — all clear AA for normal text, which matters more here than
+usual because durations are 13px and get read at arm's length in bad light. Paper on
+`signal` (the CTA) is 5.6:1. Every stage tint clears 3:1 as a non-text mark. `--color-rule`
+is a printed hairline at 1.5:1 and is deliberately below that bar: nothing load-bearing
+may depend on it alone, which is why structural edges are 2px `ink`.
+
+The first draft of this palette used `#8A877E` for `ink-3` (3.1:1) and `#D8371B` for
+signal (4.0:1). Both failed. Recorded because the failure mode is silent — they look
+fine on a bright desk monitor.
+
+**True black, deliberately.** Tinted near-black (`#111`, `#0B0B0B`) standing in for black
+is a recognised generated-design tell. A printed schedule uses black ink; so do we.
+
+**Signal is rationed.** If more than one thing on a screen is `--color-signal`, one of
+them is wrong. It marks the critical path and the single primary action, nothing else.
+
+**Retired from the M2 palette, and why:**
+
+- `--color-verified` (green) — a second accent dilutes principle 2. "All this prep fits
+  inside the 12 min cook" is a *fact*, not an achievement, and is now set in `ink-2` on
+  `paper-sunk`. M3 will need an affirmative completion mark; that is M3's decision to
+  make, and it should not resurrect a general-purpose green.
+- `--color-terracotta` (heat/urgency, never used) — signal covers it.
+- `--color-saffron` and its three tints — replaced by signal. The old ramp's `--stage-0`
+  (`#f2b134`) was visually indistinguishable from saffron (`#e8a020`) on screen, so the
+  documented reservation ("saffron is not in the stage ramp") existed only in prose.
+
+### Stage identity
+
+Not six loud hues. On a schedule, a line is identified by **the lane it runs in and its
+label**; colour is a quiet code, not the message. The M2 ramp mixed two spice tones with
+Tailwind's violet-400 and a generic sky blue — two palettes wearing one coat.
+
+Re-derived: six tints at roughly equal value (L\* ≈ 45) and low chroma, none of them red.
+They read as coded lines on an understated map and none of them competes with signal.
+
+```css
+--stage-0: #6E7B52;  --stage-1: #7A6A4F;  --stage-2: #4F6B72;
+--stage-3: #6B5F72;  --stage-4: #7A6558;  --stage-5: #5E6B5E;
+```
+
+Assignment is unchanged: by the stage's **index** in `graph.stages` (`index % 6`), never
+by `Stage.color_key` — recipes have arbitrary stages. Applied as a **3px lane rule**, not
+a filled badge or a dot.
 
 A task the scheduler moved into another stage's wait window keeps **its own** stage's
-colour inside that window block — that is how the eye reads it as borrowed work.
+tint inside that window — that is how the eye reads it as borrowed work.
 
 ## Type
 
-System stack (`-apple-system, "Segoe UI", Roboto, sans-serif`). No webfont — it costs
-a render blocking round trip and this app is used on kitchen wifi.
+**Archivo**, variable, self-hosted. One family; the **width axis** carries the signage
+voice, so no second face is needed. Weight and width do the work that a display serif
+would otherwise do.
 
-| Role | Size / weight |
+Loading — the M2 no-webfont rule is kept in *intent* and relaxed in *mechanism*. It was
+written against a Google Fonts `<link>`, which is a render-blocking round trip to a third
+party on kitchen wifi. Instead:
+
+- one `.woff2` under `apps/web/public/fonts/`, subset to Latin basic + digits +
+  punctuation actually used;
+- `<link rel="preload">` from our own origin, `font-display: optional`;
+- **budget ≤ 55KB.** If the two-axis variable file exceeds it, drop the width axis and
+  ship two static cuts (Regular, Expanded SemiBold) instead. Say which was shipped.
+
+**Shipped: the two-axis variable font, 49KB** (`public/fonts/archivo-var-subset.woff2`).
+The upstream latin file is 88KB and busts the budget; clamping the axes to the range the
+scale below actually uses (`wght` 300–700, `wdth` 88–112) and cutting the charset to what
+the product renders brings it to 50,192 bytes with both axes intact, so the width axis
+survives. Reproducible via `apps/web/scripts/subset-font.py`, which is a one-off asset
+build and deliberately **not** wired into `make` — the output is committed so the normal
+build needs neither Python nor network. Archivo is SIL OFL 1.1; the licence ships beside
+the font.
+
+`font-display: optional` means a cold first load may render in the fallback and swap on
+the next visit. That is the correct trade for a PWA: zero layout shift, zero blocking.
+Fallback stack stays `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
+
+**Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base.
+
+| Role | Size / weight / width |
 |---|---|
-| Screen title | 24 / 700 |
-| Recipe title | 22 / 700 |
-| Stage label | 17 / 600 |
-| Step instruction | 16 / 400, line-height 1.5 |
-| Task label | 15 / 500 |
-| Duration / meta | 13 / 500, `--text-muted` |
-| Section eyebrow (`WHILE THIS COOKS`) | 12 / 700, letter-spacing 0.08em, uppercase |
-| Timer digits | 44 / 300, tabular-nums |
+| Recipe title | 30 / 600 / wdth 88 — condensed, like a destination on a board |
+| Screen title (picker) | 22 / 600 / wdth 100 |
+| Stage label | 18 / 600 / wdth 112 — expanded; this is the signage voice |
+| Primary CTA | 18 / 600 / wdth 106 |
+| Task label | 15 / 500 / wdth 100 |
+| Instruction | 15 / 400 / wdth 100, line-height 1.5 |
+| Doneness cue | 13 / 400 / wdth 100, `ink-2`, **not italic** |
+| Duration, meta | 13 / 500 / wdth 100, tabular, `ink-3` |
+| Section label | 13 / 600 / wdth 100, **sentence case** |
+| Time ruler | 12 / 500 / wdth 100, tabular, `ink-3` |
+| Timer digits (M3) | 44 / 300 / wdth 88, tabular |
 
-`font-variant-numeric: tabular-nums` on every timer and duration, or the digits jitter
-as they count down.
+`font-variant-numeric: tabular-nums` on every duration, clock value and timer, or the
+digits jitter. Line length stays under 80 characters — the 390px column at a 16px gutter
+gives ~55 at 15px.
+
+**No tracked-out ALL-CAPS anywhere.** It is a generated-design tell and it costs
+legibility at 12–13px on a screen with steam on it. Section labels are sentence case at
+weight 600: `While this cooks`, `Dough`, `Frying`, `Glaze`.
+
+## Radius and elevation
+
+Both were open items ("one border radius and one soft shadow on everything, regardless of
+hierarchy"). Resolved as a rule rather than a value:
+
+> **Radius encodes whether a thing is a measurement or a control.**
+
+| Kind | Radius | Why |
+|---|---|---|
+| Bars, the time gutter, recessed bands | `0` | Their edges mean something. Rounding a measured extent falsifies the measurement. |
+| Controls — chips, the CTA, pressable rows | `2px` | A printed-form corner. You touch it, so it softens; barely. |
+| Stage badge / dot, where one survives | `50%` | It is a point on a line, not a box. |
+
+**Shadow: none, anywhere.** Depth is expressed by ground value (`paper-sunk` recesses)
+and by rule weight. There is no elevation model and adding one would contradict the
+brief's "printed, not rendered."
+
+Rule weights are the hierarchy: `1px --color-rule` hairline for list separation, `2px
+--color-ink` for a structural edge, `3px --color-signal` for the mainline.
+
+## Metadata and punctuation
+
+The middle-dot meta string (`9 min prep · fits in 12 min`, `3 servings · 34 min`) was an
+open item and is a generated-design tell. Retired — and replaced by the device this
+design system already owns: **a column.**
+
+- Durations move out of the running text into a **right-aligned tabular duration
+  column**. That removes most dots for free and makes the numbers scannable down the
+  page, which is the whole point of a timetable.
+- Meta pairs become aligned fields separated by space and value contrast, not
+  punctuation: `3 servings` `34 min total`.
+- Capacity keeps its meaning and loses its dot: `9 min prep` in `ink`, `fits in 12 min`
+  in `ink-3`.
+
+**The copy rules in `CLAUDE.md` are untouched by this.** Capacity never consumption;
+ranked never flat; "9 min prep / fits in 12 min" survives verbatim minus the separator.
+Only punctuation and alignment change.
+
+## Arrows and chevrons
+
+Resolved: **an arrow is permitted only where it encodes a dependency. Never as
+affordance, never as ornament.**
+
+| Where | M2 | M2.5 |
+|---|---|---|
+| Between capacity chips | `›` | removed — they're a measured relationship, not a sequence |
+| End of a window task row | `›` | removed — see below |
+| Recipe picker rows | `›` | removed; the recipe's total time takes the duration column |
+| Collapsed stage summary | `Chop onion → Chop tomato` | **kept.** Here `→` means "then", and a collapsed card has no vertical axis to carry it. |
+| Map connectors | — | no arrowheads. On a time axis, down is later. An arrowhead is redundant. |
+
+Removing the row chevron takes an affordance away, and `DESIGN_SYSTEM.md` has always
+said window tasks "must read as tappable, not as recipe notes." The replacement is a
+full-width hit area, a `paper-sunk` pressed state, and the duration column reading as a
+control column. **This is the one decision here most likely to be wrong**, and it is
+falsifiable: if the M2 person test shows people don't read the rows as tappable, the
+glyph comes back — as a `+`, or as a visible control.
+
+## Connector language — for the Map (M2.75)
+
+Established now so M2.75 doesn't invent it under deadline. `GRAPH_VIEW.md` §5 requires
+these to be legible **without a legend**; that is the constraint they're designed against.
+
+| Meaning | Mark |
+|---|---|
+| Dependency | The rail simply **continues** — 2px `ink`, bottom edge of one bar to the top edge of the next. No arrowhead: the time axis already says which way is later. |
+| Critical path | The **leftmost lane**, a continuous 3px `signal` rail with no gaps, running the full height. The eye runs down it without a jump. |
+| Parallel work | A **spur** — 1.5px `ink-3`, leaving the mainline where the wait window opens, running its own lane, rejoining at the close. Thinner and lighter, so it reads as subordinate without being explained. |
+| Simultaneity | Shared vertical position. That's it. |
+| Merge / junction | Two rails converging on one bar's top edge, given extra vertical room (§4.5: the merge is the densest moment in the graph). |
+| Attended vs unattended | **Solid fill vs hollow with a 1px rule.** |
+
+**No dashes.** Solid-vs-dashed was precisely the distinction that needed the legend
+`GRAPH_VIEW.md` §5 complains about. Weight, colour and lane position carry it instead.
+
+The hollow-unattended mark is the load-bearing one: a hollow bar is literally empty
+space, and the parallel spur is drawn *running through it*. You can see the free time and
+you can see what has been placed in it. That is the entire product in one mark.
+
+## Is a node a card?
+
+**No. A node is a bar on a time axis** — height ∝ duration (sqrt-scaled, clamped 56–140px
+per `GRAPH_VIEW.md` §4.4), minimum width 96px, minimum tap target 44px per §3.
+
+**But that grammar belongs to the Map, not the Plan.** `GRAPH_VIEW.md` §2 gives the Plan
+view a different job — scannability, one thumb, calm — and §6 says to spend the boldness
+on the Map and nowhere else. So the Plan view inherits the palette, the type, the radius
+rule, the rule-weight hierarchy and the duration column, and **does not become a Gantt
+chart.** Its stages stay rows.
 
 ## Components and their states
 
@@ -94,73 +266,87 @@ as they count down.
 `collapsed` · `expanded` · `active` · `complete` (M2 ships the first two; `active` /
 `complete` are M3).
 
-Collapsed shows: index badge (in the stage colour), label, `~N min`, one-line task
-summary, chevron. Expanded shows the task rows and any wait-window block this stage
-hosts. Complete will swap the index badge for a green check and strike nothing through —
-struck text is hard to read at a glance.
+Collapsed shows: the stage rail, label, `~N min`, a one-line task summary. Expanded shows
+the task rows and any wait-window block this stage hosts.
 
 `~N min` is the stage's **inline** work — `StageSpan.inline_work_min`, the tasks still on
 this card after the scheduler moved others into a window. A stage whose tasks *all* got
 moved is dropped from the plan entirely (its tasks show in the windows that borrowed
 them), the same way the scheduler drops empty wait windows.
 
+**The stage rail stays ordinal** (M2.5 decision). The alternative considered was putting
+the stage's `StageSpan.start_min` there instead. Rejected, and the reasoning is worth
+keeping: **ordinal answers "where am I in the recipe?", the time axis answers "when does
+this happen?", and those are two different jobs.** Duplicating temporal information into
+the stage rail would blur both. The time axis is the Map's, and it stays there.
+
+The treatment changes even though the content doesn't. M2 drew a filled circular badge in
+the stage's tint — a coloured counter that competed with the label beside it. It is now
+**quiet and structural**: the ordinal set in `ink-3` at 13/500 tabular, no fill, no
+circle, sitting at the top of the stage's 3px lane rule. The rail carries the stage tint;
+the number does not.
+
+This also dissolves a real M2 defect rather than restyling it. The badge *number* came
+from render position (`position={i + 1}`) while the badge *colour* came from the graph
+index (`stage.index`), so on Chicken Biryani stage ① was drawn in stage-1's tint and the
+two counters could never be read together. With the number in neutral ink and the tint on
+the rail, they no longer claim to agree.
+
 ### WaitWindowBlock — the signature component
 
-Visually attached to its host stage card, not floating as a separate "tips" section.
-That attachment is what makes the concept legible; it was the main fix from the design
-review.
+Visually attached to its host stage card, not floating as a separate "tips" section. That
+attachment is what makes the concept legible; it was the main fix from the design review
+and it does not change.
 
 ```
-⚡ WHILE THIS COOKS
-9 min prep · fits in 12 min
-────────────────────────────────────────────
-[ 🔥 12 min cooking ]  ›  [ ✓ 9 min prep ]
-────────────────────────────────────────────
-▎ Cube capsicum                            ›
-  Start with this one · 5 min
-▎ Cube paneer · 2 min                      ›
-▎ Make kadai masala · 2 min                ›
-────────────────────────────────────────────
+While this cooks
+9 min prep   fits in 12 min
+──────────────────────────────────────────
+[ 12 min cooking ]   [ 9 min prep ]
+──────────────────────────────────────────
+▎ Cube capsicum                      5 min
+  Start with this one
+▎ Cube paneer                        2 min
+▎ Make kadai masala                  2 min
+──────────────────────────────────────────
 All this prep fits inside the 12 min cook
 ```
 
-The `▎` is the borrowed task's own stage colour. Footer switches on `window.slack_min`:
-`0` → "All this prep fits inside the N min cook"; otherwise "Fits with N min to spare".
+The `▎` is the borrowed task's own stage tint, as a 3px lane rule. Footer switches on
+`window.slack_min`: `0` → "All this prep fits inside the N min cook"; otherwise "Fits
+with N min to spare" — set in `ink-2` on `paper-sunk`, no green.
 
-Rules:
-- Header text is **capacity**, never consumption. `"9 min prep · fits in 12 min"`.
-  Never `"9 of 12 min used"` — the user hasn't started.
-- The first task is visually primary (`Start with this one`), the rest secondary
-  (`Also prepare`). A flat list of three equal tasks makes the user ask "which one?"
-- Tasks are rows with a chevron — they must read as tappable, not as recipe notes.
+Rules, unchanged from M2 except in punctuation:
+- Header text is **capacity**, never consumption. Never `"9 of 12 min used"` — the user
+  hasn't started.
+- The first task is visually primary (`Start with this one`), the rest secondary. A flat
+  list of three equal tasks makes the user ask "which one?"
+- Emoji (🔥 ✓ ⚡) are removed. They were the only icons in the product and read as
+  decoration in a system that is otherwise flat ink.
 
 ### Capacity chips
-Two chips side by side inside the wait-window block: `🔥 N min cooking` and
-`✓ N min prep`, both fed from the plan (`host.duration_typical` and `window.used_min`).
-This replaces the earlier "two stacked bars" sketch — M2 found that anything bar-shaped
-reads as progress on a screen shown before cooking starts, which is the one thing the
-component must not do (see the rejected list below). Chips can't be misread that way.
-Left number is the cook time, right number is the prep that fits inside it.
+Two chips inside the wait-window block: `12 min cooking` and `9 min prep`, both fed from
+the plan (`host.duration_typical` and `window.used_min`). Chips, not bars — anything
+bar-shaped reads as progress on a screen shown *before* cooking starts, which is the one
+thing this component must not do.
 
-### Timer
-Circular ring, remaining time in the center, `Pause` and `Skip (I'll do this later)`.
-Persists in a compact header bar when the user opens a parallel task, so the main cook
-never disappears from view.
+Known limitation, unchanged in M2.5: the chips carry no magnitude, so a window at 75%
+used (Kadai Paneer, 9 in 12) and one at 5% (Donuts, 3 in 60) render identically. Fixing
+that means finding a non-bar way to show fullness. Deferred, listed below.
+
+### Timer · ParallelTaskDetail · PrimaryCTA
+Unchanged from M2 in structure. PrimaryCTA is full-width, fixed above the safe area, 52px
+tall, `--color-signal`, radius 2px; exactly one on screen at a time.
 
 **Store the absolute end timestamp, not a countdown integer.** Recompute remaining on
 every render and on `visibilitychange`. Phones sleep.
 
-### ParallelTaskDetail
-Full-screen focus view: running-timer header, task title, image, instruction, optional
-tip, `Mark Complete`, `Back to Cooking`. One task, nothing else.
-
-### PrimaryCTA
-Full-width, fixed above the safe area, 52px tall, `--primary`. There is exactly one on
-screen at a time.
-
 ## Motion
 
 - Stage expand/collapse: 200ms ease-out height + opacity.
+- **The one orchestrated moment (Map, M2.75):** on open, the time ruler draws down and
+  the critical rail extends top to bottom in a single ~700ms sweep; the parallel spurs
+  fade in after it lands. Once, on entry. Nothing else on the Map animates.
 - Task complete: check draws in 150ms, row settles. No confetti during cooking — save
   celebration for the final `finish` node.
 - Respect `prefers-reduced-motion`.
@@ -175,21 +361,41 @@ Documented so they don't come back:
 - Desktop-style horizontal cooking graph on mobile.
 - Adding more UI to explain the concept. Past a point, more explanation makes the
   interface worse.
+- Dashed-vs-solid connectors needing a key at the bottom of the Map.
+- A second accent colour alongside signal.
 
-## Under review — for M2.5
+## Resolved in M2.5
 
-Each of these should be an explicit decision, not an inherited default. Status after M2:
+| Open item | Resolution |
+|---|---|
+| Ground and accent | Paper/ink/signal. Light ground, true black, one rationed red. |
+| Radius and shadow | Radius encodes measurement vs control (0 / 2px / 50%). No shadow, ever. |
+| ALL-CAPS eyebrows | Retired. Sentence case at 13/600. |
+| Middle-dot meta | Retired. Replaced by a right-aligned tabular duration column. |
+| Chevrons and arrows | Arrows only where they encode a dependency. All affordance glyphs removed. |
+| Typography | Archivo variable, self-hosted, ≤55KB, `font-display: optional`. Six-step scale. |
+| Stage identity | Kept, but re-derived as six equal-value low-chroma tints applied as a 3px lane rule. Never red. |
+| Is a node a card | No — a bar on a time axis. Map grammar only; the Plan view stays rows. |
+| Stage rail | Stays **ordinal**, not start time. Ordinal is "where am I", the time axis is "when" — separate jobs. Treatment goes quiet: neutral ink number, tint moves to the lane rule. |
+| `→` on button text | Dropped in M2; stays dropped. |
 
-- ~~Warm cream background plus a green accent~~ — **resolved in M2**: moved to the dark
-  espresso/saffron palette. Whether *that* is the right direction is M2.5's call.
-- One border radius and one soft shadow on everything, regardless of hierarchy.
-  Hierarchy should be visible without reading the text. **Still open.**
-- Tracked-out ALL-CAPS eyebrow labels (`WHILE THIS COOKS`). Legible, but a strong tell.
-  M2 kept it; **still open.**
-- Meta strings joined with middle dots (`9 min prep · fits in 12 min`,
-  `3 servings`). M2 kept it; **still open.**
-- The `→` appended to button text — **dropped in M2** (the disabled CTA reads
-  `Start Cooking · coming in M3`).
+## Still open
 
-M2.5 owns the rest. Do it with the `frontend-design` skill, spending the boldness on
-the Map view (M2.75) and keeping the Plan view quiet.
+1. **The wait window's numbers don't reconcile.** Chicken Biryani's second window reads
+   `2 min prep`, `fits in 12 min`, `Fits with 7 min to spare` — and 2 + 7 ≠ 12. The
+   header's denominator is the host's `duration_typical`; the footer's slack is
+   `window.slack_min`, measured against the window's actual capacity after gating. Both
+   are honestly the scheduler's; they just can't sit next to each other. **A product and
+   scheduler-semantics decision, deliberately not touched in M2.5.**
+2. **The wait window assumes its host is hot.** Homemade Donuts renders "while this
+   cooks" and "60 min cooking" over dough proving at room temperature. Copy tied to
+   scheduler semantics, not a design fix.
+3. **`Start with this one` on a single-task window** (Chicken Biryani's second) ranks a
+   list of one.
+4. **Capacity chips carry no magnitude** — 9-in-12 and 3-in-60 look identical.
+5. **Do rows still read as tappable without a chevron?** Falsifiable at the M2 person
+   test.
+6. **`Stage.color_key`** — still unused by the renderer; `stageColor` assigns by position
+   in `graph.stages`. Remove at M4 or write down why it stays.
+7. **The Plan view still has no time dimension.** By design — the bar grammar is the
+   Map's. Revisit only if the M2.75 person test suggests the Plan needs it too.

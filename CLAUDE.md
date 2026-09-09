@@ -163,11 +163,18 @@ Learned from the Figma iterations — these were real mistakes, don't reintroduc
 Two design inputs feed this repo. Keep them in their lanes.
 
 **Figma (via the Figma MCP server).** The Figma Make prototype is the source of truth
-for *layout, flow, and which screens exist*. When a Figma frame is available, read it
-rather than guessing at spacing and hierarchy. The remote server is link-based — the
-owner pastes a link to a specific frame, so always work from the link given, and ask
-which version it is if it isn't stated. Frames are versioned v1 → v4, v4 newest; the
-earlier ones show what was tried and rejected, and should not be treated as the spec.
+for *layout, flow, and which screens exist*. When a frame is available, read it rather
+than guessing at spacing and hierarchy.
+
+Two things to know before reaching for it (established in M2.5):
+
+- It is a Figma **Make** file (`figma.com/make/…`), not a Design file. The MCP's
+  design-context tools read Design files by node id, so there are no frames to pull —
+  the prototype is generated React running in a preview, and it gets read by looking at
+  it. It carries Make's own "Version N" counter, and there is one design in the file;
+  the `v1 → v4` versioning this file used to describe does not exist.
+- **It covers the Plan view and the cooking screens only. There is no Map/graph frame.**
+  The Map is greenfield and the `frontend-design` skill governs it entirely.
 
 **The `frontend-design` skill.** Load it before any work on visual direction: palette,
 typography, the graph view, or a screen's aesthetic identity. It is the counterweight
