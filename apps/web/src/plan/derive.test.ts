@@ -124,3 +124,39 @@ describe('derivePlan — Chicken Biryani (two windows)', () => {
     expect(plan.warnings.join(' ')).toContain('uses 2 burners')
   })
 })
+
+describe('derivePlan — ingredient grouping', () => {
+  it('collapses an entirely ungrouped list into a single null group', () => {
+    // All three of Maggi's ingredients arrive with no group. Grouping them together is
+    // what the old NUL-byte sentinel was for; `null` as a Map key does it directly.
+    const groups = derivePlan(MAGGI).ingredientGroups
+    expect(groups).toHaveLength(1)
+    expect(groups[0].group).toBeNull()
+    expect(groups[0].items).toHaveLength(MAGGI.graph.ingredients.length)
+  })
+
+  it('keeps first-appearance order and rejoins non-contiguous groups', () => {
+    // "For the base" appears at indices 0-1 and again at 5-6 with two other groups in
+    // between, so this only passes if grouping is keyed rather than run-length.
+    const groups = derivePlan(KADAI).ingredientGroups
+    expect(groups.map((g) => g.group)).toEqual([
+      'For the base',
+      'For the kadai',
+      'For the kadai masala',
+      null,
+    ])
+    expect(groups[0].items.map((i) => i.name)).toEqual([
+      'Onion',
+      'Tomato',
+      'Ginger-garlic paste',
+      'Oil',
+    ])
+  })
+
+  it('loses no ingredient, in any fixture', () => {
+    for (const payload of [KADAI, MAGGI, BIRYANI]) {
+      const flat = derivePlan(payload).ingredientGroups.flatMap((g) => g.items)
+      expect(flat).toHaveLength(payload.graph.ingredients.length)
+    }
+  })
+})

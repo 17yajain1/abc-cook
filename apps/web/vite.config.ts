@@ -13,6 +13,9 @@ export default defineConfig({
       '@abc-cook/schema': fileURLToPath(
         new URL('../../packages/schema/index.ts', import.meta.url),
       ),
+      // Own source. Keep this in step with `paths` in tsconfig.app.json — Vite resolves
+      // the bundle, tsc resolves the types, and they are configured separately.
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   test: {
