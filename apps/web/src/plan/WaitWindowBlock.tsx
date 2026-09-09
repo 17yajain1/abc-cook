@@ -9,6 +9,12 @@ import type { RenderWindow } from './derive'
  * card, never floating as a separate tips section — that attachment is what makes the
  * idea legible.
  *
+ * Drawn as a recessed band, which is the Plan view's echo of the Map's hollow bar: a
+ * wait window *is* a gap in the schedule, so it sinks rather than lifts. The two capacity
+ * chips carry the brief's attended/unattended encoding directly — the host's cooking time
+ * is outlined (nothing is being done to it) and the prep that fits inside it is filled
+ * (that one is you, working).
+ *
  * Every number here is the scheduler's: `usedMin`, `slackMin`, and the host's own
  * duration. Nothing is added up in this file.
  */
@@ -16,34 +22,35 @@ export function WaitWindowBlock({ window }: { window: RenderWindow }) {
   const [first, ...rest] = window.tasks
 
   return (
-    <section className="mt-3 overflow-hidden rounded-2xl border border-line-strong">
-      <div className="bg-window-head px-4 py-2.5">
-        <p className="text-xs font-bold uppercase tracking-wide text-saffron">
-          ⚡ While this cooks
-        </p>
-        <p className="tabular mt-0.5 text-xs text-ink-dim">
-          {roundMin(window.usedMin)} min prep · fits in {roundMin(window.hostDurationTypical)} min
+    <section className="mt-4 border-t-2 border-ink bg-paper-sunk">
+      <div className="px-3 pb-2.5 pt-3">
+        <p className="text-[13px] font-semibold text-ink">While this cooks</p>
+        <p className="tabular mt-0.5 text-[13px]">
+          <span className="font-medium text-ink">{roundMin(window.usedMin)} min prep</span>
+          <span className="text-ink-3">
+            {' '}
+            fits in {roundMin(window.hostDurationTypical)} min
+          </span>
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 bg-window px-4 py-2.5 text-xs">
-        <Chip tone="cook">
-          🔥 <b className="tabular">{roundMin(window.hostDurationTypical)}</b>&nbsp;min cooking
-        </Chip>
-        <span className="text-ink-dim">›</span>
-        <Chip tone="prep">
-          ✓ <b className="tabular">{roundMin(window.usedMin)}</b>&nbsp;min prep
-        </Chip>
+      <div className="flex flex-wrap items-center gap-2 px-3 pb-3 text-[13px] font-medium">
+        <span className="tabular rounded-control border border-ink px-2 py-1 text-ink">
+          {roundMin(window.hostDurationTypical)} min cooking
+        </span>
+        <span className="tabular rounded-control bg-ink px-2 py-1 text-paper">
+          {roundMin(window.usedMin)} min prep
+        </span>
       </div>
 
-      <ul className="bg-surface">
+      <ul>
         {first && <WindowTask task={first} primary />}
         {rest.map((task) => (
           <WindowTask key={task.nodeId} task={task} primary={false} />
         ))}
       </ul>
 
-      <p className="bg-verified-tint px-4 py-2 text-xs text-verified-ink">
+      <p className="border-t border-rule px-3 py-2 text-[13px] text-ink-2">
         {window.slackMin <= 0
           ? `All this prep fits inside the ${roundMin(window.hostDurationTypical)} min cook`
           : `Fits with ${roundMin(window.slackMin)} min to spare`}
@@ -60,48 +67,21 @@ function WindowTask({
   primary: boolean
 }) {
   return (
-    <li
-      className="flex items-center gap-3 border-t border-line px-4 first:border-t-0"
-      style={{ paddingBlock: primary ? 14 : 10 }}
-    >
+    <li className="flex items-baseline gap-3 border-t border-rule px-3 py-2.5">
       <span
         aria-hidden
-        className="h-8 w-1 flex-shrink-0 rounded-full"
-        style={{ background: stageColor(task.homeStageIndex) }}
+        className="flex-shrink-0 self-stretch"
+        style={{ width: 3, background: stageColor(task.homeStageIndex) }}
       />
       <div className="min-w-0 flex-1">
-        <p
-          className="font-semibold text-ink"
-          style={{ fontSize: primary ? 15 : 13 }}
-        >
-          {task.label}
-        </p>
-        <p className="tabular mt-0.5 text-xs text-ink-dim">
-          {primary ? 'Start with this one · ' : ''}
-          {task.durationTypical} min
-        </p>
+        <p className="text-[15px] font-medium text-ink">{task.label}</p>
+        {primary && (
+          <p className="mt-0.5 text-[13px] text-ink-2">Start with this one</p>
+        )}
       </div>
-      <span aria-hidden className="flex-shrink-0 text-ink-dim">
-        ›
+      <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
+        {task.durationTypical} min
       </span>
     </li>
-  )
-}
-
-function Chip({
-  tone,
-  children,
-}: {
-  tone: 'cook' | 'prep'
-  children: React.ReactNode
-}) {
-  const cls =
-    tone === 'cook'
-      ? 'bg-saffron-tint text-saffron-dim'
-      : 'bg-verified-tint text-verified-ink'
-  return (
-    <span className={`flex items-center gap-1 rounded-lg px-2.5 py-1 ${cls}`}>
-      {children}
-    </span>
   )
 }

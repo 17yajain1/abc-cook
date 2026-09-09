@@ -1,46 +1,55 @@
 @import 'tailwindcss';
 
-/* Design tokens — docs/DESIGN_SYSTEM.md.
-   Dark "spice cabinet" palette ported from the Figma Make prototype (M2 decision 1).
-   System font stack is deliberate: no webfont round trip on kitchen wifi. */
-@theme {
-  --color-ground: #1c1109;
-  --color-surface: #241708;
-  --color-surface-raised: #2c1e0f;
-  --color-line: #3a2810;
-  --color-line-strong: #6b4a1c;
-
-  --color-ink: #f5edd8;
-  --color-ink-muted: #b8a888;
-  --color-ink-dim: #7a6650;
-
-  --color-saffron: #e8a020;
-  --color-saffron-soft: #f5c050;
-  --color-saffron-dim: #c87c20;
-  --color-saffron-tint: #3a2010;
-  --color-terracotta: #c4521a;
-
-  --color-verified: #4caf7d;
-  --color-verified-ink: #6a9a7a;
-  --color-verified-tint: #152c1e;
-  --color-verified-line: #1e4030;
-
-  --color-window: #211409;
-  --color-window-head: #2c1a0a;
-
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+/* Archivo, self-hosted and subset. The M2 no-webfont rule is kept in intent and relaxed
+   in mechanism: it was written against a render-blocking round trip to Google Fonts.
+   This is our own origin, preloaded in index.html, and `optional` so a cold load never
+   blocks and never shifts. See docs/DESIGN_SYSTEM.md § Type. */
+@font-face {
+  font-family: 'Archivo Variable';
+  src: url('/fonts/archivo-var-subset.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-stretch: 88% 112%;
+  font-style: normal;
+  font-display: optional;
 }
 
-/* Stage colours are assigned by INDEX, cycling through six — recipes have arbitrary
-   stages, so `Stage.color_key` is not consulted. See docs/DESIGN_SYSTEM.md.
-   Saffron is reserved for CTAs and wait-window chrome, so it is not in this ramp. */
+/* Design tokens — derived from the Timetable brief in docs/DESIGN_SYSTEM.md.
+   Four core values: paper, ink, rule, signal. Everything else is a tint of those.
+   Contrast against --color-paper is checked, not assumed: ink-2 6.5:1, ink-3 4.6:1,
+   signal 4.8:1, paper-on-signal 5.6:1. --color-rule is a printed hairline at 1.5:1 and
+   is deliberately below the bar, so nothing load-bearing may depend on it alone. */
+@theme {
+  --color-paper: #efeeea;
+  --color-paper-sunk: #e4e2dc;
+
+  --color-ink: #000000;
+  --color-ink-2: #55534c;
+  --color-ink-3: #6e6b62;
+  --color-rule: #c9c5bb;
+
+  --color-signal: #c42f16;
+  --color-signal-sunk: #f5ded8;
+
+  --font-sans:
+    'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Radius encodes whether a thing is a measurement or a control. Measurements are
+     square because their edges mean something; controls soften, barely. No third value,
+     and no shadow scale at all — depth is ground value and rule weight. */
+  --radius-control: 2px;
+}
+
+/* Stage identity. Six tints at roughly equal value (L* ~= 45) and low chroma, none of
+   them red, so none competes with --color-signal. Assigned by the stage's INDEX in
+   graph.stages (index % 6), never by Stage.color_key — recipes have arbitrary stages.
+   Drawn as a 3px lane rule, never as a filled badge. All clear 3:1 as non-text marks. */
 :root {
-  --stage-0: #f2b134;
-  --stage-1: #d4622a;
-  --stage-2: #7fb069;
-  --stage-3: #a78bfa;
-  --stage-4: #4ea8de;
-  --stage-5: #de7ba0;
+  --stage-0: #6e7b52;
+  --stage-1: #7a6a4f;
+  --stage-2: #4f6b72;
+  --stage-3: #6b5f72;
+  --stage-4: #7a6558;
+  --stage-5: #5e6b5e;
 }
 
 html,
@@ -52,6 +61,12 @@ body,
 }
 
 html {
+  /* Required, not cosmetic. Without it Chrome's auto-dark-mode inverts the whole page
+     for anyone whose OS is set to dark, which silently destroys a palette whose contrast
+     ratios were chosen against paper. The M2 dark ground hid this; a light one does not.
+     This product is one deliberate light design, not a themed one. */
+  color-scheme: light;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -65,7 +80,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-ground);
+  background: var(--color-paper-sunk);
   color: var(--color-ink);
   overscroll-behavior: none;
 }
@@ -77,13 +92,24 @@ body {
   width: 390px;
   max-width: 100%;
   margin: 0 auto;
-  background: var(--color-ground);
+  background: var(--color-paper);
   box-sizing: border-box;
 }
 
-/* Every duration and timer digit, or the numbers jitter as they change. */
+/* Every duration, clock value and timer digit, or the numbers jitter as they change. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* The signage voice. Width, not size, is what makes a stage label read as a board. */
+.expanded {
+  font-stretch: 112%;
+}
+.condensed {
+  font-stretch: 88%;
+}
+.semi-expanded {
+  font-stretch: 106%;
 }
 
 .no-scrollbar::-webkit-scrollbar {

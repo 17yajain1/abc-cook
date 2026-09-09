@@ -32,11 +32,11 @@ export default function App() {
     case 'error':
       return (
         <Centered>
-          <p className="text-ink">{view.message}</p>
+          <p className="text-[15px] text-ink">{view.message}</p>
           <button
             type="button"
             onClick={backToPicker}
-            className="mt-4 rounded-full bg-saffron px-4 py-2 text-sm font-semibold text-ground"
+            className="mt-5 rounded-control bg-signal px-4 py-2 text-[15px] font-semibold text-paper"
           >
             Back
           </button>
@@ -60,28 +60,30 @@ function RecipePicker({ onPick }: { onPick: (recipeId: string) => void }) {
   }, [])
 
   return (
-    <div className="flex h-full flex-col px-6 pt-16">
-      <h1 className="text-2xl font-bold text-ink">ABC Cook</h1>
-      <p className="mt-1 text-sm text-ink-muted">Pick a recipe to see its cooking plan.</p>
+    <div className="flex h-full flex-col bg-paper px-5 pt-16">
+      <h1 className="text-[22px] font-semibold text-ink">ABC Cook</h1>
+      <p className="mt-1 text-[15px] text-ink-2">Pick a recipe to see its cooking plan.</p>
 
-      {error && <p className="mt-6 text-sm text-terracotta">{error}</p>}
+      {error && <p className="mt-6 text-[15px] text-signal">{error}</p>}
 
-      <ul className="mt-8 space-y-2.5">
+      <ul className="mt-8 border-t border-rule">
         {recipes?.map((recipe) => (
           <li key={recipe.id}>
             <button
               type="button"
               onClick={() => onPick(recipe.id)}
-              className="flex w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 text-left"
+              className="flex w-full items-baseline justify-between gap-3 border-b border-rule py-3.5 text-left active:bg-paper-sunk"
             >
-              <span className="font-semibold text-ink">{recipe.title}</span>
-              <span className="tabular text-xs text-ink-dim">
-                {recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'} ›
+              <span className="text-[15px] font-medium text-ink">{recipe.title}</span>
+              <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
+                {recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'}
               </span>
             </button>
           </li>
         ))}
-        {!recipes && !error && <li className="text-sm text-ink-dim">Loading…</li>}
+        {!recipes && !error && (
+          <li className="py-3.5 text-[15px] text-ink-3">Loading…</li>
+        )}
       </ul>
     </div>
   )
@@ -89,7 +91,7 @@ function RecipePicker({ onPick }: { onPick: (recipeId: string) => void }) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-8 text-center text-sm text-ink-muted">
+    <div className="flex h-full flex-col items-center justify-center bg-paper px-8 text-center text-[15px] text-ink-2">
       {children}
     </div>
   )

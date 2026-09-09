@@ -16,11 +16,14 @@ export function PlanScreen({
 }) {
   const [tab, setTab] = useState<Tab>('plan')
 
+  // `relative` matters: the CTA below is absolutely positioned, and without a positioned
+  // ancestor it resolved against the viewport and escaped the 390px column at any wider
+  // width. Invisible at exactly 390px, which is why M2 shipped it.
   return (
-    <div className="flex h-full flex-col bg-ground">
+    <div className="relative flex h-full flex-col bg-paper">
       <RecipeHeader plan={plan} />
 
-      <div className="flex flex-shrink-0 items-center gap-2 border-b border-line px-5 pb-2">
+      <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
         <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>
           Cooking Plan
         </TabButton>
@@ -30,7 +33,7 @@ export function PlanScreen({
         <button
           type="button"
           onClick={onPickAnother}
-          className="ml-auto text-xs text-ink-dim underline underline-offset-2"
+          className="ml-auto self-center text-[13px] text-ink-3 underline underline-offset-4"
         >
           change recipe
         </button>
@@ -38,7 +41,7 @@ export function PlanScreen({
 
       <div className="no-scrollbar flex-1 overflow-y-auto pb-28">
         {plan.warnings.length > 0 && (
-          <div className="mx-5 mt-4 rounded-xl border border-line-strong bg-surface-raised px-3 py-2 text-xs text-ink-muted">
+          <div className="mx-5 mt-4 border-l-2 border-ink bg-paper-sunk px-3 py-2 text-[13px] text-ink-2">
             {plan.warnings.map((w) => (
               <p key={w}>{sentence(w)}</p>
             ))}
@@ -46,7 +49,7 @@ export function PlanScreen({
         )}
 
         {tab === 'plan' ? (
-          <div className="px-5 pt-5">
+          <div className="px-5 pt-6">
             {plan.stages.map((stage, i) => (
               <StageCard
                 key={stage.stageId}
@@ -58,7 +61,7 @@ export function PlanScreen({
             ))}
 
             {plan.savedMin === 0 && (
-              <p className="pb-4 pt-2 text-center text-xs text-ink-dim">
+              <p className="pb-4 pt-2 text-[13px] text-ink-3">
                 Nothing in this recipe cooks unattended — there's no prep to slot in
                 while you wait.
               </p>
@@ -69,16 +72,15 @@ export function PlanScreen({
         )}
       </div>
 
-      <div
-        className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-4"
-        style={{ background: 'linear-gradient(to top, var(--color-ground) 72%, transparent)' }}
-      >
+      <div className="absolute bottom-0 left-0 right-0 border-t border-rule bg-paper px-5 pb-6 pt-4">
+        {/* Disabled, so deliberately not signal — a dead control must not wear the
+            colour reserved for the live one. M3 turns this signal when it works. */}
         <button
           type="button"
           disabled
-          className="w-full cursor-not-allowed rounded-2xl bg-surface-raised py-4 text-center text-base font-bold text-ink-dim"
+          className="w-full cursor-not-allowed rounded-control border border-rule bg-paper-sunk py-3.5 text-center text-[18px] font-semibold text-ink-3"
         >
-          Start Cooking · coming in M3
+          Start Cooking (coming in M3)
         </button>
       </div>
     </div>
@@ -98,8 +100,8 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-        active ? 'bg-saffron text-ground' : 'text-ink-muted'
+      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-medium ${
+        active ? 'border-ink text-ink' : 'border-transparent text-ink-3'
       }`}
     >
       {children}
