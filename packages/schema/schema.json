@@ -1,0 +1,614 @@
+{
+  "$defs": {
+    "CookingGraph": {
+      "description": "The internal DAG of a recipe: what the LLM extracts, what the scheduler consumes.",
+      "properties": {
+        "cuisine": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Cuisine, when the source states or implies one."
+        },
+        "id": {
+          "description": "Stable graph id.",
+          "type": "string"
+        },
+        "ingredients": {
+          "description": "Every ingredient the recipe lists.",
+          "items": {
+            "$ref": "#/$defs/Ingredient"
+          },
+          "type": "array"
+        },
+        "nodes": {
+          "description": "Every unit of work.",
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "type": "array"
+        },
+        "servings": {
+          "description": "Servings the quantities are stated for.",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRef"
+        },
+        "stages": {
+          "description": "Ordered stages; every node's `stage` must appear here.",
+          "items": {
+            "$ref": "#/$defs/Stage"
+          },
+          "type": "array"
+        },
+        "stated_total_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Total time the original recipe claimed. Sanity-checks extraction (\u00a75.8)."
+        },
+        "title": {
+          "description": "Recipe title, e.g. \"Kadai Paneer\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "servings",
+        "cuisine",
+        "source",
+        "ingredients",
+        "nodes",
+        "stages",
+        "stated_total_min"
+      ],
+      "type": "object"
+    },
+    "CookingPlan": {
+      "description": "The scheduled, renderable output the user sees.",
+      "properties": {
+        "critical_path": {
+          "description": "Node ids on the longest path.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "graph_id": {
+          "description": "Id of the graph this plan was computed from.",
+          "type": "string"
+        },
+        "saved_min": {
+          "description": "serial_min - total_min. The number the product is arguing for.",
+          "type": "number"
+        },
+        "scheduled": {
+          "description": "Every node, placed on the timeline.",
+          "items": {
+            "$ref": "#/$defs/ScheduledNode"
+          },
+          "type": "array"
+        },
+        "serial_min": {
+          "description": "Sum of all typical durations, done one at a time.",
+          "type": "number"
+        },
+        "total_min": {
+          "description": "Makespan of the scheduled plan.",
+          "type": "number"
+        },
+        "warnings": {
+          "description": "Safety-check findings (\u00a74.5). \"degraded\" means extraction fell back.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "windows": {
+          "description": "Wait windows derived from the timeline.",
+          "items": {
+            "$ref": "#/$defs/WaitWindow"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "graph_id",
+        "scheduled",
+        "windows",
+        "total_min",
+        "serial_min",
+        "saved_min",
+        "critical_path"
+      ],
+      "type": "object"
+    },
+    "Ingredient": {
+      "description": "One ingredient line from the source recipe.\n\nA `prep_note` is a hint that a prep node exists: \"2 onions, finely chopped\"\nimplies a `chop_onion` node even when no written step mentions chopping.",
+      "properties": {
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Ingredient grouping, e.g. \"For the masala\" / \"For garnish\"."
+        },
+        "id": {
+          "description": "Stable id, e.g. \"ing_onion\".",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name, e.g. \"Onion\".",
+          "type": "string"
+        },
+        "optional": {
+          "default": false,
+          "description": "Optional ingredients are exempt from the consumption invariant (\u00a75.5).",
+          "type": "boolean"
+        },
+        "prep_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Preparation stated on the ingredient line, e.g. \"finely chopped\"."
+        },
+        "qty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Quantity, or null when the recipe gives none."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Unit, e.g. \"medium\", \"g\", \"tbsp\"."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "qty",
+        "unit",
+        "prep_note",
+        "group"
+      ],
+      "type": "object"
+    },
+    "Node": {
+      "description": "One unit of work in the cooking graph.\n\n`kind` and `attention` are separate on purpose. `attention` decides whether the\nnode occupies the cook and therefore whether it creates a wait window; `kind`\ndecides how it renders. Scheduler code must branch on `attention` only.",
+      "properties": {
+        "attention": {
+          "description": "Whether the cook is occupied. `unattended` and `periodic` create windows.",
+          "enum": [
+            "hands_on",
+            "periodic",
+            "unattended"
+          ],
+          "type": "string"
+        },
+        "consumes": {
+          "description": "Ingredient ids and/or component ids this node uses up.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "depends_on": {
+          "description": "Node ids that must COMPLETE before this node may start.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "doneness_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Sensory finish signal, e.g. \"onions light golden, oil separating\"."
+        },
+        "duration_max": {
+          "description": "Pessimistic duration; window-safety checks use this.",
+          "type": "integer"
+        },
+        "duration_min": {
+          "description": "Optimistic duration in minutes.",
+          "type": "integer"
+        },
+        "duration_typical": {
+          "description": "Duration the plan displays and schedules on.",
+          "type": "integer"
+        },
+        "id": {
+          "description": "Stable id, e.g. \"cook_base\".",
+          "type": "string"
+        },
+        "instruction": {
+          "description": "Full sentence(s) shown in step mode.",
+          "type": "string"
+        },
+        "interruptible": {
+          "description": "Whether the cook can drop this mid-way and return. Gates `periodic` windows.",
+          "type": "boolean"
+        },
+        "kind": {
+          "description": "Render classification. Not used by the scheduler.",
+          "enum": [
+            "prep",
+            "active",
+            "passive",
+            "combine",
+            "finish"
+          ],
+          "type": "string"
+        },
+        "label": {
+          "description": "UI heading, four words or fewer.",
+          "type": "string"
+        },
+        "max_lead_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Freshness ceiling: minutes this may finish before its consumer starts (\u00a74.5)."
+        },
+        "produces": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component id this node yields, e.g. \"comp_base\"."
+        },
+        "stage": {
+          "description": "Id of the stage this node belongs to; must exist in `stages`.",
+          "type": "string"
+        },
+        "station": {
+          "description": "The resource this node contends for.",
+          "enum": [
+            "burner",
+            "oven",
+            "counter",
+            "sink",
+            "fridge",
+            "none"
+          ],
+          "type": "string"
+        },
+        "tip": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional aside shown in step mode."
+        }
+      },
+      "required": [
+        "id",
+        "stage",
+        "label",
+        "instruction",
+        "kind",
+        "attention",
+        "duration_min",
+        "duration_typical",
+        "duration_max",
+        "station",
+        "interruptible"
+      ],
+      "type": "object"
+    },
+    "RecipeListResponse": {
+      "description": "Every recipe the API can currently serve.",
+      "properties": {
+        "recipes": {
+          "description": "Available recipes, by title.",
+          "items": {
+            "$ref": "#/$defs/RecipeSummary"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "recipes"
+      ],
+      "type": "object"
+    },
+    "RecipePlanResponse": {
+      "description": "Everything the Plan view needs, in one round trip.\n\nThe graph rides along because the plan is node *ids* and timings \u2014 the labels,\ninstructions and ingredients the renderer draws all live on the graph. Shipping both\nkeeps the frontend a pure renderer: it joins by id, and computes nothing.",
+      "properties": {
+        "graph": {
+          "$ref": "#/$defs/CookingGraph"
+        },
+        "plan": {
+          "$ref": "#/$defs/CookingPlan"
+        },
+        "stages": {
+          "description": "Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.",
+          "items": {
+            "$ref": "#/$defs/StageSpan"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "graph",
+        "plan",
+        "stages"
+      ],
+      "type": "object"
+    },
+    "RecipeSummary": {
+      "description": "One row in the recipe list.",
+      "properties": {
+        "id": {
+          "description": "Slug used in the plan URL.",
+          "type": "string"
+        },
+        "servings": {
+          "description": "Servings the quantities are stated for.",
+          "type": "integer"
+        },
+        "title": {
+          "description": "Recipe title, e.g. \"Kadai Paneer\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "servings"
+      ],
+      "type": "object"
+    },
+    "ScheduledNode": {
+      "description": "One node placed on the timeline.",
+      "properties": {
+        "end_min": {
+          "description": "Minutes from the start of cooking.",
+          "type": "number"
+        },
+        "node_id": {
+          "description": "Id of the node in the source graph.",
+          "type": "string"
+        },
+        "occupies_cook": {
+          "description": "Whether the cook is busy for this interval. Follows `Node.attention`.",
+          "type": "boolean"
+        },
+        "rank_in_window": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Order within the window. 0 is the task the UI promotes as \"start with this\"."
+        },
+        "start_min": {
+          "description": "Minutes from the start of cooking.",
+          "type": "number"
+        },
+        "window_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set when this ran inside another node's wait window."
+        }
+      },
+      "required": [
+        "node_id",
+        "start_min",
+        "end_min",
+        "occupies_cook"
+      ],
+      "type": "object"
+    },
+    "SourceRef": {
+      "description": "Where a recipe came from.",
+      "properties": {
+        "imported_at": {
+          "description": "When the import ran.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "kind": {
+          "description": "url / image / pasted text.",
+          "enum": [
+            "url",
+            "image",
+            "text"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "description": "The URL, the image reference, or the pasted text itself.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "imported_at"
+      ],
+      "type": "object"
+    },
+    "Stage": {
+      "description": "A named group of nodes: Prep, Cook Base, Add Veggies, Finish.\n\nStages are user-facing and ordered; the Plan view groups by them.",
+      "properties": {
+        "color_key": {
+          "description": "Key into the stage palette in docs/DESIGN_SYSTEM.md.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id, e.g. \"cook_base\".",
+          "type": "string"
+        },
+        "label": {
+          "description": "User-facing name, e.g. \"Cook the base\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "color_key"
+      ],
+      "type": "object"
+    },
+    "StageSpan": {
+      "description": "A stage's footprint on the scheduled timeline.\n\nDeliberately NOT part of `CookingPlan`: it is a view over a finished plan, computed\nby `abc_cook.schedule.rollup`, and adding it to the plan would rewrite all five\ngolden fixtures for a rendering convenience.\n\nIt exists because the Plan view shows a per-stage minute count, and the frontend is\nforbidden from deriving one (CLAUDE.md). Stages interleave \u2014 in Kadai Paneer `prep`\nspans 0-19 while `cook_base` spans 3-22 \u2014 so a stage is a span, not a block.",
+      "properties": {
+        "elapsed_min": {
+          "description": "Wall-clock span of the stage. Overlaps other stages' spans.",
+          "type": "number"
+        },
+        "end_min": {
+          "description": "Latest end among this stage's nodes.",
+          "type": "number"
+        },
+        "inline_work_min": {
+          "description": "`work_min - windowed_work_min`. What the stage's own card still shows.",
+          "type": "number"
+        },
+        "node_ids": {
+          "description": "This stage's nodes, in scheduled order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "stage_id": {
+          "description": "Id of the stage in the source graph.",
+          "type": "string"
+        },
+        "start_min": {
+          "description": "Earliest start among this stage's nodes.",
+          "type": "number"
+        },
+        "windowed_work_min": {
+          "description": "Of `work_min`, the minutes absorbed into another stage's wait window.",
+          "type": "number"
+        },
+        "work_min": {
+          "description": "Sum of `duration_typical` over the stage's nodes.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stage_id",
+        "start_min",
+        "end_min",
+        "elapsed_min",
+        "work_min",
+        "windowed_work_min",
+        "inline_work_min",
+        "node_ids"
+      ],
+      "type": "object"
+    },
+    "WaitWindow": {
+      "description": "An unattended interval the scheduler filled with prep work.\n\nUser-facing as \"while this cooks\". Capacity is deliberately below the host node's\nduration \u2014 see \u00a74.3 for the multipliers and why they exist.",
+      "properties": {
+        "assigned": {
+          "description": "Node ids, in the order the cook should do them.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "capacity_min": {
+          "description": "Usable minutes, after the safety multiplier.",
+          "type": "number"
+        },
+        "host_node_id": {
+          "description": "The unattended or periodic node whose duration creates it.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable window id.",
+          "type": "string"
+        },
+        "slack_min": {
+          "description": "Unused capacity.",
+          "type": "number"
+        },
+        "used_min": {
+          "description": "Minutes of assigned work.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "host_node_id",
+        "capacity_min",
+        "assigned",
+        "used_min",
+        "slack_min"
+      ],
+      "type": "object"
+    }
+  },
+  "title": "ABCCookSchema"
+}

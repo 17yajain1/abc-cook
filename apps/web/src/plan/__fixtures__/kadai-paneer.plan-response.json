@@ -1,0 +1,510 @@
+{
+  "graph": {
+    "id": "kadai-paneer",
+    "title": "Kadai Paneer",
+    "servings": 3,
+    "cuisine": "North Indian",
+    "source": {
+      "kind": "text",
+      "value": "Hand-authored from docs/COOKING_GRAPH.md §3 for the M1 golden-fixture suite.",
+      "imported_at": "2026-09-08T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_onion",
+        "name": "Onion",
+        "qty": 2.0,
+        "unit": "medium",
+        "prep_note": "finely chopped",
+        "group": "For the base",
+        "optional": false
+      },
+      {
+        "id": "ing_tomato",
+        "name": "Tomato",
+        "qty": 3.0,
+        "unit": "medium",
+        "prep_note": "finely chopped",
+        "group": "For the base",
+        "optional": false
+      },
+      {
+        "id": "ing_capsicum",
+        "name": "Capsicum",
+        "qty": 1.0,
+        "unit": "large",
+        "prep_note": "cut into cubes",
+        "group": "For the kadai",
+        "optional": false
+      },
+      {
+        "id": "ing_paneer",
+        "name": "Paneer",
+        "qty": 250.0,
+        "unit": "g",
+        "prep_note": "cubed",
+        "group": "For the kadai",
+        "optional": false
+      },
+      {
+        "id": "ing_kadai_masala",
+        "name": "Kadai masala whole spices",
+        "qty": 2.0,
+        "unit": "tbsp",
+        "prep_note": "dry roasted and coarsely ground",
+        "group": "For the kadai masala",
+        "optional": false
+      },
+      {
+        "id": "ing_ginger_garlic",
+        "name": "Ginger-garlic paste",
+        "qty": 1.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For the base",
+        "optional": false
+      },
+      {
+        "id": "ing_oil",
+        "name": "Oil",
+        "qty": 3.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For the base",
+        "optional": false
+      },
+      {
+        "id": "ing_salt",
+        "name": "Salt",
+        "qty": null,
+        "unit": "to taste",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "chop_onion",
+        "stage": "prep",
+        "label": "Chop onion",
+        "instruction": "Finely chop the onions.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_onion"
+        ],
+        "produces": "comp_onion_chopped",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "chop_tomato",
+        "stage": "prep",
+        "label": "Chop tomato",
+        "instruction": "Finely chop the tomatoes.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_tomato"
+        ],
+        "produces": "comp_tomato_chopped",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "saute_onion",
+        "stage": "cook_base",
+        "label": "Sauté onion",
+        "instruction": "Heat oil, add the ginger-garlic paste, then the onions. Sauté until light golden.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 4,
+        "duration_typical": 5,
+        "duration_max": 7,
+        "station": "burner",
+        "depends_on": [
+          "chop_onion"
+        ],
+        "consumes": [
+          "comp_onion_chopped",
+          "ing_oil",
+          "ing_ginger_garlic"
+        ],
+        "produces": "comp_onion_sauteed",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "onions light golden, oil separating",
+        "tip": null
+      },
+      {
+        "id": "cook_tomato_base",
+        "stage": "cook_base",
+        "label": "Cook tomato base",
+        "instruction": "Add the chopped tomatoes and salt. Cook, stirring occasionally, until the oil separates and the masala thickens.",
+        "kind": "passive",
+        "attention": "periodic",
+        "duration_min": 8,
+        "duration_typical": 12,
+        "duration_max": 15,
+        "station": "burner",
+        "depends_on": [
+          "saute_onion",
+          "chop_tomato"
+        ],
+        "consumes": [
+          "comp_onion_sauteed",
+          "comp_tomato_chopped",
+          "ing_salt"
+        ],
+        "produces": "comp_base",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "oil pooling at the edges, masala pulling away from the pan",
+        "tip": null
+      },
+      {
+        "id": "chop_capsicum",
+        "stage": "prep",
+        "label": "Cube capsicum",
+        "instruction": "Cut the capsicum into bite-sized cubes.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 7,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_capsicum"
+        ],
+        "produces": "comp_capsicum",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "cube_paneer",
+        "stage": "prep",
+        "label": "Cube paneer",
+        "instruction": "Cut the paneer into cubes.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_paneer"
+        ],
+        "produces": "comp_paneer",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "make_kadai_masala",
+        "stage": "prep",
+        "label": "Make kadai masala",
+        "instruction": "Dry roast the whole spices until fragrant, then coarsely grind.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_kadai_masala"
+        ],
+        "produces": "comp_kadai_masala",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "add_veggies",
+        "stage": "add_veggies",
+        "label": "Add veggies",
+        "instruction": "Stir the ground kadai masala into the base, then add the capsicum. Cook until the capsicum is just tender.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 7,
+        "station": "burner",
+        "depends_on": [
+          "cook_tomato_base",
+          "chop_capsicum",
+          "make_kadai_masala"
+        ],
+        "consumes": [
+          "comp_base",
+          "comp_capsicum",
+          "comp_kadai_masala"
+        ],
+        "produces": "comp_veggie_base",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "capsicum bright green, still with a bite",
+        "tip": null
+      },
+      {
+        "id": "add_paneer",
+        "stage": "finish",
+        "label": "Add paneer",
+        "instruction": "Fold in the paneer cubes and cook gently until heated through.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 4,
+        "duration_typical": 5,
+        "duration_max": 7,
+        "station": "burner",
+        "depends_on": [
+          "add_veggies",
+          "cube_paneer"
+        ],
+        "consumes": [
+          "comp_veggie_base",
+          "comp_paneer"
+        ],
+        "produces": "comp_curry",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "paneer soft, gravy clinging",
+        "tip": null
+      },
+      {
+        "id": "finish",
+        "stage": "finish",
+        "label": "Finish",
+        "instruction": "Adjust salt, add a splash of water if the gravy is tight, and take off the heat.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 4,
+        "station": "burner",
+        "depends_on": [
+          "add_paneer"
+        ],
+        "consumes": [
+          "comp_curry"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "color_key": "prep"
+      },
+      {
+        "id": "cook_base",
+        "label": "Cook the base",
+        "color_key": "cook_base"
+      },
+      {
+        "id": "add_veggies",
+        "label": "Add veggies",
+        "color_key": "add_veggies"
+      },
+      {
+        "id": "finish",
+        "label": "Finish",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": 38
+  },
+  "plan": {
+    "graph_id": "kadai-paneer",
+    "scheduled": [
+      {
+        "node_id": "chop_onion",
+        "start_min": 0.0,
+        "end_min": 3.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "saute_onion",
+        "start_min": 3.0,
+        "end_min": 8.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "chop_tomato",
+        "start_min": 8.0,
+        "end_min": 10.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "chop_capsicum",
+        "start_min": 10.0,
+        "end_min": 15.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "cook_tomato_base",
+        "start_min": 10.0,
+        "end_min": 22.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "cube_paneer",
+        "start_min": 15.0,
+        "end_min": 17.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 1
+      },
+      {
+        "node_id": "make_kadai_masala",
+        "start_min": 17.0,
+        "end_min": 19.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 2
+      },
+      {
+        "node_id": "add_veggies",
+        "start_min": 22.0,
+        "end_min": 27.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "add_paneer",
+        "start_min": 27.0,
+        "end_min": 32.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "finish",
+        "start_min": 32.0,
+        "end_min": 34.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [
+      {
+        "id": "w1",
+        "host_node_id": "cook_tomato_base",
+        "capacity_min": 9.0,
+        "assigned": [
+          "chop_capsicum",
+          "cube_paneer",
+          "make_kadai_masala"
+        ],
+        "used_min": 9.0,
+        "slack_min": 0.0
+      }
+    ],
+    "total_min": 34.0,
+    "serial_min": 43.0,
+    "saved_min": 9.0,
+    "critical_path": [
+      "chop_onion",
+      "saute_onion",
+      "cook_tomato_base",
+      "add_veggies",
+      "add_paneer",
+      "finish"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "prep",
+      "start_min": 0.0,
+      "end_min": 19.0,
+      "elapsed_min": 19.0,
+      "work_min": 14.0,
+      "windowed_work_min": 9.0,
+      "inline_work_min": 5.0,
+      "node_ids": [
+        "chop_onion",
+        "chop_tomato",
+        "chop_capsicum",
+        "cube_paneer",
+        "make_kadai_masala"
+      ]
+    },
+    {
+      "stage_id": "cook_base",
+      "start_min": 3.0,
+      "end_min": 22.0,
+      "elapsed_min": 19.0,
+      "work_min": 17.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 17.0,
+      "node_ids": [
+        "saute_onion",
+        "cook_tomato_base"
+      ]
+    },
+    {
+      "stage_id": "add_veggies",
+      "start_min": 22.0,
+      "end_min": 27.0,
+      "elapsed_min": 5.0,
+      "work_min": 5.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 5.0,
+      "node_ids": [
+        "add_veggies"
+      ]
+    },
+    {
+      "stage_id": "finish",
+      "start_min": 27.0,
+      "end_min": 34.0,
+      "elapsed_min": 7.0,
+      "work_min": 7.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 7.0,
+      "node_ids": [
+        "add_paneer",
+        "finish"
+      ]
+    }
+  ]
+}

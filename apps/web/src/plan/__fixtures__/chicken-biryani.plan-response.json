@@ -1,0 +1,737 @@
+{
+  "graph": {
+    "id": "chicken-biryani",
+    "title": "Chicken Biryani",
+    "servings": 4,
+    "cuisine": "Hyderabadi",
+    "source": {
+      "kind": "text",
+      "value": "Hand-authored for the M1 golden-fixture suite: two independent chains (rice, chicken) merging at layering; runs at burner_capacity=2.",
+      "imported_at": "2026-09-08T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_basmati",
+        "name": "Basmati rice",
+        "qty": 400.0,
+        "unit": "g",
+        "prep_note": "rinsed and soaked",
+        "group": "For the rice",
+        "optional": false
+      },
+      {
+        "id": "ing_water",
+        "name": "Water",
+        "qty": 2.0,
+        "unit": "l",
+        "prep_note": null,
+        "group": "For the rice",
+        "optional": false
+      },
+      {
+        "id": "ing_whole_spices",
+        "name": "Whole spices (bay, cardamom, cloves, cinnamon)",
+        "qty": 1.0,
+        "unit": "handful",
+        "prep_note": null,
+        "group": "For the rice",
+        "optional": false
+      },
+      {
+        "id": "ing_chicken",
+        "name": "Chicken, bone-in",
+        "qty": 700.0,
+        "unit": "g",
+        "prep_note": "cut into large pieces",
+        "group": "For the chicken",
+        "optional": false
+      },
+      {
+        "id": "ing_yogurt",
+        "name": "Yogurt",
+        "qty": 150.0,
+        "unit": "g",
+        "prep_note": "whisked",
+        "group": "For the marinade",
+        "optional": false
+      },
+      {
+        "id": "ing_ginger_garlic",
+        "name": "Ginger-garlic paste",
+        "qty": 2.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For the marinade",
+        "optional": false
+      },
+      {
+        "id": "ing_biryani_masala",
+        "name": "Biryani masala",
+        "qty": 2.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For the marinade",
+        "optional": false
+      },
+      {
+        "id": "ing_onion",
+        "name": "Onion",
+        "qty": 3.0,
+        "unit": "large",
+        "prep_note": "thinly sliced",
+        "group": "For the chicken",
+        "optional": false
+      },
+      {
+        "id": "ing_oil",
+        "name": "Oil",
+        "qty": 100.0,
+        "unit": "ml",
+        "prep_note": null,
+        "group": "For the chicken",
+        "optional": false
+      },
+      {
+        "id": "ing_saffron",
+        "name": "Saffron",
+        "qty": 1.0,
+        "unit": "pinch",
+        "prep_note": null,
+        "group": "For layering",
+        "optional": false
+      },
+      {
+        "id": "ing_milk",
+        "name": "Warm milk",
+        "qty": 3.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For layering",
+        "optional": false
+      },
+      {
+        "id": "ing_mint",
+        "name": "Mint leaves",
+        "qty": 1.0,
+        "unit": "cup",
+        "prep_note": "chopped",
+        "group": "For layering",
+        "optional": false
+      },
+      {
+        "id": "ing_coriander",
+        "name": "Coriander leaves",
+        "qty": 1.0,
+        "unit": "cup",
+        "prep_note": "chopped",
+        "group": "For layering",
+        "optional": false
+      },
+      {
+        "id": "ing_ghee",
+        "name": "Ghee",
+        "qty": 3.0,
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "For layering",
+        "optional": false
+      },
+      {
+        "id": "ing_salt",
+        "name": "Salt",
+        "qty": null,
+        "unit": "to taste",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "mix_marinade",
+        "stage": "prep",
+        "label": "Mix marinade",
+        "instruction": "Whisk the yogurt with ginger-garlic paste, biryani masala and salt.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_yogurt",
+          "ing_ginger_garlic",
+          "ing_biryani_masala",
+          "ing_salt"
+        ],
+        "produces": "comp_marinade",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "marinate_chicken",
+        "stage": "chicken",
+        "label": "Marinate chicken",
+        "instruction": "Coat the chicken in the marinade and leave it in the fridge.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 10,
+        "duration_typical": 15,
+        "duration_max": 30,
+        "station": "fridge",
+        "depends_on": [
+          "mix_marinade"
+        ],
+        "consumes": [
+          "ing_chicken",
+          "comp_marinade"
+        ],
+        "produces": "comp_marinated_chicken",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": "Longer is better; 15 minutes is the floor."
+      },
+      {
+        "id": "slice_onions",
+        "stage": "prep",
+        "label": "Slice onions",
+        "instruction": "Slice the onions as thinly and evenly as you can.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 4,
+        "duration_max": 6,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_onion"
+        ],
+        "produces": "comp_sliced_onion",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "fry_birista",
+        "stage": "chicken",
+        "label": "Fry birista",
+        "instruction": "Fry the sliced onions in hot oil, stirring often, until evenly deep golden brown. Drain.",
+        "kind": "active",
+        "attention": "periodic",
+        "duration_min": 8,
+        "duration_typical": 10,
+        "duration_max": 14,
+        "station": "burner",
+        "depends_on": [
+          "slice_onions"
+        ],
+        "consumes": [
+          "comp_sliced_onion",
+          "ing_oil"
+        ],
+        "produces": "comp_birista",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "deep, even golden brown — not the first hint of colour",
+        "tip": null
+      },
+      {
+        "id": "cook_chicken",
+        "stage": "chicken",
+        "label": "Cook chicken",
+        "instruction": "Cook the marinated chicken with half the birista until the oil separates and the chicken is nearly done, with a little thick gravy.",
+        "kind": "active",
+        "attention": "periodic",
+        "duration_min": 10,
+        "duration_typical": 12,
+        "duration_max": 16,
+        "station": "burner",
+        "depends_on": [
+          "marinate_chicken",
+          "fry_birista"
+        ],
+        "consumes": [
+          "comp_marinated_chicken",
+          "comp_birista"
+        ],
+        "produces": "comp_chicken_gravy",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "oil pooling at the edges, chicken 90% cooked",
+        "tip": null
+      },
+      {
+        "id": "soak_rice",
+        "stage": "rice",
+        "label": "Soak rice",
+        "instruction": "Rinse the basmati until the water runs clear, then leave it to soak.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 15,
+        "duration_typical": 20,
+        "duration_max": 30,
+        "station": "none",
+        "depends_on": [],
+        "consumes": [
+          "ing_basmati"
+        ],
+        "produces": "comp_soaked_rice",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "boil_spiced_water",
+        "stage": "rice",
+        "label": "Boil spiced water",
+        "instruction": "Bring a large pot of water with the whole spices and salt to a rolling boil.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 5,
+        "duration_typical": 6,
+        "duration_max": 9,
+        "station": "burner",
+        "depends_on": [],
+        "consumes": [
+          "ing_water",
+          "ing_whole_spices"
+        ],
+        "produces": "comp_spiced_water",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "a hard rolling boil",
+        "tip": null
+      },
+      {
+        "id": "parboil_rice",
+        "stage": "rice",
+        "label": "Parboil rice",
+        "instruction": "Add the soaked rice to the boiling water and cook until about 70% done — still firm at the core.",
+        "kind": "active",
+        "attention": "periodic",
+        "duration_min": 6,
+        "duration_typical": 7,
+        "duration_max": 10,
+        "station": "burner",
+        "depends_on": [
+          "soak_rice",
+          "boil_spiced_water"
+        ],
+        "consumes": [
+          "comp_soaked_rice",
+          "comp_spiced_water",
+          "ing_salt"
+        ],
+        "produces": "comp_parboiled_rice",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "grains bendy but with a hard white centre",
+        "tip": null
+      },
+      {
+        "id": "drain_rice",
+        "stage": "rice",
+        "label": "Drain rice",
+        "instruction": "Drain the rice well in a colander.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "sink",
+        "depends_on": [
+          "parboil_rice"
+        ],
+        "consumes": [
+          "comp_parboiled_rice"
+        ],
+        "produces": "comp_drained_rice",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "soak_saffron",
+        "stage": "prep",
+        "label": "Soak saffron",
+        "instruction": "Stir the saffron into the warm milk and set aside.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_saffron",
+          "ing_milk"
+        ],
+        "produces": "comp_saffron_milk",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "chop_mint_coriander",
+        "stage": "prep",
+        "label": "Chop herbs",
+        "instruction": "Roughly chop the mint and coriander.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 4,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_mint",
+          "ing_coriander"
+        ],
+        "produces": "comp_herbs",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "layer_biryani",
+        "stage": "assemble",
+        "label": "Layer biryani",
+        "instruction": "Layer the drained rice over the chicken gravy, scattering birista, herbs, saffron milk and ghee between the layers.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 4,
+        "duration_typical": 6,
+        "duration_max": 9,
+        "station": "counter",
+        "depends_on": [
+          "drain_rice",
+          "cook_chicken",
+          "soak_saffron",
+          "chop_mint_coriander"
+        ],
+        "consumes": [
+          "comp_drained_rice",
+          "comp_chicken_gravy",
+          "comp_saffron_milk",
+          "comp_herbs",
+          "ing_ghee"
+        ],
+        "produces": "comp_layered_biryani",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "dum",
+        "stage": "dum",
+        "label": "Dum cook",
+        "instruction": "Seal the pot, cook on the lowest heat so the rice finishes in its own steam.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 15,
+        "duration_typical": 20,
+        "duration_max": 30,
+        "station": "burner",
+        "depends_on": [
+          "layer_biryani"
+        ],
+        "consumes": [
+          "comp_layered_biryani"
+        ],
+        "produces": "comp_dum_biryani",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "rice fully tender, steam escaping the seal",
+        "tip": null
+      },
+      {
+        "id": "rest_and_serve",
+        "stage": "dum",
+        "label": "Rest and serve",
+        "instruction": "Rest 5 minutes, then fold gently from the bottom and serve.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "none",
+        "depends_on": [
+          "dum"
+        ],
+        "consumes": [
+          "comp_dum_biryani"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "color_key": "prep"
+      },
+      {
+        "id": "rice",
+        "label": "Rice",
+        "color_key": "cook_base"
+      },
+      {
+        "id": "chicken",
+        "label": "Chicken",
+        "color_key": "add_veggies"
+      },
+      {
+        "id": "assemble",
+        "label": "Assemble",
+        "color_key": "combine"
+      },
+      {
+        "id": "dum",
+        "label": "Dum",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": 90
+  },
+  "plan": {
+    "graph_id": "chicken-biryani",
+    "scheduled": [
+      {
+        "node_id": "boil_spiced_water",
+        "start_min": 0.0,
+        "end_min": 6.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "slice_onions",
+        "start_min": 0.0,
+        "end_min": 4.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "soak_rice",
+        "start_min": 0.0,
+        "end_min": 20.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "chop_mint_coriander",
+        "start_min": 4.0,
+        "end_min": 7.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 1
+      },
+      {
+        "node_id": "fry_birista",
+        "start_min": 4.0,
+        "end_min": 14.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "mix_marinade",
+        "start_min": 7.0,
+        "end_min": 10.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 2
+      },
+      {
+        "node_id": "marinate_chicken",
+        "start_min": 10.0,
+        "end_min": 25.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "soak_saffron",
+        "start_min": 10.0,
+        "end_min": 11.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 3
+      },
+      {
+        "node_id": "parboil_rice",
+        "start_min": 20.0,
+        "end_min": 27.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "cook_chicken",
+        "start_min": 25.0,
+        "end_min": 37.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "drain_rice",
+        "start_min": 27.0,
+        "end_min": 29.0,
+        "occupies_cook": true,
+        "window_id": "w2",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "layer_biryani",
+        "start_min": 37.0,
+        "end_min": 43.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "dum",
+        "start_min": 43.0,
+        "end_min": 63.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "rest_and_serve",
+        "start_min": 63.0,
+        "end_min": 66.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [
+      {
+        "id": "w1",
+        "host_node_id": "soak_rice",
+        "capacity_min": 18.0,
+        "assigned": [
+          "slice_onions",
+          "chop_mint_coriander",
+          "mix_marinade",
+          "soak_saffron"
+        ],
+        "used_min": 11.0,
+        "slack_min": 7.0
+      },
+      {
+        "id": "w2",
+        "host_node_id": "cook_chicken",
+        "capacity_min": 9.0,
+        "assigned": [
+          "drain_rice"
+        ],
+        "used_min": 2.0,
+        "slack_min": 7.0
+      }
+    ],
+    "total_min": 66.0,
+    "serial_min": 112.0,
+    "saved_min": 46.0,
+    "critical_path": [
+      "mix_marinade",
+      "marinate_chicken",
+      "cook_chicken",
+      "layer_biryani",
+      "dum",
+      "rest_and_serve"
+    ],
+    "warnings": [
+      "uses 2 burners"
+    ]
+  },
+  "stages": [
+    {
+      "stage_id": "prep",
+      "start_min": 0.0,
+      "end_min": 11.0,
+      "elapsed_min": 11.0,
+      "work_min": 11.0,
+      "windowed_work_min": 11.0,
+      "inline_work_min": 0.0,
+      "node_ids": [
+        "slice_onions",
+        "chop_mint_coriander",
+        "mix_marinade",
+        "soak_saffron"
+      ]
+    },
+    {
+      "stage_id": "rice",
+      "start_min": 0.0,
+      "end_min": 29.0,
+      "elapsed_min": 29.0,
+      "work_min": 35.0,
+      "windowed_work_min": 2.0,
+      "inline_work_min": 33.0,
+      "node_ids": [
+        "boil_spiced_water",
+        "soak_rice",
+        "parboil_rice",
+        "drain_rice"
+      ]
+    },
+    {
+      "stage_id": "chicken",
+      "start_min": 4.0,
+      "end_min": 37.0,
+      "elapsed_min": 33.0,
+      "work_min": 37.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 37.0,
+      "node_ids": [
+        "fry_birista",
+        "marinate_chicken",
+        "cook_chicken"
+      ]
+    },
+    {
+      "stage_id": "assemble",
+      "start_min": 37.0,
+      "end_min": 43.0,
+      "elapsed_min": 6.0,
+      "work_min": 6.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 6.0,
+      "node_ids": [
+        "layer_biryani"
+      ]
+    },
+    {
+      "stage_id": "dum",
+      "start_min": 43.0,
+      "end_min": 66.0,
+      "elapsed_min": 23.0,
+      "work_min": 23.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 23.0,
+      "node_ids": [
+        "dum",
+        "rest_and_serve"
+      ]
+    }
+  ]
+}
