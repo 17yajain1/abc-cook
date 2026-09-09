@@ -38,6 +38,28 @@ not because it looks good.
 **Voice.** Printed, not rendered. Flat ink, true rules, tabular figures, no elevation.
 A board tells you facts; it doesn't congratulate you.
 
+### Register: the Map is an instrument, the Plan is a kitchen screen
+
+Direction A's palette, light ground, type and radius rule transfer to **both** views. Its
+*harshest* commitments — zero elevation anywhere, full-weight true black, minimal chroma,
+"a board tells you facts" — were calibrated for the Map's instrument-panel register and
+are **not** automatically inherited by the Plan view.
+
+This has to be said explicitly because leaving it unsaid already cost a milestone. The
+first M2.5 pass applied the full austerity to the Plan view by default and produced a
+screen measurably colder and flatter than the M2 baseline it replaced — a regression on
+the screen users see most, in service of a register that belongs to a screen that did not
+exist yet. The Plan view took all of the direction's cost and none of its benefit, because
+the benefit (a visible time axis, proportional bars, hollow-vs-filled) is the Map's.
+
+The Map is read for ten seconds to understand a structure. The Plan is held for forty
+minutes in a kitchen while something burns. Those are different jobs and they get
+different amounts of austerity.
+
+_(Mechanism pending — the specific concessions are being chosen with the owner and will
+be written here. Until then, treat the Plan view's current tuning as unresolved rather
+than as the standard.)_
+
 ---
 
 ## Canvas
@@ -85,6 +107,15 @@ is a recognised generated-design tell. A printed schedule uses black ink; so do 
 **Signal is rationed.** If more than one thing on a screen is `--color-signal`, one of
 them is wrong. It marks the critical path and the single primary action, nothing else.
 
+Precisely: signal is the only **fully saturated** mark. The stage tints below are
+colour, but they are low-chroma and mid-value by construction and none of them is red,
+so signal still wins on a screen full of them. The original wording — "the only
+saturated mark" — was written before the Map study proved that stage identity has to be
+carried by fill rather than by a hairline, and it would have forbidden the thing that
+made the Map legible. **A screen with no signal on it at all is the failure this rule
+was meant to prevent, and rationing it into absence is the same mistake as spending it
+everywhere.**
+
 **Retired from the M2 palette, and why:**
 
 - `--color-verified` (green) — a second accent dilutes principle 2. "All this prep fits
@@ -111,8 +142,19 @@ They read as coded lines on an understated map and none of them competes with si
 ```
 
 Assignment is unchanged: by the stage's **index** in `graph.stages` (`index % 6`), never
-by `Stage.color_key` — recipes have arbitrary stages. Applied as a **3px lane rule**, not
-a filled badge or a dot.
+by `Stage.color_key` — recipes have arbitrary stages.
+
+**The treatment differs by view, and that is deliberate.**
+
+- **Plan view — a 3px lane rule.** Never a filled badge or a dot. The Plan view is the
+  quiet one; identity is a margin note there.
+- **Map view — the bar's fill.** A node bar is filled with its own stage tint. Tried as a
+  3px strip on the bar's top edge first, and at true size it vanished: a 3px line on a
+  152px bar reads as a rendering artifact, not as identity. The bar has area, so the area
+  is what should carry the colour.
+
+The Map's fill treatment is why the saturation rule above is stated in terms of *fully*
+saturated marks.
 
 A task the scheduler moved into another stage's wait window keeps **its own** stage's
 tint inside that window — that is how the eye reads it as borrowed work.
@@ -235,12 +277,17 @@ these to be legible **without a legend**; that is the constraint they're designe
 
 | Meaning | Mark |
 |---|---|
-| Dependency | The rail simply **continues** — 2px `ink`, bottom edge of one bar to the top edge of the next. No arrowhead: the time axis already says which way is later. |
-| Critical path | The **leftmost lane**, a continuous 3px `signal` rail with no gaps, running the full height. The eye runs down it without a jump. |
-| Parallel work | A **spur** — 1.5px `ink-3`, leaving the mainline where the wait window opens, running its own lane, rejoining at the close. Thinner and lighter, so it reads as subordinate without being explained. |
-| Simultaneity | Shared vertical position. That's it. |
-| Merge / junction | Two rails converging on one bar's top edge, given extra vertical room (§4.5: the merge is the densest moment in the graph). |
-| Attended vs unattended | **Solid fill vs hollow with a 1px rule.** |
+| Critical path | The **leftmost lane**, a continuous **6px `signal`** rail with no gaps, running the full height — including stretches where the mainline is *blocked* and no work sits on it. It must be the strongest mark on the screen. At 3px it was not: it read as a hairline weaker than the surrounding ink. |
+| Attended work | A bar **filled** with its stage tint, label in `paper`. Fill means "you are here, doing this". |
+| Unattended work | The bar drawn **hollow** — `paper` fill, 1.5px `ink` outline. An unattended *host* is drawn **wide**, spanning the lanes its window frees, and the borrowed work is drawn **inside it**. |
+| Parallel work | A **spur** — 1.5px `ink-3`, leaving the mainline where the window opens, running down *through* the hollow stretch, rejoining where it closes. Short 1px ticks hang the borrowed tasks off it. **Curved, never right-angled**: a rail spur curves away, and an orthogonal jog is flowchart notation. |
+| Simultaneity | Shared vertical position, plus containment inside the hollow host. |
+| Merge / junction | The host bar's **top edge overdrawn at 3px `ink`** — that edge is where the mainline and the merging branch both arrive, and §4.5 says the junction is the densest moment in the graph. |
+| Dependency (general) | The rail simply **continues**. No arrowhead: the time axis already says which way is later. |
+
+Adjacent bars are inset 1px top and bottom so a `paper` gutter always separates them.
+Without it, two neighbouring bars sharing a stage tint (`add_paneer` and `finish`) fuse
+into one block and the schedule loses a boundary that means something.
 
 **No dashes.** Solid-vs-dashed was precisely the distinction that needed the legend
 `GRAPH_VIEW.md` §5 complains about. Weight, colour and lane position carry it instead.

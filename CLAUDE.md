@@ -194,6 +194,18 @@ improve it.
 - Read `docs/COOKING_GRAPH.md` before any change to the schema, the extractor, or the
   scheduler. It is long on purpose.
 - Plan before large changes: propose the file-level diff first, then implement.
+- **Any milestone that changes ground colour or introduces new visual grammar needs a
+  rendered screenshot at the checkpoint, not just a token table and a prose brief.**
+  Learned in M2.5: the brief read correctly, the owner approved it on that basis, and the
+  render didn't match it — a spur the doc described was never drawn, stage tints specified
+  at 3px were invisible at true size, and the signal rail was the faintest mark on a screen
+  where the doc called it the strongest. Prose and hex values cannot be reviewed for the
+  thing that actually matters. Render one screen, screenshot it, and put it in front of the
+  owner *before* implementing the rest.
+- Related, and the reason the above is worth the round trip: **a principle written in
+  `DESIGN_SYSTEM.md` that isn't visibly present in the render isn't done.** Before calling
+  any visual work finished, walk the doc's principles and connector table one row at a
+  time against the screenshot.
 - Prefer small, reviewable commits. The owner is one person building this in evenings.
 - The owner is a senior data scientist (Python, ML, production GenAI) and is newer to
   frontend. Explain frontend decisions; don't over-explain Python or model plumbing.

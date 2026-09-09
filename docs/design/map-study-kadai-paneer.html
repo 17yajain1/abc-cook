@@ -21,15 +21,19 @@
     finish           32->34  hands_on
   total 34, serial 43, saved 9.
 
-  Vertical scale: y = 40 + 56 + 34*sqrt(minutes) accumulated per segment, i.e. the
-  sqrt row scaling from GRAPH_VIEW.md §4.4. A 12 min cook is 231px; a 2 min chop is 48px.
-  (The §4.4 clamp of 140px is not exercised here because kadai-paneer's longest single
-  span is 12 min. Homemade Donuts' 60 min rise is what needs it.)
+  Vertical scale: 34*sqrt(minutes) accumulated per segment — the sqrt row scaling from
+  GRAPH_VIEW.md §4.4. A 12 min cook is 231px; a 2 min chop is 48px. (§4.4's 140px clamp
+  is not exercised here; Homemade Donuts' 60 min rise is what needs it.)
+
+  Note what the wide hollow bar exposes for free: the host cooks for 12 minutes but the
+  window's capacity is only 9, so the container has a visible 3-minute tail below the last
+  prep task. That is the same gap the Plan view states as "fits in 12 min" beside
+  "7 min to spare" and cannot reconcile in words. Drawn, it needs no explanation. The
+  underlying scheduler-semantics question is still open and still untouched.
 
   To view: serve the repo root so the font path resolves, e.g.
     python -m http.server 4173
     open http://localhost:4173/docs/design/map-study-kadai-paneer.html
-  Opening the file directly still works; the type falls back to the system stack.
 -->
 <html lang="en">
   <head>
@@ -71,6 +75,7 @@
       .device {
         width: 390px;
         background: var(--paper);
+        margin: 0;
       }
       figcaption {
         width: 390px;
@@ -82,16 +87,13 @@
       .tabular {
         font-variant-numeric: tabular-nums;
       }
-      .expanded {
-        font-stretch: 112%;
-      }
       .condensed {
         font-stretch: 88%;
       }
     </style>
   </head>
   <body>
-    <figure class="device" style="margin: 0">
+    <figure class="device">
       <svg
         viewBox="0 0 390 750"
         width="390"
@@ -102,24 +104,17 @@
       >
         <title id="study-title">Kadai Paneer cooking map</title>
         <desc id="study-desc">
-          A time-scaled schedule. The left lane is the critical path. Cooking the tomato
-          base runs unattended for twelve minutes, drawn hollow; cubing the capsicum,
-          cubing the paneer and making the kadai masala are drawn alongside it over
-          exactly that stretch, because they happen while it cooks. The Plan view is the
-          text equivalent of this screen.
+          A time-scaled schedule. The red rail down the left is the critical path.
+          Cooking the tomato base runs unattended for twelve minutes, drawn as a large
+          empty box; cubing the capsicum, cubing the paneer and making the kadai masala
+          are drawn inside that box, because they happen while it cooks. The Plan view is
+          the text equivalent of this screen.
         </desc>
 
         <rect width="390" height="750" fill="var(--paper)" />
 
         <!-- masthead -->
-        <text
-          x="16"
-          y="32"
-          class="condensed"
-          font-size="20"
-          font-weight="600"
-          fill="var(--ink)"
-        >
+        <text x="16" y="32" class="condensed" font-size="20" font-weight="600" fill="var(--ink)">
           Kadai Paneer
         </text>
         <text x="16" y="52" class="tabular" font-size="12" font-weight="500" fill="var(--ink-3)">
@@ -127,164 +122,112 @@
         </text>
 
         <!-- time gutter -->
-        <rect x="0" y="70" width="46" height="672" fill="var(--paper-sunk)" />
-        <text x="40" y="84" text-anchor="end" font-size="10" font-weight="600" fill="var(--ink-3)">
+        <rect x="0" y="70" width="40" height="672" fill="var(--paper-sunk)" />
+        <text x="32" y="84" text-anchor="end" font-size="10" font-weight="600" fill="var(--ink-3)">
           min
         </text>
-
         <g class="tabular" font-size="11" font-weight="500" fill="var(--ink-3)">
-          <text x="40" y="100" text-anchor="end">0</text>
-          <text x="40" y="159" text-anchor="end">3</text>
-          <text x="40" y="235" text-anchor="end">8</text>
-          <text x="40" y="283" text-anchor="end">10</text>
-          <text x="40" y="359" text-anchor="end">15</text>
-          <text x="40" y="407" text-anchor="end">17</text>
-          <text x="40" y="455" text-anchor="end">19</text>
-          <text x="40" y="514" text-anchor="end">22</text>
-          <text x="40" y="590" text-anchor="end">27</text>
-          <text x="40" y="666" text-anchor="end">32</text>
-          <text x="40" y="714" text-anchor="end">34</text>
+          <text x="32" y="100" text-anchor="end">0</text>
+          <text x="32" y="159" text-anchor="end">3</text>
+          <text x="32" y="235" text-anchor="end">8</text>
+          <text x="32" y="283" text-anchor="end">10</text>
+          <text x="32" y="359" text-anchor="end">15</text>
+          <text x="32" y="407" text-anchor="end">17</text>
+          <text x="32" y="455" text-anchor="end">19</text>
+          <text x="32" y="514" text-anchor="end">22</text>
+          <text x="32" y="590" text-anchor="end">27</text>
+          <text x="32" y="666" text-anchor="end">32</text>
+          <text x="32" y="714" text-anchor="end">34</text>
         </g>
 
-        <g stroke="var(--rule)" stroke-width="1">
-          <line x1="46" y1="96.5" x2="52" y2="96.5" />
-          <line x1="46" y1="155.5" x2="52" y2="155.5" />
-          <line x1="46" y1="231.5" x2="52" y2="231.5" />
-          <line x1="46" y1="279.5" x2="52" y2="279.5" />
-          <line x1="46" y1="355.5" x2="52" y2="355.5" />
-          <line x1="46" y1="403.5" x2="52" y2="403.5" />
-          <line x1="46" y1="451.5" x2="52" y2="451.5" />
-          <line x1="46" y1="510.5" x2="52" y2="510.5" />
-          <line x1="46" y1="586.5" x2="52" y2="586.5" />
-          <line x1="46" y1="662.5" x2="52" y2="662.5" />
-          <line x1="46" y1="710.5" x2="52" y2="710.5" />
-        </g>
+        <!-- THE MAINLINE. 6px signal, unbroken from first cut to plated, including the
+             8->10 stretch where it is blocked waiting on the tomatoes: the path exists
+             even when no work sits on it (GRAPH_VIEW.md §4.3). It is the most saturated
+             mark on the screen and nothing else on it is saturated at all. -->
+        <rect x="42" y="96" width="6" height="614" fill="var(--signal)" />
 
-        <!-- The mainline. Continuous from first cut to plated, including the 8->10
-             stretch where it is blocked waiting on the tomatoes: the path exists even
-             when no work sits on it (GRAPH_VIEW.md §4.3). -->
-        <rect x="52" y="96" width="3" height="614" fill="var(--signal)" />
+        <!-- ================= attended work =================
+             Filled with its own stage tint. Fill means "you are here, doing this". -->
 
-        <!-- The rejoin: where the borrowed work returns to the mainline. Thinner and
-             lighter than the merge, and it meets the mainline rather than pointing at
-             it. No arrowhead — on a time axis, down is later.
+        <rect x="48" y="97" width="142" height="57" fill="var(--stage-0)" />
+        <text x="58" y="120" font-size="13" font-weight="500" fill="var(--paper)">Chop onion</text>
+        <text x="58" y="136" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">3 min</text>
 
-             Only the binding edge is drawn. Long crossing edges (cube_paneer feeds
-             add_paneer) were tried and made the study unreadable: routed round the
-             margin they read as a box outline rather than a connector, which is exactly
-             the ambiguity the no-legend rule is meant to avoid. M2.75's layout engine
-             draws every edge from the graph and will need a real routing strategy for
-             them; this study deliberately does not pretend to have one. -->
+        <rect x="48" y="156" width="142" height="74" fill="var(--stage-1)" />
+        <text x="58" y="179" font-size="13" font-weight="500" fill="var(--paper)">Sauté onion</text>
+        <text x="58" y="195" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">5 min</text>
+
+        <rect x="206" y="232" width="156" height="46" fill="var(--stage-0)" />
+        <text x="216" y="255" font-size="13" font-weight="500" fill="var(--paper)">Chop tomato</text>
+        <text x="216" y="271" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">2 min</text>
+
+        <!-- ================= the unattended stretch =================
+             ABSENCE HAS A SHAPE. The host is drawn hollow and wide — it spans the lanes
+             its window frees — so the twelve minutes read as room you have rather than
+             work you are doing. The borrowed prep is drawn INSIDE it. Its top edge is
+             overdrawn heavy because that edge is the merge: the mainline and the tomatoes
+             both arrive there, and a junction is the densest moment in the graph (§4.5).
+
+             The empty tail below the last prep task is real: the base cooks 12 min but
+             the window's capacity is 9. -->
+        <rect
+          x="48"
+          y="279"
+          width="322"
+          height="231"
+          fill="var(--paper)"
+          stroke="var(--ink)"
+          stroke-width="1.5"
+        />
+        <rect x="48" y="277" width="322" height="3" fill="var(--stage-1)" />
+        <line x1="48" y1="279" x2="370" y2="279" stroke="var(--ink)" stroke-width="3" />
+        <text x="58" y="303" font-size="13" font-weight="500" fill="var(--ink)">Cook tomato base</text>
+        <text x="58" y="319" class="tabular" font-size="11" fill="var(--ink-3)">12 min</text>
+
+        <!-- THE SPUR. Leaves the mainline where the window opens, runs down through the
+             hollow stretch carrying the borrowed work, and rejoins where it closes.
+             1.5px ink-3 — thinner and lighter than the mainline, so it reads as
+             subordinate without being explained. Curved, because a rail spur curves away;
+             a right angle would be flowchart notation. No arrowheads: down is later. -->
         <path
-          d="M 224 451 L 216 451 L 216 506 L 190 506 L 190 510"
+          d="M 48 288 C 130 288 198 290 198 312 L 198 440 C 198 478 140 496 92 510"
           fill="none"
           stroke="var(--ink-3)"
           stroke-width="1.5"
         />
+        <g stroke="var(--ink-3)" stroke-width="1">
+          <line x1="198" y1="317" x2="206" y2="317" />
+          <line x1="198" y1="379" x2="206" y2="379" />
+          <line x1="198" y1="427" x2="206" y2="427" />
+        </g>
 
-        <!-- The merge. Two lanes arriving at one instant, drawn heavier than a rejoin
-             because a junction is the densest moment in the graph (§4.5). -->
-        <line x1="208" y1="279" x2="224" y2="279" stroke="var(--ink)" stroke-width="2" />
+        <!-- borrowed work: inside the hollow bar, keeping its own stage tint (prep) so it
+             stays readable as borrowed rather than as part of the cook -->
+        <rect x="206" y="280" width="156" height="74" fill="var(--stage-0)" />
+        <text x="216" y="303" font-size="13" font-weight="500" fill="var(--paper)">Cube capsicum</text>
+        <text x="216" y="319" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">5 min</text>
 
-        <!-- ================= lane 1 — the critical path ================= -->
+        <rect x="206" y="356" width="156" height="46" fill="var(--stage-0)" />
+        <text x="216" y="379" font-size="13" font-weight="500" fill="var(--paper)">Cube paneer</text>
+        <text x="216" y="395" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">2 min</text>
 
-        <!-- chop onion 0->3 -->
-        <rect x="56" y="96" width="152" height="59" fill="var(--ink)" />
-        <rect x="56" y="96" width="152" height="3" fill="var(--stage-0)" />
-        <text x="66" y="119" font-size="13" font-weight="500" fill="var(--paper)">Chop onion</text>
-        <text x="66" y="135" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          3 min
-        </text>
+        <rect x="206" y="404" width="156" height="46" fill="var(--stage-0)" />
+        <text x="216" y="427" font-size="13" font-weight="500" fill="var(--paper)">Make kadai masala</text>
+        <text x="216" y="443" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">2 min</text>
 
-        <!-- sauté onion 3->8 -->
-        <rect x="56" y="155" width="152" height="76" fill="var(--ink)" />
-        <rect x="56" y="155" width="152" height="3" fill="var(--stage-1)" />
-        <text x="66" y="178" font-size="13" font-weight="500" fill="var(--paper)">Sauté onion</text>
-        <text x="66" y="194" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          5 min
-        </text>
+        <!-- ================= back on the mainline ================= -->
 
-        <!-- cook tomato base 10->22 — UNATTENDED. Hollow, so the twelve minutes read as
-             room you have rather than work you are doing. -->
-        <rect
-          x="56"
-          y="279"
-          width="152"
-          height="231"
-          fill="var(--paper)"
-          stroke="var(--ink)"
-          stroke-width="1"
-        />
-        <rect x="56" y="279" width="152" height="3" fill="var(--stage-1)" />
-        <text x="66" y="302" font-size="13" font-weight="500" fill="var(--ink)">
-          Cook tomato base
-        </text>
-        <text x="66" y="318" class="tabular" font-size="11" fill="var(--ink-3)">12 min</text>
-        <!-- Deliberately unlabelled. The hollow mark either reads as "this runs without
-             you" on its own or it does not, and the five-second test (GRAPH_VIEW.md §8)
-             is what settles that. Captioning it here would pass the test by cheating. -->
+        <rect x="48" y="511" width="142" height="74" fill="var(--stage-2)" />
+        <text x="58" y="534" font-size="13" font-weight="500" fill="var(--paper)">Add veggies</text>
+        <text x="58" y="550" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">5 min</text>
 
-        <!-- add veggies 22->27 -->
-        <rect x="56" y="510" width="152" height="76" fill="var(--ink)" />
-        <rect x="56" y="510" width="152" height="3" fill="var(--stage-2)" />
-        <text x="66" y="533" font-size="13" font-weight="500" fill="var(--paper)">Add veggies</text>
-        <text x="66" y="549" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          5 min
-        </text>
+        <rect x="48" y="587" width="142" height="74" fill="var(--stage-3)" />
+        <text x="58" y="610" font-size="13" font-weight="500" fill="var(--paper)">Add paneer</text>
+        <text x="58" y="626" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">5 min</text>
 
-        <!-- add paneer 27->32 -->
-        <rect x="56" y="586" width="152" height="76" fill="var(--ink)" />
-        <rect x="56" y="586" width="152" height="3" fill="var(--stage-3)" />
-        <text x="66" y="609" font-size="13" font-weight="500" fill="var(--paper)">Add paneer</text>
-        <text x="66" y="625" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          5 min
-        </text>
-
-        <!-- finish 32->34 -->
-        <rect x="56" y="662" width="152" height="48" fill="var(--ink)" />
-        <rect x="56" y="662" width="152" height="3" fill="var(--stage-3)" />
-        <text x="66" y="685" font-size="13" font-weight="500" fill="var(--paper)">Finish</text>
-        <text x="66" y="701" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          2 min
-        </text>
-
-        <!-- ================= lane 2 — everything else =================
-             These keep their own stage tint (prep, olive) even though they sit beside
-             the cook_base lane. That is how borrowed work stays readable as borrowed. -->
-
-        <!-- chop tomato 8->10 -->
-        <rect x="224" y="231" width="142" height="48" fill="var(--ink)" />
-        <rect x="224" y="231" width="142" height="3" fill="var(--stage-0)" />
-        <text x="234" y="254" font-size="13" font-weight="500" fill="var(--paper)">Chop tomato</text>
-        <text x="234" y="270" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          2 min
-        </text>
-
-        <!-- cube capsicum 10->15 -->
-        <rect x="224" y="279" width="142" height="76" fill="var(--ink)" />
-        <rect x="224" y="279" width="142" height="3" fill="var(--stage-0)" />
-        <text x="234" y="302" font-size="13" font-weight="500" fill="var(--paper)">Cube capsicum</text>
-        <text x="234" y="318" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          5 min
-        </text>
-
-        <!-- cube paneer 15->17 -->
-        <rect x="224" y="355" width="142" height="48" fill="var(--ink)" />
-        <rect x="224" y="355" width="142" height="3" fill="var(--stage-0)" />
-        <text x="234" y="378" font-size="13" font-weight="500" fill="var(--paper)">Cube paneer</text>
-        <text x="234" y="394" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          2 min
-        </text>
-
-        <!-- make kadai masala 17->19 -->
-        <rect x="224" y="403" width="142" height="48" fill="var(--ink)" />
-        <rect x="224" y="403" width="142" height="3" fill="var(--stage-0)" />
-        <text x="234" y="426" font-size="13" font-weight="500" fill="var(--paper)">
-          Make kadai masala
-        </text>
-        <text x="234" y="442" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
-          2 min
-        </text>
+        <rect x="48" y="663" width="142" height="46" fill="var(--stage-3)" />
+        <text x="58" y="686" font-size="13" font-weight="500" fill="var(--paper)">Finish</text>
+        <text x="58" y="702" class="tabular" font-size="11" fill="var(--paper)" opacity="0.8">2 min</text>
       </svg>
     </figure>
 
