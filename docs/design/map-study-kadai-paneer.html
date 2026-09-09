@@ -1,0 +1,297 @@
+<!doctype html>
+<!--
+  M2.5 DESIGN STUDY — not production code, not a layout engine.
+
+  A hand-placed static SVG of the kadai-paneer Map view, made to test whether the
+  Timetable connector language in docs/DESIGN_SYSTEM.md is legible without a legend
+  (docs/GRAPH_VIEW.md §8). Geometry is hardcoded on purpose. M2.75 replaces it with the
+  real pure function `CookingPlan -> LayoutSpec`; nothing here should be ported.
+
+  Every time and dependency below is read from apps/api/tests/fixtures/kadai-paneer
+  (.graph.json / .plan.json) — no invented numbers:
+    chop_onion       0->3    hands_on
+    saute_onion      3->8    hands_on
+    chop_tomato      8->10   hands_on          merges into cook_tomato_base
+    cook_tomato_base 10->22  periodic          hosts window w1, capacity 9, used 9
+    chop_capsicum    10->15  hands_on   w1 r0
+    cube_paneer      15->17  hands_on   w1 r1
+    make_kadai_masala 17->19 hands_on   w1 r2
+    add_veggies      22->27  hands_on
+    add_paneer       27->32  hands_on
+    finish           32->34  hands_on
+  total 34, serial 43, saved 9.
+
+  Vertical scale: y = 40 + 56 + 34*sqrt(minutes) accumulated per segment, i.e. the
+  sqrt row scaling from GRAPH_VIEW.md §4.4. A 12 min cook is 231px; a 2 min chop is 48px.
+  (The §4.4 clamp of 140px is not exercised here because kadai-paneer's longest single
+  span is 12 min. Homemade Donuts' 60 min rise is what needs it.)
+
+  To view: serve the repo root so the font path resolves, e.g.
+    python -m http.server 4173
+    open http://localhost:4173/docs/design/map-study-kadai-paneer.html
+  Opening the file directly still works; the type falls back to the system stack.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <title>Map study — Kadai Paneer</title>
+    <style>
+      @font-face {
+        font-family: 'Archivo Variable';
+        src: url('../../apps/web/public/fonts/archivo-var-subset.woff2')
+          format('woff2-variations');
+        font-weight: 300 700;
+        font-stretch: 88% 112%;
+        font-display: swap;
+      }
+      :root {
+        color-scheme: light;
+        --paper: #efeeea;
+        --paper-sunk: #e4e2dc;
+        --ink: #000000;
+        --ink-2: #55534c;
+        --ink-3: #6e6b62;
+        --rule: #c9c5bb;
+        --signal: #c42f16;
+        --stage-0: #6e7b52;
+        --stage-1: #7a6a4f;
+        --stage-2: #4f6b72;
+        --stage-3: #6b5f72;
+      }
+      body {
+        margin: 0;
+        background: var(--paper-sunk);
+        font-family: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 0 40px;
+      }
+      .device {
+        width: 390px;
+        background: var(--paper);
+      }
+      figcaption {
+        width: 390px;
+        margin-top: 16px;
+        color: var(--ink-2);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+      .expanded {
+        font-stretch: 112%;
+      }
+      .condensed {
+        font-stretch: 88%;
+      }
+    </style>
+  </head>
+  <body>
+    <figure class="device" style="margin: 0">
+      <svg
+        viewBox="0 0 390 750"
+        width="390"
+        height="750"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-labelledby="study-title study-desc"
+      >
+        <title id="study-title">Kadai Paneer cooking map</title>
+        <desc id="study-desc">
+          A time-scaled schedule. The left lane is the critical path. Cooking the tomato
+          base runs unattended for twelve minutes, drawn hollow; cubing the capsicum,
+          cubing the paneer and making the kadai masala are drawn alongside it over
+          exactly that stretch, because they happen while it cooks. The Plan view is the
+          text equivalent of this screen.
+        </desc>
+
+        <rect width="390" height="750" fill="var(--paper)" />
+
+        <!-- masthead -->
+        <text
+          x="16"
+          y="32"
+          class="condensed"
+          font-size="20"
+          font-weight="600"
+          fill="var(--ink)"
+        >
+          Kadai Paneer
+        </text>
+        <text x="16" y="52" class="tabular" font-size="12" font-weight="500" fill="var(--ink-3)">
+          34 min total
+        </text>
+
+        <!-- time gutter -->
+        <rect x="0" y="70" width="46" height="672" fill="var(--paper-sunk)" />
+        <text x="40" y="84" text-anchor="end" font-size="10" font-weight="600" fill="var(--ink-3)">
+          min
+        </text>
+
+        <g class="tabular" font-size="11" font-weight="500" fill="var(--ink-3)">
+          <text x="40" y="100" text-anchor="end">0</text>
+          <text x="40" y="159" text-anchor="end">3</text>
+          <text x="40" y="235" text-anchor="end">8</text>
+          <text x="40" y="283" text-anchor="end">10</text>
+          <text x="40" y="359" text-anchor="end">15</text>
+          <text x="40" y="407" text-anchor="end">17</text>
+          <text x="40" y="455" text-anchor="end">19</text>
+          <text x="40" y="514" text-anchor="end">22</text>
+          <text x="40" y="590" text-anchor="end">27</text>
+          <text x="40" y="666" text-anchor="end">32</text>
+          <text x="40" y="714" text-anchor="end">34</text>
+        </g>
+
+        <g stroke="var(--rule)" stroke-width="1">
+          <line x1="46" y1="96.5" x2="52" y2="96.5" />
+          <line x1="46" y1="155.5" x2="52" y2="155.5" />
+          <line x1="46" y1="231.5" x2="52" y2="231.5" />
+          <line x1="46" y1="279.5" x2="52" y2="279.5" />
+          <line x1="46" y1="355.5" x2="52" y2="355.5" />
+          <line x1="46" y1="403.5" x2="52" y2="403.5" />
+          <line x1="46" y1="451.5" x2="52" y2="451.5" />
+          <line x1="46" y1="510.5" x2="52" y2="510.5" />
+          <line x1="46" y1="586.5" x2="52" y2="586.5" />
+          <line x1="46" y1="662.5" x2="52" y2="662.5" />
+          <line x1="46" y1="710.5" x2="52" y2="710.5" />
+        </g>
+
+        <!-- The mainline. Continuous from first cut to plated, including the 8->10
+             stretch where it is blocked waiting on the tomatoes: the path exists even
+             when no work sits on it (GRAPH_VIEW.md §4.3). -->
+        <rect x="52" y="96" width="3" height="614" fill="var(--signal)" />
+
+        <!-- The rejoin: where the borrowed work returns to the mainline. Thinner and
+             lighter than the merge, and it meets the mainline rather than pointing at
+             it. No arrowhead — on a time axis, down is later.
+
+             Only the binding edge is drawn. Long crossing edges (cube_paneer feeds
+             add_paneer) were tried and made the study unreadable: routed round the
+             margin they read as a box outline rather than a connector, which is exactly
+             the ambiguity the no-legend rule is meant to avoid. M2.75's layout engine
+             draws every edge from the graph and will need a real routing strategy for
+             them; this study deliberately does not pretend to have one. -->
+        <path
+          d="M 224 451 L 216 451 L 216 506 L 190 506 L 190 510"
+          fill="none"
+          stroke="var(--ink-3)"
+          stroke-width="1.5"
+        />
+
+        <!-- The merge. Two lanes arriving at one instant, drawn heavier than a rejoin
+             because a junction is the densest moment in the graph (§4.5). -->
+        <line x1="208" y1="279" x2="224" y2="279" stroke="var(--ink)" stroke-width="2" />
+
+        <!-- ================= lane 1 — the critical path ================= -->
+
+        <!-- chop onion 0->3 -->
+        <rect x="56" y="96" width="152" height="59" fill="var(--ink)" />
+        <rect x="56" y="96" width="152" height="3" fill="var(--stage-0)" />
+        <text x="66" y="119" font-size="13" font-weight="500" fill="var(--paper)">Chop onion</text>
+        <text x="66" y="135" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          3 min
+        </text>
+
+        <!-- sauté onion 3->8 -->
+        <rect x="56" y="155" width="152" height="76" fill="var(--ink)" />
+        <rect x="56" y="155" width="152" height="3" fill="var(--stage-1)" />
+        <text x="66" y="178" font-size="13" font-weight="500" fill="var(--paper)">Sauté onion</text>
+        <text x="66" y="194" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          5 min
+        </text>
+
+        <!-- cook tomato base 10->22 — UNATTENDED. Hollow, so the twelve minutes read as
+             room you have rather than work you are doing. -->
+        <rect
+          x="56"
+          y="279"
+          width="152"
+          height="231"
+          fill="var(--paper)"
+          stroke="var(--ink)"
+          stroke-width="1"
+        />
+        <rect x="56" y="279" width="152" height="3" fill="var(--stage-1)" />
+        <text x="66" y="302" font-size="13" font-weight="500" fill="var(--ink)">
+          Cook tomato base
+        </text>
+        <text x="66" y="318" class="tabular" font-size="11" fill="var(--ink-3)">12 min</text>
+        <!-- Deliberately unlabelled. The hollow mark either reads as "this runs without
+             you" on its own or it does not, and the five-second test (GRAPH_VIEW.md §8)
+             is what settles that. Captioning it here would pass the test by cheating. -->
+
+        <!-- add veggies 22->27 -->
+        <rect x="56" y="510" width="152" height="76" fill="var(--ink)" />
+        <rect x="56" y="510" width="152" height="3" fill="var(--stage-2)" />
+        <text x="66" y="533" font-size="13" font-weight="500" fill="var(--paper)">Add veggies</text>
+        <text x="66" y="549" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          5 min
+        </text>
+
+        <!-- add paneer 27->32 -->
+        <rect x="56" y="586" width="152" height="76" fill="var(--ink)" />
+        <rect x="56" y="586" width="152" height="3" fill="var(--stage-3)" />
+        <text x="66" y="609" font-size="13" font-weight="500" fill="var(--paper)">Add paneer</text>
+        <text x="66" y="625" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          5 min
+        </text>
+
+        <!-- finish 32->34 -->
+        <rect x="56" y="662" width="152" height="48" fill="var(--ink)" />
+        <rect x="56" y="662" width="152" height="3" fill="var(--stage-3)" />
+        <text x="66" y="685" font-size="13" font-weight="500" fill="var(--paper)">Finish</text>
+        <text x="66" y="701" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          2 min
+        </text>
+
+        <!-- ================= lane 2 — everything else =================
+             These keep their own stage tint (prep, olive) even though they sit beside
+             the cook_base lane. That is how borrowed work stays readable as borrowed. -->
+
+        <!-- chop tomato 8->10 -->
+        <rect x="224" y="231" width="142" height="48" fill="var(--ink)" />
+        <rect x="224" y="231" width="142" height="3" fill="var(--stage-0)" />
+        <text x="234" y="254" font-size="13" font-weight="500" fill="var(--paper)">Chop tomato</text>
+        <text x="234" y="270" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          2 min
+        </text>
+
+        <!-- cube capsicum 10->15 -->
+        <rect x="224" y="279" width="142" height="76" fill="var(--ink)" />
+        <rect x="224" y="279" width="142" height="3" fill="var(--stage-0)" />
+        <text x="234" y="302" font-size="13" font-weight="500" fill="var(--paper)">Cube capsicum</text>
+        <text x="234" y="318" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          5 min
+        </text>
+
+        <!-- cube paneer 15->17 -->
+        <rect x="224" y="355" width="142" height="48" fill="var(--ink)" />
+        <rect x="224" y="355" width="142" height="3" fill="var(--stage-0)" />
+        <text x="234" y="378" font-size="13" font-weight="500" fill="var(--paper)">Cube paneer</text>
+        <text x="234" y="394" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          2 min
+        </text>
+
+        <!-- make kadai masala 17->19 -->
+        <rect x="224" y="403" width="142" height="48" fill="var(--ink)" />
+        <rect x="224" y="403" width="142" height="3" fill="var(--stage-0)" />
+        <text x="234" y="426" font-size="13" font-weight="500" fill="var(--paper)">
+          Make kadai masala
+        </text>
+        <text x="234" y="442" class="tabular" font-size="11" fill="var(--paper)" opacity="0.72">
+          2 min
+        </text>
+      </svg>
+    </figure>
+
+    <figcaption>
+      M2.5 design study — hardcoded geometry, not a layout engine. Times read from the
+      kadai-paneer fixture. M2.75 replaces this with the real
+      <code>CookingPlan&nbsp;→&nbsp;LayoutSpec</code> function.
+    </figcaption>
+  </body>
+</html>
