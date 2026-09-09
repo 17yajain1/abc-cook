@@ -75,6 +75,14 @@ The graph itself, per `docs/GRAPH_VIEW.md`. Deterministic SVG layout, row = time
 critical path as the leftmost continuous lane, solid vs dashed connectors legible
 without a legend.
 
+This is where the Plan view's building blocks get their second consumer, so it is also
+where `src/components/global/` earns its place — the shared *components* the two views
+turn out to need, alongside the feature-agnostic *functions* already in `src/lib/`. Not
+before: with a single consumer, extracting a primitive is guesswork, and a wrong
+abstraction is harder to undo than a duplicated component. Everything else stays
+feature-first — `src/plan/` and `src/map/` own their own pieces, so a view can be
+deleted by deleting a folder.
+
 **Exit:** the five-second test from `GRAPH_VIEW.md` §8, run on five people. Three of
 five answer "what happens while the base is cooking?" correctly without being told
 anything.
@@ -91,6 +99,21 @@ Start Cooking → Cook Base timer → "While this cooks" → Chop capsicum
 ```
 
 Timers that survive backgrounding, screen wake lock, pause/resume, skip.
+
+Two structural pieces land here, and deliberately not earlier:
+
+**`src/store/`** — a live session (current stage, running timers, what's been marked
+done) is the first genuinely global state in the app. Until now a view union in one
+`useState` in `App.tsx` has been enough, and adding a store before there was state to
+put in it would have been ceremony. Prefer Zustand to React context: a context whose
+value object isn't memoised re-renders every consumer, which with a timer ticking means
+the whole tree once a second on a phone. Its `persist` middleware is also the natural
+home for the wall-clock end times — store the absolute end time, never a counting-down
+integer (`CLAUDE.md`).
+
+**`src/hooks/`** — logic that isn't visual: `useTimer`, `useWakeLock`. Components stay
+presentational, and the timer arithmetic becomes testable without rendering anything,
+which matters because a timer bug shows up an hour into a real dinner.
 
 **Exit:** you cook one real dish end to end using only the app. Not a click-through —
 an actual dinner. Write down every moment you got confused or had to look away.
