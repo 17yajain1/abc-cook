@@ -1,0 +1,181 @@
+<!doctype html>
+<!--
+  DIRECTION 3 STRESS STUDY B — "two windows".
+
+  SYNTHETIC DATA. Not a fixture. Invented to exercise the case NO golden fixture
+  contains: more than one qualifying wait window in a single recipe.
+
+  This is the case that punctures a core principle. Direction 3 says "the free window is
+  the only place on the screen where a number is allowed to be large." With two
+  non-adjacent windows there are TWO 44px numbers on one scroll — here "45" and "15".
+  The screen has to be judged on whether that dilutes the idea or survives it.
+
+  Zebra rules 5 (merge adjacent windows) and 6 (cap at three, demote the rest) are
+  untested logic. This recipe has two NON-adjacent windows — hands-on work sits between
+  them — so rule 5 does not fire and both render as fields. Rule 6's cap is not reached.
+  Neither rule has ever been rendered.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="darkreader-lock" />
+    <title>Stress B — two windows</title>
+    <link rel="stylesheet" href="_direction3-study.css" />
+  </head>
+  <body>
+    <figure class="device">
+      <header>
+        <h1 class="condensed">Beef Rendang with Coconut Rice</h1>
+        <p class="cuisine">Minang, adapted</p>
+        <p class="meta tabular"><span>4 servings</span><span>2 hr 5 min total</span></p>
+        <p class="promise">
+          This plan saves you <span class="tabular">26 min</span> by prepping while
+          things cook.
+        </p>
+      </header>
+
+      <nav class="tabs">
+        <span class="tab active">Cooking Plan</span>
+        <span class="tab">Ingredients</span>
+        <a class="change">change recipe</a>
+      </nav>
+
+      <div class="plan">
+        <!-- 1 — Prep -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">1</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Prep</span>
+              <span class="stage-dur tabular">~8 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Cut the beef into large chunks</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Blend the spice paste until smooth</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <p class="cue">until it forms a loose, pourable paste</p>
+          </div>
+        </section>
+
+        <!-- 2 — Sear & simmer: hands-on Sear, then FIELD ONE -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">2</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Sear and simmer</span>
+              <span class="stage-dur tabular">~57 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Sear the beef in batches</span>
+              <span class="task-dur tabular">12 min</span>
+            </div>
+            <p class="cue">until deeply browned on all sides</p>
+
+            <div class="field">
+              <p class="field-subject">Simmer the rendang</p>
+              <p class="field-cue">until the sauce is thick and the beef is fork-tender</p>
+
+              <p class="big tabular">45</p>
+              <p class="big-label">
+                <span class="prov">minutes while the rendang simmers</span>
+              </p>
+
+              <div class="field-task field-task--primary">
+                <span class="field-task-name">Rinse and drain the rice for the coconut rice</span>
+                <span class="field-task-dur tabular">3 min</span>
+              </div>
+              <p class="field-hint">Start with this</p>
+              <div class="field-task">
+                <span class="field-task-name">Thinly slice the shallots for the crisp garnish</span>
+                <span class="field-task-dur tabular">6 min</span>
+              </div>
+              <div class="field-task">
+                <span class="field-task-name">Toast the shredded coconut until golden</span>
+                <span class="field-task-dur tabular">4 min</span>
+              </div>
+
+              <p class="field-foot">
+                <span class="prov">13 minutes of prep, with half an hour to spare.</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 — Reduce: plain unattended-ish row, NO window (nothing to slot) -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">3</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Reduce</span>
+              <span class="stage-dur tabular">~18 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Reduce the sauce, stirring often</span>
+              <span class="task-dur tabular">18 min</span>
+            </div>
+            <p class="cue">until the oil splits and the paste clings to the meat</p>
+          </div>
+        </section>
+
+        <!-- 4 — Finish: Rest, then FIELD TWO -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">4</span>
+          </div>
+          <div class="stage-body">
+            <div class="field field--absorb">
+              <div class="stage-head">
+                <span class="stage-title expanded">Rest and serve</span>
+              </div>
+              <p class="field-subject">Rest the beef and steam the rice</p>
+              <p class="field-cue">until the rice is tender and the beef has settled</p>
+
+              <p class="big tabular">15</p>
+              <p class="big-label">
+                <span class="prov">minutes while the rice steams</span>
+              </p>
+
+              <div class="field-task field-task--primary">
+                <span class="field-task-name">Fry the sliced shallots until crisp and golden</span>
+                <span class="field-task-dur tabular">7 min</span>
+              </div>
+              <p class="field-hint">Start with this</p>
+              <div class="field-task">
+                <span class="field-task-name">Warm the serving plates</span>
+                <span class="field-task-dur tabular">2 min</span>
+              </div>
+
+              <p class="field-foot">
+                <span class="prov">Just enough time — start as soon as the rice is on.</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="cta-wrap">
+        <button class="cta" type="button">Start Cooking</button>
+      </div>
+    </figure>
+
+    <figcaption>
+      <b>Direction 3 stress study B — synthetic "two windows".</b> Not a fixture. Two
+      non-adjacent wait windows, so both render as fields and the screen carries
+      <b>two 44px numbers</b> ("45" and "15"). Direction 3's rule that the field is the
+      only place a large number is allowed now applies twice — the question is whether
+      that dilutes the idea. Zebra rules 5 (merge) and 6 (cap at three) are not exercised
+      here and have never been rendered anywhere.
+    </figcaption>
+  </body>
+</html>
