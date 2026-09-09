@@ -11,6 +11,88 @@
 
 ---
 
+## Authority and conflict resolution
+
+`CLAUDE.md` § "Repo layout" is the map of which document owns which decision:
+
+| Document | Owns |
+|---|---|
+| `CLAUDE.md` | Non-negotiable engineering rules, vocabulary, working style. The meta-document. |
+| `docs/PRODUCT.md` | Positioning, competitors, what the product refuses to be. |
+| `docs/COOKING_GRAPH.md` | The schema and the scheduler algorithm — what the graph *is* and how `CookingPlan` is computed. |
+| `docs/GRAPH_VIEW.md` | How the graph is *drawn* on a phone: layout constraints, the encoding table, the five-second test. |
+| `docs/DESIGN_SYSTEM.md` | This file. Tokens, palette, typography, stage colour, component states, visual grammar. |
+| `docs/ROADMAP.md` | Milestone scope and exit criteria. |
+
+Two conflict rules already exist and are unchanged:
+
+- **Figma Make vs the `frontend-design` skill** (`CLAUDE.md` § "Design workflow"): where
+  they conflict on *aesthetics*, the skill wins; where they conflict on *flow or
+  information hierarchy*, Figma wins.
+- **A fixture's expected plan** (`CLAUDE.md`): if a scheduler change moves a golden
+  fixture's output, that is a product decision to surface, not a test to update.
+
+**The general rule: if two project documents conflict, do not silently pick one.** State
+the conflict, name both documents and both claims, and ask the owner to decide. Inventing
+a resolution — or quietly following whichever document was read last — is the failure this
+section exists to prevent.
+
+There is no `DECISIONS.md`. Decision history lives in this file's *Resolved in M2.5*
+table, in `docs/ROADMAP.md`, and in the `s1`–`s5` session notes at the repo root.
+
+---
+
+## M2.5 sign-off blocker — the wait-window arithmetic is unresolved
+
+**M2.5 is not fully signed off until this is resolved.** It is a scheduler /
+product-contract problem, not a visual-copy problem, and **it must not be fixed by
+editing UI copy to conceal it.**
+
+`WaitWindowBlock` can render a header and a footer that do not add up. Chicken Biryani's
+second window:
+
+```
+2 min prep   fits in 12 min
+...
+Fits with 7 min to spare
+```
+
+2 + 7 ≠ 12.
+
+**Why the two lines derive from different capacity concepts:**
+
+- The header's "fits in **12** min" is the host node's raw `duration_typical`.
+  `COOKING_GRAPH.md` § 3 blesses exactly this: *"the UI copy … falls straight out of
+  `used_min` and the host node's duration."*
+- The footer's "**7** min to spare" is `window.slack_min` = `capacity_min − used_min`,
+  and `capacity_min` is the **gated** figure — `duration_typical × 0.75` for a `periodic`
+  host, `× 0.9` for `unattended` (`COOKING_GRAPH.md` § 4.3). Here: `12 × 0.75 = 9`;
+  `9 − 2 = 7`.
+
+So the header's denominator is 12 and the footer's is 9. The 3-minute difference is the
+§ 4.3 safety margin, and nothing in the product names it.
+
+**What the existing documents settle, and what they don't:**
+
+- `COOKING_GRAPH.md` § 3 and § 4.3 define every primitive precisely —
+  `duration_typical`, `capacity_min` and its `× 0.9` / `× 0.75` gating, `used_min`,
+  `slack_min`.
+- **No document defines how one UI view should present the header and footer together so
+  they reconcile.** The footer copy ("Fits with N min to spare") is this file's own
+  `WaitWindowBlock` spec (§ WaitWindowBlock), and it pairs a capacity-relative number
+  with a duration-relative one in the same block.
+
+Citing where the primitives are defined is **not** the same as applying a fix. Resolving
+the arithmetic is a product decision with scheduler and golden-fixture consequences, and
+this documentation pass does not make it. Options a future session must **not** choose
+unilaterally include: put capacity (not raw duration) in the header; add the safety
+margin as an explicit third line; drop the "to spare" footer; change what `slack_min` is
+measured against in the scheduler.
+
+The example above is left **unreconciled on purpose** in this document.
+
+---
+
 ## Design brief
 
 **Subject.** One person, one dish, a phone propped against something in a home kitchen.
@@ -56,9 +138,27 @@ The Map is read for ten seconds to understand a structure. The Plan is held for 
 minutes in a kitchen while something burns. Those are different jobs and they get
 different amounts of austerity.
 
-_(Mechanism pending — the specific concessions are being chosen with the owner and will
-be written here. Until then, treat the Plan view's current tuning as unresolved rather
-than as the standard.)_
+**Frozen structural grammar for M2.5 — not open for reinterpretation:**
+
+- The Plan view stays a **vertical, stage-row** experience. It does **not** become a
+  Gantt chart and it does **not** acquire a time axis.
+- It inherits, from the direction: the **palette**, the **typography**, the **radius
+  rule**, the **rule-weight hierarchy**, and the **right-aligned tabular duration
+  column**.
+- **Wait windows stay attached to their host stage** (§ WaitWindowBlock), never floating
+  as a separate "tips" section.
+- The Map's grammar — the minute axis, proportional bar heights, hollow-vs-filled marks,
+  the connector language — **does not transfer to the Plan automatically.** Anything the
+  Plan borrows from it is a deliberate, named decision, not a default.
+
+**Still unresolved — and it is the only thing unresolved here:** the exact degree of
+visual warmth, softness and austerity the Plan view carries — surface tone, whether any
+element sits proud of the page, body-text weight. This is a **visual-tuning question**,
+chosen with the owner against a rendered screen (`CLAUDE.md` § "Working style"). It is
+**not** licence to change the Plan view's information architecture, re-order its
+hierarchy, or introduce a different layout model. Until the tuning is chosen, treat the
+Plan view's current *rendered* tuning as provisional rather than as the standard — but the
+structural grammar above it is fixed.
 
 ---
 
@@ -73,7 +173,7 @@ than as the standard.)_
 
 ## Colour
 
-Four core values — **paper, ink, rule, signal** — plus two recessed tints and a muted
+Four core values — **paper, ink, rule, signal** — plus one recessed tint and a muted
 stage family. Nothing else. The live source of truth is the `@theme` block in
 `apps/web/src/index.css`; this table is the intent.
 
@@ -87,8 +187,15 @@ stage family. Nothing else. The live source of truth is the `@theme` block in
 --color-rule:         #C9C5BB;   /* hairlines */
 
 --color-signal:       #C42F16;   /* critical path, the live thing, the primary CTA */
---color-signal-sunk:  #F5DED8;   /* signal fill behind a chip or an active row */
 ```
+
+`--color-signal-sunk` (`#F5DED8`, "signal fill behind a chip or an active row") was in
+this set and is **removed from the M2.5 token set**: it has no consumer. Nothing in
+`apps/web/src` references it, and the M2.5 `WaitWindowBlock` chips are `ink`-outlined and
+`ink`-filled, not signal-tinted. It still exists in `apps/web/src/index.css` — drop it
+there the next time that file is edited; this documentation pass does not touch tokens. If
+a real M2.5 consumer appears, add the token back *together with* the component that uses
+it, not before.
 
 **Contrast, checked not assumed.** Against `--color-paper`: `ink-2` 6.5:1, `ink-3`
 4.6:1, `signal` 4.8:1 — all clear AA for normal text, which matters more here than
@@ -104,17 +211,38 @@ fine on a bright desk monitor.
 **True black, deliberately.** Tinted near-black (`#111`, `#0B0B0B`) standing in for black
 is a recognised generated-design tell. A printed schedule uses black ink; so do we.
 
-**Signal is rationed.** If more than one thing on a screen is `--color-signal`, one of
-them is wrong. It marks the critical path and the single primary action, nothing else.
+**Signal is rationed — and the rule is about priority, not count.**
 
-Precisely: signal is the only **fully saturated** mark. The stage tints below are
-colour, but they are low-chroma and mid-value by construction and none of them is red,
-so signal still wins on a screen full of them. The original wording — "the only
-saturated mark" — was written before the Map study proved that stage identity has to be
-carried by fill rather than by a hairline, and it would have forbidden the thing that
-made the Map legible. **A screen with no signal on it at all is the failure this rule
-was meant to prevent, and rationing it into absence is the same mistake as spending it
-everywhere.**
+> Signal is reserved for the **highest-priority constraint or action on the current
+> screen**. It may appear on more than one visual element at once **only when those
+> elements represent the same underlying priority**. It is never used for emphasis,
+> category, selection, or generic interactivity.
+
+Earlier phrasings pulled in two directions — "if more than one thing is signal, one is
+wrong" versus "a screen with no signal is a failure." Both were trying to say the same
+thing badly. The priority rule resolves it. On the Map, the critical-path rail and a
+live-now marker (M3) are the *same* priority — "the thing you cannot walk away from" — so
+signal on both is correct. On the Plan, the primary CTA is that priority and is the only
+signal mark. A screen legitimately carries no signal when nothing on it is that kind of
+priority; a screen carrying signal on two *different* priorities has diluted it.
+
+Signal is still the only **fully saturated** mark. The stage tints are colour, but
+low-chroma and mid-value by construction and none is red, so signal wins on a screen full
+of them — which is what lets stage identity be carried by fill on the Map (§ Stage
+identity) without competing. (The earlier "the only *saturated* mark" wording predated the
+Map study and would have forbidden that fill.)
+
+**Worked example — the three colour roles on one Plan screen:**
+
+| Role | Token | How often | Why it is not a general accent |
+|---|---|---|---|
+| Highest-priority action | `--color-signal` | **Once** — the `Start Cooking` CTA | It is *the* action of the screen; nothing else competes for that slot |
+| Category code | a stage tint | Once per stage, as a 3px lane rule | Low-chroma, never saturated — reads as "which stage" without claiming "what matters most" |
+| Everything else | `ink` / `ink-2` / `ink-3` | Everywhere | Rules, type, the duration column, the recessed wait-window band. No hue. |
+
+The saved-time line ("saves you 9 min") stays **ink, not signal**, even though it is the
+product's own pitch — colouring it would put signal on a second priority and turn it into
+an accent. That restraint is the rule working.
 
 **Retired from the M2 palette, and why:**
 
@@ -143,6 +271,27 @@ They read as coded lines on an understated map and none of them competes with si
 
 Assignment is unchanged: by the stage's **index** in `graph.stages` (`index % 6`), never
 by `Stage.color_key` — recipes have arbitrary stages.
+
+**Accessibility validation — required before M2.75 ships stage colour as a Map fill.**
+
+The six tints must be checked under:
+
+- **protanopia** (red-blind)
+- **deuteranopia** (green-blind)
+- **tritanopia** (blue-blind)
+- **greyscale** (full desaturation — covers monochrome output and the harshest low-light case)
+
+The pass condition is **not** "the tints stay distinguishable under every simulation." It
+is that **stage colour is never the sole carrier of stage or task identity.** Lane
+position and the stage label are always present on both views — Plan: the ordinal and
+label at the head of the lane rule; Map: the lane the bar runs in, plus its label. Colour
+is redundant by design, so a tint collision under one simulation is a legibility note, not
+a blocker.
+
+**Do not raise the tints' saturation pre-emptively.** Increase chroma only if the
+validation shows a real problem that lane position and labels do not already cover — and
+if it does, that is a deliberate change made against the signal-rationing rule above, not
+a quiet bump.
 
 **The treatment differs by view, and that is deliberate.**
 
@@ -188,6 +337,15 @@ the font.
 the next visit. That is the correct trade for a PWA: zero layout shift, zero blocking.
 Fallback stack stays `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
 
+**Latin-script scope is an M2.5 decision, not a permanent assumption.** The subset is
+Latin basic + digits + the punctuation the product renders, because M2.5's fixtures and
+UI copy are Latin-script. This is *not* a claim that Devanagari or other Indic-script
+recipe content will never be needed — the product's centre of gravity is Indian home
+cooking, and localised recipe text is plausible. Indic-script and localised typography
+should be revisited **before** any regional-language content is introduced; a
+Devanagari-capable face or a script-aware font stack is a separate asset decision at that
+point. M2.5 ships the Latin subset unchanged.
+
 **Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base.
 
 | Role | Size / weight / width |
@@ -230,7 +388,10 @@ and by rule weight. There is no elevation model and adding one would contradict 
 brief's "printed, not rendered."
 
 Rule weights are the hierarchy: `1px --color-rule` hairline for list separation, `2px
---color-ink` for a structural edge, `3px --color-signal` for the mainline.
+--color-ink` for a structural edge. (The Map's critical-path rail is `6px --color-signal`
+— specified in the *Connector language* block below, and not an M2.5 mark. An earlier
+draft of this line said `3px` for "the mainline"; the Map study proved 3px read as a
+hairline weaker than the surrounding ink, which is why the connector block says 6px.)
 
 ## Metadata and punctuation
 
@@ -266,14 +427,21 @@ affordance, never as ornament.**
 Removing the row chevron takes an affordance away, and `DESIGN_SYSTEM.md` has always
 said window tasks "must read as tappable, not as recipe notes." The replacement is a
 full-width hit area, a `paper-sunk` pressed state, and the duration column reading as a
-control column. **This is the one decision here most likely to be wrong**, and it is
-falsifiable: if the M2 person test shows people don't read the rows as tappable, the
-glyph comes back — as a `+`, or as a visible control.
+control column. **This is the one decision here most likely to be wrong.**
 
-## Connector language — for the Map (M2.75)
+**The test, stated so it can be failed:** during the person test (`GRAPH_VIEW.md` § 8 and
+the M2 exit test), if **fewer than 4 of 5 participants independently identify a
+wait-window task row as tappable without being prompted**, restore an explicit affordance
+— a `+`, or a visible control, *not* the `›` chevron. Until that test runs and fails, the
+chevron stays removed.
+
+## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+
+### Connector language — for the Map (M2.75)
 
 Established now so M2.75 doesn't invent it under deadline. `GRAPH_VIEW.md` §5 requires
 these to be legible **without a legend**; that is the constraint they're designed against.
+A future session must not read this block as instruction to build the Map now.
 
 | Meaning | Mark |
 |---|---|
@@ -310,8 +478,9 @@ chart.** Its stages stay rows.
 ## Components and their states
 
 ### StageCard
-`collapsed` · `expanded` · `active` · `complete` (M2 ships the first two; `active` /
-`complete` are M3).
+
+**M2.5 states: `collapsed` and `expanded`.** The `active` and `complete` states are M3 —
+see the *Future Milestone Reference* blocks below.
 
 Collapsed shows: the stage rail, label, `~N min`, a one-line task summary. Expanded shows
 the task rows and any wait-window block this stage hosts.
@@ -363,6 +532,11 @@ The `▎` is the borrowed task's own stage tint, as a 3px lane rule. Footer swit
 `window.slack_min`: `0` → "All this prep fits inside the N min cook"; otherwise "Fits
 with N min to spare" — set in `ink-2` on `paper-sunk`, no green.
 
+> **The header ("fits in N min") and this footer ("N min to spare") can fail to add up.**
+> They are measured against different quantities. See the sign-off blocker at the top of
+> this document. Do not reword either line to hide the discrepancy — the resolution is a
+> scheduler / product-contract decision.
+
 Rules, unchanged from M2 except in punctuation:
 - Header text is **capacity**, never consumption. Never `"9 of 12 min used"` — the user
   hasn't started.
@@ -381,22 +555,48 @@ Known limitation, unchanged in M2.5: the chips carry no magnitude, so a window a
 used (Kadai Paneer, 9 in 12) and one at 5% (Donuts, 3 in 60) render identically. Fixing
 that means finding a non-bar way to show fullness. Deferred, listed below.
 
-### Timer · ParallelTaskDetail · PrimaryCTA
-Unchanged from M2 in structure. PrimaryCTA is full-width, fixed above the safe area, 52px
-tall, `--color-signal`, radius 2px; exactly one on screen at a time.
+### PrimaryCTA (M2.5)
+Full-width, fixed above the safe area, 52px tall, `--color-signal`, radius 2px; exactly
+one on screen at a time. Unchanged from M2 in structure.
 
-**Store the absolute end timestamp, not a countdown integer.** Recompute remaining on
-every render and on `visibilitychange`. Phones sleep.
+## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+
+A future session must not build anything in this block as part of M2.5.
+
+### StageCard `active` / `complete` states (M3)
+
+`active` is the stage currently being cooked; `complete` is a finished stage. Their
+visual treatment is not specified yet — it waits on M3's cooking-mode design, and on the
+completion-mark decision the colour section defers to M3 (a completion mark must not
+resurrect a general-purpose green).
+
+### Timer digits and timer behaviour (M3)
+
+- **Timer digits.** Type scale row: 44 / 300 / wdth 88, tabular. The one place the scale
+  goes large.
+- **Timer · ParallelTaskDetail.** Unchanged from M2 in structure. **Store the absolute
+  end timestamp, not a countdown integer** — recompute remaining on every render and on
+  `visibilitychange`. Phones sleep. (This storage rule is a `CLAUDE.md` non-negotiable and
+  applies whenever the timer is built.)
 
 ## Motion
 
+**M2.5 scope:**
+
 - Stage expand/collapse: 200ms ease-out height + opacity.
+- Respect `prefers-reduced-motion` — this is not optional and applies to every milestone.
+
+## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+
+### Map entry animation and cooking-mode motion
+
 - **The one orchestrated moment (Map, M2.75):** on open, the time ruler draws down and
   the critical rail extends top to bottom in a single ~700ms sweep; the parallel spurs
   fade in after it lands. Once, on entry. Nothing else on the Map animates.
-- Task complete: check draws in 150ms, row settles. No confetti during cooking — save
-  celebration for the final `finish` node.
-- Respect `prefers-reduced-motion`.
+- **Task complete (M3):** check draws in 150ms, row settles. No confetti during cooking —
+  save celebration for the final `finish` node.
+
+A future session must not build either of these as part of M2.5.
 
 ## Things the design review already rejected
 
@@ -428,12 +628,9 @@ Documented so they don't come back:
 
 ## Still open
 
-1. **The wait window's numbers don't reconcile.** Chicken Biryani's second window reads
-   `2 min prep`, `fits in 12 min`, `Fits with 7 min to spare` — and 2 + 7 ≠ 12. The
-   header's denominator is the host's `duration_typical`; the footer's slack is
-   `window.slack_min`, measured against the window's actual capacity after gating. Both
-   are honestly the scheduler's; they just can't sit next to each other. **A product and
-   scheduler-semantics decision, deliberately not touched in M2.5.**
+1. **The wait window's numbers don't reconcile (2 + 7 ≠ 12).** This is an **M2.5 sign-off
+   blocker** — see the *M2.5 sign-off blocker* section at the top of this document. Not
+   restated here.
 2. **The wait window assumes its host is hot.** Homemade Donuts renders "while this
    cooks" and "60 min cooking" over dough proving at room temperature. Copy tied to
    scheduler semantics, not a design fix.
