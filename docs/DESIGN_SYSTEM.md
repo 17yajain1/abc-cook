@@ -38,58 +38,85 @@ a resolution — or quietly following whichever document was read last — is th
 section exists to prevent.
 
 There is no `DECISIONS.md`. Decision history lives in this file's *Resolved in M2.5*
-table, in `docs/ROADMAP.md`, and in the `s1`–`s5` session notes at the repo root.
+table, in `docs/ROADMAP.md`, and in the `s1`–`s6` session notes at the repo root.
 
 ---
 
-## M2.5 sign-off blocker — the wait-window arithmetic is unresolved
+## A study proposes composition, never tokens
 
-**M2.5 is not fully signed off until this is resolved.** It is a scheduler /
-product-contract problem, not a visual-copy problem, and **it must not be fixed by
-editing UI copy to conceal it.**
+A design study is a rendered argument about **composition**. It is not a token source.
+This has to be stated because it very nearly went the other way: the Direction 3 studies
+in `docs/design/` carry their own `:root` block — a warmer paper, a `#241f19` brown-black
+ink, a `#e7dcc3` field ground, a `#b23a1b` red, and no stage hue at all — and reading them
+as the palette would have silently replaced four written decisions in this file with values
+that were never argued anywhere.
 
-`WaitWindowBlock` can render a header and a footer that do not add up. Chicken Biryani's
-second window:
+| Artefact | Authority |
+|---|---|
+| **This document** | Rules and tokens. Authoritative. A value here changes only by an argued decision recorded here. |
+| **A study** (`docs/design/*.html`) | **Composition only** — grouping, hierarchy, density, what sits where, what the marks are. Its token values are exploratory scaffolding and **never** override a written decision. |
+| **The M2 baseline screenshot** | A quality floor. Not a reference to copy from and not a target to hit. See *The M2 baseline is a warmth floor*. |
 
-```
-2 min prep   fits in 12 min
-...
-Fits with 7 min to spare
-```
+So: adopt a study's **arrangement**; render it in **this file's** tokens. If a study's
+composition genuinely cannot survive the written tokens, that is a finding to report and
+a decision for the owner to make here — not a licence to drift toward the study's values
+until the gap closes.
 
-2 + 7 ≠ 12.
+---
 
-**Why the two lines derive from different capacity concepts:**
+## Two layers: scheduler precision, and practical guidance
 
-- The header's "fits in **12** min" is the host node's raw `duration_typical`.
-  `COOKING_GRAPH.md` § 3 blesses exactly this: *"the UI copy … falls straight out of
-  `used_min` and the host node's duration."*
-- The footer's "**7** min to spare" is `window.slack_min` = `capacity_min − used_min`,
-  and `capacity_min` is the **gated** figure — `duration_typical × 0.75` for a `periodic`
-  host, `× 0.9` for `unattended` (`COOKING_GRAPH.md` § 4.3). Here: `12 × 0.75 = 9`;
-  `9 − 2 = 7`.
+This is the governing principle for every number and every phrase the Plan puts on screen.
 
-So the header's denominator is 12 and the footer's is 9. The 3-minute difference is the
-§ 4.3 safety margin, and nothing in the product names it.
+> **The UI must not display internal scheduler bookkeeping in a form the user can perceive
+> as self-contradictory.**
 
-**What the existing documents settle, and what they don't:**
+Note carefully what this does *not* say. It is **not** "cooking time is approximate, so
+displayed numbers need not reconcile." That phrasing is too broad — it would also excuse
+the wait window telling you dough is cooking, which is a different failure the user can
+see just as plainly. The real claim is narrower and firmer: **the internal scheduler
+contract and the user-facing contract are different layers**, and scheduler-internal
+quantities — safety margins, gating deltas, the `× 0.9` / `× 0.75` factors — must not
+surface as visible inconsistencies.
 
-- `COOKING_GRAPH.md` § 3 and § 4.3 define every primitive precisely —
-  `duration_typical`, `capacity_min` and its `× 0.9` / `× 0.75` gating, `used_min`,
-  `slack_min`.
-- **No document defines how one UI view should present the header and footer together so
-  they reconcile.** The footer copy ("Fits with N min to spare") is this file's own
-  `WaitWindowBlock` spec (§ WaitWindowBlock), and it pairs a capacity-relative number
-  with a duration-relative one in the same block.
+- **Internally, the scheduler stays precise.** `duration_typical`, `capacity_min`,
+  `used_min`, `slack_min` and the § 4.3 gating are not to be changed to make displayed
+  numbers add up. That is a real constraint, not a preference: those figures exist so the
+  app does not tell someone to do nine minutes of chopping inside a nine-minute simmer.
+- **User-facing, durations and windows are practical guidance.** The screen's job is to
+  help the cook decide what to do and when — not to expose the arithmetic that produced
+  the advice. Small differences between what the scheduler computed and what the screen
+  says are acceptable; a *visible contradiction* is not.
+- Do not spend milestone-level effort making every displayed minute reconcile.
 
-Citing where the primitives are defined is **not** the same as applying a fix. Resolving
-the arithmetic is a product decision with scheduler and golden-fixture consequences, and
-this documentation pass does not make it. Options a future session must **not** choose
-unilaterally include: put capacity (not raw duration) in the header; add the safety
-margin as an explicit third line; drop the "to spare" footer; change what `slack_min` is
-measured against in the scheduler.
+### The two known instances
 
-The example above is left **unreconciled on purpose** in this document.
+Both are the same rule. They differ only in that one surfaces as arithmetic and the other
+as language.
+
+**1. The wait-window arithmetic — a known issue, not a blocker.** `2 + 7 ≠ 12`. Chicken
+Biryani's second window could render `2 min prep · fits in 12 min` above `Fits with 7 min
+to spare`. The header's denominator was the host's raw `duration_typical` (12); the
+footer's was `slack_min`, measured against the **gated** `capacity_min`
+(`12 × 0.75 = 9`; `9 − 2 = 7`). The 3-minute difference is the § 4.3 safety margin, which
+nothing in the product names.
+
+This was an M2.5 sign-off blocker and **is downgraded to a recorded known issue.** The
+Direction 3 composition happens to dissolve it: there is no "fits in N min" header and no
+numeric "N min to spare" footer any more. The numeral is the host's real
+`duration_typical` and the footer is qualitative, so no two numbers on screen contradict
+each other. Recorded rather than fixed — nothing was changed in the scheduler, and
+`window.capacity_min` remains available and unread.
+
+If a future render path does pair the two quantities again, and `capacity_min` is already
+in scope there, reading it instead of the raw duration is an acceptable one-line fix. Do
+not add a field or a computation to produce it, and do not make it a task of its own.
+
+**2. The wait window assumed its host was hot** — "while this cooks" over dough proving at
+room temperature. Resolved in M2.5; see § WaitWindowBlock.
+
+**Neither is a licence to hide a genuine semantic problem with copy.** The test is whether
+the screen still tells the truth, not whether the contradiction became harder to notice.
 
 ---
 
@@ -120,6 +147,54 @@ not because it looks good.
 **Voice.** Printed, not rendered. Flat ink, true rules, tabular figures, no elevation.
 A board tells you facts; it doesn't congratulate you.
 
+### Grounded and authored — the quality bar
+
+The Plan should feel **grounded in the kitchen: a printed cooking sheet resting on a
+counter**, not a floating SaaS UI. And it should feel **authored** — as though someone
+decided each thing on it — rather than assembled from a template.
+
+This is a bar to clear, **not permission to invent decoration or alter the palette.**
+The way to hit it is stronger structural decisions, not more marks: real hierarchy, real
+density, weight and space doing the work that a border or a shadow would otherwise be
+asked to do.
+
+### Avoid generated-design tells
+
+This document already bans several by name — tinted near-black standing in for true
+black, tracked-out ALL-CAPS eyebrows, middle-dot meta strings, decorative emoji, uniform
+radius-plus-soft-shadow on everything regardless of hierarchy. Each was argued locally.
+They are all instances of one rule, and naming the category is what stops the next one:
+
+> **A choice that appears because it is a default, rather than because something in the
+> brief requires it, is a tell. Every visual decision must trace to a line in the brief.
+> If it cannot, cut it — including defaults that arrive by omission, not only ornament
+> that arrives by addition.**
+
+Also in the category, and not otherwise enumerated: floating-card treatment, generic
+iconography, arbitrary accent colours, pills used where a plain figure would do,
+gradients, shadows, and UI added merely because empty space felt unfinished.
+
+That last one is worth stating on its own. Empty space on this screen is usually correct
+— on a plan whose whole subject is unoccupied time, it is frequently the content.
+
+### The M2 baseline is a warmth floor
+
+`M2's Kadai Paneer screen is the minimum acceptable warmth and liveliness.` It is a
+**floor, not a ceiling and not a target.** Several things visible in it are retired by
+this document and must not be reproduced: filled circular numbered stage badges,
+decorative emoji and illustration, the `›` between capacity chips, the middle-dot meta
+string, and the green CTA. Clearing those is the starting point, not the finish line.
+
+The obligation: **M2.5 must not read colder or less alive than that screen**, using
+M2.5's vocabulary. This is not an aesthetic preference — it is the specific failure that
+already cost a milestone, and the reason the Register section below exists at all.
+
+At every render checkpoint, compare directly against it. **If the render is colder,
+flatter or more sterile, that is a category A finding — a real regression, not
+calibration to defer.** Report which property is carrying the loss (field ground
+contrast, ink value, type size, density, spacing) and stop. Do not close the gap by
+drifting toward a study's token values.
+
 ### Register: the Map is an instrument, the Plan is a kitchen screen
 
 Direction A's palette, light ground, type and radius rule transfer to **both** views. Its
@@ -147,18 +222,58 @@ different amounts of austerity.
   column**.
 - **Wait windows stay attached to their host stage** (§ WaitWindowBlock), never floating
   as a separate "tips" section.
+- **Stage identity is carried by the ordinal, the stage-title weight, whitespace, and the
+  3px stage-tint lane rule** (§ Stage identity). Not by a filled badge, not by a hue on
+  the title. This is structural and does not change.
 - The Map's grammar — the minute axis, proportional bar heights, hollow-vs-filled marks,
   the connector language — **does not transfer to the Plan automatically.** Anything the
   Plan borrows from it is a deliberate, named decision, not a default.
 
-**Still unresolved — and it is the only thing unresolved here:** the exact degree of
-visual warmth, softness and austerity the Plan view carries — surface tone, whether any
-element sits proud of the page, body-text weight. This is a **visual-tuning question**,
-chosen with the owner against a rendered screen (`CLAUDE.md` § "Working style"). It is
-**not** licence to change the Plan view's information architecture, re-order its
-hierarchy, or introduce a different layout model. Until the tuning is chosen, treat the
-Plan view's current *rendered* tuning as provisional rather than as the standard — but the
-structural grammar above it is fixed.
+### The locked composition — Direction 3, "Two Kinds of Minute"
+
+Chosen in s6 after the first M2.5 pass (a straight application of the direction's full
+austerity to the Plan) was rejected as colder and flatter than the M2 baseline it
+replaced. The insight: **every minute is either a minute the dish needs your hands or a
+minute it doesn't, and the screen is built out of that alternation.** Hands-on work is
+plain rows on paper; a scheduler wait window becomes a full-bleed field — a *place*, not
+a card — with the free time stated once, large.
+
+Locked, and not reopened without a render that demonstrates a real contradiction:
+
+- **The wait window is a full-bleed field**, keyed to a scheduler window in `plan.windows`
+  — **never to `attention`** (that is the zebra rule: a screen with many unattended
+  stretches must not become a stripe of fields, and keying to real windows prevents it by
+  construction). It bleeds to the device edges while its content stays on the page
+  margin. Ground is `--color-field` — warm and deeper than the page, a slab with no
+  border or shadow (see § *`--color-field`*). Height is content-driven, never
+  proportional — a 60-minute window is not ten screens tall.
+- **One large numeral** — the host's `duration_typical` — is the only place on the screen
+  a number is allowed to be large. It answers "how long have I got?".
+- **The ranked first task** gets weight and a `Start with this` cue in `--color-signal`;
+  the rest are secondary. Suppressed entirely on a single-task window — ranking a list of
+  one is noise.
+- **Orphan-absorb:** when a stage's only content is its hosted field (the host pulled out,
+  nothing left inline), the field absorbs the stage header rather than leaving it stranded
+  on paper above.
+- **One field per scheduler window. No merging of adjacent windows, no cap-and-demote.**
+  Those rules are untested logic; they are deferred to M2.75 with a real corpus.
+
+What the composition **proposes but does not get to set**: token values. The Direction 3
+studies render in a warmer palette of their own (`#241f19` ink, `#b23a1b` red, no stage
+hue). Those are study scaffolding. The Plan is built in **this file's** tokens —
+`#000000` ink, `--color-paper` / `--color-paper-sunk`, the six stage tints,
+`--color-signal`. See § *A study proposes composition, never tokens*.
+
+The **one** value the composition did carry across is the wait-window field surface: the
+study's `#e7dcc3` became `--color-field`, because measured against the M2 warmth floor the
+field on `--color-paper-sunk` was a category A regression and the study value is the
+derived answer (§ *`--color-field`*). That is a deliberate, argued, single-token decision
+recorded here — not the study palette leaking in.
+
+The warmth-degree question the first draft of this section left open is **resolved**: the
+answer is Direction 3's composition in the Design System's tokens, plus `--color-field`,
+measured against the M2 baseline floor at every checkpoint. It is no longer an open tuning
+dial.
 
 ---
 
@@ -180,6 +295,7 @@ stage family. Nothing else. The live source of truth is the `@theme` block in
 ```css
 --color-paper:        #EFEEEA;   /* the board */
 --color-paper-sunk:   #E4E2DC;   /* time gutter, recessed bands, pressed rows */
+--color-field:        #E7DCC3;   /* the wait-window field surface only — § WaitWindowBlock */
 
 --color-ink:          #000000;   /* rules and primary type */
 --color-ink-2:        #55534C;   /* instructions, doneness cues, secondary */
@@ -189,20 +305,50 @@ stage family. Nothing else. The live source of truth is the `@theme` block in
 --color-signal:       #C42F16;   /* critical path, the live thing, the primary CTA */
 ```
 
-`--color-signal-sunk` (`#F5DED8`, "signal fill behind a chip or an active row") was in
-this set and is **removed from the M2.5 token set**: it has no consumer. Nothing in
-`apps/web/src` references it, and the M2.5 `WaitWindowBlock` chips are `ink`-outlined and
-`ink`-filled, not signal-tinted. It still exists in `apps/web/src/index.css` — drop it
-there the next time that file is edited; this documentation pass does not touch tokens. If
-a real M2.5 consumer appears, add the token back *together with* the component that uses
-it, not before.
+### `--color-field` — the wait-window surface
+
+Added in the M2.5 implementation, and **the only palette change Direction 3 makes.** It
+is deliberately warmer and deeper than `--color-paper-sunk`, and the reason is a measured
+one.
+
+The wait window is Direction 3's signature component and its job is to read, at a glance,
+as *a distinct place the plan steps onto* — the room the free time buys you. On
+`--color-paper-sunk` it did not: the ground shift from paper is ΔE ≈ 4.3 (ΔL\* 4.5%), and
+with no border or shadow to lean on, the most important region of the screen became the
+faintest. Measured against the M2 baseline warmth floor at the B2 checkpoint, that was a
+category A regression — the signature component had inverted from the *most* present thing
+on the screen to the *least*.
+
+`--color-field` is `#E7DCC3` — **the field value from the Direction 3 study**, not a fresh
+pick. Its distinction from paper is ΔE ≈ 13 (3× the old field), and that distinction is
+carried by **warmth** (b\* +11) rather than by lightness alone: ΔL\* is 6.4%, a touch
+under a 7% lightness reading, but the perceptual gap is well past any threshold because
+the hue moves, not just the value. This is the point of principle 3 — absence has a
+*shape*, and here the shape is a warm slab.
+
+Constraints held: `--color-paper` is unchanged, ink stays true black, the six stage tints
+are untouched, and the field gets **no border, gradient, shadow, or card treatment** —
+the ground value does the whole job, which is the flat-printed grammar the brief asks for.
+
+**Contrast cost, and how it is paid.** The warmer ground drops text contrast by ~0.5:1.
+`ink-3` on `--color-field` is 3.9:1 — below AA for the 13px text it carries — so **inside
+the field, secondary text steps up from `ink-3` to `ink-2`** (5.7:1). That is a contrast
+fix, not a second emphasis level: the field's own small print is simply one step darker
+than the same print on paper. `signal` on `--color-field` is 4.1:1, which is marginal for
+the 12px `Start with this` cue; it is carried for M2.5 and listed as a calibration item.
+
+`--color-signal-sunk` (`#F5DED8`) is **removed from `index.css`** in this same pass — it
+never had a consumer, and the Direction 3 field is `--color-field`, not a signal tint. If
+a real consumer appears later, add it back *with* the component that uses it.
 
 **Contrast, checked not assumed.** Against `--color-paper`: `ink-2` 6.5:1, `ink-3`
 4.6:1, `signal` 4.8:1 — all clear AA for normal text, which matters more here than
 usual because durations are 13px and get read at arm's length in bad light. Paper on
-`signal` (the CTA) is 5.6:1. Every stage tint clears 3:1 as a non-text mark. `--color-rule`
-is a printed hairline at 1.5:1 and is deliberately below that bar: nothing load-bearing
-may depend on it alone, which is why structural edges are 2px `ink`.
+`signal` (the CTA) is 5.6:1. Against `--color-field`: `ink` 15:1, `ink-2` 5.7:1 (the
+field's body and secondary text), `signal` 4.1:1 (marginal, 12px only). Every stage tint
+clears 3:1 as a non-text mark. `--color-rule` is a printed hairline at 1.5:1 and is
+deliberately below that bar: nothing load-bearing may depend on it alone, which is why
+structural edges are 2px `ink`.
 
 The first draft of this palette used `#8A877E` for `ink-3` (3.1:1) and `#D8371B` for
 signal (4.0:1). Both failed. Recorded because the failure mode is silent — they look
@@ -346,10 +492,12 @@ should be revisited **before** any regional-language content is introduced; a
 Devanagari-capable face or a script-aware font stack is a separate asset decision at that
 point. M2.5 ships the Latin subset unchanged.
 
-**Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base.
+**Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base, plus **one figure
+at 44** reserved for the wait-window numeral.
 
 | Role | Size / weight / width |
 |---|---|
+| Wait-window numeral | 44 / 600 / wdth 100, tabular — the free-time figure, § WaitWindowBlock. The one large number on the Plan. Not duration-scaled — `12` and `60` render at the same size. Whether 44px over-weights a short wait is a calibration item (§ Still open 5a); the fix, if any, is the one scale value, never duration-dependent type. |
 | Recipe title | 30 / 600 / wdth 88 — condensed, like a destination on a board |
 | Screen title (picker) | 22 / 600 / wdth 100 |
 | Stage label | 18 / 600 / wdth 112 — expanded; this is the signage voice |
@@ -362,13 +510,17 @@ point. M2.5 ships the Latin subset unchanged.
 | Time ruler | 12 / 500 / wdth 100, tabular, `ink-3` |
 | Timer digits (M3) | 44 / 300 / wdth 88, tabular |
 
+The wait-window numeral and the M3 timer digits share a size and nothing else: the
+numeral is a heavy tabular figure on paper (a fact on a board), the timer is a light
+condensed one (a clock face). Two different jobs that happen to land at 44px.
+
 `font-variant-numeric: tabular-nums` on every duration, clock value and timer, or the
 digits jitter. Line length stays under 80 characters — the 390px column at a 16px gutter
 gives ~55 at 15px.
 
 **No tracked-out ALL-CAPS anywhere.** It is a generated-design tell and it costs
-legibility at 12–13px on a screen with steam on it. Section labels are sentence case at
-weight 600: `While this cooks`, `Dough`, `Frying`, `Glaze`.
+legibility at 12–13px on a screen with steam on it. Section and stage labels are sentence
+case at weight 600: `Cooking plan`, `Ingredients`, `Prep`, `Cook the base`, `Finish`.
 
 ## Radius and elevation
 
@@ -404,12 +556,15 @@ design system already owns: **a column.**
   page, which is the whole point of a timetable.
 - Meta pairs become aligned fields separated by space and value contrast, not
   punctuation: `3 servings` `34 min total`.
-- Capacity keeps its meaning and loses its dot: `9 min prep` in `ink`, `fits in 12 min`
-  in `ink-3`.
+- The wait window's old capacity line (`9 min prep · fits in 12 min`) is gone entirely in
+  Direction 3 — replaced by the subject line, the numeral and the caption (§
+  WaitWindowBlock). The `·`-string retirement stands; there is simply no longer a line to
+  re-punctuate.
 
-**The copy rules in `CLAUDE.md` are untouched by this.** Capacity never consumption;
-ranked never flat; "9 min prep / fits in 12 min" survives verbatim minus the separator.
-Only punctuation and alignment change.
+**The copy *principles* in `CLAUDE.md` § "Product copy rules" are untouched and still
+govern:** capacity never consumption, ranked never flat, no UI to explain the concept.
+The specific `9 of 12` / `9 min prep · fits in 12 min` examples there illustrate those
+principles; Direction 3 satisfies all three by other means.
 
 ## Arrows and chevrons
 
@@ -418,7 +573,7 @@ affordance, never as ornament.**
 
 | Where | M2 | M2.5 |
 |---|---|---|
-| Between capacity chips | `›` | removed — they're a measured relationship, not a sequence |
+| Between capacity chips | `›` | n/a — the chips themselves are retired (§ WaitWindowBlock) |
 | End of a window task row | `›` | removed — see below |
 | Recipe picker rows | `›` | removed; the recipe's total time takes the duration column |
 | Collapsed stage summary | `Chop onion → Chop tomato` | **kept.** Here `→` means "then", and a collapsed card has no vertical axis to carry it. |
@@ -426,8 +581,11 @@ affordance, never as ornament.**
 
 Removing the row chevron takes an affordance away, and `DESIGN_SYSTEM.md` has always
 said window tasks "must read as tappable, not as recipe notes." The replacement is a
-full-width hit area, a `paper-sunk` pressed state, and the duration column reading as a
-control column. **This is the one decision here most likely to be wrong.**
+full-width hit area, a pressed state one ground-step down from the row's own surface
+(`paper-sunk` for a row on paper; for a row inside the wait-window field, a step *below*
+`--color-field`, not `paper-sunk`, which is lighter than the field), and the duration
+column reading as a control column. **This is the one decision here most likely to be
+wrong.** The exact pressed value inside the field is a Phase C implementation detail.
 
 **The test, stated so it can be failed:** during the person test (`GRAPH_VIEW.md` § 8 and
 the M2 exit test), if **fewer than 4 of 5 participants independently identify a
@@ -510,54 +668,127 @@ the rail, they no longer claim to agree.
 
 ### WaitWindowBlock — the signature component
 
-Visually attached to its host stage card, not floating as a separate "tips" section. That
-attachment is what makes the concept legible; it was the main fix from the design review
-and it does not change.
+Attached to its host stage, not floating as a separate "tips" section — that attachment
+is what makes the concept legible and it does not change. In Direction 3 the block is a
+**full-bleed field on `--color-field`** (§ *`--color-field`* has the derivation and the
+contrast handling): it runs to the device edges while its content stays on the 16px page
+margin, so the ground changes but the text alignment does not. No border, no radius, no
+shadow — a slab, a different surface, a place the plan steps onto for a while. Secondary
+text inside it is `ink-2`, one step darker than the same print on paper, so it clears AA
+against the warmer ground.
 
 ```
-While this cooks
-9 min prep   fits in 12 min
-──────────────────────────────────────────
-[ 12 min cooking ]   [ 9 min prep ]
-──────────────────────────────────────────
-▎ Cube capsicum                      5 min
-  Start with this one
-▎ Cube paneer                        2 min
-▎ Make kadai masala                  2 min
-──────────────────────────────────────────
-All this prep fits inside the 12 min cook
+                                              ← field bleeds to device edge
+  Cook tomato base
+  until oil pools at the edges, masala pulls away
+
+  12
+  minutes, checking now and then
+
+  Cube capsicum                          5 min
+  Start with this
+  ──────────────────────────────────────────
+  Cube paneer                            2 min
+  ──────────────────────────────────────────
+  Make kadai masala                      2 min
+
+  Just enough — start as soon as the base is on
+                                              →
 ```
 
-The `▎` is the borrowed task's own stage tint, as a 3px lane rule. Footer switches on
-`window.slack_min`: `0` → "All this prep fits inside the N min cook"; otherwise "Fits
-with N min to spare" — set in `ink-2` on `paper-sunk`, no green.
+Top to bottom:
 
-> **The header ("fits in N min") and this footer ("N min to spare") can fail to add up.**
-> They are measured against different quantities. See the sign-off blocker at the top of
-> this document. Do not reword either line to hide the discrepancy — the resolution is a
-> scheduler / product-contract decision.
+- **Subject line** — the host node's `label`, verbatim (`Cook tomato base`). 15/600
+  `ink-2`. This is where the host's identity lives, so the numeral caption below does not
+  have to carry it.
+- **Doneness cue** — the host's `doneness_cue` where it has one, `until …`, 13/400
+  `ink-2`. Omitted when the host has none (`soak_rice` has `doneness_cue: null`).
+- **The numeral** — the host's `duration_typical`, 44/600 tabular, `ink`. Digits only.
+  The one large figure on the Plan. Not `--color-signal` — nothing in the field is signal
+  except the `Start with this` cue.
+- **The caption** — see *The wait-window caption* below. 13/400 `ink-2`.
+- **Ranked tasks** — each a full-width row, name 15/500 left, `duration_typical` in the
+  right-aligned tabular column. Led by a 3px bar in the task's **home-stage** tint (the
+  `▎` — this is how the eye reads it as borrowed from elsewhere). Rows are `≥ 44px` and
+  separated by a `1px --color-rule` hairline.
+- **First-task emphasis** — the first row's name goes to weight 600 and gets a
+  `Start with this` cue in `--color-signal` beneath it. **Suppressed entirely when the
+  window has one task** — ranking a list of one is noise. (Closes the M2 open item
+  "`Start with this one` on a single-task window ranks a list of one".)
+- **The footer** — one qualitative line, `ink-2`, switched on `window.slack_min`. It
+  states **no second number**, which is what keeps the block free of the `2 + 7 ≠ 12`
+  contradiction. Wording is category B (calibration) — it has to read correctly for both
+  a 0-slack window and a 51-minute one; see *Still open*.
 
-Rules, unchanged from M2 except in punctuation:
-- Header text is **capacity**, never consumption. Never `"9 of 12 min used"` — the user
-  hasn't started.
-- The first task is visually primary (`Start with this one`), the rest secondary. A flat
-  list of three equal tasks makes the user ask "which one?"
-- Emoji (🔥 ✓ ⚡) are removed. They were the only icons in the product and read as
-  decoration in a system that is otherwise flat ink.
+**Orphan-absorb.** When a stage's only content is its hosted field — the host was pulled
+into the field as its subject, and no inline task is left — the field **absorbs the stage
+header** rather than leaving `Rise` stranded on paper above an empty stage. The stage
+title renders on the field ground; the ordinal stays in the gutter on paper. When the
+stage still has an inline task before the field (Kadai's `Sauté onion`), the header stays
+on paper and the field follows normally.
 
-### Capacity chips
-Two chips inside the wait-window block: `12 min cooking` and `9 min prep`, both fed from
-the plan (`host.duration_typical` and `window.used_min`). Chips, not bars — anything
-bar-shaped reads as progress on a screen shown *before* cooking starts, which is the one
-thing this component must not do.
+**One field per scheduler window.** No merging of adjacent windows, no cap-and-demote of
+a fourth. Both are untested layout logic and are deferred to M2.75 against a real corpus.
 
-Known limitation, unchanged in M2.5: the chips carry no magnitude, so a window at 75%
-used (Kadai Paneer, 9 in 12) and one at 5% (Donuts, 3 in 60) render identically. Fixing
-that means finding a non-bar way to show fullness. Deferred, listed below.
+**Retired from the M2 / s5 version:** the `While this cooks` eyebrow; the `9 min prep ·
+fits in 12 min` capacity line; the two capacity chips (`12 min cooking` / `9 min prep`);
+the numeric `Fits with N min to spare` footer; the 🔥 ✓ ⚡ emoji. The chips carried a
+known magnitude problem (75%-full and 5%-full rendered identically) that the single
+numeral sidesteps — the numeral is the *duration*, and the caption plus footer carry how
+full it is in words.
+
+#### The wait-window caption
+
+The line under the numeral. It appears on **every** wait window in the product, so it has
+to be true for every host without exception.
+
+It **derives from the host's `attention`** — the field `COOKING_GRAPH.md` § 4.2
+designates as the single authority on whether the cook is free:
+
+| host `attention` | caption | reads |
+|---|---|---|
+| `unattended` | `minutes hands off` | the cook is free for the whole interval |
+| `periodic` | `minutes, checking now and then` | the cook must return every couple of minutes (`× 0.75` gating already assumes this) |
+
+**The caption is deliberately process-neutral. It asserts only involvement, never
+temperature or process** — because the graph cannot support a temperature claim.
+`while this cooks`, `while this rests`, `while this proves` are all retired: each is a
+statement the graph has no field to back.
+
+**`station` was checked across all five fixtures and rejected as a heat discriminator:**
+
+| fixture · host | `attention` | `station` | actually hot? |
+|---|---|---|---|
+| homemade-donuts · `first_rise` | unattended | `none` | no (dough, room temp) |
+| chicken-biryani · `soak_rice` | unattended | `none` | no (cold water) |
+| strawberry-shortcake · `bake_shortcakes` | unattended | `oven` | yes |
+| kadai-paneer · `cook_tomato_base` | periodic | `burner` | yes |
+| chicken-biryani · `cook_chicken` | periodic | `burner` | yes |
+
+`station: "none"` conflates "cold rest" with "unstated", and `unattended` spans both a
+hot oven bake and a room-temperature rise. There is no sound heat signal in the schema,
+so the copy does not attempt one.
+
+This needs **no `CookingGraph` schema change.** `attention` is already on `Node`;
+`derive.ts` already carries `attention` through for borrowed tasks; the host's `attention`
+is the same kind of categorical lookup. If deriving the caption ever turns out to need a
+schema change, that is a product decision — stop and raise it, do not make it.
+
+`CLAUDE.md` § Vocabulary is updated to match: the **Parallel task** row no longer mandates
+`while this cooks` as the user-facing phrase, and points here.
 
 ### PrimaryCTA (M2.5)
 Full-width, fixed above the safe area, 52px tall, `--color-signal`, radius 2px; exactly
 one on screen at a time. Unchanged from M2 in structure.
+
+**In M2.5 it is signal red and inert.** The label is `Start Cooking`; tapping does
+nothing, because cooking mode is M3. This is deliberate — a grey disabled button was
+tried in s5 and left the Plan with *no* signal mark at all, which was a measurable step
+down from the M2 baseline (whose CTA is a full, live bar). The screen needs its one
+signal element. The person-test script must carry an explicit caveat: **the most
+prominent element on screen doing nothing may pull a tester's attention to the dead
+button and away from the hierarchy under test** — feedback caused by the inert CTA is not
+evidence the hierarchy is wrong.
 
 ## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
 
@@ -572,12 +803,37 @@ resurrect a general-purpose green).
 
 ### Timer digits and timer behaviour (M3)
 
-- **Timer digits.** Type scale row: 44 / 300 / wdth 88, tabular. The one place the scale
-  goes large.
+- **Timer digits.** Type scale row: 44 / 300 / wdth 88, tabular. Shares a size with the
+  wait-window numeral and nothing else — see § Type.
 - **Timer · ParallelTaskDetail.** Unchanged from M2 in structure. **Store the absolute
   end timestamp, not a countdown integer** — recompute remaining on every render and on
   `visibilitychange`. Phones sleep. (This storage rule is a `CLAUDE.md` non-negotiable and
   applies whenever the timer is built.)
+
+### Authored wait phrase (M2.75/M3) — the caption's upgrade path
+
+The `attention`-derived caption (§ WaitWindowBlock) is the *smallest correct* contract,
+not the *best possible* one. The better version, deferred on scope rather than rejected on
+merit:
+
+> A nullable `Node.wait_phrase: str | None`, authored by the extractor at import, giving
+> the window a per-recipe voice — `while the dough rises`, `while the rendang simmers`,
+> `while the shortcakes bake`. `attention` describes involvement, not process; a phrase
+> written against the actual dish is warmer and more specific than anything derivable from
+> the schema, and the Direction 3 studies were drawn with exactly this copy.
+
+Two questions it must answer that M2.5's version does not have to:
+
+1. **The fallback.** What the caption reads when `wait_phrase` is null — the
+   `attention`-derived line is the natural floor, so this upgrade is additive, not a
+   replacement.
+2. **Non-authored imports.** Link-extracted (Schema.org) and search-derived recipes
+   arrive without authored prose. Either the extractor synthesises a phrase from the host
+   label, or those recipes fall back to (1). This is a `M4` import-pipeline decision, not
+   a rendering one.
+
+Cost when picked up: schema field + all five golden graph fixtures + the extraction
+prompt + likely a new invariant. Not an M2.5 convenience.
 
 ## Motion
 
@@ -620,26 +876,34 @@ Documented so they don't come back:
 | ALL-CAPS eyebrows | Retired. Sentence case at 13/600. |
 | Middle-dot meta | Retired. Replaced by a right-aligned tabular duration column. |
 | Chevrons and arrows | Arrows only where they encode a dependency. All affordance glyphs removed. |
-| Typography | Archivo variable, self-hosted, ≤55KB, `font-display: optional`. Six-step scale. |
+| Typography | Archivo variable, self-hosted, ≤55KB, `font-display: optional`. Six-step scale plus one 44px figure. |
 | Stage identity | Kept, but re-derived as six equal-value low-chroma tints applied as a 3px lane rule. Never red. |
 | Is a node a card | No — a bar on a time axis. Map grammar only; the Plan view stays rows. |
 | Stage rail | Stays **ordinal**, not start time. Ordinal is "where am I", the time axis is "when" — separate jobs. Treatment goes quiet: neutral ink number, tint moves to the lane rule. |
 | `→` on button text | Dropped in M2; stays dropped. |
+| Plan-view composition | **Direction 3, "Two Kinds of Minute"** (§ Register). The wait window is a full-bleed field with one large numeral; hands-on work is plain rows. Locked. |
+| Plan-view warmth degree | No longer an open dial. Direction 3's composition in this file's tokens, held to the M2 baseline floor at every render checkpoint. |
+| Wait window "assumes its host is hot" | Caption derives from `attention`, process-neutral (§ WaitWindowBlock). `station` checked across fixtures and rejected. |
+| `2 + 7 ≠ 12` arithmetic | Downgraded from blocker to known issue (§ Two layers). Direction 3's composition removes both offending lines; nothing changed in the scheduler. |
+| `Start with this` on a single-task window | Rank cue suppressed when the window has one task (§ WaitWindowBlock). |
+| Capacity chips carry no magnitude | Chips retired. The single numeral is the duration; fullness is carried by the caption and footer in words. |
+| Wait-window field surface too faint | `--color-field` (`#E7DCC3`, the study's field value) replaces `--color-paper-sunk` for the field — ΔE 13 from paper vs 4.3. The only palette change Direction 3 makes. In-field secondary text steps `ink-3` → `ink-2` for AA. See § *`--color-field`*. |
+| `--color-signal-sunk` | Removed. Dropped from `index.css` in the M2.5 implementation pass. |
+| `GRAPH_VIEW.md` §5 dashed connectors | Contradiction resolved — §5 updated to defer connector grammar to this file's *Connector language* block. No dashes. |
 
-## Still open
+## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
-1. **The wait window's numbers don't reconcile (2 + 7 ≠ 12).** This is an **M2.5 sign-off
-   blocker** — see the *M2.5 sign-off blocker* section at the top of this document. Not
-   restated here.
-2. **The wait window assumes its host is hot.** Homemade Donuts renders "while this
-   cooks" and "60 min cooking" over dough proving at room temperature. Copy tied to
-   scheduler semantics, not a design fix.
-3. **`Start with this one` on a single-task window** (Chicken Biryani's second) ranks a
-   list of one.
-4. **Capacity chips carry no magnitude** — 9-in-12 and 3-in-60 look identical.
-5. **Do rows still read as tappable without a chevron?** Falsifiable at the M2 person
-   test.
-6. **`Stage.color_key`** — still unused by the renderer; `stageColor` assigns by position
-   in `graph.stages`. Remove at M4 or write down why it stays.
-7. **The Plan view still has no time dimension.** By design — the bar grammar is the
-   Map's. Revisit only if the M2.75 person test suggests the Plan needs it too.
+| # | Item | Class | Note |
+|---|---|---|---|
+| 1 | **Do wait-window rows read as tappable without a chevron?** | B | Falsifiable at the person test (§ Arrows and chevrons has the pass condition). If it fails, a `+` or a visible control returns — not the `›`. |
+| 2 | **Wait-window footer wording.** One line must read correctly for a 0-slack window and a 51-minute one. | B | Provisional in the studies (`Just enough — start as soon as the base is on` / `Nothing else to do until the dough doubles`). Calibrate against both rendered. |
+| 3 | **Field-qualification threshold — which windows earn the full-bleed field.** | B | s6 explored `capacity_min ≥ 8`, `used_min ≥ 3`; both are guesses. The field-vs-inline "cliff" (two recipes 2 min apart look very different) is the real question. Calibrate against a real corpus in M2.75; the fix may be "field always, prominence scales". |
+| 4 | **Non-windowed unattended time has no visual mark** — a 25-min proof and a 3-min chop render the same. | B/C | Deliberate for now; the tan edge marks that once distinguished them "implied a system that wasn't there". Revisit if the person test shows it matters. |
+| 5 | **Multi-window recipes put more than one 44px numeral on screen.** | B | Reads better than feared (different stages, different scroll positions). Restate the principle as "one large number *per window*". No fixture has this; a stress study does. |
+| 5a | **The 44px numeral is not duration-scaled — `12`, `20` and `60` get identical weight.** | B | The large numeral is Direction 3's focal treatment for the wait window and stays; the open question is only whether 44px gives a *short* wait disproportionate presence. Test with real people across short and long waits (12 / 20 / 60 min). **Do not solve with duration-dependent typography** — if it needs adjusting, adjust the single scale value. |
+| 5b | **`signal` on `--color-field` is 4.1:1** — marginal for the 12px `Start with this` cue. | C | Carried for M2.5. Fix if the person test shows it: bump the cue to 13px, or darken the field-local signal use. Not a token change. |
+| 5c | **Pressed state for a task row inside the field.** | C | `paper-sunk` is *lighter* than `--color-field`, so the row's pressed state can't be the on-paper one. Needs a step below `--color-field`. Phase C detail. |
+| 6 | **`Stage.color_key`** — unused by the renderer; `stageColor` assigns by position in `graph.stages`. | C | Remove at M4 or write down why it stays. |
+| 7 | **The Plan view has no time dimension.** | A (settled) | By design — the bar grammar is the Map's. Revisit only if the M2.75 person test says the Plan needs it too. |
+| 8 | **Authored `wait_phrase`** — the caption's better version. | A (deferred) | Scope, not merit. See § *Authored wait phrase*. |
+| 9 | **`CookingGraph` cannot express "hot" vs "passive rest".** | A (deferred) | The caption is process-neutral because of this. A real heat field is an M4 schema decision if it is ever wanted; nothing in M2.5–M3 needs it. |

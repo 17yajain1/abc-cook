@@ -141,7 +141,7 @@ Mixing these up in code or copy is how the product gets muddy.
 | **Stage** | A named group of nodes: Prep, Cook Base, Add Veggies, Finish | Yes |
 | **Node** | One unit of work in the graph | No |
 | **Wait window** | An unattended interval that can host prep work | No |
-| **Parallel task** | A prep node the scheduler placed inside a wait window | Yes, as "while this cooks" |
+| **Parallel task** | A prep node the scheduler placed inside a wait window | Yes — surfaced under the wait-window field; wording derives from the host's `attention` (`DESIGN_SYSTEM.md` § WaitWindowBlock), **not** a fixed "while this cooks" (that assumes heat the graph can't confirm) |
 | **Station** | A contended resource: burner, oven, counter, sink | No |
 
 ## Product copy rules
