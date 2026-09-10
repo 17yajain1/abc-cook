@@ -19,8 +19,10 @@ export function PlanScreen({
   // `relative` matters: the CTA below is absolutely positioned, and without a positioned
   // ancestor it resolved against the viewport and escaped the 390px column at any wider
   // width. Invisible at exactly 390px, which is why M2 shipped it.
+  // `overflow-x-clip`: the wait-window field bleeds past the content box on purpose; clip
+  // keeps that from ever becoming a horizontal scroll on a sub-390 screen.
   return (
-    <div className="relative flex h-full flex-col bg-paper">
+    <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
       <RecipeHeader plan={plan} />
 
       <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
@@ -72,15 +74,20 @@ export function PlanScreen({
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 border-t border-rule bg-paper px-5 pb-6 pt-4">
-        {/* Disabled, so deliberately not signal — a dead control must not wear the
-            colour reserved for the live one. M3 turns this signal when it works. */}
+      {/* z-20 keeps this fixed footer above the stage ordinals, which carry a z-10 of
+          their own so they stay legible where the wait-window field bleeds across the
+          gutter. */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-rule bg-paper px-5 pb-6 pt-4">
+        {/* Signal, and the label is just "Start Cooking" (DESIGN_SYSTEM.md § PrimaryCTA).
+            It does nothing until M3 — that limitation lives in the person-test caveat,
+            not on the button — so it is aria-disabled with no handler rather than a
+            greyed `disabled`, which would dim the one signal mark on the screen. */}
         <button
           type="button"
-          disabled
-          className="w-full cursor-not-allowed rounded-control border border-rule bg-paper-sunk py-3.5 text-center text-[18px] font-semibold text-ink-3"
+          aria-disabled="true"
+          className="flex h-[52px] w-full cursor-default items-center justify-center rounded-control bg-signal text-[18px] font-semibold text-paper"
         >
-          Start Cooking (coming in M3)
+          Start Cooking
         </button>
       </div>
     </div>

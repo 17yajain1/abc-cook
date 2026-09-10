@@ -22,13 +22,19 @@
   --color-paper: #efeeea;
   --color-paper-sunk: #e4e2dc;
 
+  /* The wait-window field surface (docs/DESIGN_SYSTEM.md § WaitWindowBlock). Warmer and
+     deeper than paper-sunk on purpose: against paper-sunk (dE 4.3) the field did not read
+     as a distinct place; this is the Direction 3 study's field value, dE 13 from paper,
+     carried by warmth (b* +11) not just lightness. Flat surface only — no border, no
+     shadow. */
+  --color-field: #e7dcc3;
+
   --color-ink: #000000;
   --color-ink-2: #55534c;
   --color-ink-3: #6e6b62;
   --color-rule: #c9c5bb;
 
   --color-signal: #c42f16;
-  --color-signal-sunk: #f5ded8;
 
   --font-sans:
     'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
