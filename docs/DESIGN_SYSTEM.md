@@ -177,13 +177,23 @@ gradients, shadows, and UI added merely because empty space felt unfinished.
 That last one is worth stating on its own. Empty space on this screen is usually correct
 — on a plan whose whole subject is unoccupied time, it is frequently the content.
 
+**One knowing exception, recorded rather than hidden.** Each stage sits on its own
+18%-alpha tint ground, which is a card treatment and therefore on the list above. It is
+kept because the stage list is the screen's armature: on plain paper the six stages read
+as one undifferentiated column of rows, and rule-and-space hierarchy did not fix it in
+the `4c` / `4d` pair. The ground is flat — no radius, no border, no shadow — so it is a
+tinted region, not a floating object. It runs behind **everything the stage contains**:
+the header, its task rows, and any wait-window panel nested inside it. A ground that
+stops short of the stage's last piece of content turns the stage into a header chip and
+promises an object the layout doesn't deliver.
+
 ### The M2 baseline is a warmth floor
 
 `M2's Kadai Paneer screen is the minimum acceptable warmth and liveliness.` It is a
 **floor, not a ceiling and not a target.** Several things visible in it are retired by
-this document and must not be reproduced: filled circular numbered stage badges,
-decorative emoji and illustration, the `›` between capacity chips, the middle-dot meta
-string, and the green CTA. Clearing those is the starting point, not the finish line.
+this document and must not be reproduced: decorative emoji and illustration, the `›`
+between capacity chips, the middle-dot meta string, and the green CTA. Clearing those is
+the starting point, not the finish line.
 
 The obligation: **M2.5 must not read colder or less alive than that screen**, using
 M2.5's vocabulary. This is not an aesthetic preference — it is the specific failure that
@@ -222,9 +232,11 @@ different amounts of austerity.
   column**.
 - **Wait windows stay attached to their host stage** (§ WaitWindowBlock), never floating
   as a separate "tips" section.
-- **Stage identity is carried by the ordinal, the stage-title weight, whitespace, and the
-  3px stage-tint lane rule** (§ Stage identity). Not by a filled badge, not by a hue on
-  the title. This is structural and does not change.
+- **Stage identity is carried by a filled ordinal badge in the stage tint, the
+  stage-title weight, and the stage's tinted ground** (§ Stage identity). The 3px lane
+  rule is retired: with a badge and a tinted ground the stage's colour was already
+  stated twice, and at 3px the lane read as a blob rather than a rule. The title itself
+  still takes no hue.
 - The Map's grammar — the minute axis, proportional bar heights, hollow-vs-filled marks,
   the connector language — **does not transfer to the Plan automatically.** Anything the
   Plan borrows from it is a deliberate, named decision, not a default.
@@ -240,15 +252,39 @@ a card — with the free time stated once, large.
 
 Locked, and not reopened without a render that demonstrates a real contradiction:
 
-- **The wait window is a full-bleed field**, keyed to a scheduler window in `plan.windows`
-  — **never to `attention`** (that is the zebra rule: a screen with many unattended
-  stretches must not become a stripe of fields, and keying to real windows prevents it by
-  construction). It bleeds to the device edges while its content stays on the page
-  margin. Ground is `--color-field` — warm and deeper than the page, a slab with no
-  border or shadow (see § *`--color-field`*). Height is content-driven, never
-  proportional — a 60-minute window is not ten screens tall.
-- **One large numeral** — the host's `duration_typical` — is the only place on the screen
-  a number is allowed to be large. It answers "how long have I got?".
+- **The wait window is a panel nested inside its host's stage**, keyed to a scheduler
+  window in `plan.windows` — **never to `attention`** (the zebra rule: a screen with
+  many unattended stretches must not become a stripe of fields, and keying to real
+  windows prevents it by construction). The host node stays an **ordinary task row** of
+  its stage; the borrowed work sits in a panel directly beneath that row, inset 12px on
+  both sides inside the stage's own tint ground, on `--color-field` with a 2px
+  stage-tint edge down its leading side. Flat: no radius, no shadow. Height is
+  content-driven, never proportional — a 60-minute window is not ten screens tall.
+
+  **Why containment, and not a place.** Direction 3 drew the field as a full-bleed slab —
+  "a place the plan steps onto" — and the composition was coherent on plain paper. Once
+  stages became tinted grounds it stopped being coherent twice over: a full bleed was the
+  only element on the screen ignoring the grid, and an inset sibling card read as a band
+  butted *after* the stage rather than work happening *inside* it. Nesting is what the
+  scheduler actually models — these tasks run within that host's duration — so nesting is
+  what the screen should draw. The field stays the most saturated surface on screen
+  (`--color-field` `#E7DCC3` against the 18% stage tints); that ranking is the point.
+
+  **Orphan-absorb still applies.** When the panel is the stage's only content, it renders
+  directly under the stage header with no inline row above it. The header is not absorbed
+  into the panel any more — the stage ground already contains both.
+- **The panel states the relationship in words, not a figure.** It is headed
+  `Meanwhile, do these` (15/600 `ink`) with a second line derived from the host's
+  `attention` — `checking the pan now and then` for `periodic`, `your hands are free`
+  for `unattended` (13/400 `ink-2`). No display number anywhere in the panel.
+
+  Two figures were tried and both failed for the same reason. The 44px numeral read as a
+  poster number and spent display scale on the host's `duration_typical`, which the
+  duration column already carries one row above. Replacing it with a stated line
+  (`12 min free`) failed too: it restated that same duration a third time, and a bare
+  quantity cannot say *why* the free time matters. **What the cook needs is not the size of
+  the gap but what to put in it**, and containment plus a lead-in says that without a
+  number at all.
 - **The ranked first task** gets weight and a `Start with this` cue in `--color-signal`;
   the rest are secondary. Suppressed entirely on a single-task window — ranking a list of
   one is noise.
@@ -336,6 +372,12 @@ the field, secondary text steps up from `ink-3` to `ink-2`** (5.7:1). That is a 
 fix, not a second emphasis level: the field's own small print is simply one step darker
 than the same print on paper. `signal` on `--color-field` is 4.1:1, which is marginal for
 the 12px `Start with this` cue; it is carried for M2.5 and listed as a calibration item.
+
+**The same step-up applies to the stage grounds.** On an 18% stage tint, `ink-3` (13px
+durations, secondary lines) measures 3.6–3.8:1 across the six tints and fails AA;
+`ink-2` measures 5.2–5.4:1 and passes. So **inside a tinted stage ground, secondary text
+is `ink-2`** — the same contrast fix as the field, not a second emphasis level. On plain
+paper `ink-3` is unchanged.
 
 `--color-signal-sunk` (`#F5DED8`) is **removed from `index.css`** in this same pass — it
 never had a consumer, and the Direction 3 field is `--color-field`, not a signal tint. If
@@ -441,8 +483,9 @@ a quiet bump.
 
 **The treatment differs by view, and that is deliberate.**
 
-- **Plan view — a 3px lane rule.** Never a filled badge or a dot. The Plan view is the
-  quiet one; identity is a margin note there.
+- **Plan view — a 22px filled circular badge in the stage tint**, ordinal in `paper`,
+  at the head of the stage. Identity is not a margin note on this view: the stage list
+  is the screen's armature and the badge is what makes it one.
 - **Map view — the bar's fill.** A node bar is filled with its own stage tint. Tried as a
   3px strip on the bar's top edge first, and at true size it vanished: a 3px line on a
   152px bar reads as a rendering artifact, not as identity. The bar has area, so the area
@@ -492,12 +535,10 @@ should be revisited **before** any regional-language content is introduced; a
 Devanagari-capable face or a script-aware font stack is a separate asset decision at that
 point. M2.5 ships the Latin subset unchanged.
 
-**Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base, plus **one figure
-at 44** reserved for the wait-window numeral.
+**Scale** — 12 / 13 / 15 / 18 / 22 / 30, a ~1.2 ratio off a 15px base.
 
 | Role | Size / weight / width |
 |---|---|
-| Wait-window numeral | 44 / 600 / wdth 100, tabular — the free-time figure, § WaitWindowBlock. The one large number on the Plan. Not duration-scaled — `12` and `60` render at the same size. Whether 44px over-weights a short wait is a calibration item (§ Still open 5a); the fix, if any, is the one scale value, never duration-dependent type. |
 | Recipe title | 30 / 600 / wdth 88 — condensed, like a destination on a board |
 | Screen title (picker) | 22 / 600 / wdth 100 |
 | Stage label | 18 / 600 / wdth 112 — expanded; this is the signage voice |
@@ -509,10 +550,6 @@ at 44** reserved for the wait-window numeral.
 | Section label | 13 / 600 / wdth 100, **sentence case** |
 | Time ruler | 12 / 500 / wdth 100, tabular, `ink-3` |
 | Timer digits (M3) | 44 / 300 / wdth 88, tabular |
-
-The wait-window numeral and the M3 timer digits share a size and nothing else: the
-numeral is a heavy tabular figure on paper (a fact on a board), the timer is a light
-condensed one (a clock face). Two different jobs that happen to land at 44px.
 
 `font-variant-numeric: tabular-nums` on every duration, clock value and timer, or the
 digits jitter. Line length stays under 80 characters — the 390px column at a 16px gutter
@@ -654,17 +691,26 @@ keeping: **ordinal answers "where am I in the recipe?", the time axis answers "w
 this happen?", and those are two different jobs.** Duplicating temporal information into
 the stage rail would blur both. The time axis is the Map's, and it stays there.
 
-The treatment changes even though the content doesn't. M2 drew a filled circular badge in
-the stage's tint — a coloured counter that competed with the label beside it. It is now
-**quiet and structural**: the ordinal set in `ink-3` at 13/500 tabular, no fill, no
-circle, sitting at the top of the stage's 3px lane rule. The rail carries the stage tint;
-the number does not.
+M2 drew this badge too, and drew it wrong: the number came from render position
+(`position={i + 1}`) while the colour came from the graph index (`stage.index`), so on
+Chicken Biryani stage ① was drawn in stage-1's tint and the two counters could never be
+read together. **Both must derive from the same ordered stage list.** The badge returns;
+the defect does not.
 
-This also dissolves a real M2 defect rather than restyling it. The badge *number* came
-from render position (`position={i + 1}`) while the badge *colour* came from the graph
-index (`stage.index`), so on Chicken Biryani stage ① was drawn in stage-1's tint and the
-two counters could never be read together. With the number in neutral ink and the tint on
-the rail, they no longer claim to agree.
+**Stages open expanded** (M2.5 decision — previously an unrecorded `defaultExpanded`
+prop in `PlanScreen.tsx`). The collapsed state stays specified and reachable; it is not
+the default. Resolves § Authority conflict 7.
+
+A stage that hosts a wait window states its free minutes as a **second value in the
+duration column when the stage is collapsed** — `12 free` then `~17 min`, two aligned
+values, no middle dot (the `·`-string retirement in § Metadata and punctuation applies
+here too). **Not when it is expanded:** the panel below is then visible and its rows
+carry the same information, so the figure is a second statement of one fact. The rule is
+general — *state free time where the detail is not visible, and never twice on one
+screen.*
+
+It is set in `ink-2`, never in the stage tint: the tints clear 3:1 as **non-text marks**
+only, and measured as 13px text on their own 18% ground they run 3.2–4.1:1.
 
 ### WaitWindowBlock — the signature component
 
@@ -708,9 +754,14 @@ Top to bottom:
   except the `Start with this` cue.
 - **The caption** — see *The wait-window caption* below. 13/400 `ink-2`.
 - **Ranked tasks** — each a full-width row, name 15/500 left, `duration_typical` in the
-  right-aligned tabular column. Led by a 3px bar in the task's **home-stage** tint (the
-  `▎` — this is how the eye reads it as borrowed from elsewhere). Rows are `≥ 44px` and
-  separated by a `1px --color-rule` hairline.
+  right-aligned tabular column. Led by a 3px bar in the task's **home-stage** tint
+  **only when the window holds tasks from more than one home stage.** In both shipped
+  fixtures every task in a window comes from one stage, so the bar was one colour
+  repeated, carrying no information and failing this document's own "remove it and lose
+  nothing" test. Drawn conditionally, the mark means something when it appears. (The
+  panel's own 2px leading edge is the *stage's* tint and is a different mark — it says
+  "this work sits inside this stage's host", not "this task came from elsewhere.") Rows
+  are `≥ 44px` and separated by a `1px --color-rule` hairline.
 - **First-task emphasis** — the first row's name goes to weight 600 and gets a
   `Start with this` cue in `--color-signal` beneath it. **Suppressed entirely when the
   window has one task** — ranking a list of one is noise. (Closes the M2 open item
@@ -729,6 +780,18 @@ on paper and the field follows normally.
 
 **One field per scheduler window.** No merging of adjacent windows, no cap-and-demote of
 a fourth. Both are untested layout logic and are deferred to M2.75 against a real corpus.
+
+**A task row is titled by its task; the doneness cue is always its second line.** Cue,
+label, duration — that order does not vary, on inline rows and on the panel's subject
+line alike.
+
+Leading with the cue was tried (`6a`, `7a`) on the argument that the cue is the valuable
+information — a cook cannot guess `until oil pooling at the edges, masala pulling away
+from the pan`, but can guess `Cook tomato base`. The argument was right about **value**
+and wrong about **order**: a cue has no fixed length or shape, so a list of cue-led rows
+gives the eye no anchor to scan, and on a 390px column the cue wraps and pushes the
+label down out of the row's first line. The cue keeps its prominence through contrast
+and position within the row, not by taking the title.
 
 **Retired from the M2 / s5 version:** the `While this cooks` eyebrow; the `9 min prep ·
 fits in 12 min` capacity line; the two capacity chips (`12 min cooking` / `9 min prep`);
