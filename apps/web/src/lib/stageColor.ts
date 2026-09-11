@@ -13,3 +13,12 @@ export function stageColor(index: number): string {
 export function stageGround(index: number): string {
   return `color-mix(in srgb, ${stageColor(index)} calc(var(--stage-ground-alpha) * 100%), transparent)`
 }
+
+/**
+ * A Map task card's fill — the stage tint at `--map-card-alpha` (M2.75), stronger than
+ * `stageGround`'s region wash because a card has to read as a discrete object against
+ * paper, not a background region. `DESIGN_SYSTEM.md` § The Map grammar.
+ */
+export function mapCardFill(index: number): string {
+  return `color-mix(in srgb, ${stageColor(index)} calc(var(--map-card-alpha) * 100%), transparent)`
+}
