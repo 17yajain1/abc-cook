@@ -4,8 +4,8 @@ import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { derivePlan } from './derive'
 import { attentionLine, hasMultiHomeStage } from './WaitWindowBlock'
-import chickenBiryani from './__fixtures__/chicken-biryani.plan-response.json'
-import kadaiPaneer from './__fixtures__/kadai-paneer.plan-response.json'
+import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
+import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 
 const KADAI = kadaiPaneer as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse

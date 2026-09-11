@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { derivePlan } from './derive'
-import chickenBiryani from './__fixtures__/chicken-biryani.plan-response.json'
-import kadaiPaneer from './__fixtures__/kadai-paneer.plan-response.json'
-import maggi from './__fixtures__/maggi-2min.plan-response.json'
+import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
+import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
+import maggi from '@/__fixtures__/maggi-2min.plan-response.json'
 
 // Fixtures are real scheduler output, frozen by apps/api/scripts/export_web_fixtures.py.
 const KADAI = kadaiPaneer as RecipePlanResponse
