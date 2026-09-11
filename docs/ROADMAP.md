@@ -60,12 +60,17 @@ you need real screens on a real phone to react to. Not after — M3 will build a
 components on whatever direction exists at the time.
 
 Produce a design brief (palette, type, layout concept, principles), write it into
-`DESIGN_SYSTEM.md`, and apply it. Spend the boldness on the Map view; keep everything
-else quiet.
+`DESIGN_SYSTEM.md`, and apply it to the Plan view — the only view that exists at this
+point. The Map itself is out of scope: it's greenfield, and `DESIGN_SYSTEM.md` § Register
+explicitly defers its construction, and the direction's boldest commitments, to M2.75.
 
-**Exit:** put your app's Map view next to a screenshot of ReciMe and of Chart My
-Recipes. If a stranger can't tell which one is different, you haven't found a direction
-yet — you've found the default.
+**Exit:** `DESIGN_SYSTEM.md`'s principles and stage-identity treatment are visibly present
+in a rendered Plan screen at 390×844, checked row by row against the doc rather than
+approved from a token table (`CLAUDE.md` § Working style). And: M2's five-second person
+test, re-run against the M2.5 Plan, with the inert-CTA caveat in the script.
+
+(The Map-vs-competitors comparison originally written here belongs to M2.75, once the Map
+exists to compare against — moved there.)
 
 ---
 
@@ -85,7 +90,9 @@ deleted by deleting a folder.
 
 **Exit:** the five-second test from `GRAPH_VIEW.md` §8, run on five people. Three of
 five answer "what happens while the base is cooking?" correctly without being told
-anything.
+anything. **And** the exit comparison M2.5 deferred here now that the Map exists to
+compare: put it next to a screenshot of ReciMe and of Chart My Recipes — if a stranger
+can't tell which one is different, the direction hasn't landed.
 
 ---
 
