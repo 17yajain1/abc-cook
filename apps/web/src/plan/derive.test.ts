@@ -97,6 +97,22 @@ describe('derivePlan — Maggi (nothing to parallelise)', () => {
   })
 })
 
+describe('derivePlan — host node backs exactly one row and one window', () => {
+  it('every window\'s hostNodeId appears in its owning stage\'s inlineTasks exactly once', () => {
+    // The UI renders the host as an ordinary TaskRow and, right after it, the
+    // WaitWindowBlock for the window it hosts — both addressed by this same id.
+    for (const payload of [KADAI, BIRYANI]) {
+      const plan = derivePlan(payload)
+      for (const stage of plan.stages) {
+        for (const window of stage.windows) {
+          const matches = stage.inlineTasks.filter((t) => t.nodeId === window.hostNodeId)
+          expect(matches).toHaveLength(1)
+        }
+      }
+    }
+  })
+})
+
 describe('derivePlan — Chicken Biryani (two windows)', () => {
   const plan = derivePlan(BIRYANI)
 

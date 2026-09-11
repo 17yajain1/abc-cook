@@ -19,8 +19,9 @@ export function PlanScreen({
   // `relative` matters: the CTA below is absolutely positioned, and without a positioned
   // ancestor it resolved against the viewport and escaped the 390px column at any wider
   // width. Invisible at exactly 390px, which is why M2 shipped it.
-  // `overflow-x-clip`: the wait-window field bleeds past the content box on purpose; clip
-  // keeps that from ever becoming a horizontal scroll on a sub-390 screen.
+  // `overflow-x-clip`: nothing bleeds past the content box any more (the wait-window
+  // panel is fully contained in its stage's own body), but the clip stays as a guard
+  // against a sub-390px viewport.
   return (
     <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
       <RecipeHeader plan={plan} />
@@ -41,7 +42,7 @@ export function PlanScreen({
         </button>
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto pb-28">
+      <div className="no-scrollbar flex-1 overflow-y-auto pb-56">
         {plan.warnings.length > 0 && (
           <div className="mx-5 mt-4 border-l-2 border-ink bg-paper-sunk px-3 py-2 text-[13px] text-ink-2">
             {plan.warnings.map((w) => (
@@ -52,14 +53,8 @@ export function PlanScreen({
 
         {tab === 'plan' ? (
           <div className="px-5 pt-6">
-            {plan.stages.map((stage, i) => (
-              <StageCard
-                key={stage.stageId}
-                stage={stage}
-                position={i + 1}
-                isLast={i === plan.stages.length - 1}
-                defaultExpanded
-              />
+            {plan.stages.map((stage) => (
+              <StageCard key={stage.stageId} stage={stage} defaultExpanded />
             ))}
 
             {plan.savedMin === 0 && (
@@ -74,9 +69,7 @@ export function PlanScreen({
         )}
       </div>
 
-      {/* z-20 keeps this fixed footer above the stage ordinals, which carry a z-10 of
-          their own so they stay legible where the wait-window field bleeds across the
-          gutter. */}
+      {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. */}
       <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-rule bg-paper px-5 pb-6 pt-4">
         {/* Signal, and the label is just "Start Cooking" (DESIGN_SYSTEM.md § PrimaryCTA).
             It does nothing until M3 — that limitation lives in the person-test caveat,

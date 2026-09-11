@@ -48,7 +48,8 @@
 /* Stage identity. Six tints at roughly equal value (L* ~= 45) and low chroma, none of
    them red, so none competes with --color-signal. Assigned by the stage's INDEX in
    graph.stages (index % 6), never by Stage.color_key — recipes have arbitrary stages.
-   Drawn as a 3px lane rule, never as a filled badge. All clear 3:1 as non-text marks. */
+   Drawn as a filled ordinal badge plus a wash across the stage's own ground. All clear
+   3:1 as non-text marks. */
 :root {
   --stage-0: #6e7b52;
   --stage-1: #7a6a4f;
@@ -56,6 +57,10 @@
   --stage-3: #6b5f72;
   --stage-4: #7a6558;
   --stage-5: #5e6b5e;
+
+  /* The stage ground wash's alpha — the knowing card exception, § Avoid generated-design
+     tells. One home for the value so it can't drift between components. */
+  --stage-ground-alpha: 0.18;
 }
 
 html,
