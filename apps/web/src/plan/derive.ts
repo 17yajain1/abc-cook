@@ -35,13 +35,22 @@ export interface RenderWindowTask extends RenderTask {
   rankInWindow: number
 }
 
-/** A "while this cooks" block, hanging off the stage its host node belongs to. */
+/** The wait-window field, hanging off the stage its host node belongs to. */
 export interface RenderWindow {
   id: string
   hostNodeId: string
+  /** The host node's label — the field's subject line. */
   hostLabel: string
-  /** The host's own duration — the "fits in N min" figure. */
+  /** The host's own duration — the big numeral. */
   hostDurationTypical: number
+  /**
+   * The host's `attention`. Drives the caption under the numeral (DESIGN_SYSTEM.md
+   * § WaitWindowBlock): `unattended` → "hands off", `periodic` → "checking now and then".
+   * A categorical lookup, not a computed value — same as `RenderTask.attention`.
+   */
+  hostAttention: Node['attention']
+  /** The host's doneness cue, shown as the field's `until …` line. `null` when it has none. */
+  hostDonenessCue: string | null
   usedMin: number
   slackMin: number
   capacityMin: number
@@ -142,6 +151,8 @@ export function derivePlan(payload: RecipePlanResponse): RenderPlan {
       hostNodeId: window.host_node_id,
       hostLabel: host.label,
       hostDurationTypical: host.duration_typical,
+      hostAttention: host.attention,
+      hostDonenessCue: host.doneness_cue ?? null,
       usedMin: window.used_min,
       slackMin: window.slack_min,
       capacityMin: window.capacity_min,

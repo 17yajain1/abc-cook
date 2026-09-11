@@ -1,107 +1,125 @@
-import { roundMin } from '@/lib/duration'
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderWindow } from './derive'
 
 /**
- * The signature component (docs/DESIGN_SYSTEM.md). "While this cooks": the prep the
- * scheduler slotted into an unattended stretch. Rendered attached to its host stage
- * card, never floating as a separate tips section — that attachment is what makes the
- * idea legible.
+ * The signature component — Direction 3, "Two Kinds of Minute" (docs/DESIGN_SYSTEM.md
+ * § WaitWindowBlock, § Direction 3). A scheduler wait window renders as a panel nested
+ * inside its host's own stage, directly beneath the host's ordinary task row — never in
+ * place of it, never full-bleed. The panel sits on `--color-field` (warm, deeper than
+ * the stage's own tint ground) with a 2px leading edge in the host stage's own tint.
+ * Flat: no radius, no shadow beyond that edge.
  *
- * Every number here is the scheduler's: `usedMin`, `slackMin`, and the host's own
- * duration. Nothing is added up in this file.
+ * The head states the relationship in words — "Meanwhile, do these" plus a line derived
+ * from the host's `attention` — never a numeral; the host's own duration already lives
+ * one row above, in its `TaskRow`. Then the ranked borrowed tasks, then one qualitative
+ * footer line that carries no second number.
+ *
+ * Every value here is the scheduler's or the graph's, looked up by id. Nothing is added.
  */
-export function WaitWindowBlock({ window }: { window: RenderWindow }) {
+export function WaitWindowBlock({
+  window,
+  hostStageIndex,
+}: {
+  window: RenderWindow
+  /** Index in `graph.stages` of the stage hosting this window — its tint leads the
+   *  panel's edge. Distinct from a task's own `homeStageIndex` below. */
+  hostStageIndex: number
+}) {
   const [first, ...rest] = window.tasks
+  const ranked = window.tasks.length > 1
+  const showTintBar = hasMultiHomeStage(window.tasks)
+
+  const attentionText = attentionLine(window.hostAttention)
+
+  // Qualitative — no number, so it cannot contradict the host's own duration one row up.
+  // Wording is category B (DESIGN_SYSTEM.md § Still open #2): provisional until seen
+  // against a 0-slack and a 50-min-slack window side by side.
+  const footer =
+    window.slackMin <= 2
+      ? 'Start as soon as it is underway — the timing is tight.'
+      : window.slackMin >= window.hostDurationTypical / 2
+        ? 'Plenty of time — no need to rush.'
+        : 'There is room to spare.'
 
   return (
-    <section className="mt-3 overflow-hidden rounded-2xl border border-line-strong">
-      <div className="bg-window-head px-4 py-2.5">
-        <p className="text-xs font-bold uppercase tracking-wide text-saffron">
-          ⚡ While this cooks
-        </p>
-        <p className="tabular mt-0.5 text-xs text-ink-dim">
-          {roundMin(window.usedMin)} min prep · fits in {roundMin(window.hostDurationTypical)} min
+    <div
+      className="mt-2 mb-2 bg-field"
+      style={{ borderLeft: `2px solid ${stageColor(hostStageIndex)}` }}
+    >
+      <div className="p-3">
+        <p className="text-[15px] font-semibold text-ink">Meanwhile, do these</p>
+        <p className="mt-1 text-[13px] text-ink-2">{attentionText}</p>
+
+        <ul className="mt-3">
+          {first && <WindowTask task={first} primary={ranked} showTintBar={showTintBar} />}
+          {rest.map((task) => (
+            <WindowTask key={task.nodeId} task={task} primary={false} showTintBar={showTintBar} />
+          ))}
+        </ul>
+
+        <p className="mt-1 border-t border-rule pt-3 text-[13px] leading-[1.42] text-ink-2">
+          {footer}
         </p>
       </div>
-
-      <div className="flex flex-wrap items-center gap-2 bg-window px-4 py-2.5 text-xs">
-        <Chip tone="cook">
-          🔥 <b className="tabular">{roundMin(window.hostDurationTypical)}</b>&nbsp;min cooking
-        </Chip>
-        <span className="text-ink-dim">›</span>
-        <Chip tone="prep">
-          ✓ <b className="tabular">{roundMin(window.usedMin)}</b>&nbsp;min prep
-        </Chip>
-      </div>
-
-      <ul className="bg-surface">
-        {first && <WindowTask task={first} primary />}
-        {rest.map((task) => (
-          <WindowTask key={task.nodeId} task={task} primary={false} />
-        ))}
-      </ul>
-
-      <p className="bg-verified-tint px-4 py-2 text-xs text-verified-ink">
-        {window.slackMin <= 0
-          ? `All this prep fits inside the ${roundMin(window.hostDurationTypical)} min cook`
-          : `Fits with ${roundMin(window.slackMin)} min to spare`}
-      </p>
-    </section>
+    </div>
   )
+}
+
+/**
+ * The line under the head. Derived from the host's `attention` — the only field the
+ * graph has that speaks to "is the cook free?". Deliberately process-neutral: it does
+ * not say "cooks" / "rests" / "proves", because the graph cannot confirm which.
+ */
+export function attentionLine(attention: RenderWindow['hostAttention']): string {
+  return attention === 'periodic' ? 'checking the pan now and then' : 'your hands are free'
+}
+
+/**
+ * Whether this window's borrowed tasks come from more than one home stage. The 3px
+ * home-stage bar on each task row is drawn only when this is true — in both shipped
+ * fixtures every task in a window shares one home stage, so the bar would otherwise be
+ * one colour repeated, carrying no information (§ WaitWindowBlock).
+ */
+export function hasMultiHomeStage(tasks: readonly { homeStageIndex: number }[]): boolean {
+  return new Set(tasks.map((t) => t.homeStageIndex)).size > 1
 }
 
 function WindowTask({
   task,
   primary,
+  showTintBar,
 }: {
   task: RenderWindow['tasks'][number]
   primary: boolean
+  showTintBar: boolean
 }) {
   return (
     <li
-      className="flex items-center gap-3 border-t border-line px-4 first:border-t-0"
-      style={{ paddingBlock: primary ? 14 : 10 }}
+      className={`relative flex items-baseline gap-3 border-t border-rule py-3 ${showTintBar ? 'pl-3' : ''}`}
     >
-      <span
-        aria-hidden
-        className="h-8 w-1 flex-shrink-0 rounded-full"
-        style={{ background: stageColor(task.homeStageIndex) }}
-      />
-      <div className="min-w-0 flex-1">
-        <p
-          className="font-semibold text-ink"
-          style={{ fontSize: primary ? 15 : 13 }}
+      {showTintBar && (
+        <span
+          aria-hidden
+          className="absolute bottom-0 left-0 top-0 w-[3px]"
+          style={{ background: stageColor(task.homeStageIndex) }}
+        />
+      )}
+      <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+        <span
+          className={`block text-[15px] text-ink ${primary ? 'font-semibold' : 'font-medium'}`}
         >
           {task.label}
-        </p>
-        <p className="tabular mt-0.5 text-xs text-ink-dim">
-          {primary ? 'Start with this one · ' : ''}
-          {task.durationTypical} min
-        </p>
-      </div>
-      <span aria-hidden className="flex-shrink-0 text-ink-dim">
-        ›
+        </span>
+        {primary && (
+          <span className="mt-0.5 block text-[12px] font-medium text-signal">
+            Start with this
+          </span>
+        )}
+      </span>
+      <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
+        {task.durationTypical} min
       </span>
     </li>
-  )
-}
-
-function Chip({
-  tone,
-  children,
-}: {
-  tone: 'cook' | 'prep'
-  children: React.ReactNode
-}) {
-  const cls =
-    tone === 'cook'
-      ? 'bg-saffron-tint text-saffron-dim'
-      : 'bg-verified-tint text-verified-ink'
-  return (
-    <span className={`flex items-center gap-1 rounded-lg px-2.5 py-1 ${cls}`}>
-      {children}
-    </span>
   )
 }

@@ -1,0 +1,155 @@
+<!doctype html>
+<!--
+  DIRECTION 3 STRESS STUDY C — "strictly sequential".
+
+  SYNTHETIC DATA. Not a fixture. Maggi is the only no-parallelism fixture and it is
+  seven minutes long. This is a 40-minute recipe that needs constant attention
+  throughout — a risotto — so the scheduler finds NO wait window and `saved_min` is 0.
+
+  This is the "do we look generic" test. With saved_min == 0:
+   - the shipped RecipeHeader hides the promise line entirely
+   - PlanScreen shows the "nothing cooks unattended" line
+   - there is no field, no big number, nowhere on the screen
+  What is left of Direction 3 is: warm ground, the type scale, the ordinal spine, the
+  CTA. The differentiation narrows from CONCEPT to CRAFT. Judge whether that is enough,
+  or whether this reads as any other recipe list.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="darkreader-lock" />
+    <title>Stress C — strictly sequential</title>
+    <link rel="stylesheet" href="_direction3-study.css" />
+  </head>
+  <body>
+    <figure class="device">
+      <header>
+        <h1 class="condensed">Mushroom Risotto</h1>
+        <p class="cuisine">Northern Italian</p>
+        <p class="meta tabular"><span>2 servings</span><span>40 min total</span></p>
+        <!-- saved_min == 0: NO promise line. Instead, the honest note. -->
+        <p class="no-parallel">
+          Nothing in this recipe cooks unattended — it needs stirring the whole way
+          through, so there is no prep to slot in while you wait.
+        </p>
+      </header>
+
+      <nav class="tabs">
+        <span class="tab active">Cooking Plan</span>
+        <span class="tab">Ingredients</span>
+        <a class="change">change recipe</a>
+      </nav>
+
+      <div class="plan">
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">1</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Prep</span>
+              <span class="stage-dur tabular">~9 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Slice the mushrooms</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Finely dice the shallot</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Grate the parmesan</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">2</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Build the base</span>
+              <span class="stage-dur tabular">~14 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Warm the stock and keep it at a bare simmer</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Fry the mushrooms hard, then set aside</span>
+              <span class="task-dur tabular">6 min</span>
+            </div>
+            <p class="cue">until deeply browned and no liquid remains in the pan</p>
+            <div class="task">
+              <span class="task-name">Soften the shallot in butter</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <p class="cue">until translucent, not coloured</p>
+          </div>
+        </section>
+
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">3</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">The rice</span>
+              <span class="stage-dur tabular">~23 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Toast the rice in the pan</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <p class="cue">until the grains turn translucent at the edges</p>
+            <div class="task">
+              <span class="task-name">Add the wine and let it cook away</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Add stock a ladle at a time, stirring almost constantly</span>
+              <span class="task-dur tabular">18 min</span>
+            </div>
+            <p class="cue">until the rice is creamy but still has a slight bite</p>
+          </div>
+        </section>
+
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">4</span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Finish</span>
+              <span class="stage-dur tabular">~4 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Beat in the butter, parmesan and the fried mushrooms</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Rest off the heat, then serve</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="cta-wrap">
+        <button class="cta" type="button">Start Cooking</button>
+      </div>
+    </figure>
+
+    <figcaption>
+      <b>Direction 3 stress study C — synthetic "strictly sequential".</b> Not a fixture.
+      A 40-minute risotto with no unattended stretch, so <code>saved_min = 0</code>: no
+      promise line, no field, no big number. What remains of Direction 3 is the ground,
+      the type scale, the spine and the CTA. This is the case where the differentiation
+      is craft rather than concept — judge whether it still reads as this app.
+    </figcaption>
+  </body>
+</html>

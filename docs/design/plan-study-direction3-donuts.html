@@ -1,0 +1,596 @@
+<!doctype html>
+<!--
+  M2.5 DESIGN STUDY — Direction 3, "Two Kinds of Minute" — PLAN view, Donuts fixture.
+  Revision 2: applies the owner's checkpoint notes (fixes 1-7).
+
+  Not production code, not a layout engine, not a component. A hand-placed static page
+  built for ONE purpose: a rendered 390px screenshot of the Direction 3 visual language,
+  on the fixture that exercises the zebra risk, put in front of the owner BEFORE any
+  component is touched (CLAUDE.md working-style rule).
+
+  Governing idea of the direction:
+    "Every minute in this recipe is either a minute the dish needs your hands or a
+     minute it doesn't, and the whole screen is built out of that alternation."
+
+  WHY DONUTS: the zebra stress test. A 60-minute unattended first rise (the biggest
+  window in the fixture set) plus two further unattended stretches — proof (25 min) and
+  heat oil (12 min) — that carry NO borrowed work. The field is keyed to a
+  scheduler-declared wait window, never to `attention`, so only `first_rise` gets a
+  field. The other two unattended stretches are plain rows: no mark, no tint. One field
+  on the screen. Stripes are unreachable.
+
+  REVISION 2 CHANGES:
+   2. Field subject line carries the task name only — the duration ("1 hr") is gone; the
+      big numeral is the whole idea and stating it twice in two units weakened it.
+   3. Estimated stage figures (~18/~10/~14/~11 min) are flagged in the caption, not
+      fixed here — no StageSpan fixture exists for this recipe on the web side. Kadai
+      Paneer's figures ARE real (it has a plan-response fixture).
+   5. "Rise" is no longer stranded: when a stage's only content is a hosted field (the
+      host pulled out, nothing left inline), the field absorbs the stage header. "Rise"
+      now sits on the field, not alone at the bottom of the paper section.
+   6. The tan edge marks beside the bare unattended rows are GONE. They implied a system
+      that was not there (same failure class as the Map's old right-angle bracket).
+      Proof donuts and Heat oil are ordinary rows. Open question for implementation:
+      non-windowed unattended time currently has no visual distinction at all.
+   7. Slack copy retoned from shortfall to permission ("Nothing else to do until the
+      dough doubles"). Still provisional — final wording waits on the Kadai Paneer
+      render, where one line has to work for both 3 min spare and 51 min spare.
+
+  Every number is read from apps/api/tests/fixtures/homemade-donuts (.graph/.plan.json):
+    bloom_yeast   0->4    hands_on        mix_dough     4->10   hands_on
+    knead_dough   10->18  hands_on        first_rise    18->78  unattended  dur 60  HOST w1
+    grease_pan    18->21  hands_on w1r0   shape_and_cut 78->88  hands_on
+    proof_donuts  88->113 unattended d25  heat_oil      88->100 unattended  d12
+    fry_donuts    113->127 periodic       make_glaze    127->132 hands_on
+    glaze_donuts  132->138 hands_on
+    total 138, serial 153, saved 15.
+    w1: host first_rise, capacity 54, assigned [grease_pan], used 3, slack 51.
+
+  To view: serve the repo root so the font path resolves —
+    python -m http.server 4173
+    open http://localhost:4173/docs/design/plan-study-direction3-donuts.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <!-- The owner's Chrome runs Dark Reader, which inverts localhost and would make this
+         light palette impossible to review. This meta makes Dark Reader disable itself on
+         the page. It has no effect in a browser without the extension. -->
+    <meta name="darkreader-lock" />
+    <title>Plan study — Direction 3 — Donuts</title>
+    <style>
+      @font-face {
+        font-family: 'Archivo Variable';
+        src: url('../../apps/web/public/fonts/archivo-var-subset.woff2')
+          format('woff2-variations');
+        font-weight: 300 700;
+        font-stretch: 88% 112%;
+        font-display: swap;
+      }
+
+      /* Direction 3 palette. Four values plus one surface. Not the shipped M2.5 tokens —
+         this is a study, and the owner has not approved a palette. To be written into
+         DESIGN_SYSTEM.md only after the direction and its calibration are locked.
+           --paper   toasted oat, genuine yellow-warm chroma, deeper than AI-default cream
+           --field   the unattended surface: a warmer, deeper step — a place, not a box
+           --ink     warm brown-black, chosen as a colour, never a grey ramp
+           --action  dried-chilli red — the ONLY saturated mark on the screen; means "do
+                     this now" and nothing else. Oxide/rust, away from the #D97757
+                     terracotta that reads as an AI tell. */
+      :root {
+        color-scheme: light;
+        --paper: #f4eee1;
+        --field: #e7dcc3;
+        --field-rule: #d3c3a0;
+        --ink: #241f19;
+        --ink-2: #59503f;
+        --ink-3: #857b68;
+        --rule: #ddd4c0;
+        --action: #b23a1b;
+        --action-ink: #f8f2e4;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #e0d9c8;
+        font-family: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 0 48px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      .device {
+        width: 390px;
+        min-height: 900px;
+        background: var(--paper);
+        color: var(--ink);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+      .condensed {
+        font-stretch: 88%;
+      }
+      .expanded {
+        font-stretch: 108%;
+      }
+
+      /* provisional copy — visible in the render so the owner sees exactly what is a
+         placeholder waiting on their wording */
+      .prov {
+        border-bottom: 1px dotted var(--ink-3);
+      }
+
+      /* ---------- header ---------- */
+      header {
+        padding: 30px 20px 18px;
+      }
+      h1 {
+        font-size: 32px;
+        font-weight: 600;
+        line-height: 1.06;
+        letter-spacing: -0.015em;
+      }
+      .cuisine {
+        font-size: 15px;
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .meta {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+        margin-top: 13px;
+        display: flex;
+        gap: 20px;
+      }
+      .promise {
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1.38;
+        margin-top: 17px;
+        max-width: 31ch;
+        color: var(--ink);
+      }
+
+      /* ---------- tabs ---------- */
+      .tabs {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .tab {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        padding: 6px 0 11px;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+      }
+      .tab.active {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .change {
+        margin-left: auto;
+        font-size: 13px;
+        color: var(--ink-3);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      /* ---------- plan body ---------- */
+      .plan {
+        padding: 4px 0 128px;
+      }
+
+      .stage {
+        display: flex;
+        gap: 12px;
+        padding: 18px 20px 2px;
+      }
+      .gutter {
+        width: 16px;
+        flex-shrink: 0;
+        position: relative;
+        display: flex;
+        justify-content: center;
+      }
+      .ord {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+        line-height: 1;
+        padding-top: 7px;
+        position: relative;
+        z-index: 2;
+      }
+      /* the spine: a quiet 1px rule tying the ordinals together. Structure, not stage
+         identity — a cooking plan IS a numbered sequence, so a connecting line earns
+         its place (frontend-design: structure is information). No colour: stage hue
+         was dropped for the Plan in the Direction 3 decision. */
+      .spine {
+        position: absolute;
+        top: 28px;
+        bottom: -18px;
+        left: 50%;
+        width: 1px;
+        margin-left: -0.5px;
+        background: var(--rule);
+      }
+      .stage-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .stage-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .stage-title {
+        font-size: 22px;
+        font-weight: 600;
+        flex: 1;
+        letter-spacing: -0.005em;
+      }
+      .stage-dur {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+      }
+
+      .task {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 11px 0;
+      }
+      .task + .task {
+        border-top: 1px solid var(--rule);
+      }
+      .task-name {
+        flex: 1;
+        font-size: 17px;
+        font-weight: 500;
+      }
+      .task-dur {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        flex-shrink: 0;
+      }
+      .cue {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 4px;
+        line-height: 1.42;
+      }
+
+      /* ---------- the field: a qualifying wait window ---------- */
+      /* Full-bleed on purpose (Direction 3 risk c, shown honestly). It breaks the 20px
+         page margin because it is a page-level statement, not a stage-level box. Content
+         is padded back to the page margin. Height is content-driven, never proportional:
+         a 60-min window is not ten screens tall. */
+      .field {
+        background: var(--field);
+        /* .stage-body's left edge sits at x=48 (20 pad + 16 gutter + 12 gap), right edge
+           at x=370 (20 pad). Pull both to the device edges. */
+        margin: 16px -20px 10px -48px;
+        padding: 20px 20px 6px;
+      }
+      /* fix 5: when the field IS the whole stage, it absorbs the stage header instead of
+         leaving it stranded on paper above. Negative top margin eats the .stage padding
+         so the field starts at the top; the gutter ordinal (z-index 2) stays visible. */
+      .field--absorb {
+        margin-top: -18px;
+        padding-top: 18px;
+      }
+      .field--absorb .stage-head {
+        margin-bottom: 2px;
+      }
+
+      /* fix 2: the subject line is the host task's NAME only. No duration — the numeral
+         below carries it. */
+      .field-subject {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-2);
+      }
+      .field-cue {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 4px;
+        line-height: 1.42;
+      }
+      /* the one large number in the entire product. Answers "how long have I got?". */
+      .big {
+        font-size: 44px;
+        font-weight: 600;
+        line-height: 1;
+        margin-top: 18px;
+        letter-spacing: -0.025em;
+      }
+      .big-label {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .field-task {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--field-rule);
+      }
+      .field-task:first-of-type {
+        margin-top: 14px;
+      }
+      .field-task-name {
+        flex: 1;
+        font-size: 17px;
+        font-weight: 500;
+      }
+      /* fix 3: the "start here" cue is weight + a caption, not a dot. Only rendered when
+         there is more than one task to rank — a single-task window needs no "first". */
+      .field-task--primary .field-task-name {
+        font-weight: 600;
+      }
+      .field-task-dur {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        flex-shrink: 0;
+      }
+      .field-hint {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--action);
+        margin-top: 3px;
+      }
+      .field-foot {
+        font-size: 13px;
+        color: var(--ink-2);
+        border-top: 1px solid var(--field-rule);
+        margin-top: 4px;
+        padding: 11px 0 14px;
+        line-height: 1.42;
+      }
+
+      /* ---------- CTA ---------- */
+      /* The most saturated element on the screen, and obviously pressable. In the study
+         it is live-looking; M3 wires it up. */
+      .cta-wrap {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 14px 20px 26px;
+        background: var(--paper);
+        border-top: 1px solid var(--rule);
+      }
+      .cta {
+        display: block;
+        width: 100%;
+        background: var(--action);
+        color: var(--action-ink);
+        font-size: 18px;
+        font-weight: 600;
+        text-align: center;
+        padding: 15px;
+        border: none;
+        border-radius: 2px;
+      }
+
+      figcaption {
+        width: 390px;
+        margin-top: 18px;
+        color: #59503f;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      figcaption code {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 11px;
+      }
+      figcaption b {
+        color: #241f19;
+      }
+    </style>
+  </head>
+  <body>
+    <figure class="device">
+      <!-- ===================== header ===================== -->
+      <header>
+        <h1 class="condensed">Homemade Glazed Donuts</h1>
+        <p class="cuisine">American</p>
+        <p class="meta tabular">
+          <span>12 servings</span><span>2 hr 18 min total</span>
+        </p>
+        <p class="promise">
+          This plan saves you <span class="tabular">15 min</span> by prepping while
+          things cook.
+        </p>
+      </header>
+
+      <!-- ===================== tabs ===================== -->
+      <nav class="tabs">
+        <span class="tab active">Cooking Plan</span>
+        <span class="tab">Ingredients</span>
+        <a class="change">change recipe</a>
+      </nav>
+
+      <!-- ===================== plan ===================== -->
+      <div class="plan">
+        <!-- 1 — Prep : three hands-on tasks, plain paper -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">1</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Prep</span>
+              <span class="stage-dur tabular">~18 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Bloom yeast</span>
+              <span class="task-dur tabular">4 min</span>
+            </div>
+            <p class="cue">until a thick foamy head on the milk</p>
+            <div class="task">
+              <span class="task-name">Mix dough</span>
+              <span class="task-dur tabular">6 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Knead dough</span>
+              <span class="task-dur tabular">8 min</span>
+            </div>
+            <p class="cue">until smooth, springs back, thin translucent windowpane</p>
+          </div>
+        </section>
+
+        <!-- 2 — Rise : a stage that is ENTIRELY a wait window. The host (first_rise) is
+             pulled out of the row list, which leaves nothing inline, so the field
+             absorbs the stage header (fix 5). "Rise" sits on the field, not stranded. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">2</span>
+          </div>
+          <div class="stage-body">
+            <div class="field field--absorb">
+              <div class="stage-head">
+                <span class="stage-title expanded">Rise</span>
+              </div>
+              <p class="field-cue">until doubled in bulk and it holds a dimple when poked</p>
+
+              <p class="big tabular">60</p>
+              <p class="big-label">
+                <span class="prov">minutes while the dough rises &mdash; hands off</span>
+              </p>
+
+              <div class="field-task">
+                <span class="field-task-name">Grease tray</span>
+                <span class="field-task-dur tabular">3 min</span>
+              </div>
+
+              <p class="field-foot">
+                <span class="prov">Nothing else to do until the dough doubles.</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 — Shape and proof : one hands-on, then a bare unattended stretch. No window,
+             so NO field and (fix 6) no edge mark. Just a plain row. This is the
+             anti-zebra result made visible: 25 unattended minutes, nothing drawn. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">3</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Shape and proof</span>
+              <span class="stage-dur tabular">~10 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Roll and cut</span>
+              <span class="task-dur tabular">10 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Proof donuts</span>
+              <span class="task-dur tabular">25 min</span>
+            </div>
+            <p class="cue">until visibly puffed, jiggly, a slow-filling dimple</p>
+          </div>
+        </section>
+
+        <!-- 4 — Fry : heat oil is also bare unattended time, no window, no mark. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">4</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Fry</span>
+              <span class="stage-dur tabular">~14 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Heat oil</span>
+              <span class="task-dur tabular">12 min</span>
+            </div>
+            <p class="cue">until 175&deg;C on a thermometer</p>
+            <div class="task">
+              <span class="task-name">Fry donuts</span>
+              <span class="task-dur tabular">14 min</span>
+            </div>
+            <p class="cue">until deep golden, cooked through, oil back to temperature between batches</p>
+          </div>
+        </section>
+
+        <!-- 5 — Glaze -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">5</span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Glaze</span>
+              <span class="stage-dur tabular">~11 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Make glaze</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <p class="cue">until it coats the back of a spoon and ribbons briefly</p>
+            <div class="task">
+              <span class="task-name">Glaze donuts</span>
+              <span class="task-dur tabular">6 min</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===================== CTA ===================== -->
+      <div class="cta-wrap">
+        <button class="cta" type="button">Start Cooking</button>
+      </div>
+    </figure>
+
+    <figcaption>
+      <b>M2.5 design study — Direction 3, "Two Kinds of Minute" — Plan view, Donuts
+      fixture. Revision 2.</b>
+      Hand-placed static page, not a component and not a layout engine. Times and
+      dependencies are read from <code>apps/api/tests/fixtures/homemade-donuts</code>.
+      &nbsp;<b>Estimated, not real:</b> the per-stage figures (<code>~18</code>,
+      <code>~10</code>, <code>~14</code>, <code>~11 min</code>) are hand-derived from node
+      durations — this recipe has no <code>StageSpan</code> fixture on the web side, so
+      the real <code>inline_work_min</code> rollup is confirmed at implementation, not
+      here.
+      &nbsp;<b>Zebra check:</b> three unattended stretches (rise 60, proof 25, heat oil
+      12); only <code>first_rise</code> is a scheduler wait window with borrowed work, so
+      only it gets a field. The other two are plain rows — no field, no mark.
+      &nbsp;<b>Provisional copy</b> (dotted): the numeral label and the slack line. Final
+      wording waits on the Kadai Paneer render, where one line must serve both 3 min
+      spare and 51 min spare; the <code>54 vs 60</code> capacity gap
+      (<code>2 + 7 &ne; 12</code>) stays parked. M2.75 replaces this study with the real
+      <code>CookingPlan&nbsp;&rarr;&nbsp;LayoutSpec</code> function.
+    </figcaption>
+  </body>
+</html>

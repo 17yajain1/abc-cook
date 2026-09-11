@@ -99,8 +99,7 @@ Every visual property must encode something. If it decorates, cut it.
 | Vertical position | When it happens |
 | Vertical extent | How long it takes |
 | Horizontal lane | Which parallel thread |
-| Solid connector | Hard dependency — must finish before the next starts |
-| Dashed connector | "Can be done during" — the parallel relationship |
+| Connector | A dependency — see below; the mark's weight, colour and lane position carry the kind |
 | Stage tint | Which stage the node belongs to |
 | Fill vs outline | Attended vs unattended work |
 
@@ -109,10 +108,13 @@ glance** — they're the whole reason the parallel lanes exist. An outline or ha
 treatment for "this is cooking without you" reads instantly; a small clock icon does
 not.
 
-Solid vs dashed connectors is the other load-bearing distinction, and it should be
-legible without the legend that the current mockups include. If you need to explain
-"→ must happen next / ⇢ can be done in parallel" in a key at the bottom, the strokes
-aren't doing their job yet.
+**Connectors carry meaning by weight, colour and lane — not by solid-vs-dashed.**
+`DESIGN_SYSTEM.md` § *Connector language* is authoritative for the mark set (the 6px
+signal critical-path rail, the hollow unattended host, the `ink-3` parallel spur, the
+overdrawn merge edge). Solid-vs-dashed was explicitly **rejected** there: it is precisely
+the distinction that needs a key, and the whole point of § 8's test is that the screen
+works without one. If a connector needs a legend entry to be understood, the mark is
+wrong — change the mark, don't add the key.
 
 ---
 
@@ -181,7 +183,8 @@ Hand someone the Map view for a dish they know, say nothing, and ask: **"what ha
 while the base is cooking?"**
 
 If they answer correctly in under five seconds without you explaining anything, the
-graph view works. If they ask "what do the dotted lines mean?", it doesn't yet.
+graph view works. If they ask what any mark means — a connector, the hollow bar, the
+spur — it doesn't yet.
 
 Run this on five people before writing another line of graph code. It costs an evening
 and it is worth more than another Figma iteration.

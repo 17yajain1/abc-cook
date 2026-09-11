@@ -1,0 +1,177 @@
+<!doctype html>
+<!--
+  DIRECTION 3 STRESS STUDY A — "the messy import".
+
+  SYNTHETIC DATA. Not a fixture. Invented to stress three things the five golden
+  fixtures cannot, because they were authored to be well-behaved:
+    1. Task names 40-70 characters long (imported recipes routinely fail to split a
+       short `label` from the full `instruction`).
+    2. A single stage with 9 tasks (fixtures top out at 3).
+    3. Zero doneness cues on any row (imported recipes frequently have none).
+
+  What to look for:
+   - Does the duration column hold when a name wraps to 2-3 lines? (Should: .task-dur
+     is flex-shrink:0, .task-name has overflow-wrap:anywhere.)
+   - Is a 9-task stage scannable, or a wall? (This is the honest weak point — there is
+     no collapse mechanism in the Direction 3 study. The shipped StageCard has one.)
+   - With every cue gone, does the two-level hierarchy collapse to a flat list, and does
+     that list still feel like this app or like everyone else's?
+   - The field still carries the distinctive load — long host subject, long borrowed-task
+     names, the big number.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="darkreader-lock" />
+    <title>Stress A — messy import</title>
+    <link rel="stylesheet" href="_direction3-study.css" />
+  </head>
+  <body>
+    <figure class="device">
+      <header>
+        <h1 class="condensed">
+          Sheet-Pan Harissa Chicken Thighs with Chickpeas, Red Onion and Preserved Lemon
+        </h1>
+        <p class="cuisine">North African–ish, adapted from a video</p>
+        <p class="meta tabular"><span>4 servings</span><span>55 min total</span></p>
+        <p class="promise">
+          This plan saves you <span class="tabular">14 min</span> by prepping while the
+          tray roasts.
+        </p>
+      </header>
+
+      <nav class="tabs">
+        <span class="tab active">Cooking Plan</span>
+        <span class="tab">Ingredients</span>
+        <a class="change">change recipe</a>
+      </nav>
+
+      <div class="plan">
+        <!-- 1 — Prep: 9 tasks, long names, NO cues -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">1</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Prep</span>
+              <span class="stage-dur tabular">~23 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Pat the chicken thighs completely dry with paper towels</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Whisk together harissa paste, olive oil, honey, ground cumin and salt into a loose marinade</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Coat the chicken thighs in the marinade and leave them at room temperature</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Drain and rinse two 400g tins of chickpeas until the water runs clear</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Slice one large red onion into thin half-moons</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Quarter the preserved lemons, then scrape out and discard the soft flesh</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Roughly chop a large handful of fresh coriander, stalks and all</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Finely grate the zest of one unwaxed lemon, then juice it</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Line a large sheet pan with baking parchment and heat the oven to 220&deg;C fan</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 — Roast: the field. Long host subject, long borrowed-task names, no cues. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">2</span><span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="field field--absorb">
+              <div class="stage-head">
+                <span class="stage-title expanded">Roast</span>
+              </div>
+              <p class="field-subject">
+                Roast the chicken and chickpeas together until the chicken is cooked
+                through and the chickpea edges have crisped
+              </p>
+
+              <p class="big tabular">35</p>
+              <p class="big-label">
+                <span class="prov">minutes while the tray roasts</span>
+              </p>
+
+              <div class="field-task field-task--primary">
+                <span class="field-task-name">Stir together yoghurt, tahini, lemon juice and a splash of cold water for the drizzle</span>
+                <span class="field-task-dur tabular">5 min</span>
+              </div>
+              <p class="field-hint">Start with this</p>
+              <div class="field-task">
+                <span class="field-task-name">Pick the leaves from a small bunch of mint and roughly chop</span>
+                <span class="field-task-dur tabular">3 min</span>
+              </div>
+              <div class="field-task">
+                <span class="field-task-name">Toast the pine nuts in a dry pan until golden, watching them constantly</span>
+                <span class="field-task-dur tabular">4 min</span>
+              </div>
+
+              <p class="field-foot">
+                <span class="prov">12 minutes of prep. The tray needs the rest of the half hour on its own.</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 — Finish -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">3</span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Finish</span>
+              <span class="stage-dur tabular">~4 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Spoon the roasted chicken and chickpeas onto a warm platter</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Drizzle with the yoghurt-tahini sauce and scatter over the herbs and pine nuts</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="cta-wrap">
+        <button class="cta" type="button">Start Cooking</button>
+      </div>
+    </figure>
+
+    <figcaption>
+      <b>Direction 3 stress study A — synthetic "messy import".</b> Not a fixture —
+      invented to stress long task names (40–90 chars), a 9-task stage, and a recipe with
+      no doneness cues at all. The duration column should hold on every wrapped row; the
+      9-task Prep stage is the honest weak point (no collapse mechanism in this study);
+      the cue-less rows show how flat the two-level hierarchy goes when the second level
+      is always empty.
+    </figcaption>
+  </body>
+</html>

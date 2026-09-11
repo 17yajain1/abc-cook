@@ -1,0 +1,335 @@
+/* Shared styling for the Direction 3 "Two Kinds of Minute" stress studies.
+   Not production CSS — a study harness. The token values here are the same ones the
+   donuts / kadai-paneer studies use inline; they land in DESIGN_SYSTEM.md only once the
+   direction and its calibration are locked. */
+
+:root {
+  color-scheme: light;
+  --paper: #f4eee1;
+  --field: #e7dcc3;
+  --field-rule: #d3c3a0;
+  --ink: #241f19;
+  --ink-2: #59503f;
+  --ink-3: #857b68;
+  --rule: #ddd4c0;
+  --action: #b23a1b;
+  --action-ink: #f8f2e4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #e0d9c8;
+  font-family: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 48px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.device {
+  width: 390px;
+  min-height: 844px;
+  background: var(--paper);
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.condensed {
+  font-stretch: 88%;
+}
+.expanded {
+  font-stretch: 108%;
+}
+
+.prov {
+  border-bottom: 1px dotted var(--ink-3);
+}
+
+/* ---------- header ---------- */
+header {
+  padding: 30px 20px 18px;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+}
+.cuisine {
+  font-size: 15px;
+  color: var(--ink-2);
+  margin-top: 5px;
+}
+.meta {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  margin-top: 13px;
+  display: flex;
+  gap: 20px;
+}
+.promise {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.38;
+  margin-top: 17px;
+  max-width: 31ch;
+  color: var(--ink);
+}
+.no-parallel {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 14px;
+  max-width: 34ch;
+  line-height: 1.45;
+}
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--rule);
+}
+.tab {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 6px 0 11px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab.active {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.change {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- plan body ---------- */
+.plan {
+  padding: 4px 0 128px;
+}
+
+.stage {
+  display: flex;
+  gap: 12px;
+  padding: 18px 20px 2px;
+}
+.gutter {
+  width: 16px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.ord {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  line-height: 1;
+  padding-top: 7px;
+  position: relative;
+  z-index: 2;
+}
+.spine {
+  position: absolute;
+  top: 28px;
+  bottom: -18px;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--rule);
+}
+.stage-body {
+  flex: 1;
+  min-width: 0;
+}
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.stage-title {
+  font-size: 22px;
+  font-weight: 600;
+  flex: 1;
+  letter-spacing: -0.005em;
+}
+.stage-dur {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.task {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 0;
+}
+.task + .task {
+  border-top: 1px solid var(--rule);
+}
+.task-name {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 500;
+  /* the overflow guard the fixture studies never needed — a single long token
+     (URL, hyphenated blend name) must break rather than shove the duration off. */
+  overflow-wrap: anywhere;
+}
+.task-dur {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.cue {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 4px;
+  line-height: 1.42;
+}
+
+/* ---------- the field ---------- */
+.field {
+  background: var(--field);
+  margin: 16px -20px 10px -48px;
+  padding: 20px 20px 6px;
+}
+.field--absorb {
+  margin-top: -18px;
+  padding-top: 18px;
+}
+.field--absorb .stage-head {
+  margin-bottom: 2px;
+}
+.field-subject {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.field-cue {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 4px;
+  line-height: 1.42;
+}
+.big {
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: 18px;
+  letter-spacing: -0.025em;
+}
+.big-label {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 5px;
+}
+.field-task {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--field-rule);
+}
+.field-task:first-of-type {
+  margin-top: 14px;
+}
+.field-task-name {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.field-task--primary .field-task-name {
+  font-weight: 600;
+}
+.field-task-dur {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.field-hint {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--action);
+  margin-top: 3px;
+}
+.field-foot {
+  font-size: 13px;
+  color: var(--ink-2);
+  border-top: 1px solid var(--field-rule);
+  margin-top: 4px;
+  padding: 11px 0 14px;
+  line-height: 1.42;
+}
+
+/* ---------- CTA ---------- */
+.cta-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 20px 26px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+.cta {
+  display: block;
+  width: 100%;
+  background: var(--action);
+  color: var(--action-ink);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  padding: 15px;
+  border: none;
+  border-radius: 2px;
+}
+
+figcaption {
+  width: 390px;
+  margin-top: 18px;
+  color: #59503f;
+  font-size: 12px;
+  line-height: 1.55;
+}
+figcaption code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+}
+figcaption b {
+  color: #241f19;
+}
+
+@font-face {
+  font-family: 'Archivo Variable';
+  src: url('../../apps/web/public/fonts/archivo-var-subset.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-stretch: 88% 112%;
+  font-display: swap;
+}

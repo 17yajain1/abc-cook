@@ -8,3 +8,8 @@ const STAGE_COUNT = 6
 export function stageColor(index: number): string {
   return `var(--stage-${((index % STAGE_COUNT) + STAGE_COUNT) % STAGE_COUNT})`
 }
+
+/** The stage's tint as a ground wash — § Stage identity. Text on it must be ink-2. */
+export function stageGround(index: number): string {
+  return `color-mix(in srgb, ${stageColor(index)} calc(var(--stage-ground-alpha) * 100%), transparent)`
+}

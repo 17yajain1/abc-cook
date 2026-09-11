@@ -141,7 +141,7 @@ Mixing these up in code or copy is how the product gets muddy.
 | **Stage** | A named group of nodes: Prep, Cook Base, Add Veggies, Finish | Yes |
 | **Node** | One unit of work in the graph | No |
 | **Wait window** | An unattended interval that can host prep work | No |
-| **Parallel task** | A prep node the scheduler placed inside a wait window | Yes, as "while this cooks" |
+| **Parallel task** | A prep node the scheduler placed inside a wait window | Yes — surfaced under the wait-window field; wording derives from the host's `attention` (`DESIGN_SYSTEM.md` § WaitWindowBlock), **not** a fixed "while this cooks" (that assumes heat the graph can't confirm) |
 | **Station** | A contended resource: burner, oven, counter, sink | No |
 
 ## Product copy rules
@@ -163,11 +163,18 @@ Learned from the Figma iterations — these were real mistakes, don't reintroduc
 Two design inputs feed this repo. Keep them in their lanes.
 
 **Figma (via the Figma MCP server).** The Figma Make prototype is the source of truth
-for *layout, flow, and which screens exist*. When a Figma frame is available, read it
-rather than guessing at spacing and hierarchy. The remote server is link-based — the
-owner pastes a link to a specific frame, so always work from the link given, and ask
-which version it is if it isn't stated. Frames are versioned v1 → v4, v4 newest; the
-earlier ones show what was tried and rejected, and should not be treated as the spec.
+for *layout, flow, and which screens exist*. When a frame is available, read it rather
+than guessing at spacing and hierarchy.
+
+Two things to know before reaching for it (established in M2.5):
+
+- It is a Figma **Make** file (`figma.com/make/…`), not a Design file. The MCP's
+  design-context tools read Design files by node id, so there are no frames to pull —
+  the prototype is generated React running in a preview, and it gets read by looking at
+  it. It carries Make's own "Version N" counter, and there is one design in the file;
+  the `v1 → v4` versioning this file used to describe does not exist.
+- **It covers the Plan view and the cooking screens only. There is no Map/graph frame.**
+  The Map is greenfield and the `frontend-design` skill governs it entirely.
 
 **The `frontend-design` skill.** Load it before any work on visual direction: palette,
 typography, the graph view, or a screen's aesthetic identity. It is the counterweight
@@ -187,6 +194,18 @@ improve it.
 - Read `docs/COOKING_GRAPH.md` before any change to the schema, the extractor, or the
   scheduler. It is long on purpose.
 - Plan before large changes: propose the file-level diff first, then implement.
+- **Any milestone that changes ground colour or introduces new visual grammar needs a
+  rendered screenshot at the checkpoint, not just a token table and a prose brief.**
+  Learned in M2.5: the brief read correctly, the owner approved it on that basis, and the
+  render didn't match it — a spur the doc described was never drawn, stage tints specified
+  at 3px were invisible at true size, and the signal rail was the faintest mark on a screen
+  where the doc called it the strongest. Prose and hex values cannot be reviewed for the
+  thing that actually matters. Render one screen, screenshot it, and put it in front of the
+  owner *before* implementing the rest.
+- Related, and the reason the above is worth the round trip: **a principle written in
+  `DESIGN_SYSTEM.md` that isn't visibly present in the render isn't done.** Before calling
+  any visual work finished, walk the doc's principles and connector table one row at a
+  time against the screenshot.
 - Prefer small, reviewable commits. The owner is one person building this in evenings.
 - The owner is a senior data scientist (Python, ML, production GenAI) and is newer to
   frontend. Explain frontend decisions; don't over-explain Python or model plumbing.

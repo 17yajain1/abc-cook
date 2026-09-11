@@ -4,11 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#efeeea" />
+    <meta name="color-scheme" content="light" />
+    <!-- This product is one deliberate light design (index.css color-scheme). The lock
+         stops the Dark Reader extension inverting it — which otherwise makes every
+         localhost screenshot untrustworthy for a design review. -->
+    <meta name="darkreader-lock" />
     <meta name="description" content="ABC Cook - Cooking plans from recipes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="ABC Cook" />
+    <!-- Preloaded from our own origin. Paired with `font-display: optional` in
+         index.css: a cold load renders immediately in the fallback and swaps on the
+         next visit, so there is no blocking round trip and no layout shift. -->
+    <link
+      rel="preload"
+      href="/fonts/archivo-var-subset.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>ABC Cook</title>
   </head>
   <body>

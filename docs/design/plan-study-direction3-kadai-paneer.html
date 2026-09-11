@@ -1,0 +1,524 @@
+<!doctype html>
+<!--
+  M2.5 DESIGN STUDY — Direction 3, "Two Kinds of Minute" — PLAN view, Kadai Paneer.
+  Companion to plan-study-direction3-donuts.html. Same visual system, applied to the
+  flattering case: one tight window, three ranked tasks that exactly fill it.
+
+  WHY KADAI PANEER, SECOND: Donuts is the zebra stress test and the cavernous case
+  (60-min window, one task, 51 min slack). Kadai Paneer is the opposite end — a 12-min
+  window with 9 minutes of prep in it and 0 scheduler slack. It shows:
+   - the field WITH a hands-on task above it in the same stage (not an orphan — "Sauté
+     onion" sits on paper, then the field). This is the common shape.
+   - the ranked-task treatment: three tasks, the first marked "start with this".
+   - the tight end of the slack-copy problem: one line has to work here (3 min visual
+     tail, 0 scheduler slack) AND on Donuts (51 min slack).
+
+  Every number is read from apps/web/src/plan/__fixtures__/kadai-paneer.plan-response.json
+  (graph + plan + real StageSpan rollup — these figures ARE production values):
+    chop_onion     0->3   hands_on   prep            chop_tomato   8->10  hands_on   prep
+    saute_onion    3->8   hands_on   cook_base       cook_tomato_base 10->22 periodic  HOST w1
+    chop_capsicum  10->15 hands_on   w1 r0           cube_paneer   15->17 hands_on   w1 r1
+    make_kadai_masala 17->19 hands_on w1 r2          add_veggies   22->27 hands_on   add_veggies
+    add_paneer     27->32 hands_on   finish          finish        32->34 hands_on   finish
+    total 34, serial 43, saved 9.
+    w1: host cook_tomato_base, capacity 9, assigned [chop_capsicum, cube_paneer,
+        make_kadai_masala], used 9, slack 0.
+    StageSpan inline_work_min: prep 5, cook_base 17, add_veggies 5, finish 7.
+
+  To view: serve the repo root so the font path resolves —
+    python -m http.server 4173
+    open http://localhost:4173/docs/design/plan-study-direction3-kadai-paneer.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="darkreader-lock" />
+    <title>Plan study — Direction 3 — Kadai Paneer</title>
+    <style>
+      @font-face {
+        font-family: 'Archivo Variable';
+        src: url('../../apps/web/public/fonts/archivo-var-subset.woff2')
+          format('woff2-variations');
+        font-weight: 300 700;
+        font-stretch: 88% 112%;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: light;
+        --paper: #f4eee1;
+        --field: #e7dcc3;
+        --field-rule: #d3c3a0;
+        --ink: #241f19;
+        --ink-2: #59503f;
+        --ink-3: #857b68;
+        --rule: #ddd4c0;
+        --action: #b23a1b;
+        --action-ink: #f8f2e4;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #e0d9c8;
+        font-family: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 0 48px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      .device {
+        width: 390px;
+        min-height: 844px;
+        background: var(--paper);
+        color: var(--ink);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+      .condensed {
+        font-stretch: 88%;
+      }
+      .expanded {
+        font-stretch: 108%;
+      }
+
+      .prov {
+        border-bottom: 1px dotted var(--ink-3);
+      }
+
+      /* ---------- header ---------- */
+      header {
+        padding: 30px 20px 18px;
+      }
+      h1 {
+        font-size: 32px;
+        font-weight: 600;
+        line-height: 1.06;
+        letter-spacing: -0.015em;
+      }
+      .cuisine {
+        font-size: 15px;
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .meta {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+        margin-top: 13px;
+        display: flex;
+        gap: 20px;
+      }
+      .promise {
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1.38;
+        margin-top: 17px;
+        max-width: 31ch;
+        color: var(--ink);
+      }
+
+      /* ---------- tabs ---------- */
+      .tabs {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .tab {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        padding: 6px 0 11px;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+      }
+      .tab.active {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .change {
+        margin-left: auto;
+        font-size: 13px;
+        color: var(--ink-3);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      /* ---------- plan body ---------- */
+      .plan {
+        padding: 4px 0 128px;
+      }
+
+      .stage {
+        display: flex;
+        gap: 12px;
+        padding: 18px 20px 2px;
+      }
+      .gutter {
+        width: 16px;
+        flex-shrink: 0;
+        position: relative;
+        display: flex;
+        justify-content: center;
+      }
+      .ord {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+        line-height: 1;
+        padding-top: 7px;
+        position: relative;
+        z-index: 2;
+      }
+      .spine {
+        position: absolute;
+        top: 28px;
+        bottom: -18px;
+        left: 50%;
+        width: 1px;
+        margin-left: -0.5px;
+        background: var(--rule);
+      }
+      .stage-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .stage-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .stage-title {
+        font-size: 22px;
+        font-weight: 600;
+        flex: 1;
+        letter-spacing: -0.005em;
+      }
+      .stage-dur {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+      }
+
+      .task {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 11px 0;
+      }
+      .task + .task {
+        border-top: 1px solid var(--rule);
+      }
+      .task-name {
+        flex: 1;
+        font-size: 17px;
+        font-weight: 500;
+      }
+      .task-dur {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        flex-shrink: 0;
+      }
+      .cue {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 4px;
+        line-height: 1.42;
+      }
+
+      /* ---------- the field ---------- */
+      .field {
+        background: var(--field);
+        margin: 16px -20px 10px -48px;
+        padding: 20px 20px 6px;
+      }
+      .field--absorb {
+        margin-top: -18px;
+        padding-top: 18px;
+      }
+      .field--absorb .stage-head {
+        margin-bottom: 2px;
+      }
+      .field-subject {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-2);
+      }
+      .field-cue {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 4px;
+        line-height: 1.42;
+      }
+      .big {
+        font-size: 44px;
+        font-weight: 600;
+        line-height: 1;
+        margin-top: 18px;
+        letter-spacing: -0.025em;
+      }
+      .big-label {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .field-task {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--field-rule);
+      }
+      .field-task:first-of-type {
+        margin-top: 14px;
+      }
+      .field-task-name {
+        flex: 1;
+        font-size: 17px;
+        font-weight: 500;
+      }
+      .field-task--primary .field-task-name {
+        font-weight: 600;
+      }
+      .field-task-dur {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-3);
+        flex-shrink: 0;
+      }
+      .field-hint {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--action);
+        margin-top: 3px;
+      }
+      .field-foot {
+        font-size: 13px;
+        color: var(--ink-2);
+        border-top: 1px solid var(--field-rule);
+        margin-top: 4px;
+        padding: 11px 0 14px;
+        line-height: 1.42;
+      }
+
+      /* ---------- CTA ---------- */
+      .cta-wrap {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 14px 20px 26px;
+        background: var(--paper);
+        border-top: 1px solid var(--rule);
+      }
+      .cta {
+        display: block;
+        width: 100%;
+        background: var(--action);
+        color: var(--action-ink);
+        font-size: 18px;
+        font-weight: 600;
+        text-align: center;
+        padding: 15px;
+        border: none;
+        border-radius: 2px;
+      }
+
+      figcaption {
+        width: 390px;
+        margin-top: 18px;
+        color: #59503f;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      figcaption code {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 11px;
+      }
+      figcaption b {
+        color: #241f19;
+      }
+    </style>
+  </head>
+  <body>
+    <figure class="device">
+      <!-- ===================== header ===================== -->
+      <header>
+        <h1 class="condensed">Kadai Paneer</h1>
+        <p class="cuisine">North Indian</p>
+        <p class="meta tabular">
+          <span>3 servings</span><span>34 min total</span>
+        </p>
+        <p class="promise">
+          This plan saves you <span class="tabular">9 min</span> by prepping while
+          things cook.
+        </p>
+      </header>
+
+      <!-- ===================== tabs ===================== -->
+      <nav class="tabs">
+        <span class="tab active">Cooking Plan</span>
+        <span class="tab">Ingredients</span>
+        <a class="change">change recipe</a>
+      </nav>
+
+      <!-- ===================== plan ===================== -->
+      <div class="plan">
+        <!-- 1 — Prep : two hands-on chops. The other three prep nodes were slotted into
+             stage 2's window, so they show there, not here. inline_work_min = 5. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">1</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Prep</span>
+              <span class="stage-dur tabular">~5 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Chop onion</span>
+              <span class="task-dur tabular">3 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Chop tomato</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 — Cook the base : has a hands-on task (Sauté onion) THEN the field. Not an
+             orphan — the stage header stays on paper, "Sauté onion" sits below it, and
+             the field follows with the host (Cook tomato base) as its subject. -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">2</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Cook the base</span>
+              <span class="stage-dur tabular">~17 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Sauté onion</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <p class="cue">until the onions are light golden and the oil separates</p>
+
+            <div class="field">
+              <p class="field-subject">Cook tomato base</p>
+              <p class="field-cue">
+                until oil pools at the edges and the masala pulls away from the pan
+              </p>
+
+              <p class="big tabular">12</p>
+              <p class="big-label">
+                <span class="prov">minutes while the base cooks</span>
+              </p>
+
+              <div class="field-task field-task--primary">
+                <span class="field-task-name">Cube capsicum</span>
+                <span class="field-task-dur tabular">5 min</span>
+              </div>
+              <p class="field-hint">Start with this</p>
+              <div class="field-task">
+                <span class="field-task-name">Cube paneer</span>
+                <span class="field-task-dur tabular">2 min</span>
+              </div>
+              <div class="field-task">
+                <span class="field-task-name">Make kadai masala</span>
+                <span class="field-task-dur tabular">2 min</span>
+              </div>
+
+              <p class="field-foot">
+                <span class="prov"
+                  >Just enough time &mdash; start as soon as the base is on.</span
+                >
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 — Add veggies -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">3</span>
+            <span class="spine"></span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Add veggies</span>
+              <span class="stage-dur tabular">~5 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Add veggies</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <p class="cue">until the capsicum is bright green and still has a bite</p>
+          </div>
+        </section>
+
+        <!-- 4 — Finish -->
+        <section class="stage">
+          <div class="gutter">
+            <span class="ord tabular">4</span>
+          </div>
+          <div class="stage-body">
+            <div class="stage-head">
+              <span class="stage-title expanded">Finish</span>
+              <span class="stage-dur tabular">~7 min</span>
+            </div>
+            <div class="task">
+              <span class="task-name">Add paneer</span>
+              <span class="task-dur tabular">5 min</span>
+            </div>
+            <p class="cue">until the paneer is soft and the gravy clings</p>
+            <div class="task">
+              <span class="task-name">Finish</span>
+              <span class="task-dur tabular">2 min</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===================== CTA ===================== -->
+      <div class="cta-wrap">
+        <button class="cta" type="button">Start Cooking</button>
+      </div>
+    </figure>
+
+    <figcaption>
+      <b>M2.5 design study — Direction 3, "Two Kinds of Minute" — Plan view, Kadai Paneer
+      fixture.</b>
+      Hand-placed static page. Every figure — durations, the <code>12</code>, the
+      per-stage <code>~N min</code> — is read from
+      <code>kadai-paneer.plan-response.json</code>, including the real
+      <code>StageSpan</code> rollup, so these are production values.
+      &nbsp;<b>The field here</b> sits inside stage 2, below a hands-on task, with the
+      host (<code>cook_tomato_base</code>) as its subject rather than a repeated row.
+      Three tasks fill the 9-minute capacity exactly; the scheduler reports 0 slack while
+      the host cooks for 12, which is the <code>2 + 7 &ne; 12</code> gap — parked, no
+      scheduler or <code>derive.ts</code> change.
+      &nbsp;<b>Provisional copy</b> (dotted): the numeral label and the slack line. The
+      slack line must also read correctly on Donuts (51 min spare) — that reconciliation
+      is the open wording question.
+    </figcaption>
+  </body>
+</html>
