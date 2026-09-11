@@ -61,6 +61,12 @@
   /* The stage ground wash's alpha — the knowing card exception, § Avoid generated-design
      tells. One home for the value so it can't drift between components. */
   --stage-ground-alpha: 0.18;
+
+  /* Map task card fill alpha (docs/DESIGN_SYSTEM.md § The Map grammar, M2.75). Higher
+     than --stage-ground-alpha: a Plan stage ground is a region tint behind rows, but a
+     Map card has to read as a discrete tappable object against paper, and at 0.18 it
+     didn't. Calibrated at the M2.75 render checkpoint against the direction mock. */
+  --map-card-alpha: 0.28;
 }
 
 html,
