@@ -645,17 +645,25 @@ chevron stays removed.
 
 ## The Map grammar (M2.75)
 
-**Direction set by the owner in s9** with a rendered mock,
-`docs/design/renders/m275-direction-mock.png`. It replaces the M2.5 *Connector language*
-block (6px signal rail, hollow bars, a curved spur, no dashes, no arrowheads, no legend) —
-that grammar was drawn in `docs/design/map-study-kadai-paneer.html` and never built. The
-reversals are argued in § *Resolved in M2.75*, not made silently.
+**Direction set by the owner's approved handoff**, `M2.75 Map design handoff.md` (turn 11
+of the studies canvas) plus `M2.75_Claude_Code_Implementation_Handoff.md`, superseding the
+s9 mock this section previously described
+(`docs/design/renders/m275-direction-mock.png`, still kept as history). That mock's own
+grammar — a 3-lane first-fit layout seeded by `plan.critical_path`, a drawn time axis with
+tick labels, and one dashed flow line per borrowed task — was itself a reversal of M2.5's
+*Connector language* block and is now superseded in turn. The reversals from the s9
+grammar to this one are argued in § *Resolved in M2.75, round 2*, not made silently.
 
-**What the Map is.** A vertical time axis on the left, tasks as rounded tinted cards placed
-at their scheduled start and sized to their duration, parallel "while waiting" work to the
-right on the wait-window field colour, solid arrows for dependencies, dashed arrows for
-parallel flow, and a legend underneath. The five-second question it answers is *"what
-happens when, and what can I do in parallel?"*
+**What the Map is.** Two fixed columns — a mainline spine on the left, everything else on
+the right — with classification derived by pure interval math over `start_min`/`end_min`/
+window membership, never a flag authored per task, recipe, or fixture. Tasks are rounded
+tinted cards sized to their duration (sqrt-compressed) and to their own label (text-fit,
+never clipped or shrunk). Solid arrows connect real dependencies between two mainline
+cards; one dashed bracket per wait window (not one line per member) connects a host to its
+members; independent-overlap cards get no connector at all. A legend sits underneath.
+There is no drawn time axis — vertical order and each card's own duration label carry
+"when". The five-second question it answers is *"what happens when, and what can I do in
+parallel?"*
 
 **Entry point — a mode of the Cooking Plan tab, not a tab of its own.** The product model
 is:
@@ -677,34 +685,32 @@ checkpoint.
 
 | Meaning | Mark |
 |---|---|
-| When / how long | Card top = `yOf(start_min)`, card bottom = `yOf(end_min)`, each inset 6px so the arrow between consecutive cards has room. The axis is **sqrt-compressed per stretch** (`GRAPH_VIEW.md` §4): rows are ≥ 56px, so a card is never under the 44px tap floor, and a 60-minute rise is clamped to 140px so it dwarfs a chop without becoming a screen of its own. |
-| Which stage | Card **fill** is the stage tint at `--map-card-alpha` with a 1px stroke of the same tint. Label 13/500 `ink`, duration 11/500 tabular `ink-2`, both centred. Dark text on a pale tint, not `paper` on a mid-value fill. |
-| Borrowed into a window | Card fill **`--color-field`**, 1px `ink-3` stroke at 40%. The same surface as the Plan's *Meanwhile, do these* panel, so "while waiting" is one colour in both views. Legend entry `Parallel (while waiting)`. (Replaces M2.5's "keeps its own stage tint inside the window".) |
-| Attention | A third line, 11/400 `ink-3`, derived from `Node.attention` and nothing else: `(low attention)` for `periodic`, `(hands off)` for `unattended`, **no line** for `hands_on` — hands-on is the default state of a cooking step; the note marks when you are free. Dropped when the card is under 60px. **Secondary information** — it must read as a quiet aside on the card, not as a second checklist running beside the timeline. If the checkpoint render makes the Map feel like two lists, the note is the first thing to cut back, not the layout. |
-| Dependency | 1px `ink`, orthogonal elbows, a 6px arrowhead into the target's **top edge**. Edges converging on one target share their final vertical segment, so a merge has exactly one arrowhead — that shared segment *is* the junction. |
-| Parallel flow | 1px `ink-2`, dashed `4 3`, leaving the host card's **right edge** into a vertical bus at `host.right + 8`, then one horizontal branch per borrowed card into its left edge, arrowhead at the end. Drawn only for `plan.windows` entries — never inferred from `attention` (the zebra rule from § Register applies here too). |
-| Time | A 1px `ink` axis line at `x = 56` with an arrowhead at the bottom. Ticks `N min`, 11/500 tabular `ink-3`, right-aligned, at every task boundary. Not every five minutes: the axis is compressed, so evenly numbered ticks would be unevenly spaced and read as a bug. |
-| Critical path | **Not painted, and not user-facing.** `plan.critical_path` is used only to choose lane 0 — a layout input, the same way `depends_on` is. No rail, no signal, no legend entry, no label, no `<desc>` wording names it. The Map carries no `--color-signal` in M2.75; the user reads timing, parallelism and dependencies, never a scheduler category. |
-| Overflow | Beyond three lanes, the extra concurrent nodes collapse into one `+N more` card in the last lane spanning their interval — `paper-sunk` fill, dashed `ink-3` stroke, inert until a later milestone gives it a tap. |
-| Legend | HTML beneath the SVG, 12/400 `ink-2`: one tinted dot per stage in `graph.stages` order, a field-coloured `Parallel (while waiting)` dot when the plan has windows, then `— Dependency` and `- - Parallel flow` (the dashed key only when windows exist). **Must stay compact** — one or two lines at 390px — and the graph above it must read without a viewer repeatedly checking back against it; the legend explains the marks once, it doesn't carry the comprehension. Validated at the render checkpoint. |
+| Classification | Pure interval math, no per-task flag. A task in a window's `assigned` is a **window child**. A window's `host_node_id` is seeded onto the **mainline** first (Decision 1 below). Everything else is walked in `start_min` order (ties broken by `end_min` ascending, then `node_id`) against the mainline intervals reserved so far: no overlap → **mainline**; overlaps something already reserved → **independent** (own card, no connector). |
+| Column / width | Mainline: `x=20, w=190`. Window-child or independent: `x=222, w=108`. Two columns only — no lane count to reason about. |
+| When / how long | Card height = `max(44, durationHeight, textFitHeight)`. `durationHeight = clamp(20·√duration + 20, 44, 120)` (sqrt-compressed, so a 60-min task reads longer than a 2-min one, not 30× longer). `textFitHeight` grows the card to fit its wrapped label — **never clips or shrinks a word**. Vertical position comes from a single shared time→y map (breakpoints at every `start_min`/`end_min` in the plan) so a window's members line up beside their host at the right minute, and Plan and Map agree on timing. |
+| Which stage | Mainline and independent cards: fill is the stage tint at `--map-card-alpha`. Window-child cards: fill is **`--color-field`** regardless of stage — the same surface as the Plan's *Meanwhile, do these* panel, so "while waiting" is one colour in both views. No stroke, no shadow, no gradient on any card. |
+| Attention | A third line, 10/500 `ink-3`, derived from `Node.attention` and nothing else: `(low attention)` for `periodic`, `(hands off)` for `unattended`, no line for `hands_on`. **Mainline cards only, and only from 60px up** — a window-child or independent card never carries a note, even when its own attention would produce one (`homemade-donuts`' `proof_donuts` is `periodic` and independent; it gets no note). One relationship note per card is enough. |
+| Dependency | 1.5px `ink`, drawn only between two **mainline** cards with a real `depends_on` edge — never into or out of a window-child or independent card, even when the underlying graph has that dependency (`strawberry-shortcake`'s `macerate_berries → assemble_shortcakes` is real and undrawn, because `macerate_berries` is independent). Consecutive mainline cards with no dependency between them get no line either — a card's position on the mainline is a time fact, not a dependency claim. Adjacent pair: a straight line down the shared centre. A pair with another mainline card between them: an elbow into the left gutter and back, merging onto the same final segment every edge into that target shares — one arrowhead per merge. |
+| Window bracket | One dashed (`3 3`) mark **per window**, not per member: a short stem off the host's right edge, a vertical spine, then one tick with an arrowhead into each *shown* member. Skipped entirely if the window's host didn't stay mainline, or if every member folded. |
+| Independent overlap | No connector of any kind — its position beside the mainline card it overlaps is the only relationship shown. |
+| Overflow (fold) | Quiet text, no box: `+N more` (11/500, `ink-3`) under the relevant anchor card. Two rules, both count-based and generic — never per-fixture: a window's 4th+ member folds (`assigned.length > 3`); any right-column card whose interval collides with what the column is already showing folds too. A folded card's label lands under its own window's last *shown* member (an independent that collides with a member redirects the same way). |
+| Critical path | **Not read anywhere in `layout.ts`, painted or otherwise.** Earlier drafts (through the s9 mock) used `plan.critical_path` to seed lane 0; the current classification is pure interval math and needs no critical-path input at all. No rail, no signal, no legend entry, no label, no `<desc>` wording names it. |
+| Legend | HTML beneath the SVG, 12/400 `ink-2`: one dot + label per stage actually used by a **visible** card, in `graph.stages` order, then `— Dependency` (always), then `- - Parallel (while waiting)` only when the plan has any window or independent card. A fully serial plan (`maggi-2min`) draws zero brackets and shows no parallel legend entry — the Map goes quiet when the graph is quiet. |
 
 **Arrowheads are consistent with § *Arrows and chevrons*.** That rule permits an arrow
-"only where it encodes a dependency", which is exactly and only what these do. Dashes were
-rejected in M2.5 because the bar grammar had no legend to carry the solid/dashed
-distinction; this direction has one, so the objection no longer applies.
+"only where it encodes a dependency", which is exactly and only what these do.
 
 **Radius.** Map task cards are `8px` — a tappable object on a chart, not a measured bar.
-The row *behind* the card is still the measurement; the card sits inside it. Still no
-shadow, no gradient, no elevation.
+Still no shadow, no gradient, no elevation, no border.
 
-**`--map-card-alpha`** (`0.28`, `index.css` `:root`). The Plan's 18% stage ground is a
-region tint; a Map card has to read as an *object* against paper, and at 18% it did not.
-Calibrated at the M2.75 render checkpoint against the mock's pastels.
+**`--map-card-alpha`** (`0.32`, `index.css` `:root`). Raised from the M2.75-checkpoint
+value of `0.28` per the design handoff's stated 32% — see Decision set below.
 
-**What the Map draws is the plan, not the graph.** The mock places *Chop tomato* beside
-*Chop onion* at 0 min because both have no dependencies. The scheduler places it at 8–10
-because one cook cannot chop both at once. The Map draws 8–10. `CLAUDE.md`: the frontend
-renders `CookingPlan` and never re-infers parallelism.
+**What the Map draws is the plan, not the graph.** `chop_tomato` sits beside `chop_onion`
+in the graph (both have no dependencies) but the scheduler places it at 8–10 because one
+cook cannot chop both at once — the Map draws 8–10, and classifies `chop_tomato` mainline
+because that's where the interval math puts it, not because the graph suggested a lane.
+`CLAUDE.md`: the frontend renders `CookingPlan` and never re-infers parallelism.
 
 ## Is a node a card?
 
@@ -1020,6 +1026,30 @@ above so the history is legible.
 | Critical path painted as a 6px signal rail, unbroken top to bottom | Not painted; `plan.critical_path` only orders lane 0 | The mock has no rail. Signal is rationed to the highest-priority action on screen (§ *Signal is rationed*), and nothing on a not-yet-started Map is that priority — M3's live-now marker is. Also: the critical path is now explicitly **not a user-facing category** (owner term 5) — no label, no legend entry names it. |
 | Unattended work drawn hollow (an empty outlined box) | Unattended work is a filled host card; borrowed tasks sit beside it on the field colour, joined by a dashed flow line | "Absence has a shape" is kept as a principle (§ Design brief); the mark changed from an empty container to a positive card plus an explicit flow connector, which is what the mock draws. |
 | Entry point undecided pre-mock | The Map is a **mode** of the Cooking Plan tab (`Plan · Map` switch), not a separate top-level tab; Plan is the permanent default | Matches the mock's own in-app switch and keeps the product model to `Cooking Plan → {Plan, Map}` / `Ingredients` (owner term 1–2, s9). |
+
+## Resolved in M2.75, round 2
+
+The owner supplied a further, approved handoff — `M2.75 Map design handoff.md` (visual
+spec) and `M2.75_Claude_Code_Implementation_Handoff.md` (brief) — that moves the target
+again, before the s9 grammar above ever shipped past its own checkpoint. Dry-running the
+new handoff's classification rule against real scheduler output for all five golden
+fixtures (not a hypothetical) surfaced four genuine conflicts — between the two new
+documents, or between a new document and `CLAUDE.md`/this file. Each was put to the owner
+and decided; none was picked silently.
+
+| # | Conflict | Decision | Why |
+|---|---|---|---|
+| 1 | The design handoff's literal `currentEnd` walk demotes a window **host** to independent when it ties at the same `start_min` as a non-window task (`chicken-biryani`'s `soak_rice`, host of a 4-member window, ties at `start_min=0` with `boil_spiced_water`) — contradicting "a window host is always mainline". | **Seed every window host onto the mainline first**, sorted `(start_min, node_id)`, before walking the remaining candidates against those reserved intervals. Still pure interval math — no per-task flag, no recipe check. | A host that loses its mainline slot also loses its bracket, which no version of the handoff wants. Hosts are a small, well-defined set (`plan.windows[*].host_node_id`) — seeding them first costs nothing and removes the tie case entirely. |
+| 2 | The design handoff defines one 108px-wide right column with only a per-window overflow rule (`assigned.length > 3`); `chicken-biryani`'s right column has 8 pairwise time collisions once independent-overlap cards land on top of window children, which that rule alone doesn't resolve. | **Keep the single right column; add a generic, count-agnostic fold.** Window children are tried first at each time slice; any right-column card — member or independent — whose interval collides with what's already shown folds into the nearest quiet `+N more` label instead of a third lane. | A third lane was explicitly rejected (two columns is the whole point of the handoff). The fold rule already has to exist for the `>3` case; extending it to "any collision" is the same mechanism, not a new one, and it's what makes `synthetic-two-windows`' independent card fold correctly with zero fixture-specific code. |
+| 3 | The design handoff's prose ("solid line between consecutive mainline cards") conflicts with its own worked examples and the implementation brief's test list ("one edge per actual `depends_on` pair") — `kadai-paneer`'s consecutive mainline pair `saute_onion → chop_tomato` is not a dependency, so a literal chain would draw a false one, which `CLAUDE.md` forbids outright. | **Solid arrows only for real `depends_on` pairs where both ends are mainline.** No arrow between two mainline cards just because they're adjacent in time; no arrow touching a window-child or independent card even when the underlying dependency is real. | The frontend must never draw a relationship the scheduler didn't assert. A merely-adjacent pair is a time fact, not a dependency claim. |
+| 4 | The handoff's column geometry (mainline at `x=20`) leaves no left gutter for a time axis; this file's pre-existing Map grammar and the s9 mock both draw one at `x=56` with `N min` ticks. | **No axis, no ticks.** Time is carried entirely by vertical order, the sqrt-compressed height, and each card's own duration label. | The two specs are geometrically incompatible at 390px width — there is no room for both. The handoff's own "explicitly rejected" list already objects to "placing any card by visual balance rather than by `start_min`/`end_min`", which an axis doesn't violate, but dropping it is what the approved visual spec actually shows. |
+
+Two further points were decided without a separate owner round-trip, flagged instead in
+the CP1 report: a label that would need a 4th wrapped line still never clips (the
+handoff's own rejected list bans clipping outright, so "never clip" wins over any implied
+line cap); and the bracket dash colour `#a39d8f` in the design handoff is a study value,
+not a written token (§ *A study proposes composition, never tokens*) — it renders as
+`--color-ink-3` pending a token decision.
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 

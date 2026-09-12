@@ -57,13 +57,15 @@ persuading.
 
 - **Vertical flow, always.** Time runs down the screen. Parallelism runs across.
   Never the other way round — horizontal scrolling to follow a recipe is a failure.
-- **Maximum 3 parallel lanes.** Real recipes rarely exceed 2. Beyond 3, collapse the
-  extras into an overflow card rather than shrinking the columns: one `+N more` card in
-  the last lane, spanning the interval the overlapping nodes share, `paper-sunk` fill and
-  a dashed `ink-3` stroke to mark it as a summary rather than a task — inert until a later
-  milestone gives it a tap (`DESIGN_SYSTEM.md` § *The Map grammar*, "Overflow").
-- **Minimum node width 96px** and minimum tap target 44px. If the layout algorithm
-  wants to go below either, it must reduce lanes instead.
+- **Two fixed columns, not a lane count to reason about.** A mainline spine on the left
+  and everything else on the right (`DESIGN_SYSTEM.md` § *The Map grammar*). Beyond what
+  the right column can show without a time collision — a window's 4th+ member, or any
+  card whose interval collides with what's already shown — the rest collapse into a quiet
+  `+N more` text label under the relevant card: no box, no border, count-based and generic
+  (never tuned to a specific recipe's member count).
+- **Minimum node width 96px** and minimum tap target 44px. Both columns are fixed widths
+  (190px mainline, 108px right) comfortably above the floor; a card only grows taller,
+  never narrower.
 - **No pan-and-zoom canvas as the primary interaction.** It feels like a diagramming
   tool, not a cooking tool. Fit-to-width, scroll vertically. Zoom can exist as a
   gesture; it must not be *required*.
@@ -74,42 +76,47 @@ persuading.
 
 ## 4. Layout algorithm
 
-Deterministic, computed from the graph — never hand-placed, never LLM-placed.
+Deterministic, computed from the plan — never hand-placed, never LLM-placed, and never
+branching on which recipe it is (`M2.75 Map design handoff.md`; conflicts between it and
+the implementation brief resolved in `DESIGN_SYSTEM.md` § *Resolved in M2.75, round 2*).
 
 ```
-1. AXIS. Breakpoints are every distinct start_min/end_min in the plan.
-   Segment height = clamp(34·sqrt(Δmin), 56, 140), accumulated top to bottom
-   with 16px top padding. Sqrt, not linear, so a 60-minute rise dwarfs a
-   2-minute chop without pushing everything else off screen. Ticks are drawn
-   at every breakpoint, not at fixed 5-minute intervals — the axis is
-   compressed, so evenly numbered ticks would sit unevenly apart and read as
-   a bug. If two tick labels would land under 14px apart, the later one is
-   omitted (the mark stays; only the redundant label goes).
-2. LANES, left to right:
-   a. Lane 0 = every node in plan.critical_path. This is a layout input
-      only — it decides which column is leftmost. Nothing about it is drawn
-      or named on screen (DESIGN_SYSTEM.md § The Map grammar).
-   b. A window's borrowed tasks go in host.lane + 1, each occupying its own
-      scheduled interval. A borrowed task that is also on the critical path
-      stays in lane 0.
-   c. Everything else is first-fit into the lowest free lane ≥ 1, ordered by
-      (start_min, hosts-first, rank_in_window, node_id).
-   d. Maximum 3 lanes. A node with no free lane ≤ 2 joins the overflow card
-      for its interval (§ 3) instead of a fourth column.
-3. EDGES. One per depends_on pair: an orthogonal elbow from the source's
-   bottom edge into the target's top edge, arrowhead at the target. Edges
-   converging on one target share their final vertical segment, so a merge
-   point draws as a single arrowhead — that shared segment is the merge.
-4. FLOWS. One per wait window: a dashed bus leaves the host card's right
-   edge and branches once per borrowed task into its left edge. Drawn only
-   from plan.windows — never inferred from a node's attention value.
+1. CLASSIFY. A task in a window's `assigned` is a window child. A window's
+   `host_node_id` is seeded onto the mainline first, sorted (start_min, node_id) —
+   so a host never loses its mainline slot (and its bracket) to a tie. Everything
+   else is walked in (start_min, end_min asc, node_id) order against the mainline
+   intervals reserved so far: no overlap -> mainline, reserve it; overlap -> an
+   independent concurrent card. Pure interval math — no flag is ever set by hand.
+2. COLUMNS. Mainline at x=20/w=190. Window children and independents share one
+   right column at x=222/w=108, sorted (start_min, child-before-independent,
+   rank_in_window, node_id). A window's members are tried first at each time
+   slice; anything — member or independent — that would collide with what's
+   already shown, or a window's 4th+ member, folds into a quiet `+N more` label
+   under the relevant shown card instead of a third column.
+3. TIME -> Y. One shared vertical map for both columns, built from every distinct
+   start_min/end_min in the plan: each stretch is
+   clamp(20*sqrt(Δmin) + 20, 44, 120) plus a 12px gap, then grown further wherever
+   a card's own wrapped-label height needs more room than its duration gives it
+   (text is never clipped or shrunk to fit — the card grows instead). No axis or
+   ticks are drawn; this map only decides where things sit.
+4. EDGES. One per depends_on pair where BOTH ends are mainline cards — never into
+   or out of a window child or an independent, even when the underlying
+   dependency is real. Adjacent mainline pair: a straight line. A pair with
+   another mainline card between them: an elbow into the left gutter and back,
+   merging onto the same final segment every edge into that target shares — one
+   arrowhead per merge.
+5. BRACKETS. One dashed mark per window whose host stayed mainline and has at
+   least one shown member: a stem off the host's right edge, a spine, one tick
+   with an arrowhead into each shown member. Independent-overlap cards get no
+   connector of any kind — position beside the card they overlap is the only
+   relationship shown.
 ```
 
 Row = time is the single most important choice here. It is what makes the parallelism
 *visible* rather than merely *stated*, and it's what nobody else in this space is
-doing. The full mark set — card fill, stroke, text, and exact geometry constants — is
-`DESIGN_SYSTEM.md` § *The Map grammar*; this section owns the algorithm, that one owns
-the marks.
+doing. The full mark set — card fill, exact geometry constants, fold and bracket
+rendering — is `DESIGN_SYSTEM.md` § *The Map grammar*; this section owns the algorithm,
+that one owns the marks.
 
 ## 5. Encoding — what carries meaning
 
@@ -118,28 +125,30 @@ Every visual property must encode something. If it decorates, cut it.
 | Property | Encodes |
 |---|---|
 | Vertical position | When it happens |
-| Vertical extent | How long it takes |
-| Horizontal lane | Which parallel thread |
-| Card tint vs field fill | Attended work in its own stage vs work borrowed into a wait window |
-| Solid arrow | A dependency |
-| Dashed arrow | A wait-window assignment — "you can do this while that happens" |
-| A third card line | Attention: `(low attention)` / `(hands off)` / nothing for hands-on |
+| Vertical extent | How long it takes (sqrt-compressed) or how much label it carries, whichever is greater |
+| Column (mainline vs right) | Mainline sequence vs window-child / independent-overlap — an interval-math fact, not an authored category |
+| Card tint vs field fill | Attended work in its own stage vs a window child on the wait-window field colour |
+| Solid arrow | A real `depends_on` pair between two mainline cards |
+| Dashed bracket | One wait window, host to its shown members — never one line per member |
+| No connector | An independent-overlap card: related only by sitting beside what it overlaps |
+| A third card line | Attention, mainline cards only: `(low attention)` / `(hands off)` / nothing for hands-on |
+| Quiet `+N more` text | A window's 4th+ member, or any right-column card that collided in time with what's already shown |
 | Legend | The key for the above, kept compact — see below |
 
-**Attended vs unattended is carried by fill, not by outline.** A node the scheduler
-placed in a stage runs on its own stage tint; a node it borrowed into a window runs on the
-wait-window field colour. The field colour is shared with the Plan's own *Meanwhile, do
-these* panel, so "while waiting" reads as one thing across both views
+**Attended vs unattended is carried by fill, not by outline.** A window child runs on the
+wait-window field colour regardless of its own stage; a mainline or independent card runs
+on its stage tint. The field colour is shared with the Plan's own *Meanwhile, do these*
+panel, so "while waiting" reads as one thing across both views
 (`DESIGN_SYSTEM.md` § *The Map grammar*).
 
-**Connectors carry meaning by weight, colour and dash pattern.** `DESIGN_SYSTEM.md` §
-*The Map grammar* is authoritative for the mark set: a 1px ink line with an orthogonal
-elbow and an arrowhead for a dependency, a 1px dashed `ink-2` line for a wait-window
-assignment. Solid-vs-dashed was rejected in an earlier direction as "the distinction that
-needs a key" — that objection held only while the Map had no legend. This direction has
-one (§ *Resolved in M2.75*), so the objection no longer applies; the five-second test in
-§ 8 is still the actual bar, and the legend must stay compact enough to clear it rather
-than becoming the explanation the graph itself should carry.
+**Connectors carry meaning by weight, colour and dash pattern, and by which two things
+they connect.** `DESIGN_SYSTEM.md` § *The Map grammar* is authoritative for the mark set:
+a 1.5px ink line for a mainline dependency, a dashed `ink-3` bracket for a window. A
+dependency line never touches a window-child or independent card, and an independent card
+never gets a connector at all — the two-column classification carries that distinction, a
+line doesn't have to. The five-second test in § 8 is still the actual bar, and the legend
+must stay compact enough to clear it rather than becoming the explanation the graph itself
+should carry.
 
 ---
 
