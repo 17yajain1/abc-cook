@@ -24,13 +24,15 @@ from abc_cook.schema import CookingGraph, CookingPlan, Node, SourceRef, Stage
 FIXTURES = Path(__file__).parent / "fixtures"
 
 # Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/ — the five
-# golden recipes from COOKING_GRAPH.md §7.
+# golden recipes from COOKING_GRAPH.md §7, plus a sixth hand-authored purely to prove
+# the M2.75 Map layout algorithm generalizes (docs/DESIGN_SYSTEM.md § The Map grammar).
 GOLDEN = [
     "kadai-paneer",
     "maggi-2min",
     "chicken-biryani",
     "homemade-donuts",
     "strawberry-shortcake",
+    "synthetic-two-windows",
 ]
 
 

@@ -16,15 +16,17 @@ from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema import RecipePlanResponse
 
 # Straightforward (kadai-paneer), degrades to nothing (maggi-2min), two windows and
-# 4-way concurrency (chicken-biryani), a 60-min clamp case (homemade-donuts), and
-# non-integer minutes with off-thread freshness-held tasks (strawberry-shortcake) — the
-# M2.75 Map's five fixtures (docs/GRAPH_VIEW.md, plan `s9-M2.75-map-view.md`).
+# 4-way concurrency (chicken-biryani), a 60-min clamp case (homemade-donuts),
+# non-integer minutes with off-thread freshness-held tasks (strawberry-shortcake), and
+# a sixth, hand-authored fixture the layout algorithm has never been tuned against
+# (synthetic-two-windows) — the M2.75 Map's six fixtures (docs/GRAPH_VIEW.md).
 SLUGS = [
     "kadai-paneer",
     "maggi-2min",
     "chicken-biryani",
     "homemade-donuts",
     "strawberry-shortcake",
+    "synthetic-two-windows",
 ]
 
 # Shared test data, not Plan-specific: the M2.75 Map's layout.test.ts reads these too.
