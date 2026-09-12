@@ -7,10 +7,12 @@ import type { MapCard, MapLayout } from './layout'
 /**
  * Renders a `MapLayout` — nothing more. Every coordinate, every label, every note
  * already lives on the layout object; this file only turns them into SVG and HTML.
- * See `docs/DESIGN_SYSTEM.md` § *The Map grammar* for the mark set this draws.
+ * See `docs/DESIGN_SYSTEM.md` § *The Map grammar* for the mark set this draws, and
+ * `M2.75 Map design handoff.md` for the approved visual spec it implements.
  *
- * Draw order matters for legibility on paper: axis, then edges, then flows, then cards
- * on top of both, then overflow cards last (`GRAPH_VIEW.md` §4).
+ * No axis, no card strokes, no critical-path signal of any kind — all explicitly
+ * rejected in the M2.75 handoff. Draw order: edges, then brackets, then cards on top
+ * of both, then fold labels last.
  */
 export function MapView({ layout }: { layout: MapLayout }) {
   const titleId = useId()
@@ -42,7 +44,7 @@ export function MapView({ layout }: { layout: MapLayout }) {
             <path d="M0,0 L8,4 L0,8 Z" fill="var(--color-ink)" />
           </marker>
           <marker
-            id="map-arrow-flow"
+            id="map-arrow-tick"
             viewBox="0 0 8 8"
             refX="7"
             refY="4"
@@ -50,70 +52,36 @@ export function MapView({ layout }: { layout: MapLayout }) {
             markerHeight="6"
             orient="auto-start-reverse"
           >
-            <path d="M0,0 L8,4 L0,8 Z" fill="var(--color-ink-2)" />
+            <path d="M0,0 L8,4 L0,8 Z" fill="var(--color-ink-3)" />
           </marker>
         </defs>
 
-        {/* Time axis — the spine every card is measured against. No rail, no signal:
-            the critical path is a layout input only (DESIGN_SYSTEM.md § The Map grammar,
-            "Critical path"). */}
-        <line
-          x1={layout.axis.x}
-          y1={layout.axis.y0}
-          x2={layout.axis.x}
-          y2={layout.axis.y1}
-          stroke="var(--color-ink)"
-          strokeWidth={1}
-          markerEnd="url(#map-arrow-dep)"
-        />
-        {layout.axis.ticks.map((tick) => (
-          <text
-            key={tick.y}
-            x={layout.axis.x - 8}
-            y={tick.y}
-            textAnchor="end"
-            dominantBaseline="middle"
-            className="tabular"
-            fontSize={11}
-            fontWeight={500}
-            fill="var(--color-ink-3)"
-          >
-            {tick.label}
-          </text>
-        ))}
-
-        {/* Dependencies — solid, orthogonal, one shared arrowhead per merge. */}
+        {/* Mainline chain — solid, quiet, one shared arrowhead per merge. */}
         {layout.edges.map((edge) => (
           <path
             key={`${edge.from}->${edge.to}`}
             d={edge.d}
             fill="none"
             stroke="var(--color-ink)"
-            strokeWidth={1}
+            strokeWidth={1.5}
             markerEnd="url(#map-arrow-dep)"
           />
         ))}
 
-        {/* Parallel flow — dashed, a bus off the host plus one branch per borrowed
-            card. Drawn only from plan.windows, never inferred from attention. */}
-        {layout.flows.map((flow) => (
-          <g key={flow.windowId}>
-            <path
-              d={flow.busD}
-              fill="none"
-              stroke="var(--color-ink-2)"
-              strokeWidth={1}
-              strokeDasharray="4 3"
-            />
-            {flow.branches.map((branch) => (
+        {/* Window brackets — one per window, not one per member. */}
+        {layout.brackets.map((bracket) => (
+          <g key={bracket.windowId}>
+            <path d={bracket.stemD} fill="none" stroke="var(--color-ink-3)" strokeWidth={1} strokeDasharray="3 3" />
+            <path d={bracket.spineD} fill="none" stroke="var(--color-ink-3)" strokeWidth={1} strokeDasharray="3 3" />
+            {bracket.ticks.map((tick) => (
               <path
-                key={branch.to}
-                d={branch.d}
+                key={tick.to}
+                d={tick.d}
                 fill="none"
-                stroke="var(--color-ink-2)"
+                stroke="var(--color-ink-3)"
                 strokeWidth={1}
-                strokeDasharray="4 3"
-                markerEnd="url(#map-arrow-flow)"
+                strokeDasharray="3 3"
+                markerEnd="url(#map-arrow-tick)"
               />
             ))}
           </g>
@@ -123,31 +91,19 @@ export function MapView({ layout }: { layout: MapLayout }) {
           <TaskCard key={card.nodeId} card={card} />
         ))}
 
-        {layout.overflow.map((card) => (
-          <g key={`${card.fromMin}-${card.toMin}`}>
-            <rect
-              x={card.x}
-              y={card.y}
-              width={card.w}
-              height={card.h}
-              rx={8}
-              fill="var(--color-paper-sunk)"
-              stroke="var(--color-ink-3)"
-              strokeWidth={1}
-              strokeDasharray="4 3"
-            />
-            <text
-              x={card.x + card.w / 2}
-              y={card.y + card.h / 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize={13}
-              fontWeight={500}
-              fill="var(--color-ink-3)"
-            >
-              +{card.nodeIds.length} more
-            </text>
-          </g>
+        {layout.folds.map((fold) => (
+          <text
+            key={fold.anchorNodeId}
+            x={fold.x}
+            y={fold.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={11}
+            fontWeight={500}
+            fill="var(--color-ink-3)"
+          >
+            {fold.text}
+          </text>
         ))}
       </svg>
 
@@ -157,13 +113,10 @@ export function MapView({ layout }: { layout: MapLayout }) {
 }
 
 function TaskCard({ card }: { card: MapCard }) {
-  const fill = card.borrowed ? 'var(--color-field)' : mapCardFill(card.stageIndex)
-  const stroke = card.borrowed
-    ? 'color-mix(in srgb, var(--color-ink-3) 40%, transparent)'
-    : stageColor(card.stageIndex)
+  const fill = card.role === 'window-child' ? 'var(--color-field)' : mapCardFill(card.stageIndex)
 
   // Stack label line(s), the duration, and the optional attention note, centred as a
-  // block inside the card. Small cards (no note) get a shorter block.
+  // block inside the card.
   const LABEL_LINE_H = 16
   const SMALL_LINE_H = 14
   const contentH = card.labelLines.length * LABEL_LINE_H + SMALL_LINE_H + (card.note ? SMALL_LINE_H : 0)
@@ -172,16 +125,7 @@ function TaskCard({ card }: { card: MapCard }) {
 
   return (
     <g>
-      <rect
-        x={card.x}
-        y={card.y}
-        width={card.w}
-        height={card.h}
-        rx={8}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={1}
-      />
+      <rect x={card.x} y={card.y} width={card.w} height={card.h} rx={8} fill={fill} />
       {card.labelLines.map((line, i) => (
         <text
           key={i}
@@ -214,8 +158,8 @@ function TaskCard({ card }: { card: MapCard }) {
           y={top + card.labelLines.length * LABEL_LINE_H + SMALL_LINE_H + SMALL_LINE_H / 2}
           textAnchor="middle"
           dominantBaseline="middle"
-          fontSize={11}
-          fontWeight={400}
+          fontSize={10}
+          fontWeight={500}
           fill="var(--color-ink-3)"
         >
           {card.note}
@@ -237,18 +181,9 @@ function Legend({ legend }: { legend: MapLayout['legend'] }) {
           {stage.label}
         </span>
       ))}
-      {legend.hasParallel && (
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: 'var(--color-field)' }}
-          />
-          Parallel (while waiting)
-        </span>
-      )}
       <span className="flex items-center gap-1.5">
         <svg width="16" height="8" aria-hidden="true">
-          <line x1={0} y1={4} x2={16} y2={4} stroke="var(--color-ink)" strokeWidth={1} />
+          <line x1={0} y1={4} x2={16} y2={4} stroke="var(--color-ink)" strokeWidth={1.5} />
         </svg>
         Dependency
       </span>
@@ -260,12 +195,12 @@ function Legend({ legend }: { legend: MapLayout['legend'] }) {
               y1={4}
               x2={16}
               y2={4}
-              stroke="var(--color-ink-2)"
+              stroke="var(--color-ink-3)"
               strokeWidth={1}
-              strokeDasharray="4 3"
+              strokeDasharray="3 3"
             />
           </svg>
-          Parallel flow
+          Parallel (while waiting)
         </span>
       )}
     </div>
