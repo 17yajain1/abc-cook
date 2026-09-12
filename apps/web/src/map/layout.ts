@@ -534,13 +534,16 @@ export function layoutMap(payload: RecipePlanResponse): MapLayout {
     })
   }
 
-  const independentCount = [...roleOf.values()].filter((r) => r === 'independent').length
   const usedStageIndexes = new Set(cards.map((c) => c.stageIndex))
   const legend = {
     stages: graph.stages
       .map((stage, index) => ({ label: stage.label, stageIndex: index }))
       .filter((s) => usedStageIndexes.has(s.stageIndex)),
-    hasParallel: plan.windows.length > 0 || independentCount > 0,
+    // The dashed key is the bracket's key. An independent-overlap card draws no
+    // bracket, so it must never be what makes this true (CP2, "Fix hasParallel").
+    // Independent-overlap cards get no legend entry of their own — their position and
+    // lack of a bracket are the whole signal, per the approved grammar.
+    hasParallel: plan.windows.length > 0,
   }
 
   return {

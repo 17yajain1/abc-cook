@@ -65,9 +65,14 @@
   /* Map task card fill alpha (docs/DESIGN_SYSTEM.md § The Map grammar, M2.75). Higher
      than --stage-ground-alpha: a Plan stage ground is a region tint behind rows, but a
      Map card has to read as a discrete tappable object against paper, and at 0.18 it
-     didn't. Set to 32% per the M2.75 Map design handoff (turn 11); the M2.75-checkpoint
-     value of 0.28 was calibrated against the since-superseded axis-and-lane grammar. */
-  --map-card-alpha: 0.32;
+     didn't. The design handoff's stated 32% failed the CP2 accessibility pass: the
+     mainline attention note (10/500 ink-2) fell to 4.29-4.57:1 against the six
+     composited stage fills at that alpha, short of WCAG AA's 4.5:1. Lowered to 28% —
+     the minimum backward step that clears 4.5:1 on all six stages (worst case 4.55:1,
+     docs/DESIGN_SYSTEM.md § Resolved in M2.75, round 2 has the full table) — which
+     happens to be the M2.5-checkpoint value already calibrated as a legible light tint,
+     not a coincidence worth re-litigating. */
+  --map-card-alpha: 0.28;
 }
 
 html,

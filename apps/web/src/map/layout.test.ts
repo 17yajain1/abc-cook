@@ -354,3 +354,72 @@ describe('layoutMap — synthetic-two-windows specifics (a fixture the algorithm
     expect(crush.h).toBeGreaterThanOrEqual(crush.labelLines.length * 16 + 34)
   })
 })
+
+/**
+ * A hand-built `RecipePlanResponse` — never routed through the real scheduler — purely
+ * to isolate `hasParallel` from every golden fixture, none of which happens to have an
+ * independent-overlap card with zero windows. `b` overlaps `a` in time and belongs to no
+ * window, so it classifies independent; there is no window at all, so no bracket can
+ * ever be drawn (CP2, "Fix hasParallel").
+ */
+function independentOnlyPlan(): RecipePlanResponse {
+  const node = (id: string) => ({
+    id,
+    stage: 's',
+    label: id,
+    instruction: '',
+    kind: 'prep' as const,
+    attention: 'hands_on' as const,
+    duration_min: 5,
+    duration_typical: 5,
+    duration_max: 5,
+    station: 'counter' as const,
+    depends_on: [],
+    interruptible: true,
+  })
+  return {
+    graph: {
+      id: 'inline-independent-only',
+      title: 'Inline fixture',
+      servings: 1,
+      cuisine: null,
+      source: { kind: 'text', value: 'inline test fixture, not a real recipe', imported_at: '2026-01-01T00:00:00Z' },
+      ingredients: [],
+      nodes: [node('a'), node('b')],
+      stages: [{ id: 's', label: 'Stage', color_key: 's' }],
+      stated_total_min: null,
+    },
+    plan: {
+      graph_id: 'inline-independent-only',
+      scheduled: [
+        { node_id: 'a', start_min: 0, end_min: 10, occupies_cook: true, window_id: null, rank_in_window: null },
+        { node_id: 'b', start_min: 5, end_min: 15, occupies_cook: true, window_id: null, rank_in_window: null },
+      ],
+      windows: [],
+      total_min: 15,
+      serial_min: 10,
+      saved_min: -5,
+      critical_path: ['a'],
+      warnings: [],
+    },
+    stages: [],
+  } as unknown as RecipePlanResponse
+}
+
+describe('layoutMap — hasParallel semantics (CP2)', () => {
+  it('is false for an independent-only plan: an independent card draws no bracket, so it must not key the dashed legend entry', () => {
+    const layout = layoutMap(independentOnlyPlan())
+    const independentCard = layout.cards.find((c) => c.role === 'independent')
+    expect(independentCard).toBeDefined() // sanity: the fixture does produce one
+    expect(layout.brackets).toEqual([])
+    expect(layout.legend.hasParallel).toBe(false)
+  })
+
+  it('is true as soon as the plan has a real window, independent of how many independent cards also exist', () => {
+    // chicken-biryani has both windows and independents; hasParallel must still trace
+    // to the windows, not merely to "something concurrent exists".
+    const layout = layoutMap(BIRYANI)
+    expect(layout.brackets.length).toBeGreaterThan(0)
+    expect(layout.legend.hasParallel).toBe(true)
+  })
+})

@@ -160,7 +160,7 @@ function TaskCard({ card }: { card: MapCard }) {
           dominantBaseline="middle"
           fontSize={10}
           fontWeight={500}
-          fill="var(--color-ink-3)"
+          fill="var(--color-ink-2)"
         >
           {card.note}
         </text>
