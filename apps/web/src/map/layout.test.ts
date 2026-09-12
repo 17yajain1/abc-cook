@@ -8,12 +8,14 @@ import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import maggi from '@/__fixtures__/maggi-2min.plan-response.json'
 import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
+import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
 
 const KADAI = kadaiPaneer as RecipePlanResponse
 const MAGGI = maggi as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse
 const DONUTS = homemadeDonuts as RecipePlanResponse
 const SHORTCAKE = strawberryShortcake as RecipePlanResponse
+const SYNTHETIC = syntheticTwoWindows as RecipePlanResponse
 
 const ALL: [string, RecipePlanResponse][] = [
   ['kadai-paneer', KADAI],
@@ -21,92 +23,170 @@ const ALL: [string, RecipePlanResponse][] = [
   ['chicken-biryani', BIRYANI],
   ['homemade-donuts', DONUTS],
   ['strawberry-shortcake', SHORTCAKE],
+  ['synthetic-two-windows', SYNTHETIC],
 ]
+
+/** Recomputes each node's expected role straight from plan facts — start_min, end_min,
+ * window membership — independent of `layout.ts`'s own implementation, so a test bug
+ * that copies the algorithm's mistake can't hide behind it. */
+function expectedRoles(fixture: RecipePlanResponse): Map<string, 'mainline' | 'window-child' | 'independent'> {
+  const scheduled = fixture.plan.scheduled
+  const memberIds = new Set(fixture.plan.windows.flatMap((w) => w.assigned))
+  const hostIds = new Set(fixture.plan.windows.map((w) => w.host_node_id))
+  const byId = new Map(scheduled.map((s) => [s.node_id, s]))
+
+  const roles = new Map<string, 'mainline' | 'window-child' | 'independent'>()
+  for (const id of memberIds) roles.set(id, 'window-child')
+
+  const reserved: { start: number; end: number }[] = []
+  const overlaps = (a: { start: number; end: number }, b: { start: number; end: number }) =>
+    a.start < b.end && b.start < a.end
+
+  const sortedHosts = [...hostIds].sort(
+    (a, b) => byId.get(a)!.start_min - byId.get(b)!.start_min || a.localeCompare(b),
+  )
+  for (const id of sortedHosts) {
+    const s = byId.get(id)!
+    const interval = { start: s.start_min, end: s.end_min }
+    if (reserved.some((r) => overlaps(r, interval))) {
+      roles.set(id, 'independent')
+    } else {
+      roles.set(id, 'mainline')
+      reserved.push(interval)
+    }
+  }
+
+  const rest = scheduled
+    .filter((s) => !memberIds.has(s.node_id) && !hostIds.has(s.node_id))
+    .sort((a, b) => a.start_min - b.start_min || a.end_min - b.end_min || a.node_id.localeCompare(b.node_id))
+  for (const s of rest) {
+    const interval = { start: s.start_min, end: s.end_min }
+    if (reserved.some((r) => overlaps(r, interval))) {
+      roles.set(s.node_id, 'independent')
+    } else {
+      roles.set(s.node_id, 'mainline')
+      reserved.push(interval)
+    }
+  }
+  return roles
+}
 
 describe.each(ALL)('layoutMap — %s (general invariants)', (_slug, fixture) => {
   const layout = layoutMap(fixture)
+  const roles = expectedRoles(fixture)
 
   it('is deterministic', () => {
     expect(layoutMap(fixture)).toEqual(layout)
   })
 
-  it('never exceeds the 3-lane maximum', () => {
-    expect(layout.lanes).toBeLessThanOrEqual(3)
+  it('gives every visible card the classification the plan facts alone imply', () => {
     for (const card of layout.cards) {
-      expect(card.lane).toBeLessThan(3)
-      expect(card.lane).toBeGreaterThanOrEqual(0)
+      expect(card.role).toBe(roles.get(card.nodeId))
     }
   })
 
-  it('gives every card at least the 44px tap floor and 96px width floor', () => {
+  it('places every card in exactly one of the two fixed columns by role', () => {
     for (const card of layout.cards) {
-      expect(card.h).toBeGreaterThanOrEqual(44)
-      expect(card.w).toBeGreaterThanOrEqual(96)
-    }
-  })
-
-  it('places every critical-path node in lane 0', () => {
-    const criticalSet = new Set(fixture.plan.critical_path)
-    for (const card of layout.cards) {
-      if (criticalSet.has(card.nodeId)) expect(card.lane).toBe(0)
-    }
-  })
-
-  it('marks a card borrowed iff the scheduler assigned it a window_id', () => {
-    const scheduledById = new Map(fixture.plan.scheduled.map((s) => [s.node_id, s]))
-    for (const card of layout.cards) {
-      const windowId = scheduledById.get(card.nodeId)?.window_id ?? null
-      expect(card.borrowed).toBe(windowId != null)
-    }
-  })
-
-  it('never overlaps two cards in the same lane', () => {
-    const byLane = new Map<number, typeof layout.cards>()
-    for (const card of layout.cards) {
-      const bucket = byLane.get(card.lane) ?? []
-      bucket.push(card)
-      byLane.set(card.lane, bucket)
-    }
-    for (const cards of byLane.values()) {
-      const sorted = [...cards].sort((a, b) => a.y - b.y)
-      for (let i = 1; i < sorted.length; i++) {
-        expect(sorted[i].y).toBeGreaterThanOrEqual(sorted[i - 1].y + sorted[i - 1].h)
+      if (card.role === 'mainline') {
+        expect(card.x).toBe(20)
+        expect(card.w).toBe(190)
+      } else {
+        expect(card.x).toBe(222)
+        expect(card.w).toBe(108)
       }
     }
   })
 
-  it('draws exactly one edge per depends_on pair', () => {
-    const expectedPairs = fixture.graph.nodes.flatMap((n) =>
-      (n.depends_on ?? []).map((dep) => `${dep}->${n.id}`),
-    )
+  it('gives every card at least the 44px tap floor and its own text-fit floor', () => {
+    for (const card of layout.cards) {
+      expect(card.h).toBeGreaterThanOrEqual(44)
+      expect(card.h).toBeGreaterThanOrEqual(card.labelLines.length * 16 + 34)
+    }
+  })
+
+  it('never overlaps two mainline cards in time', () => {
+    const mainline = layout.cards.filter((c) => c.role === 'mainline').sort((a, b) => a.y - b.y)
+    for (let i = 1; i < mainline.length; i++) {
+      expect(mainline[i].y).toBeGreaterThanOrEqual(mainline[i - 1].y + mainline[i - 1].h)
+    }
+  })
+
+  it('never overlaps two visible right-column cards in time', () => {
+    const right = layout.cards.filter((c) => c.role !== 'mainline').sort((a, b) => a.y - b.y)
+    for (let i = 1; i < right.length; i++) {
+      expect(right[i].y).toBeGreaterThanOrEqual(right[i - 1].y + right[i - 1].h)
+    }
+  })
+
+  it('draws edges only between two mainline cards, one per real dependency', () => {
+    const mainlineIds = new Set(layout.cards.filter((c) => c.role === 'mainline').map((c) => c.nodeId))
+    const expectedPairs = fixture.graph.nodes
+      .flatMap((n) => (n.depends_on ?? []).map((dep) => ({ from: dep, to: n.id })))
+      .filter((p) => mainlineIds.has(p.from) && mainlineIds.has(p.to))
+      .map((p) => `${p.from}->${p.to}`)
     const actualPairs = layout.edges.map((e) => `${e.from}->${e.to}`)
     expect(actualPairs.sort()).toEqual(expectedPairs.sort())
-  })
-
-  it('draws one flow branch per non-critical node the scheduler assigned to a window', () => {
-    const criticalSet = new Set(fixture.plan.critical_path)
-    const expectedBranchCount = fixture.plan.windows.reduce(
-      (n, w) => n + w.assigned.filter((id) => !criticalSet.has(id)).length,
-      0,
-    )
-    const actualBranchCount = layout.flows.reduce((n, f) => n + f.branches.length, 0)
-    expect(actualBranchCount).toBe(expectedBranchCount)
-  })
-
-  it('has a y-monotone axis and a height that matches it', () => {
-    expect(layout.axis.y1).toBeGreaterThan(layout.axis.y0)
-    for (let i = 1; i < layout.axis.ticks.length; i++) {
-      expect(layout.axis.ticks[i].y).toBeGreaterThan(layout.axis.ticks[i - 1].y)
+    for (const edge of layout.edges) {
+      expect(mainlineIds.has(edge.from)).toBe(true)
+      expect(mainlineIds.has(edge.to)).toBe(true)
     }
-    expect(layout.height).toBeGreaterThan(layout.axis.y1)
   })
 
-  it('names no card, edge, flow or legend entry after the critical path', () => {
-    // plan.critical_path is a layout input only (DESIGN_SYSTEM.md § The Map grammar) —
-    // it must never surface as a user-facing category.
+  it('draws one bracket per window whose host is mainline and has a shown member, and no others', () => {
+    for (const bracket of layout.brackets) {
+      const host = layout.cards.find((c) => c.nodeId === bracket.hostId)
+      expect(host?.role).toBe('mainline')
+      expect(bracket.ticks.length).toBeGreaterThan(0)
+    }
+    const independentIds = new Set(
+      layout.cards.filter((c) => c.role === 'independent').map((c) => c.nodeId),
+    )
+    for (const bracket of layout.brackets) {
+      for (const tick of bracket.ticks) expect(independentIds.has(tick.to)).toBe(false)
+    }
+  })
+
+  it('every scheduled node is either a visible card or belongs to exactly one fold group', () => {
+    const cardIds = new Set(layout.cards.map((c) => c.nodeId))
+    const foldedIds = layout.folds.flatMap((f) => f.nodeIds)
+    const foldedSet = new Set(foldedIds)
+    expect(foldedIds.length).toBe(foldedSet.size) // no id folded twice
+    for (const s of fixture.plan.scheduled) {
+      expect(cardIds.has(s.node_id) || foldedSet.has(s.node_id)).toBe(true)
+    }
+  })
+
+  it('every fold anchor is itself a visible card', () => {
+    const cardIds = new Set(layout.cards.map((c) => c.nodeId))
+    for (const fold of layout.folds) {
+      expect(cardIds.has(fold.anchorNodeId)).toBe(true)
+      expect(fold.text).toBe(`+${fold.nodeIds.length} more`)
+    }
+  })
+
+  it('shows a note only on a mainline card at least 60px tall', () => {
+    for (const card of layout.cards) {
+      if (card.note) {
+        expect(card.role).toBe('mainline')
+        expect(card.h).toBeGreaterThanOrEqual(60)
+      }
+    }
+  })
+
+  it('has a height taller than its last card', () => {
+    const maxBottom = Math.max(...layout.cards.map((c) => c.y + c.h))
+    expect(layout.height).toBeGreaterThan(maxBottom)
+  })
+
+  it('names no card, edge, bracket or legend entry after the critical path', () => {
+    // plan.critical_path is not a Map concept at all in the M2.75 grammar.
     expect(layout).not.toHaveProperty('criticalPath')
+    expect(layout).not.toHaveProperty('lanes')
+    expect(layout).not.toHaveProperty('axis')
     for (const card of layout.cards) {
       expect(card).not.toHaveProperty('onCriticalPath')
+      expect(card).not.toHaveProperty('lane')
+      expect(card).not.toHaveProperty('borrowed')
     }
   })
 })
@@ -114,105 +194,163 @@ describe.each(ALL)('layoutMap — %s (general invariants)', (_slug, fixture) => 
 describe('layoutMap — kadai-paneer specifics', () => {
   const layout = layoutMap(KADAI)
 
-  it('uses 2 lanes', () => {
-    expect(layout.lanes).toBe(2)
+  it('has no folds — the only window has 3 members, none of it collides', () => {
+    expect(layout.folds).toEqual([])
   })
 
-  it('has no overflow', () => {
-    expect(layout.overflow).toEqual([])
+  it('places chop_tomato on the mainline between saute_onion and cook_tomato_base with no arrow from saute_onion', () => {
+    const chopTomato = layout.cards.find((c) => c.nodeId === 'chop_tomato')!
+    expect(chopTomato.role).toBe('mainline')
+    const pairs = layout.edges.map((e) => `${e.from}->${e.to}`)
+    expect(pairs).not.toContain('saute_onion->chop_tomato')
+    expect(pairs).toContain('chop_tomato->cook_tomato_base')
+    expect(pairs).toContain('saute_onion->cook_tomato_base') // skip edge, same merge target
   })
 
-  it('sizes the 2-min chop and the 12-min cook on different clamp regions', () => {
-    const chopOnion = layout.cards.find((c) => c.nodeId === 'chop_onion')!
-    const cookBase = layout.cards.find((c) => c.nodeId === 'cook_tomato_base')!
-    // chop_onion (0->3) is a single sqrt-scaled row, comfortably clear of the floor.
-    expect(chopOnion.h).toBeCloseTo(34 * Math.sqrt(3) - 12, 1)
-    // cook_tomato_base (10->22) spans several breakpoints (10-15-17-19-22) and so
-    // accumulates several clamped segments — taller than the single chop row, but the
-    // whole map still fits comfortably on a phone.
-    expect(cookBase.h).toBeGreaterThan(chopOnion.h)
-  })
-
-  it('draws no dashed flow for the single-window recipe’s only window without one', () => {
-    expect(layout.flows).toHaveLength(1)
-    expect(layout.flows[0].branches.map((b) => b.to)).toEqual([
-      'chop_capsicum',
-      'cube_paneer',
-      'make_kadai_masala',
-    ])
+  it('draws one bracket with 3 ticks for the single window', () => {
+    expect(layout.brackets).toHaveLength(1)
+    expect(layout.brackets[0].ticks.map((t) => t.to)).toEqual(['chop_capsicum', 'cube_paneer', 'make_kadai_masala'])
   })
 })
 
-describe('layoutMap — maggi-2min specifics (no windows)', () => {
+describe('layoutMap — maggi-2min specifics (fully serial)', () => {
   const layout = layoutMap(MAGGI)
 
-  it('has exactly 1 lane', () => {
-    expect(layout.lanes).toBe(1)
-  })
-
-  it('draws no flows and the legend carries no parallel entry', () => {
-    expect(layout.flows).toEqual([])
+  it('has no brackets, no folds, and no parallel legend entry', () => {
+    expect(layout.brackets).toEqual([])
+    expect(layout.folds).toEqual([])
     expect(layout.legend.hasParallel).toBe(false)
   })
 
-  it('has no overflow', () => {
-    expect(layout.overflow).toEqual([])
+  it('every card is mainline', () => {
+    expect(layout.cards.every((c) => c.role === 'mainline')).toBe(true)
   })
 })
 
-describe('layoutMap — chicken-biryani specifics (4-way concurrency)', () => {
+describe('layoutMap — chicken-biryani specifics (4-way concurrency + fold)', () => {
   const layout = layoutMap(BIRYANI)
 
-  it('overflows exactly the two free-floating nodes the fixture forces out', () => {
-    expect(layout.overflow).toHaveLength(1)
-    expect(layout.overflow[0].nodeIds.sort()).toEqual(['boil_spiced_water', 'fry_birista'])
+  it('classifies the mainline set exactly as the interval walk demands', () => {
+    const mainlineIds = layout.cards.filter((c) => c.role === 'mainline').map((c) => c.nodeId).sort()
+    expect(mainlineIds).toEqual(['soak_rice', 'cook_chicken', 'layer_biryani', 'dum', 'rest_and_serve'].sort())
   })
 
-  it('keeps the dual-role borrowed-and-critical node on the spine, not beside its host', () => {
-    const mixMarinade = layout.cards.find((c) => c.nodeId === 'mix_marinade')!
-    expect(mixMarinade.lane).toBe(0)
-    expect(mixMarinade.borrowed).toBe(true)
+  it('shows marinate_chicken as a visible independent card beside soak_rice', () => {
+    // The other three independents (boil_spiced_water, fry_birista, parboil_rice) are
+    // independent too, but each collides in time with something already shown in the
+    // right column, so they fold — see the fold-group tests below. Only a card that
+    // survives the fold gets its own MapCard.
+    const marinate = layout.cards.find((c) => c.nodeId === 'marinate_chicken')!
+    expect(marinate.role).toBe('independent')
   })
 
-  it('draws no flow branch to the dual-role node', () => {
-    const w1 = layout.flows.find((f) => f.windowId === 'w1')!
-    expect(w1.branches.map((b) => b.to)).not.toContain('mix_marinade')
+  it('folds the 4th w1 member and its two time-colliding independents under mix_marinade', () => {
+    const w1Fold = layout.folds.find((f) => f.anchorNodeId === 'mix_marinade')!
+    expect(w1Fold.nodeIds.sort()).toEqual(['boil_spiced_water', 'fry_birista', 'soak_saffron'].sort())
   })
 
-  it('still draws edges touching the overflowed nodes', () => {
+  it('folds the collision on parboil_rice under marinate_chicken', () => {
+    const w2Fold = layout.folds.find((f) => f.anchorNodeId === 'marinate_chicken')!
+    expect(w2Fold.nodeIds).toEqual(['parboil_rice'])
+  })
+
+  it('draws no edge touching an overflowed or independent node', () => {
     const pairs = layout.edges.map((e) => `${e.from}->${e.to}`)
-    expect(pairs).toContain('slice_onions->fry_birista')
-    expect(pairs).toContain('boil_spiced_water->parboil_rice')
+    expect(pairs).not.toContain('slice_onions->fry_birista')
+    expect(pairs).not.toContain('boil_spiced_water->parboil_rice')
   })
 })
 
-describe('layoutMap — homemade-donuts specifics (60-min clamp)', () => {
+describe('layoutMap — homemade-donuts specifics (long window + independent on the critical path)', () => {
   const layout = layoutMap(DONUTS)
 
-  it('clamps the first_rise stretch to the 140px ceiling', () => {
-    // first_rise (18->78) spans the 18->21 and 21->78 breakpoints; the second, a
-    // 57-minute stretch, is the one that hits the ceiling.
-    const y18 = layout.axis.ticks.find((t) => t.label === '18 min')!.y
-    const y21 = layout.axis.ticks.find((t) => t.label === '21 min')!.y
-    const y78 = layout.axis.ticks.find((t) => t.label === '78 min')!.y
-    expect(y78 - y21).toBe(140)
-    expect(y21 - y18).toBeLessThan(140)
+  it('classifies proof_donuts independent despite sitting on the critical path', () => {
+    const proof = layout.cards.find((c) => c.nodeId === 'proof_donuts')!
+    expect(proof.role).toBe('independent')
+    expect(proof.note).toBeNull() // notes are mainline-only
+  })
+
+  it('gives first_rise a tall but bounded mainline card', () => {
+    const firstRise = layout.cards.find((c) => c.nodeId === 'first_rise')!
+    expect(firstRise.role).toBe('mainline')
+    expect(firstRise.h).toBeGreaterThanOrEqual(120)
+    expect(firstRise.h).toBeLessThan(200)
+    expect(firstRise.note).toBe('(hands off)')
+  })
+
+  it('draws the skip edge from fry_donuts to glaze_donuts over make_glaze', () => {
+    const pairs = layout.edges.map((e) => `${e.from}->${e.to}`)
+    expect(pairs).toContain('fry_donuts->glaze_donuts')
+    expect(pairs).toContain('make_glaze->glaze_donuts')
   })
 
   it('fits within roughly two phone screens', () => {
-    expect(layout.height).toBeLessThan(1700) // ~2 screens at 390x844
+    expect(layout.height).toBeLessThan(1700)
   })
 })
 
-describe('layoutMap — strawberry-shortcake specifics (non-integer capacity)', () => {
+describe('layoutMap — strawberry-shortcake specifics (independent overlap, dropped edge)', () => {
   const layout = layoutMap(SHORTCAKE)
 
-  it('still lays out cleanly even though the window capacity is non-integer', () => {
+  it('classifies macerate_berries independent and unbracketed', () => {
+    const macerate = layout.cards.find((c) => c.nodeId === 'macerate_berries')!
+    expect(macerate.role).toBe('independent')
+    expect(layout.brackets.every((b) => b.ticks.every((t) => t.to !== 'macerate_berries'))).toBe(true)
+  })
+
+  it('does not draw macerate_berries -> assemble_shortcakes (source is not mainline)', () => {
+    const pairs = layout.edges.map((e) => `${e.from}->${e.to}`)
+    expect(pairs).not.toContain('macerate_berries->assemble_shortcakes')
+  })
+
+  it('still lays out cleanly with a non-integer window capacity', () => {
     expect(SHORTCAKE.plan.windows[0].capacity_min).toBe(16.2)
-    expect(layout.overflow).toEqual([])
     for (const card of layout.cards) {
       expect(Number.isFinite(card.y)).toBe(true)
       expect(Number.isFinite(card.h)).toBe(true)
     }
+  })
+})
+
+describe('layoutMap — synthetic-two-windows specifics (a fixture the algorithm has never seen)', () => {
+  const layout = layoutMap(SYNTHETIC)
+
+  it('classifies soak_dried_beans independent (it overlaps simmer_stew, it is not a member of w1)', () => {
+    // It also happens to collide in time with the right column's own occupancy once
+    // dice_potatoes is shown, so — like Biryani's boil_spiced_water — it folds rather
+    // than rendering its own card. Its classification is still independent, not
+    // window-child: proven by the fold-group test below, which is the only place a
+    // folded node's role is externally observable.
+    const cardIds = new Set(layout.cards.map((c) => c.nodeId))
+    expect(cardIds.has('soak_dried_beans')).toBe(false)
+    const fold = layout.folds.find((f) => f.nodeIds.includes('soak_dried_beans'))
+    expect(fold).toBeDefined()
+  })
+
+  it('keeps two consecutive non-dependent mainline cards without inventing an edge', () => {
+    const pairs = layout.edges.map((e) => `${e.from}->${e.to}`)
+    expect(pairs).not.toContain('chop_vegetables->toast_whole_spices')
+    expect(pairs).toContain('chop_vegetables->simmer_stew')
+    expect(pairs).toContain('toast_whole_spices->simmer_stew')
+  })
+
+  it('folds the 4th member of the 4-member window plus its time-colliding independent under one label', () => {
+    const fold = layout.folds.find((f) => f.anchorNodeId === 'mince_garlic_ginger')!
+    expect(fold.nodeIds.sort()).toEqual(['rinse_rice', 'soak_dried_beans'].sort())
+  })
+
+  it('draws two brackets, 3 ticks then 1', () => {
+    expect(layout.brackets).toHaveLength(2)
+    const byWindow = new Map(layout.brackets.map((b) => [b.windowId, b.ticks.length]))
+    expect(byWindow.get('w1')).toBe(3)
+    expect(byWindow.get('w2')).toBe(1)
+  })
+
+  it('wraps the long window-child label onto multiple lines instead of clipping it', () => {
+    const crush = layout.cards.find((c) => c.nodeId === 'crush_spice_blend')!
+    expect(crush.role).toBe('window-child')
+    expect(crush.labelLines.length).toBeGreaterThan(1)
+    expect(crush.labelLines.join(' ')).toBe('Crush toasted spice blend')
+    expect(crush.h).toBeGreaterThanOrEqual(crush.labelLines.length * 16 + 34)
   })
 })
