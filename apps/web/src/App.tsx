@@ -3,13 +3,14 @@ import { useCallback, useEffect, useState } from 'react'
 import type { RecipeSummary } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan, fetchRecipes } from './api/client'
+import { layoutMap, type MapLayout } from './map/layout'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 
 type View =
   | { kind: 'picker' }
   | { kind: 'loading'; recipeId: string }
-  | { kind: 'plan'; plan: RenderPlan }
+  | { kind: 'plan'; plan: RenderPlan; map: MapLayout }
   | { kind: 'error'; message: string }
 
 export default function App() {
@@ -18,7 +19,9 @@ export default function App() {
   const openRecipe = useCallback((recipeId: string) => {
     setView({ kind: 'loading', recipeId })
     fetchPlan(recipeId)
-      .then((payload) => setView({ kind: 'plan', plan: derivePlan(payload) }))
+      .then((payload) =>
+        setView({ kind: 'plan', plan: derivePlan(payload), map: layoutMap(payload) }),
+      )
       .catch((err: unknown) =>
         setView({ kind: 'error', message: messageFor(err) }),
       )
@@ -43,7 +46,7 @@ export default function App() {
         </Centered>
       )
     case 'plan':
-      return <PlanScreen plan={view.plan} onPickAnother={backToPicker} />
+      return <PlanScreen plan={view.plan} map={view.map} onPickAnother={backToPicker} />
     default:
       return <RecipePicker onPick={openRecipe} />
   }

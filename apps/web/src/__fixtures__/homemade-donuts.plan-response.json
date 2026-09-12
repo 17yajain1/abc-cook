@@ -1,0 +1,583 @@
+{
+  "graph": {
+    "id": "homemade-donuts",
+    "title": "Homemade Glazed Donuts",
+    "servings": 12,
+    "cuisine": "American",
+    "source": {
+      "kind": "text",
+      "value": "Hand-authored for the M1 golden-fixture suite: a 60-minute unattended rise (huge window) and a freshness-constrained glaze.",
+      "imported_at": "2026-09-08T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_flour",
+        "name": "Bread flour",
+        "qty": 500.0,
+        "unit": "g",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_yeast",
+        "name": "Active dry yeast",
+        "qty": 7.0,
+        "unit": "g",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_sugar",
+        "name": "Sugar",
+        "qty": 50.0,
+        "unit": "g",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_milk",
+        "name": "Warm milk",
+        "qty": 240.0,
+        "unit": "ml",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_butter",
+        "name": "Butter",
+        "qty": 60.0,
+        "unit": "g",
+        "prep_note": "softened",
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_egg",
+        "name": "Egg",
+        "qty": 2.0,
+        "unit": "whole",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_salt",
+        "name": "Salt",
+        "qty": 6.0,
+        "unit": "g",
+        "prep_note": null,
+        "group": "Dough",
+        "optional": false
+      },
+      {
+        "id": "ing_frying_oil",
+        "name": "Neutral oil, for frying",
+        "qty": 1.5,
+        "unit": "l",
+        "prep_note": null,
+        "group": "Frying",
+        "optional": false
+      },
+      {
+        "id": "ing_powdered_sugar",
+        "name": "Powdered sugar",
+        "qty": 250.0,
+        "unit": "g",
+        "prep_note": null,
+        "group": "Glaze",
+        "optional": false
+      },
+      {
+        "id": "ing_vanilla",
+        "name": "Vanilla extract",
+        "qty": 1.0,
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "Glaze",
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "bloom_yeast",
+        "stage": "prep",
+        "label": "Bloom yeast",
+        "instruction": "Stir the yeast and a pinch of sugar into the warm milk and let it go foamy.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 4,
+        "duration_max": 6,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_yeast",
+          "ing_milk",
+          "ing_sugar"
+        ],
+        "produces": "comp_bloomed_yeast",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "a thick foamy head on the milk",
+        "tip": null
+      },
+      {
+        "id": "mix_dough",
+        "stage": "prep",
+        "label": "Mix dough",
+        "instruction": "Combine the bloomed yeast with flour, eggs, butter, remaining sugar and salt into a shaggy dough.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 5,
+        "duration_typical": 6,
+        "duration_max": 9,
+        "station": "counter",
+        "depends_on": [
+          "bloom_yeast"
+        ],
+        "consumes": [
+          "comp_bloomed_yeast",
+          "ing_flour",
+          "ing_egg",
+          "ing_butter",
+          "ing_salt"
+        ],
+        "produces": "comp_dough",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "knead_dough",
+        "stage": "prep",
+        "label": "Knead dough",
+        "instruction": "Knead until smooth and elastic and it passes the windowpane test.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 6,
+        "duration_typical": 8,
+        "duration_max": 12,
+        "station": "counter",
+        "depends_on": [
+          "mix_dough"
+        ],
+        "consumes": [
+          "comp_dough"
+        ],
+        "produces": "comp_kneaded_dough",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "smooth, springs back, thin translucent windowpane",
+        "tip": null
+      },
+      {
+        "id": "first_rise",
+        "stage": "rise",
+        "label": "First rise",
+        "instruction": "Cover and leave in a warm place until doubled.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 45,
+        "duration_typical": 60,
+        "duration_max": 90,
+        "station": "none",
+        "depends_on": [
+          "knead_dough"
+        ],
+        "consumes": [
+          "comp_kneaded_dough"
+        ],
+        "produces": "comp_risen_dough",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "doubled in bulk, holds a dimple when poked",
+        "tip": null
+      },
+      {
+        "id": "grease_pan",
+        "stage": "prep",
+        "label": "Grease tray",
+        "instruction": "Lightly grease the tray the cut donuts will proof on.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_butter"
+        ],
+        "produces": "comp_greased_tray",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "shape_and_cut",
+        "stage": "shape",
+        "label": "Roll and cut",
+        "instruction": "Roll the risen dough to 1cm and cut rings onto the greased tray.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 8,
+        "duration_typical": 10,
+        "duration_max": 15,
+        "station": "counter",
+        "depends_on": [
+          "first_rise",
+          "grease_pan"
+        ],
+        "consumes": [
+          "comp_risen_dough",
+          "comp_greased_tray"
+        ],
+        "produces": "comp_cut_donuts",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "proof_donuts",
+        "stage": "shape",
+        "label": "Proof donuts",
+        "instruction": "Cover the cut rings loosely and let them puff.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 20,
+        "duration_typical": 25,
+        "duration_max": 40,
+        "station": "none",
+        "depends_on": [
+          "shape_and_cut"
+        ],
+        "consumes": [
+          "comp_cut_donuts"
+        ],
+        "produces": "comp_proofed_donuts",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "visibly puffed, jiggly, a slow-filling dimple",
+        "tip": null
+      },
+      {
+        "id": "heat_oil",
+        "stage": "fry",
+        "label": "Heat oil",
+        "instruction": "Bring the frying oil to 175C. Start this once the donuts are cut so it is not sitting hot.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 9,
+        "duration_typical": 12,
+        "duration_max": 16,
+        "station": "burner",
+        "depends_on": [
+          "shape_and_cut"
+        ],
+        "consumes": [
+          "ing_frying_oil"
+        ],
+        "produces": "comp_hot_oil",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "175C on a thermometer",
+        "tip": null
+      },
+      {
+        "id": "fry_donuts",
+        "stage": "fry",
+        "label": "Fry donuts",
+        "instruction": "Fry in batches, about a minute a side, until deep golden. Drain on a rack.",
+        "kind": "active",
+        "attention": "periodic",
+        "duration_min": 10,
+        "duration_typical": 14,
+        "duration_max": 20,
+        "station": "burner",
+        "depends_on": [
+          "proof_donuts",
+          "heat_oil"
+        ],
+        "consumes": [
+          "comp_proofed_donuts",
+          "comp_hot_oil"
+        ],
+        "produces": "comp_fried_donuts",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "deep golden, cooked through, oil back at temperature between batches",
+        "tip": null
+      },
+      {
+        "id": "make_glaze",
+        "stage": "glaze",
+        "label": "Make glaze",
+        "instruction": "Whisk the powdered sugar with vanilla and a splash of milk to a thick pourable glaze.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 4,
+        "duration_typical": 5,
+        "duration_max": 8,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_powdered_sugar",
+          "ing_vanilla",
+          "ing_milk"
+        ],
+        "produces": "comp_glaze",
+        "interruptible": true,
+        "max_lead_min": 15,
+        "doneness_cue": "coats the back of a spoon, ribbons briefly",
+        "tip": "Make this while the donuts fry, not earlier — it crusts as it sits."
+      },
+      {
+        "id": "glaze_donuts",
+        "stage": "glaze",
+        "label": "Glaze donuts",
+        "instruction": "Dip the warm donuts in the glaze and set on a rack to drip.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 4,
+        "duration_typical": 6,
+        "duration_max": 9,
+        "station": "counter",
+        "depends_on": [
+          "fry_donuts",
+          "make_glaze"
+        ],
+        "consumes": [
+          "comp_fried_donuts",
+          "comp_glaze"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "color_key": "prep"
+      },
+      {
+        "id": "rise",
+        "label": "Rise",
+        "color_key": "cook_base"
+      },
+      {
+        "id": "shape",
+        "label": "Shape and proof",
+        "color_key": "add_veggies"
+      },
+      {
+        "id": "fry",
+        "label": "Fry",
+        "color_key": "combine"
+      },
+      {
+        "id": "glaze",
+        "label": "Glaze",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": 120
+  },
+  "plan": {
+    "graph_id": "homemade-donuts",
+    "scheduled": [
+      {
+        "node_id": "bloom_yeast",
+        "start_min": 0.0,
+        "end_min": 4.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "mix_dough",
+        "start_min": 4.0,
+        "end_min": 10.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "knead_dough",
+        "start_min": 10.0,
+        "end_min": 18.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "first_rise",
+        "start_min": 18.0,
+        "end_min": 78.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "grease_pan",
+        "start_min": 18.0,
+        "end_min": 21.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "shape_and_cut",
+        "start_min": 78.0,
+        "end_min": 88.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "heat_oil",
+        "start_min": 88.0,
+        "end_min": 100.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "proof_donuts",
+        "start_min": 88.0,
+        "end_min": 113.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "fry_donuts",
+        "start_min": 113.0,
+        "end_min": 127.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "make_glaze",
+        "start_min": 127.0,
+        "end_min": 132.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "glaze_donuts",
+        "start_min": 132.0,
+        "end_min": 138.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [
+      {
+        "id": "w1",
+        "host_node_id": "first_rise",
+        "capacity_min": 54.0,
+        "assigned": [
+          "grease_pan"
+        ],
+        "used_min": 3.0,
+        "slack_min": 51.0
+      }
+    ],
+    "total_min": 138.0,
+    "serial_min": 153.0,
+    "saved_min": 15.0,
+    "critical_path": [
+      "bloom_yeast",
+      "mix_dough",
+      "knead_dough",
+      "first_rise",
+      "shape_and_cut",
+      "proof_donuts",
+      "fry_donuts",
+      "glaze_donuts"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "prep",
+      "start_min": 0.0,
+      "end_min": 21.0,
+      "elapsed_min": 21.0,
+      "work_min": 21.0,
+      "windowed_work_min": 3.0,
+      "inline_work_min": 18.0,
+      "node_ids": [
+        "bloom_yeast",
+        "mix_dough",
+        "knead_dough",
+        "grease_pan"
+      ]
+    },
+    {
+      "stage_id": "rise",
+      "start_min": 18.0,
+      "end_min": 78.0,
+      "elapsed_min": 60.0,
+      "work_min": 60.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 60.0,
+      "node_ids": [
+        "first_rise"
+      ]
+    },
+    {
+      "stage_id": "shape",
+      "start_min": 78.0,
+      "end_min": 113.0,
+      "elapsed_min": 35.0,
+      "work_min": 35.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 35.0,
+      "node_ids": [
+        "shape_and_cut",
+        "proof_donuts"
+      ]
+    },
+    {
+      "stage_id": "fry",
+      "start_min": 88.0,
+      "end_min": 127.0,
+      "elapsed_min": 39.0,
+      "work_min": 26.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 26.0,
+      "node_ids": [
+        "heat_oil",
+        "fry_donuts"
+      ]
+    },
+    {
+      "stage_id": "glaze",
+      "start_min": 127.0,
+      "end_min": 138.0,
+      "elapsed_min": 11.0,
+      "work_min": 11.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 11.0,
+      "node_ids": [
+        "make_glaze",
+        "glaze_donuts"
+      ]
+    }
+  ]
+}

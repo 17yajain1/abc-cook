@@ -22,6 +22,7 @@ GOLDEN = [
     "chicken-biryani",
     "homemade-donuts",
     "strawberry-shortcake",
+    "synthetic-two-windows",
 ]
 
 

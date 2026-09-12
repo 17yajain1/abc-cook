@@ -21,8 +21,11 @@ So the graph view has one job, and it is not "look impressive":
 > and understand how the dish is built — what merges into what, and which parts happen
 > at the same time.
 
-If they need a legend, a tooltip, or a paragraph, the screen has failed. Everything
-below is in service of that five seconds.
+Everything below is in service of that five seconds. (An earlier draft of this rule said
+a legend means the screen failed. The M2.75 direction keeps a compact legend — see
+`DESIGN_SYSTEM.md` § *The Map grammar* and § *Resolved in M2.75* — because the mock reads
+clearly with one; the five-second test itself is still the bar a legend must clear, not a
+reason to omit one.)
 
 ---
 
@@ -35,7 +38,7 @@ contact with a phone.
 | View | When | What it optimises for |
 |---|---|---|
 | **Plan** (vertical stages) | Default. Before and during cooking. | Scannability, one thumb, calm |
-| **Map** (the actual graph) | On demand — a tab, or pinch/expand from Plan | Comprehension of structure. The "oh, I see" view. |
+| **Map** (the actual graph) | On demand — a `Plan · Map` mode switch inside the Cooking Plan tab | Comprehension of structure. The "oh, I see" view. |
 | **Step** | While cooking | One instruction. Nothing else. |
 
 The Plan view is what people use. **The Map view is what makes them understand the
@@ -54,10 +57,15 @@ persuading.
 
 - **Vertical flow, always.** Time runs down the screen. Parallelism runs across.
   Never the other way round — horizontal scrolling to follow a recipe is a failure.
-- **Maximum 3 parallel lanes.** Real recipes rarely exceed 2. Beyond 3, collapse the
-  extras into a "+2 more" affordance rather than shrinking the columns.
-- **Minimum node width 96px** and minimum tap target 44px. If the layout algorithm
-  wants to go below either, it must reduce lanes instead.
+- **Two fixed columns, not a lane count to reason about.** A mainline spine on the left
+  and everything else on the right (`DESIGN_SYSTEM.md` § *The Map grammar*). Beyond what
+  the right column can show without a time collision — a window's 4th+ member, or any
+  card whose interval collides with what's already shown — the rest collapse into a quiet
+  `+N more` text label under the relevant card: no box, no border, count-based and generic
+  (never tuned to a specific recipe's member count).
+- **Minimum node width 96px** and minimum tap target 44px. Both columns are fixed widths
+  (190px mainline, 108px right) comfortably above the floor; a card only grows taller,
+  never narrower.
 - **No pan-and-zoom canvas as the primary interaction.** It feels like a diagramming
   tool, not a cooking tool. Fit-to-width, scroll vertically. Zoom can exist as a
   gesture; it must not be *required*.
@@ -68,27 +76,47 @@ persuading.
 
 ## 4. Layout algorithm
 
-Deterministic, computed from the graph — never hand-placed, never LLM-placed.
+Deterministic, computed from the plan — never hand-placed, never LLM-placed, and never
+branching on which recipe it is (`M2.75 Map design handoff.md`; conflicts between it and
+the implementation brief resolved in `DESIGN_SYSTEM.md` § *Resolved in M2.75, round 2*).
 
 ```
-1. Assign each node a ROW = its earliest start time from the scheduler
-   (not its topological depth — time is the vertical axis, and using depth
-   makes a 60-minute rise look the same height as a 2-minute chop).
-2. Group nodes sharing a row into LANES, left to right, stable-sorted by
-   the node's rank within its wait window (rank 0 leftmost — the main thread).
-3. The main thread — the critical path — is ALWAYS the leftmost lane and
-   always vertically continuous. The eye should be able to run straight down
-   it without jumping.
-4. Row height ∝ duration, clamped: min 56px, max 140px. A 60-minute rise
-   should visibly dwarf a 2-minute chop, but not push everything else off screen.
-   Use sqrt scaling, not linear, or one long bake ruins the layout.
-5. Merge points: where lanes converge, draw them meeting at a single node.
-   The merge is the most information-dense moment in the graph — give it room.
+1. CLASSIFY. A task in a window's `assigned` is a window child. A window's
+   `host_node_id` is seeded onto the mainline first, sorted (start_min, node_id) —
+   so a host never loses its mainline slot (and its bracket) to a tie. Everything
+   else is walked in (start_min, end_min asc, node_id) order against the mainline
+   intervals reserved so far: no overlap -> mainline, reserve it; overlap -> an
+   independent concurrent card. Pure interval math — no flag is ever set by hand.
+2. COLUMNS. Mainline at x=20/w=190. Window children and independents share one
+   right column at x=222/w=108, sorted (start_min, child-before-independent,
+   rank_in_window, node_id). A window's members are tried first at each time
+   slice; anything — member or independent — that would collide with what's
+   already shown, or a window's 4th+ member, folds into a quiet `+N more` label
+   under the relevant shown card instead of a third column.
+3. TIME -> Y. One shared vertical map for both columns, built from every distinct
+   start_min/end_min in the plan: each stretch is
+   clamp(20*sqrt(Δmin) + 20, 44, 120) plus a 12px gap, then grown further wherever
+   a card's own wrapped-label height needs more room than its duration gives it
+   (text is never clipped or shrunk to fit — the card grows instead). No axis or
+   ticks are drawn; this map only decides where things sit.
+4. EDGES. One per depends_on pair where BOTH ends are mainline cards — never into
+   or out of a window child or an independent, even when the underlying
+   dependency is real. Adjacent mainline pair: a straight line. A pair with
+   another mainline card between them: an elbow into the left gutter and back,
+   merging onto the same final segment every edge into that target shares — one
+   arrowhead per merge.
+5. BRACKETS. One dashed mark per window whose host stayed mainline and has at
+   least one shown member: a stem off the host's right edge, a spine, one tick
+   with an arrowhead into each shown member. Independent-overlap cards get no
+   connector of any kind — position beside the card they overlap is the only
+   relationship shown.
 ```
 
 Row = time is the single most important choice here. It is what makes the parallelism
 *visible* rather than merely *stated*, and it's what nobody else in this space is
-doing.
+doing. The full mark set — card fill, exact geometry constants, fold and bracket
+rendering — is `DESIGN_SYSTEM.md` § *The Map grammar*; this section owns the algorithm,
+that one owns the marks.
 
 ## 5. Encoding — what carries meaning
 
@@ -97,24 +125,30 @@ Every visual property must encode something. If it decorates, cut it.
 | Property | Encodes |
 |---|---|
 | Vertical position | When it happens |
-| Vertical extent | How long it takes |
-| Horizontal lane | Which parallel thread |
-| Connector | A dependency — see below; the mark's weight, colour and lane position carry the kind |
-| Stage tint | Which stage the node belongs to |
-| Fill vs outline | Attended vs unattended work |
+| Vertical extent | How long it takes (sqrt-compressed) or how much label it carries, whichever is greater |
+| Column (mainline vs right) | Mainline sequence vs window-child / independent-overlap — an interval-math fact, not an authored category |
+| Card tint vs field fill | Attended work in its own stage vs a window child on the wait-window field colour |
+| Solid arrow | A real `depends_on` pair between two mainline cards |
+| Dashed bracket | One wait window, host to its shown members — never one line per member |
+| No connector | An independent-overlap card: related only by sitting beside what it overlaps |
+| A third card line | Attention, mainline cards only: `(low attention)` / `(hands off)` / nothing for hands-on |
+| Quiet `+N more` text | A window's 4th+ member, or any right-column card that collided in time with what's already shown |
+| Legend | The key for the above, kept compact — see below |
 
-That last one is the one to get right. **Unattended nodes should look different at a
-glance** — they're the whole reason the parallel lanes exist. An outline or hatched
-treatment for "this is cooking without you" reads instantly; a small clock icon does
-not.
+**Attended vs unattended is carried by fill, not by outline.** A window child runs on the
+wait-window field colour regardless of its own stage; a mainline or independent card runs
+on its stage tint. The field colour is shared with the Plan's own *Meanwhile, do these*
+panel, so "while waiting" reads as one thing across both views
+(`DESIGN_SYSTEM.md` § *The Map grammar*).
 
-**Connectors carry meaning by weight, colour and lane — not by solid-vs-dashed.**
-`DESIGN_SYSTEM.md` § *Connector language* is authoritative for the mark set (the 6px
-signal critical-path rail, the hollow unattended host, the `ink-3` parallel spur, the
-overdrawn merge edge). Solid-vs-dashed was explicitly **rejected** there: it is precisely
-the distinction that needs a key, and the whole point of § 8's test is that the screen
-works without one. If a connector needs a legend entry to be understood, the mark is
-wrong — change the mark, don't add the key.
+**Connectors carry meaning by weight, colour and dash pattern, and by which two things
+they connect.** `DESIGN_SYSTEM.md` § *The Map grammar* is authoritative for the mark set:
+a 1.5px ink line for a mainline dependency, a dashed `ink-3` bracket for a window. A
+dependency line never touches a window-child or independent card, and an independent card
+never gets a connector at all — the two-column classification carries that distinction, a
+line doesn't have to. The five-second test in § 8 is still the actual bar, and the legend
+must stay compact enough to clear it rather than becoming the explanation the graph itself
+should carry.
 
 ---
 
@@ -139,20 +173,26 @@ The Plan view, the Step view, and the timers should be quiet, disciplined, and
 unremarkable — a person cooking does not want personality from their timer. The Map is
 where the product gets a face.
 
-Questions worth answering deliberately rather than defaulting:
+Questions worth answering deliberately rather than defaulting — **answered for M2.75 by
+the owner's mock**, `docs/design/renders/m275-direction-mock.png` (s9):
 
-- What does the connector between nodes actually look like? This is the most
-  characteristic mark in the whole product and currently it's a generic arrow.
-- Is a node a card at all? Cards are the default. A recipe graph could be built from
-  bars, rules, or blocks on a time axis instead — closer to a score, a Gantt, or a
-  train timetable than to a SaaS dashboard.
-- What is the typographic voice? A single family with a real type scale will do more
-  for distinctiveness than any color decision.
-- What is the one moment of motion? Probably the merge — lanes converging as a stage
-  completes. One orchestrated moment, not a fade-and-slide on every card.
+- ~~What does the connector between nodes actually look like?~~ A solid orthogonal arrow
+  for a dependency, a dashed one for a wait-window assignment. `DESIGN_SYSTEM.md` §
+  *The Map grammar*.
+- ~~Is a node a card at all?~~ Yes — a rounded, stage-tinted card on a time axis, not a
+  measured bar. (An earlier direction answered "no" and built the connector language
+  around a bar grammar; that grammar was drawn in
+  `docs/design/map-study-kadai-paneer.html` and never shipped. Reversed in M2.75 — see
+  `DESIGN_SYSTEM.md` § *Resolved in M2.75*.)
+- ~~What is the typographic voice?~~ Unchanged from the rest of the app — Archivo
+  variable, the same type scale as the Plan view (`DESIGN_SYSTEM.md` § Type).
+- ~~What is the one moment of motion?~~ Cards sweep in top-to-bottom (delayed by their own
+  `y`, in place of the axis this Map no longer draws), then connectors and fold labels
+  fade in — not the merge. Built last, after the render checkpoints (`DESIGN_SYSTEM.md`
+  § *Map entry animation (M2.75)*).
 
-Whatever direction is chosen, write it down as a short design brief and put it in
-`DESIGN_SYSTEM.md`, so it survives past the session that produced it.
+The brief is written into `DESIGN_SYSTEM.md` § *The Map grammar*, so it survives past the
+session that produced it.
 
 ---
 
@@ -171,7 +211,7 @@ Whatever direction is chosen, write it down as a short design brief and put it i
   looks right cropped to a square and readable at 2x downscale.
 - Accessibility: the Map view needs a text-equivalent linearisation, which we get for
   free — it's the Plan view. Make sure a screen reader gets that instead.
-- `prefers-reduced-motion` disables the merge animation.
+- `prefers-reduced-motion` disables the entry animation (§ 6; `DESIGN_SYSTEM.md` § Motion).
 
 ---
 
@@ -183,8 +223,8 @@ Hand someone the Map view for a dish they know, say nothing, and ask: **"what ha
 while the base is cooking?"**
 
 If they answer correctly in under five seconds without you explaining anything, the
-graph view works. If they ask what any mark means — a connector, the hollow bar, the
-spur — it doesn't yet.
+graph view works. If they ask what any mark means — a card, a solid or dashed arrow, the
+attention note, an entry in the legend — it doesn't yet.
 
 Run this on five people before writing another line of graph code. It costs an evening
 and it is worth more than another Figma iteration.

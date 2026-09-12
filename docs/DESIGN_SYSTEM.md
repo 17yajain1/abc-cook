@@ -138,11 +138,15 @@ not because it looks good.
 1. **Time is measured, not labelled.** A duration that matters occupies space
    proportional to itself. A sixty-minute rise must dwarf a two-minute chop, because it
    does.
-2. **One signal colour.** The critical path — the thing you cannot walk away from — is
-   the only saturated mark on screen. Everything else is ink on paper.
-3. **Absence has a shape.** Unattended work is drawn hollow. The empty space inside the
-   mark *is* the room you have to do something else, and the parallel work is drawn
-   running through it.
+2. **One signal colour.** The thing you cannot walk away from is the only saturated mark
+   on screen. Everything else is ink on paper. (On the Plan that is the `Start Cooking`
+   CTA. On the M2.75 Map nothing is that kind of priority yet, so the Map carries no
+   signal until M3's live-now marker — § *Signal is rationed*.)
+3. **Absence has a shape.** Unattended time is drawn as room, not as work. On the Plan it
+   is the *Meanwhile* panel nested in its stage; on the Map it is the host card's length
+   on the axis with the borrowed work drawn beside it on the same field colour, joined by
+   dashed flow. (M2.5 wrote this principle as "drawn hollow"; the M2.75 direction keeps the
+   principle and changes the mark — § *Resolved in M2.75*.)
 
 **Voice.** Printed, not rendered. Flat ink, true rules, tabular figures, no elevation.
 A board tells you facts; it doesn't congratulate you.
@@ -217,7 +221,7 @@ first M2.5 pass applied the full austerity to the Plan view by default and produ
 screen measurably colder and flatter than the M2 baseline it replaced — a regression on
 the screen users see most, in service of a register that belongs to a screen that did not
 exist yet. The Plan view took all of the direction's cost and none of its benefit, because
-the benefit (a visible time axis, proportional bars, hollow-vs-filled) is the Map's.
+the benefit (a visible time axis, proportional cards, tinted-vs-field fill) is the Map's.
 
 The Map is read for ten seconds to understand a structure. The Plan is held for forty
 minutes in a kitchen while something burns. Those are different jobs and they get
@@ -237,7 +241,7 @@ different amounts of austerity.
   rule is retired: with a badge and a tinted ground the stage's colour was already
   stated twice, and at 3px the lane read as a blob rather than a rule. The title itself
   still takes no hue.
-- The Map's grammar — the minute axis, proportional bar heights, hollow-vs-filled marks,
+- The Map's grammar — the minute axis, proportional card heights, tinted-vs-field fill,
   the connector language — **does not transfer to the Plan automatically.** Anything the
   Plan borrows from it is a deliberate, named decision, not a default.
 
@@ -408,17 +412,18 @@ is a recognised generated-design tell. A printed schedule uses black ink; so do 
 
 Earlier phrasings pulled in two directions — "if more than one thing is signal, one is
 wrong" versus "a screen with no signal is a failure." Both were trying to say the same
-thing badly. The priority rule resolves it. On the Map, the critical-path rail and a
-live-now marker (M3) are the *same* priority — "the thing you cannot walk away from" — so
-signal on both is correct. On the Plan, the primary CTA is that priority and is the only
-signal mark. A screen legitimately carries no signal when nothing on it is that kind of
-priority; a screen carrying signal on two *different* priorities has diluted it.
+thing badly. The priority rule resolves it. On the Plan, the primary CTA is that priority
+and is the only signal mark. **The M2.75 Map carries no signal at all** — nothing on it is
+"the thing you cannot walk away from" yet, since the plan hasn't started; that arrives with
+M3's live-now marker. A screen legitimately carries no signal when nothing on it is that
+kind of priority; a screen carrying signal on two *different* priorities has diluted it.
 
-Signal is still the only **fully saturated** mark. The stage tints are colour, but
-low-chroma and mid-value by construction and none is red, so signal wins on a screen full
-of them — which is what lets stage identity be carried by fill on the Map (§ Stage
-identity) without competing. (The earlier "the only *saturated* mark" wording predated the
-Map study and would have forbidden that fill.)
+Signal is still the only **fully saturated** mark, on whichever screen carries it. The
+stage tints are colour, but low-chroma and mid-value by construction and none is red, so a
+future signal mark would still win against a screen full of them — which is what lets
+stage identity be carried by fill on the Map (§ Stage identity) without competing. (The
+earlier "the only *saturated* mark" wording predated the Map grammar and would have
+forbidden that fill.)
 
 **Worked example — the three colour roles on one Plan screen:**
 
@@ -470,11 +475,11 @@ The six tints must be checked under:
 - **greyscale** (full desaturation — covers monochrome output and the harshest low-light case)
 
 The pass condition is **not** "the tints stay distinguishable under every simulation." It
-is that **stage colour is never the sole carrier of stage or task identity.** Lane
-position and the stage label are always present on both views — Plan: the ordinal and
-label at the head of the lane rule; Map: the lane the bar runs in, plus its label. Colour
-is redundant by design, so a tint collision under one simulation is a legibility note, not
-a blocker.
+is that **stage colour is never the sole carrier of stage or task identity.** Position and
+the stage label are always present on both views — Plan: the ordinal and label at the head
+of the lane rule; Map: the card's position on the time axis, plus its label. Colour is
+redundant by design, so a tint collision under one simulation is a legibility note, not a
+blocker.
 
 **Do not raise the tints' saturation pre-emptively.** Increase chroma only if the
 validation shows a real problem that lane position and labels do not already cover — and
@@ -486,16 +491,23 @@ a quiet bump.
 - **Plan view — a 22px filled circular badge in the stage tint**, ordinal in `paper`,
   at the head of the stage. Identity is not a margin note on this view: the stage list
   is the screen's armature and the badge is what makes it one.
-- **Map view — the bar's fill.** A node bar is filled with its own stage tint. Tried as a
-  3px strip on the bar's top edge first, and at true size it vanished: a 3px line on a
-  152px bar reads as a rendering artifact, not as identity. The bar has area, so the area
-  is what should carry the colour.
+- **Map view — the card's fill.** A task card is filled with its own stage tint at
+  `--map-card-alpha` (§ *The Map grammar*). Tried as a 3px strip on the M2.5 bar's top
+  edge first, and at true size it vanished: a 3px line on a 152px bar reads as a
+  rendering artifact, not as identity. A card has area, so the area is what carries the
+  colour — full alpha reads as a floating chip against paper, hence the tint rather than
+  a solid fill.
 
 The Map's fill treatment is why the saturation rule above is stated in terms of *fully*
 saturated marks.
 
-A task the scheduler moved into another stage's wait window keeps **its own** stage's
-tint inside that window — that is how the eye reads it as borrowed work.
+**A task the scheduler moved into a window is the one exception**: it is drawn on
+`--color-field`, not its own stage's tint — the M2.75 direction (§ *The Map grammar*,
+"Borrowed into a window") reverses the M2.5-era rule that a borrowed task kept its own
+tint inside the window. The field colour is the stronger identity signal here, because it
+is the same surface the Plan's *Meanwhile* panel uses: "while waiting" reads as one thing
+across both views, and the dashed flow line plus its lane position still say which stage
+it belongs to.
 
 ## Type
 
@@ -571,16 +583,17 @@ hierarchy"). Resolved as a rule rather than a value:
 | Bars, the time gutter, recessed bands | `0` | Their edges mean something. Rounding a measured extent falsifies the measurement. |
 | Controls — chips, the CTA, pressable rows | `2px` | A printed-form corner. You touch it, so it softens; barely. |
 | Stage badge / dot, where one survives | `50%` | It is a point on a line, not a box. |
+| Map task cards (M2.75) | `8px` | A tappable object on a chart, not a measured bar — the row behind it is still the measurement (§ *The Map grammar*). |
 
 **Shadow: none, anywhere.** Depth is expressed by ground value (`paper-sunk` recesses)
 and by rule weight. There is no elevation model and adding one would contradict the
 brief's "printed, not rendered."
 
 Rule weights are the hierarchy: `1px --color-rule` hairline for list separation, `2px
---color-ink` for a structural edge. (The Map's critical-path rail is `6px --color-signal`
-— specified in the *Connector language* block below, and not an M2.5 mark. An earlier
-draft of this line said `3px` for "the mainline"; the Map study proved 3px read as a
-hairline weaker than the surrounding ink, which is why the connector block says 6px.)
+--color-ink` for a structural edge. (The Map carries no rail and no `--color-signal` in
+M2.75 — § *The Map grammar*, *Resolved in M2.75*. An earlier direction specified a `6px
+--color-signal` critical-path rail here; that mark was drawn in
+`docs/design/map-study-kadai-paneer.html` and never built, and is superseded.)
 
 ## Metadata and punctuation
 
@@ -614,7 +627,7 @@ affordance, never as ornament.**
 | End of a window task row | `›` | removed — see below |
 | Recipe picker rows | `›` | removed; the recipe's total time takes the duration column |
 | Collapsed stage summary | `Chop onion → Chop tomato` | **kept.** Here `→` means "then", and a collapsed card has no vertical axis to carry it. |
-| Map connectors | — | no arrowheads. On a time axis, down is later. An arrowhead is redundant. |
+| Map connectors (M2.75) | — | solid arrowhead into a dependency's target; dashed arrowhead into a borrowed task. Both encode a real dependency (a schedule order, or a window assignment), so both are permitted under this rule — see § *The Map grammar*, *Resolved in M2.75*. (Superseded: an earlier direction had no arrowheads at all, reasoned "on a time axis, down is later" — that held only while the Map had no legend to carry a solid/dashed distinction.) |
 
 Removing the row chevron takes an affordance away, and `DESIGN_SYSTEM.md` has always
 said window tasks "must read as tappable, not as recipe notes." The replacement is a
@@ -630,39 +643,84 @@ wait-window task row as tappable without being prompted**, restore an explicit a
 — a `+`, or a visible control, *not* the `›` chevron. Until that test runs and fails, the
 chevron stays removed.
 
-## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+## The Map grammar (M2.75)
 
-### Connector language — for the Map (M2.75)
+**Direction set by the owner's approved handoff**, `M2.75 Map design handoff.md` (turn 11
+of the studies canvas) plus `M2.75_Claude_Code_Implementation_Handoff.md`, superseding the
+s9 mock this section previously described
+(`docs/design/renders/m275-direction-mock.png`, still kept as history). That mock's own
+grammar — a 3-lane first-fit layout seeded by `plan.critical_path`, a drawn time axis with
+tick labels, and one dashed flow line per borrowed task — was itself a reversal of M2.5's
+*Connector language* block and is now superseded in turn. The reversals from the s9
+grammar to this one are argued in § *Resolved in M2.75, round 2*, not made silently.
 
-Established now so M2.75 doesn't invent it under deadline. `GRAPH_VIEW.md` §5 requires
-these to be legible **without a legend**; that is the constraint they're designed against.
-A future session must not read this block as instruction to build the Map now.
+**What the Map is.** Two fixed columns — a mainline spine on the left, everything else on
+the right — with classification derived by pure interval math over `start_min`/`end_min`/
+window membership, never a flag authored per task, recipe, or fixture. Tasks are rounded
+tinted cards sized to their duration (sqrt-compressed) and to their own label (text-fit,
+never clipped or shrunk). Solid arrows connect real dependencies between two mainline
+cards; one dashed bracket per wait window (not one line per member) connects a host to its
+members; independent-overlap cards get no connector at all. A legend sits underneath.
+There is no drawn time axis — vertical order and each card's own duration label carry
+"when". The five-second question it answers is *"what happens when, and what can I do in
+parallel?"*
+
+**Entry point — a mode of the Cooking Plan tab, not a tab of its own.** The product model
+is:
+
+```
+Cooking Plan
+  ├── Plan   (M2.5 — the stage rows)
+  └── Map    (M2.75 — this grammar)
+Ingredients
+```
+
+Inside the Cooking Plan tab a two-way `Plan · Map` switch sits under the tab strip. Both
+modes stay; neither replaces the other. **Plan is the permanent default** when a recipe
+opens. The Ingredients tab is untouched, and so is the Plan mode itself beyond hosting the
+switch. The switch uses the underline idiom `PlanScreen`'s tab strip already has — no
+pill, no segmented-control chrome (§ *Avoid generated-design tells*). The `Start Cooking`
+CTA is hidden in Map mode, as the mock draws it; confirmed or reversed at the M2.75 render
+checkpoint.
 
 | Meaning | Mark |
 |---|---|
-| Critical path | The **leftmost lane**, a continuous **6px `signal`** rail with no gaps, running the full height — including stretches where the mainline is *blocked* and no work sits on it. It must be the strongest mark on the screen. At 3px it was not: it read as a hairline weaker than the surrounding ink. |
-| Attended work | A bar **filled** with its stage tint, label in `paper`. Fill means "you are here, doing this". |
-| Unattended work | The bar drawn **hollow** — `paper` fill, 1.5px `ink` outline. An unattended *host* is drawn **wide**, spanning the lanes its window frees, and the borrowed work is drawn **inside it**. |
-| Parallel work | A **spur** — 1.5px `ink-3`, leaving the mainline where the window opens, running down *through* the hollow stretch, rejoining where it closes. Short 1px ticks hang the borrowed tasks off it. **Curved, never right-angled**: a rail spur curves away, and an orthogonal jog is flowchart notation. |
-| Simultaneity | Shared vertical position, plus containment inside the hollow host. |
-| Merge / junction | The host bar's **top edge overdrawn at 3px `ink`** — that edge is where the mainline and the merging branch both arrive, and §4.5 says the junction is the densest moment in the graph. |
-| Dependency (general) | The rail simply **continues**. No arrowhead: the time axis already says which way is later. |
+| Classification | Pure interval math, no per-task flag. A task in a window's `assigned` is a **window child**. A window's `host_node_id` is seeded onto the **mainline** first (Decision 1 below). Everything else is walked in `start_min` order (ties broken by `end_min` ascending, then `node_id`) against the mainline intervals reserved so far: no overlap → **mainline**; overlaps something already reserved → **independent** (own card, no connector). |
+| Column / width | Mainline: `x=20, w=190`. Window-child or independent: `x=222, w=108`. Two columns only — no lane count to reason about. |
+| When / how long | Card height = `max(44, durationHeight, textFitHeight)`. `durationHeight = clamp(20·√duration + 20, 44, 120)` (sqrt-compressed, so a 60-min task reads longer than a 2-min one, not 30× longer). `textFitHeight` grows the card to fit its wrapped label — **never clips or shrinks a word**. Vertical position comes from a single shared time→y map (breakpoints at every `start_min`/`end_min` in the plan) so a window's members line up beside their host at the right minute, and Plan and Map agree on timing. |
+| Which stage | Mainline and independent cards: fill is the stage tint at `--map-card-alpha`. Window-child cards: fill is **`--color-field`** regardless of stage — the same surface as the Plan's *Meanwhile, do these* panel, so "while waiting" is one colour in both views. No stroke, no shadow, no gradient on any card. |
+| Attention | A third line, 10/500 `ink-2`, derived from `Node.attention` and nothing else: `(low attention)` for `periodic`, `(hands off)` for `unattended`, no line for `hands_on`. **Mainline cards only, and only from 60px up** — a window-child or independent card never carries a note, even when its own attention would produce one (`homemade-donuts`' `proof_donuts` is `periodic` and independent; it gets no note). One relationship note per card is enough. `ink-2`, not `ink-3` — see § *Resolved in M2.75, round 2* item 5 (the CP2 accessibility pass); at 10px this text needs 4.5:1 against the card fill it sits on, which `ink-3` never reliably clears. |
+| Dependency | 1.5px `ink`, drawn only between two **mainline** cards with a real `depends_on` edge — never into or out of a window-child or independent card, even when the underlying graph has that dependency (`strawberry-shortcake`'s `macerate_berries → assemble_shortcakes` is real and undrawn, because `macerate_berries` is independent). Consecutive mainline cards with no dependency between them get no line either — a card's position on the mainline is a time fact, not a dependency claim. Adjacent pair: a straight line down the shared centre. A pair with another mainline card between them: an elbow into the left gutter and back, merging onto the same final segment every edge into that target shares — one arrowhead per merge. |
+| Window bracket | One dashed (`3 3`) mark **per window**, not per member: a short stem off the host's right edge, a vertical spine, then one tick with an arrowhead into each *shown* member. Skipped entirely if the window's host didn't stay mainline, or if every member folded. |
+| Independent overlap | No connector of any kind — its position beside the mainline card it overlaps is the only relationship shown. |
+| Overflow (fold) | Quiet text, no box: `+N more` (11/500, `ink-3`) under the relevant anchor card. Two rules, both count-based and generic — never per-fixture: a window's 4th+ member folds (`assigned.length > 3`); any right-column card whose interval collides with what the column is already showing folds too. A folded card's label lands under its own window's last *shown* member (an independent that collides with a member redirects the same way). |
+| Critical path | **Not read anywhere in `layout.ts`, painted or otherwise.** Earlier drafts (through the s9 mock) used `plan.critical_path` to seed lane 0; the current classification is pure interval math and needs no critical-path input at all. No rail, no signal, no legend entry, no label, no `<desc>` wording names it. |
+| Legend | HTML beneath the SVG, 12/400 `ink-2`: one dot + label per stage actually used by a **visible** card, in `graph.stages` order, then `— Dependency` (always), then `- - Parallel (while waiting)` only when the plan has at least one real **window** (`plan.windows.length > 0`). An independent-overlap card never contributes to this, on its own or alongside windows — it draws no bracket, so it must never be what makes the dashed key appear (§ *Resolved in M2.75, round 2*, item 6). Independent-overlap cards get no legend entry of their own; their scheduled position and their lack of a bracket carry their meaning. A fully serial plan (`maggi-2min`) draws zero brackets and shows no parallel legend entry — the Map goes quiet when the graph is quiet. |
 
-Adjacent bars are inset 1px top and bottom so a `paper` gutter always separates them.
-Without it, two neighbouring bars sharing a stage tint (`add_paneer` and `finish`) fuse
-into one block and the schedule loses a boundary that means something.
+**Arrowheads are consistent with § *Arrows and chevrons*.** That rule permits an arrow
+"only where it encodes a dependency", which is exactly and only what these do.
 
-**No dashes.** Solid-vs-dashed was precisely the distinction that needed the legend
-`GRAPH_VIEW.md` §5 complains about. Weight, colour and lane position carry it instead.
+**Radius.** Map task cards are `8px` — a tappable object on a chart, not a measured bar.
+Still no shadow, no gradient, no elevation, no border.
 
-The hollow-unattended mark is the load-bearing one: a hollow bar is literally empty
-space, and the parallel spur is drawn *running through it*. You can see the free time and
-you can see what has been placed in it. That is the entire product in one mark.
+**`--map-card-alpha`** (`0.28`, `index.css` `:root`). Briefly raised to the design
+handoff's stated 32% for CP1, then returned to the M2.5-checkpoint value of 0.28 at CP2:
+32% failed the accessibility pass (the attention note fell as low as 2.97:1 against the
+darkest of the six composited stage fills). 0.28 clears 4.5:1 against all six with margin
+(worst case 4.55:1) and is the same light-tint value already visually calibrated at the
+original M2.5 checkpoint — full table in § *Resolved in M2.75, round 2*, item 5.
+
+**What the Map draws is the plan, not the graph.** `chop_tomato` sits beside `chop_onion`
+in the graph (both have no dependencies) but the scheduler places it at 8–10 because one
+cook cannot chop both at once — the Map draws 8–10, and classifies `chop_tomato` mainline
+because that's where the interval math puts it, not because the graph suggested a lane.
+`CLAUDE.md`: the frontend renders `CookingPlan` and never re-infers parallelism.
 
 ## Is a node a card?
 
-**No. A node is a bar on a time axis** — height ∝ duration (sqrt-scaled, clamped 56–140px
-per `GRAPH_VIEW.md` §4.4), minimum width 96px, minimum tap target 44px per §3.
+**On the Map, yes** — a rounded tinted card placed on a time axis, height ∝ duration
+(sqrt-compressed rows, ≥ 56px, ≤ 140px per stretch, `GRAPH_VIEW.md` §4), minimum width
+96px, minimum tap target 44px per §3. See § *The Map grammar*.
 
 **But that grammar belongs to the Map, not the Plan.** `GRAPH_VIEW.md` §2 gives the Plan
 view a different job — scannability, one thumb, calm — and §6 says to spend the boldness
@@ -905,17 +963,63 @@ prompt + likely a new invariant. Not an M2.5 convenience.
 - Stage expand/collapse: 200ms ease-out height + opacity.
 - Respect `prefers-reduced-motion` — this is not optional and applies to every milestone.
 
-## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+### Map entry animation (M2.75)
 
-### Map entry animation and cooking-mode motion
+**The one orchestrated moment, once per recipe.** The handoff's brief said "the time
+axis scales in from the top, then cards and arrows fade in" — written against a
+static grammar that still had an axis. It doesn't (§ *Resolved in M2.75, round 2*,
+item 4: no axis, no ticks), so that literal instruction is stale. The replacement
+keeps the feeling — a top-to-bottom sweep landing at ~500ms, then content settling —
+using only marks the static grammar already draws:
 
-- **The one orchestrated moment (Map, M2.75):** on open, the time ruler draws down and
-  the critical rail extends top to bottom in a single ~700ms sweep; the parallel spurs
-  fade in after it lands. Once, on entry. Nothing else on the Map animates.
+- **Cards sweep in.** Each card (mainline, window-child, independent — no
+  distinction) fades in over 150ms, delayed in proportion to its own `y` on the map:
+  0ms at the top, 350ms at the bottom, so the last card lands at ~500ms. A card's
+  vertical position already carries "when" (§ *The Map grammar*); this animates that
+  fact and nothing else. No translate, no scale, no stroke-draw — fade only, so the
+  animation cannot be read as adding a mark the static Map doesn't have.
+- **Connectors settle after.** Dependency edges, window brackets, and `+N more` fold
+  labels fade in together, 150ms, once *that map's own* slowest card has had time to
+  land — derived per map from the real sweep (`connectorDelayMs` in `motion.ts`,
+  `= max(entryDelayMs(card) for card in map) + 150ms`), never a fixed number, since no
+  single constant is both tight for a short recipe and safe for a tall one. Maggi (4
+  cards, fully serial) settles by 411ms; Chicken Biryani (its tallest card landing at
+  325ms) still waits out its full sweep before anything relational appears at 475ms —
+  the "no connector before its endpoints exist" invariant holds by construction, not
+  by picking a number large enough to cover the worst case. Solid and dashed
+  connectors animate identically — motion adds no new distinction between them.
+- **The legend never animates** — static from the first frame. Nothing else on the
+  Map moves.
+- **Replays on a fresh recipe, not on the `Plan ↔ Map` switch.** The animation plays
+  the first time a recipe's Map mounts, and again if you leave the recipe (`change
+  recipe`) and come back to it later — each is a genuinely new `PlanScreen` instance.
+  It does **not** replay on subsequent `Plan → Map` toggles for the recipe you're
+  already viewing: those toggles unmount and remount only the `MapView` inside an
+  unchanged `PlanScreen`, and `PlanScreen` remembers it's already shown this recipe's
+  entry once. Replaying a 500–650ms sweep on every glance back at the Map would fight
+  the app's own "fast answer, wet hands" premise (`CLAUDE.md`); a comprehension aid is
+  only doing its job the first time you see the layout. Implementation:
+  `PlanScreen.tsx` holds a `useRef` (not `useState` — deliberately, see that file's
+  comment) that survives `mode` toggles and resets only when `PlanScreen` itself
+  remounts, and passes it to `MapView` as `skipEntryAnimation`.
+- **`prefers-reduced-motion: reduce`:** every card, connector and fold label is at
+  full opacity immediately, no sweep, no delay.
+- CSS only (`apps/web/src/index.css` `.map-enter`), delays computed by the pure
+  `entryDelayMs` / `connectorDelayMs` in `apps/web/src/map/motion.ts` and applied as
+  inline `animationDelay`. No React state, no timers driving the animation itself —
+  `MapView.tsx` stays a renderer of `MapLayout`; the *whether it plays at all*
+  decision lives one level up, in `PlanScreen`.
+
+This entry is recorded as reversal 7 in § *Resolved in M2.75, round 2* below.
+
+## Future Milestone Reference (M3) — not part of M2.5/M2.75 implementation
+
+### Cooking-mode motion
+
 - **Task complete (M3):** check draws in 150ms, row settles. No confetti during cooking —
   save celebration for the final `finish` node.
 
-A future session must not build either of these as part of M2.5.
+A future session must not build either of these ahead of its own milestone's checkpoints.
 
 ## Things the design review already rejected
 
@@ -927,8 +1031,9 @@ Documented so they don't come back:
 - Desktop-style horizontal cooking graph on mobile.
 - Adding more UI to explain the concept. Past a point, more explanation makes the
   interface worse.
-- Dashed-vs-solid connectors needing a key at the bottom of the Map.
 - A second accent colour alongside signal.
+- Exposing `plan.critical_path` as a user-facing category on the Map — a legend entry, a
+  label, a rail. It is a layout input only (§ *The Map grammar*, owner term 5, s9).
 
 ## Resolved in M2.5
 
@@ -941,7 +1046,7 @@ Documented so they don't come back:
 | Chevrons and arrows | Arrows only where they encode a dependency. All affordance glyphs removed. |
 | Typography | Archivo variable, self-hosted, ≤55KB, `font-display: optional`. Six-step scale plus one 44px figure. |
 | Stage identity | Kept, but re-derived as six equal-value low-chroma tints applied as a 3px lane rule. Never red. |
-| Is a node a card | No — a bar on a time axis. Map grammar only; the Plan view stays rows. |
+| Is a node a card | No — a bar on a time axis. Map grammar only; the Plan view stays rows. **Reversed in M2.75** — see § *Resolved in M2.75* below; the Plan view is unaffected. |
 | Stage rail | Stays **ordinal**, not start time. Ordinal is "where am I", the time axis is "when" — separate jobs. Treatment goes quiet: neutral ink number, tint moves to the lane rule. |
 | `→` on button text | Dropped in M2; stays dropped. |
 | Plan-view composition | **Direction 3, "Two Kinds of Minute"** (§ Register). The wait window is a full-bleed field with one large numeral; hands-on work is plain rows. Locked. |
@@ -952,7 +1057,61 @@ Documented so they don't come back:
 | Capacity chips carry no magnitude | Chips retired. The single numeral is the duration; fullness is carried by the caption and footer in words. |
 | Wait-window field surface too faint | `--color-field` (`#E7DCC3`, the study's field value) replaces `--color-paper-sunk` for the field — ΔE 13 from paper vs 4.3. The only palette change Direction 3 makes. In-field secondary text steps `ink-3` → `ink-2` for AA. See § *`--color-field`*. |
 | `--color-signal-sunk` | Removed. Dropped from `index.css` in the M2.5 implementation pass. |
-| `GRAPH_VIEW.md` §5 dashed connectors | Contradiction resolved — §5 updated to defer connector grammar to this file's *Connector language* block. No dashes. |
+| `GRAPH_VIEW.md` §5 dashed connectors | Contradiction resolved — §5 updated to defer connector grammar to this file's *Connector language* block. No dashes. **Reversed in M2.75** — see below; `GRAPH_VIEW.md` §5 now describes the card grammar's dashed parallel-flow line. |
+
+## Resolved in M2.75
+
+The owner set a new visual direction for the Map with a rendered mock
+(`docs/design/renders/m275-direction-mock.png`, s9) before a single line of Map code was
+built. Each reversal below is argued, not silent — the row it replaces stays in the table
+above so the history is legible.
+
+| M2.5 decision | M2.75 reversal | Why |
+|---|---|---|
+| No legend — "a legend means the screen failed" (`GRAPH_VIEW.md` §1) | Legend kept, HTML beneath the SVG | The mock draws one and reads clearly with it; the five-second comprehension test is the real bar, and a compact legend doesn't fail it. Retained as a thing to validate at the render checkpoint (owner term 7), not re-litigated as a rule. |
+| No dashes, no arrowheads ("down is later is enough") | Solid arrows for dependencies, dashed for parallel flow | Both encode a real dependency, which § *Arrows and chevrons* already permits — the earlier ban held only because the bar grammar had no legend to carry the distinction. |
+| Node is a bar filled solid in its stage tint; borrowed work keeps its own tint | Node is a rounded card at `--map-card-alpha`; borrowed work is drawn on `--color-field` | The mock's language is cards, not measured bars, and a card needs a visible object-fill rather than a full-saturation region fill. Field colour for borrowed work now matches the Plan's *Meanwhile* panel — one colour for "while waiting" everywhere. |
+| Critical path painted as a 6px signal rail, unbroken top to bottom | Not painted; `plan.critical_path` only orders lane 0 | The mock has no rail. Signal is rationed to the highest-priority action on screen (§ *Signal is rationed*), and nothing on a not-yet-started Map is that priority — M3's live-now marker is. Also: the critical path is now explicitly **not a user-facing category** (owner term 5) — no label, no legend entry names it. |
+| Unattended work drawn hollow (an empty outlined box) | Unattended work is a filled host card; borrowed tasks sit beside it on the field colour, joined by a dashed flow line | "Absence has a shape" is kept as a principle (§ Design brief); the mark changed from an empty container to a positive card plus an explicit flow connector, which is what the mock draws. |
+| Entry point undecided pre-mock | The Map is a **mode** of the Cooking Plan tab (`Plan · Map` switch), not a separate top-level tab; Plan is the permanent default | Matches the mock's own in-app switch and keeps the product model to `Cooking Plan → {Plan, Map}` / `Ingredients` (owner term 1–2, s9). |
+
+## Resolved in M2.75, round 2
+
+The owner supplied a further, approved handoff — `M2.75 Map design handoff.md` (visual
+spec) and `M2.75_Claude_Code_Implementation_Handoff.md` (brief) — that moves the target
+again, before the s9 grammar above ever shipped past its own checkpoint. Dry-running the
+new handoff's classification rule against real scheduler output for all five golden
+fixtures (not a hypothetical) surfaced four genuine conflicts — between the two new
+documents, or between a new document and `CLAUDE.md`/this file. Each was put to the owner
+and decided; none was picked silently.
+
+| # | Conflict | Decision | Why |
+|---|---|---|---|
+| 1 | The design handoff's literal `currentEnd` walk demotes a window **host** to independent when it ties at the same `start_min` as a non-window task (`chicken-biryani`'s `soak_rice`, host of a 4-member window, ties at `start_min=0` with `boil_spiced_water`) — contradicting "a window host is always mainline". | **Seed every window host onto the mainline first**, sorted `(start_min, node_id)`, before walking the remaining candidates against those reserved intervals. Still pure interval math — no per-task flag, no recipe check. | A host that loses its mainline slot also loses its bracket, which no version of the handoff wants. Hosts are a small, well-defined set (`plan.windows[*].host_node_id`) — seeding them first costs nothing and removes the tie case entirely. |
+| 2 | The design handoff defines one 108px-wide right column with only a per-window overflow rule (`assigned.length > 3`); `chicken-biryani`'s right column has 8 pairwise time collisions once independent-overlap cards land on top of window children, which that rule alone doesn't resolve. | **Keep the single right column; add a generic, count-agnostic fold.** Window children are tried first at each time slice; any right-column card — member or independent — whose interval collides with what's already shown folds into the nearest quiet `+N more` label instead of a third lane. | A third lane was explicitly rejected (two columns is the whole point of the handoff). The fold rule already has to exist for the `>3` case; extending it to "any collision" is the same mechanism, not a new one, and it's what makes `synthetic-two-windows`' independent card fold correctly with zero fixture-specific code. |
+| 3 | The design handoff's prose ("solid line between consecutive mainline cards") conflicts with its own worked examples and the implementation brief's test list ("one edge per actual `depends_on` pair") — `kadai-paneer`'s consecutive mainline pair `saute_onion → chop_tomato` is not a dependency, so a literal chain would draw a false one, which `CLAUDE.md` forbids outright. | **Solid arrows only for real `depends_on` pairs where both ends are mainline.** No arrow between two mainline cards just because they're adjacent in time; no arrow touching a window-child or independent card even when the underlying dependency is real. | The frontend must never draw a relationship the scheduler didn't assert. A merely-adjacent pair is a time fact, not a dependency claim. |
+| 4 | The handoff's column geometry (mainline at `x=20`) leaves no left gutter for a time axis; this file's pre-existing Map grammar and the s9 mock both draw one at `x=56` with `N min` ticks. | **No axis, no ticks.** Time is carried entirely by vertical order, the sqrt-compressed height, and each card's own duration label. | The two specs are geometrically incompatible at 390px width — there is no room for both. The handoff's own "explicitly rejected" list already objects to "placing any card by visual balance rather than by `start_min`/`end_min`", which an axis doesn't violate, but dropping it is what the approved visual spec actually shows. |
+| 5 | CP2 accessibility pass: at `--map-card-alpha` 32%, the mainline attention note (10px) measured 2.97–3.16:1 against the six composited stage fills — computed exactly, not estimated — well short of WCAG AA's 4.5:1 for normal text. | **Note text moved from `ink-3` to `ink-2`, and `--map-card-alpha` returned to 28%.** `ink-2` alone at 32% still fell short on four of six stages (4.29–4.57:1); 28% is the smallest step back that clears 4.5:1 on all six, worst case 4.55:1 (stage-3, mauve). Exact per-stage numbers: stage-0 `#cbcebf` 4.81, stage-1 `#cec9bf` 4.67, stage-2 `#c2c9c8` 4.58, stage-3 `#cac6c8` 4.55, stage-4 `#cec8c1` 4.64, stage-5 `#c6c9c3` 4.60 (all against `ink-2` `#55534c`). | The note is real information (it changes what the cook expects from the next several minutes), not decoration — it has to be legible on every stage a recipe uses, not just the ones the golden fixtures happen to exercise. 28% also happens to be the M2.5-checkpoint value already visually calibrated as a legible light tint, so this isn't a new, unvetted look. |
+| 6 | `legend.hasParallel` was `plan.windows.length > 0 \|\| independentCount > 0` — an independent-overlap card alone could key the dashed "Parallel (while waiting)" legend entry, even though independents draw no bracket and the dashed key is the bracket's key. No golden fixture exercised this (every fixture with an independent also has a window), so it hadn't visibly misfired. | **`hasParallel` now derives only from `plan.windows.length > 0`.** An independent-overlap card gets no legend entry of its own, on its own or in combination with windows — its scheduled position and its lack of a bracket are the whole signal, matching § *The Map grammar*, "Independent overlap". | A legend key must describe a mark that's actually on screen. Verified with a hand-built plan (two overlapping tasks, zero windows): `hasParallel` is now `false` and no bracket is drawn; re-verified `chicken-biryani` (windows and independents both present) still reads `true`, tracing to the windows. |
+| 7 | The implementation handoff's animation brief (§ Animation: "axis draws downward … over ~500ms; cards/arrows fade in … ~150ms") describes the entry against a time axis; Decision 4 above removed the axis before any animation code was built, so the literal instruction has no element left to animate. | **Cards themselves sweep top-to-bottom** — each fades in over 150ms with a delay proportional to its own `y` (0ms top, 350ms bottom, landing at ~500ms) — then dependency edges, window brackets and fold labels fade in together once every card has landed. Same duration and direction as the axis sweep; no new element. Full spec: § *Map entry animation (M2.75)* above. | The brief's *feeling* (a downward-establishing beat, then content) survives intact using only marks the static grammar already draws — inventing a stand-in axis mark to animate would be exactly the "new visual grammar" this phase was told not to introduce. |
+
+Confirmed, not merely flagged, at CP2: a label that would need a 4th wrapped line still
+never clips (the handoff's own rejected list bans clipping outright, so "never clip" wins
+over any implied line cap, unchanged from CP1); the bracket dash colour `#a39d8f` in the
+design handoff is a study value, not a written token (§ *A study proposes composition,
+never tokens*) — the owner's decision is to keep it as `--color-ink-3` rather than
+promote `#a39d8f`, closing what CP1 had left open; and the legend keeps a text label
+beside each stage dot (the handoff's "no label text needed beyond the dot" read as "no
+extra explanation" rather than "remove the key"), the owner's explicit call at CP2.
+
+A colour-vision simulation of the six `--stage-*` tokens (Machado/Vienot-Brettel-style
+linear-RGB transform for protanopia, deuteranopia and tritanopia, CIE76 ΔE on the
+simulated swatches) found several pairs fall below easy separation under red-green
+deficiency — most notably stage-0 (olive) and stage-4 (warm-brown), ΔE≈1.2 under
+protanopia, functionally the same colour. **No action taken in M2.75 CP2** — these are
+M2.5-era tokens shared with the Plan view, not part of this milestone's approved grammar,
+and the owner's decision was to log this rather than touch the shared palette here. See
+§ *Still open*, item 10.
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
@@ -967,6 +1126,7 @@ Documented so they don't come back:
 | 5b | **`signal` on `--color-field` is 4.1:1** — marginal for the 12px `Start with this` cue. | C | Carried for M2.5. Fix if the person test shows it: bump the cue to 13px, or darken the field-local signal use. Not a token change. |
 | 5c | **Pressed state for a task row inside the field.** | C | `paper-sunk` is *lighter* than `--color-field`, so the row's pressed state can't be the on-paper one. Needs a step below `--color-field`. Phase C detail. |
 | 6 | **`Stage.color_key`** — unused by the renderer; `stageColor` assigns by position in `graph.stages`. | C | Remove at M4 or write down why it stays. |
-| 7 | **The Plan view has no time dimension.** | A (settled) | By design — the bar grammar is the Map's. Revisit only if the M2.75 person test says the Plan needs it too. |
+| 7 | **The Plan view has no time dimension.** | A (settled) | By design — the time axis and card grammar belong to the Map (§ *The Map grammar*). Revisit only if the M2.75 person test says the Plan needs it too. |
 | 8 | **Authored `wait_phrase`** — the caption's better version. | A (deferred) | Scope, not merit. See § *Authored wait phrase*. |
 | 9 | **`CookingGraph` cannot express "hot" vs "passive rest".** | A (deferred) | The caption is process-neutral because of this. A real heat field is an M4 schema decision if it is ever wanted; nothing in M2.5–M3 needs it. |
+| 10 | **The six `--stage-*` colours cluster tightly for red-green colour-vision deficiency.** Simulated (Machado/Vienot-Brettel-style linear-RGB transform, CIE76 ΔE on the result): stage-0/stage-4 ΔE≈1.2 under protanopia (near-identical), stage-1/stage-4 ΔE≈2.9 under deuteranopia. All six also sit within a narrow 0.125–0.181 luminance band, so hue is doing nearly all the separating work. | B (M2.5-wide) | Found during the M2.75 Map CP2 accessibility pass, but these tokens are shared with the Plan view and predate this milestone — not something M2.75 owns or should fix unilaterally. Logged, not acted on, per the owner's explicit CP2 decision. Fixing it means picking new stage hues with real lightness separation, which touches every screen that reads `stageColor()`, not just the Map. |

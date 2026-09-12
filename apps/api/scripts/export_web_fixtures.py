@@ -1,8 +1,8 @@
 """Freeze a few `RecipePlanResponse` payloads for the web unit tests.
 
-`apps/web/src/plan/derive.test.ts` runs against real scheduler output, but the web test
-run has no Python. This writes the payloads it needs into the web package. Re-run after
-any change to the schema or the scheduler:
+Web test suites run against real scheduler output, but the web test run has no Python.
+This writes the payloads they need into the web package. Re-run after any change to the
+schema or the scheduler:
 
     python apps/api/scripts/export_web_fixtures.py
 """
@@ -15,10 +15,22 @@ from abc_cook.api.routes.recipes import burner_capacity_for, load_graph
 from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema import RecipePlanResponse
 
-# One straightforward case, one that degrades to nothing, one with two windows.
-SLUGS = ["kadai-paneer", "maggi-2min", "chicken-biryani"]
+# Straightforward (kadai-paneer), degrades to nothing (maggi-2min), two windows and
+# 4-way concurrency (chicken-biryani), a 60-min clamp case (homemade-donuts),
+# non-integer minutes with off-thread freshness-held tasks (strawberry-shortcake), and
+# a sixth, hand-authored fixture the layout algorithm has never been tuned against
+# (synthetic-two-windows) — the M2.75 Map's six fixtures (docs/GRAPH_VIEW.md).
+SLUGS = [
+    "kadai-paneer",
+    "maggi-2min",
+    "chicken-biryani",
+    "homemade-donuts",
+    "strawberry-shortcake",
+    "synthetic-two-windows",
+]
 
-OUT = Path(__file__).resolve().parents[2] / "web" / "src" / "plan" / "__fixtures__"
+# Shared test data, not Plan-specific: the M2.75 Map's layout.test.ts reads these too.
+OUT = Path(__file__).resolve().parents[2] / "web" / "src" / "__fixtures__"
 
 
 def main() -> None:

@@ -61,6 +61,18 @@
   /* The stage ground wash's alpha — the knowing card exception, § Avoid generated-design
      tells. One home for the value so it can't drift between components. */
   --stage-ground-alpha: 0.18;
+
+  /* Map task card fill alpha (docs/DESIGN_SYSTEM.md § The Map grammar, M2.75). Higher
+     than --stage-ground-alpha: a Plan stage ground is a region tint behind rows, but a
+     Map card has to read as a discrete tappable object against paper, and at 0.18 it
+     didn't. The design handoff's stated 32% failed the CP2 accessibility pass: the
+     mainline attention note (10/500 ink-2) fell to 4.29-4.57:1 against the six
+     composited stage fills at that alpha, short of WCAG AA's 4.5:1. Lowered to 28% —
+     the minimum backward step that clears 4.5:1 on all six stages (worst case 4.55:1,
+     docs/DESIGN_SYSTEM.md § Resolved in M2.75, round 2 has the full table) — which
+     happens to be the M2.5-checkpoint value already calibrated as a legible light tint,
+     not a coincidence worth re-litigating. */
+  --map-card-alpha: 0.28;
 }
 
 html,
@@ -131,6 +143,24 @@ body {
   scrollbar-width: none;
 }
 
+/* The Map's one entry animation (docs/DESIGN_SYSTEM.md § Map entry animation;
+   apps/web/src/map/motion.ts holds the matching FADE_MS — keep both in step). Cards
+   sweep in top-to-bottom, connectors/folds follow as a second beat; every element's
+   animation-delay is computed per-map in MapView.tsx (`entryDelayMs`/
+   `connectorDelayMs`) and applied inline, since a tall map's sweep takes longer than a
+   short one's — there is no single fixed delay this file could state for either beat. */
+@keyframes map-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.map-enter {
+  animation: map-fade-in 150ms ease-out both;
+}
+
 /* Safe area insets for notch/home indicator */
 @supports (padding: max(0px)) {
   body {
@@ -148,6 +178,7 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
   }
 }

@@ -77,8 +77,15 @@ exists to compare against — moved there.)
 ## M2.75 — The Map view  ·  ~2–3 evenings
 
 The graph itself, per `docs/GRAPH_VIEW.md`. Deterministic SVG layout, row = time,
-critical path as the leftmost continuous lane, solid vs dashed connectors legible
-without a legend.
+two fixed columns (a mainline spine and everything else), classification by pure interval
+math over plan facts, solid arrows for real mainline dependencies and one dashed bracket
+per wait window, with a compact legend — direction set by the owner's approved
+`M2.75 Map design handoff.md` and recorded in `DESIGN_SYSTEM.md` § *The Map grammar*. This
+supersedes an earlier in-repo checkpoint built against the owner's own s9 mock
+(`docs/design/renders/m275-direction-mock.png`, kept as history); the reversal is argued
+in `DESIGN_SYSTEM.md` § *Resolved in M2.75, round 2*. It ships as a `Plan · Map` mode
+switch inside the existing Cooking Plan tab, not a new top-level tab — Plan stays the
+permanent default.
 
 This is where the Plan view's building blocks get their second consumer, so it is also
 where `src/components/global/` earns its place — the shared *components* the two views

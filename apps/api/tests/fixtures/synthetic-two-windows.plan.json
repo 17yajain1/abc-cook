@@ -1,0 +1,40 @@
+{
+  "graph_id": "synthetic-two-windows",
+  "scheduled": [
+    { "node_id": "chop_vegetables", "start_min": 0.0, "end_min": 5.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "toast_whole_spices", "start_min": 5.0, "end_min": 8.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "dice_potatoes", "start_min": 8.0, "end_min": 12.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
+    { "node_id": "simmer_stew", "start_min": 8.0, "end_min": 33.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "soak_dried_beans", "start_min": 8.0, "end_min": 28.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "crush_spice_blend", "start_min": 12.0, "end_min": 15.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 1 },
+    { "node_id": "mince_garlic_ginger", "start_min": 15.0, "end_min": 18.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 2 },
+    { "node_id": "rinse_rice", "start_min": 18.0, "end_min": 21.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 3 },
+    { "node_id": "combine_stew_and_rice", "start_min": 33.0, "end_min": 37.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "chop_fresh_herbs", "start_min": 37.0, "end_min": 39.0, "occupies_cook": true, "window_id": "w2", "rank_in_window": 0 },
+    { "node_id": "rest_bowl", "start_min": 37.0, "end_min": 47.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
+    { "node_id": "serve_bowl", "start_min": 47.0, "end_min": 49.0, "occupies_cook": true, "window_id": null, "rank_in_window": null }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "simmer_stew",
+      "capacity_min": 22.5,
+      "assigned": ["dice_potatoes", "crush_spice_blend", "mince_garlic_ginger", "rinse_rice"],
+      "used_min": 13.0,
+      "slack_min": 9.5
+    },
+    {
+      "id": "w2",
+      "host_node_id": "rest_bowl",
+      "capacity_min": 9.0,
+      "assigned": ["chop_fresh_herbs"],
+      "used_min": 2.0,
+      "slack_min": 7.0
+    }
+  ],
+  "total_min": 49.0,
+  "serial_min": 84.0,
+  "saved_min": 35.0,
+  "critical_path": ["chop_vegetables", "simmer_stew", "combine_stew_and_rice", "rest_bowl", "serve_bowl"],
+  "warnings": []
+}
