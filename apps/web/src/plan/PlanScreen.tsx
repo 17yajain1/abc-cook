@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { MapView } from '@/map/MapView'
 import type { MapLayout } from '@/map/layout'
@@ -28,6 +28,33 @@ export function PlanScreen({
   const [tab, setTab] = useState<Tab>('plan')
   const [mode, setMode] = useState<Mode>('plan')
   const showingMap = tab === 'plan' && mode === 'map'
+
+  // The Map's entry animation plays once per recipe, not on every Plan<->Map toggle
+  // (`DESIGN_SYSTEM.md` § Map entry animation) — replaying it on every glance would
+  // fight the app's own "fast answer, wet hands" premise. A ref (not state) is the
+  // right boundary, for two reasons:
+  // 1. Lifecycle: App.tsx never transitions directly between two `{kind:'plan'}`
+  //    views — every recipe change passes through `loading` first, a different
+  //    component at the same JSX slot, which unmounts this PlanScreen and gives the
+  //    next recipe a fresh instance (and a fresh ref). Toggling `mode` only re-renders
+  //    this same instance, so the ref survives exactly across the toggles it should
+  //    and resets exactly when the recipe does.
+  // 2. Correctness under a `useState` alternative was tried and is actively wrong:
+  //    flipping state right after the animated mount commits re-renders this same,
+  //    still-mounted `MapView` instance mid-animation with `skipEntryAnimation=true`,
+  //    which strips the animation classes off already-animating elements and snaps
+  //    every card straight to full opacity almost instantly — defeating the animation
+  //    on the one mount it's supposed to play on. A ref's mutation triggers no
+  //    re-render, so flipping it immediately after mount is inert until PlanScreen
+  //    re-renders for some other reason (the next toggle) — which is exactly what's
+  //    needed here. This is a deliberate exception to "don't read refs during render":
+  //    that guidance protects against stale reads because a ref's mutation won't
+  //    trigger a re-render — which is precisely the property this relies on, not a
+  //    hazard to avoid. (Read at the JSX call site below, with the lint suppression.)
+  const hasAnimatedMapRef = useRef(false)
+  useEffect(() => {
+    if (mode === 'map') hasAnimatedMapRef.current = true
+  }, [mode])
 
   // `relative` matters: the CTA below is absolutely positioned, and without a positioned
   // ancestor it resolved against the viewport and escaped the 390px column at any wider
@@ -79,7 +106,10 @@ export function PlanScreen({
           <IngredientsPanel groups={plan.ingredientGroups} />
         ) : mode === 'map' ? (
           <div className="pt-4">
-            <MapView layout={map} />
+            {/* eslint-disable-next-line react-hooks/refs -- deliberate: see the ref's
+                declaration comment above for why a state re-render here would break
+                the animation it's supposed to gate. */}
+            <MapView layout={map} skipEntryAnimation={hasAnimatedMapRef.current} />
           </div>
         ) : (
           <div className="px-5 pt-6">

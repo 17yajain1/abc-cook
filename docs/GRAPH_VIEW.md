@@ -186,8 +186,10 @@ the owner's mock**, `docs/design/renders/m275-direction-mock.png` (s9):
   `DESIGN_SYSTEM.md` § *Resolved in M2.75*.)
 - ~~What is the typographic voice?~~ Unchanged from the rest of the app — Archivo
   variable, the same type scale as the Plan view (`DESIGN_SYSTEM.md` § Type).
-- ~~What is the one moment of motion?~~ The time axis scales in on entry, then cards and
-  arrows fade in — not the merge. Built last, after the render checkpoints (§ Motion).
+- ~~What is the one moment of motion?~~ Cards sweep in top-to-bottom (delayed by their own
+  `y`, in place of the axis this Map no longer draws), then connectors and fold labels
+  fade in — not the merge. Built last, after the render checkpoints (`DESIGN_SYSTEM.md`
+  § *Map entry animation (M2.75)*).
 
 The brief is written into `DESIGN_SYSTEM.md` § *The Map grammar*, so it survives past the
 session that produced it.

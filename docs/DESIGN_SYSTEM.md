@@ -963,15 +963,59 @@ prompt + likely a new invariant. Not an M2.5 convenience.
 - Stage expand/collapse: 200ms ease-out height + opacity.
 - Respect `prefers-reduced-motion` — this is not optional and applies to every milestone.
 
-## Future Milestone Reference (M2.75/M3) — not part of M2.5 implementation
+### Map entry animation (M2.75)
 
-### Map entry animation and cooking-mode motion
+**The one orchestrated moment, once per recipe.** The handoff's brief said "the time
+axis scales in from the top, then cards and arrows fade in" — written against a
+static grammar that still had an axis. It doesn't (§ *Resolved in M2.75, round 2*,
+item 4: no axis, no ticks), so that literal instruction is stale. The replacement
+keeps the feeling — a top-to-bottom sweep landing at ~500ms, then content settling —
+using only marks the static grammar already draws:
 
-- **The one orchestrated moment (Map, M2.75):** on open, the time axis scales in from the
-  top over ~500ms; cards and arrows fade in over 150ms once it lands. Once, on entry.
-  Nothing else on the Map animates. (Supersedes an earlier draft naming a "critical rail"
-  sweep — the M2.75 direction paints no rail, § *The Map grammar*.) Built in Step 6, after
-  the M2.75 render checkpoints, not before.
+- **Cards sweep in.** Each card (mainline, window-child, independent — no
+  distinction) fades in over 150ms, delayed in proportion to its own `y` on the map:
+  0ms at the top, 350ms at the bottom, so the last card lands at ~500ms. A card's
+  vertical position already carries "when" (§ *The Map grammar*); this animates that
+  fact and nothing else. No translate, no scale, no stroke-draw — fade only, so the
+  animation cannot be read as adding a mark the static Map doesn't have.
+- **Connectors settle after.** Dependency edges, window brackets, and `+N more` fold
+  labels fade in together, 150ms, once *that map's own* slowest card has had time to
+  land — derived per map from the real sweep (`connectorDelayMs` in `motion.ts`,
+  `= max(entryDelayMs(card) for card in map) + 150ms`), never a fixed number, since no
+  single constant is both tight for a short recipe and safe for a tall one. Maggi (4
+  cards, fully serial) settles by 411ms; Chicken Biryani (its tallest card landing at
+  325ms) still waits out its full sweep before anything relational appears at 475ms —
+  the "no connector before its endpoints exist" invariant holds by construction, not
+  by picking a number large enough to cover the worst case. Solid and dashed
+  connectors animate identically — motion adds no new distinction between them.
+- **The legend never animates** — static from the first frame. Nothing else on the
+  Map moves.
+- **Replays on a fresh recipe, not on the `Plan ↔ Map` switch.** The animation plays
+  the first time a recipe's Map mounts, and again if you leave the recipe (`change
+  recipe`) and come back to it later — each is a genuinely new `PlanScreen` instance.
+  It does **not** replay on subsequent `Plan → Map` toggles for the recipe you're
+  already viewing: those toggles unmount and remount only the `MapView` inside an
+  unchanged `PlanScreen`, and `PlanScreen` remembers it's already shown this recipe's
+  entry once. Replaying a 500–650ms sweep on every glance back at the Map would fight
+  the app's own "fast answer, wet hands" premise (`CLAUDE.md`); a comprehension aid is
+  only doing its job the first time you see the layout. Implementation:
+  `PlanScreen.tsx` holds a `useRef` (not `useState` — deliberately, see that file's
+  comment) that survives `mode` toggles and resets only when `PlanScreen` itself
+  remounts, and passes it to `MapView` as `skipEntryAnimation`.
+- **`prefers-reduced-motion: reduce`:** every card, connector and fold label is at
+  full opacity immediately, no sweep, no delay.
+- CSS only (`apps/web/src/index.css` `.map-enter`), delays computed by the pure
+  `entryDelayMs` / `connectorDelayMs` in `apps/web/src/map/motion.ts` and applied as
+  inline `animationDelay`. No React state, no timers driving the animation itself —
+  `MapView.tsx` stays a renderer of `MapLayout`; the *whether it plays at all*
+  decision lives one level up, in `PlanScreen`.
+
+This entry is recorded as reversal 7 in § *Resolved in M2.75, round 2* below.
+
+## Future Milestone Reference (M3) — not part of M2.5/M2.75 implementation
+
+### Cooking-mode motion
+
 - **Task complete (M3):** check draws in 150ms, row settles. No confetti during cooking —
   save celebration for the final `finish` node.
 
@@ -1049,6 +1093,7 @@ and decided; none was picked silently.
 | 4 | The handoff's column geometry (mainline at `x=20`) leaves no left gutter for a time axis; this file's pre-existing Map grammar and the s9 mock both draw one at `x=56` with `N min` ticks. | **No axis, no ticks.** Time is carried entirely by vertical order, the sqrt-compressed height, and each card's own duration label. | The two specs are geometrically incompatible at 390px width — there is no room for both. The handoff's own "explicitly rejected" list already objects to "placing any card by visual balance rather than by `start_min`/`end_min`", which an axis doesn't violate, but dropping it is what the approved visual spec actually shows. |
 | 5 | CP2 accessibility pass: at `--map-card-alpha` 32%, the mainline attention note (10px) measured 2.97–3.16:1 against the six composited stage fills — computed exactly, not estimated — well short of WCAG AA's 4.5:1 for normal text. | **Note text moved from `ink-3` to `ink-2`, and `--map-card-alpha` returned to 28%.** `ink-2` alone at 32% still fell short on four of six stages (4.29–4.57:1); 28% is the smallest step back that clears 4.5:1 on all six, worst case 4.55:1 (stage-3, mauve). Exact per-stage numbers: stage-0 `#cbcebf` 4.81, stage-1 `#cec9bf` 4.67, stage-2 `#c2c9c8` 4.58, stage-3 `#cac6c8` 4.55, stage-4 `#cec8c1` 4.64, stage-5 `#c6c9c3` 4.60 (all against `ink-2` `#55534c`). | The note is real information (it changes what the cook expects from the next several minutes), not decoration — it has to be legible on every stage a recipe uses, not just the ones the golden fixtures happen to exercise. 28% also happens to be the M2.5-checkpoint value already visually calibrated as a legible light tint, so this isn't a new, unvetted look. |
 | 6 | `legend.hasParallel` was `plan.windows.length > 0 \|\| independentCount > 0` — an independent-overlap card alone could key the dashed "Parallel (while waiting)" legend entry, even though independents draw no bracket and the dashed key is the bracket's key. No golden fixture exercised this (every fixture with an independent also has a window), so it hadn't visibly misfired. | **`hasParallel` now derives only from `plan.windows.length > 0`.** An independent-overlap card gets no legend entry of its own, on its own or in combination with windows — its scheduled position and its lack of a bracket are the whole signal, matching § *The Map grammar*, "Independent overlap". | A legend key must describe a mark that's actually on screen. Verified with a hand-built plan (two overlapping tasks, zero windows): `hasParallel` is now `false` and no bracket is drawn; re-verified `chicken-biryani` (windows and independents both present) still reads `true`, tracing to the windows. |
+| 7 | The implementation handoff's animation brief (§ Animation: "axis draws downward … over ~500ms; cards/arrows fade in … ~150ms") describes the entry against a time axis; Decision 4 above removed the axis before any animation code was built, so the literal instruction has no element left to animate. | **Cards themselves sweep top-to-bottom** — each fades in over 150ms with a delay proportional to its own `y` (0ms top, 350ms bottom, landing at ~500ms) — then dependency edges, window brackets and fold labels fade in together once every card has landed. Same duration and direction as the axis sweep; no new element. Full spec: § *Map entry animation (M2.75)* above. | The brief's *feeling* (a downward-establishing beat, then content) survives intact using only marks the static grammar already draws — inventing a stand-in axis mark to animate would be exactly the "new visual grammar" this phase was told not to introduce. |
 
 Confirmed, not merely flagged, at CP2: a label that would need a 4th wrapped line still
 never clips (the handoff's own rejected list bans clipping outright, so "never clip" wins
