@@ -40,6 +40,12 @@ class RecipePlanResponse(BaseModel):
     )
 
 
+class ImportStartResponse(BaseModel):
+    """`POST /import`'s `202` response (design doc §4.5)."""
+
+    job_id: str = Field(description="Poll `GET /import/{job_id}` with this.")
+
+
 class ImportJobResponse(BaseModel):
     """`GET /import/{job_id}` — the client polls this (design doc §4.5).
 

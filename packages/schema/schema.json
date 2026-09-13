@@ -291,6 +291,19 @@
       ],
       "type": "object"
     },
+    "ImportStartResponse": {
+      "description": "`POST /import`'s `202` response (design doc \u00a74.5).",
+      "properties": {
+        "job_id": {
+          "description": "Poll `GET /import/{job_id}` with this.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
     "Ingredient": {
       "description": "One ingredient line from the source recipe.\n\nA `prep_note` is a hint that a prep node exists: \"2 onions, finely chopped\"\nimplies a `chop_onion` node even when no written step mentions chopping.",
       "properties": {

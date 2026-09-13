@@ -479,6 +479,18 @@ export interface StageSpan {
   work_min: number;
 }
 /**
+ * `POST /import`'s `202` response (design doc §4.5).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ImportStartResponse".
+ */
+export interface ImportStartResponse {
+  /**
+   * Poll `GET /import/{job_id}` with this.
+   */
+  job_id: string;
+}
+/**
  * Every recipe the API can currently serve.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema

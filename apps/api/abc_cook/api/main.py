@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from abc_cook import __version__
-from abc_cook.api.routes import health, recipes
+from abc_cook.api.routes import health, import_, recipes
 
 DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 
@@ -49,6 +49,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(import_.router)
     app.include_router(recipes.router)
     return app
 

@@ -8,6 +8,7 @@ See docs/COOKING_GRAPH.md §2 for the spec these implement.
 
 from abc_cook.schema.api import (
     ImportJobResponse,
+    ImportStartResponse,
     RecipeListResponse,
     RecipePlanResponse,
     RecipeSummary,
@@ -39,6 +40,7 @@ __all__ = [
     "GraphProvenance",
     "ImportJobResponse",
     "ImportResult",
+    "ImportStartResponse",
     "ImportStatus",
     "Ingredient",
     "Node",
