@@ -21,7 +21,7 @@ help:
 	@echo "api      run the api alone on :$(API_PORT)"
 	@echo "web      run the web dev server alone, exposed on the local network"
 	@echo "lint     ruff + mypy on the api, oxlint on the web"
-	@echo "test     pytest (llm-marked tests excluded)"
+	@echo "test     pytest (llm- and network-marked tests excluded)"
 	@echo "types    regenerate packages/schema from the Pydantic JSON Schema"
 	@echo "clean    remove caches and build output"
 
@@ -49,7 +49,7 @@ lint:
 	cd $(WEB_DIR) && npm run lint
 
 test:
-	cd $(API_DIR) && $(VENV_BIN)/pytest -m "not llm"
+	cd $(API_DIR) && $(VENV_BIN)/pytest -m "not llm and not network"
 	cd $(WEB_DIR) && npm test
 
 # Pydantic models -> JSON Schema -> packages/schema/index.ts, plus the frozen

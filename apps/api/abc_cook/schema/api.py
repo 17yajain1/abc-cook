@@ -7,6 +7,7 @@ hand-mirrored in `.ts`.
 from pydantic import BaseModel, Field
 
 from abc_cook.schema.graph import CookingGraph
+from abc_cook.schema.normalized import ImportResult, ImportStatus
 from abc_cook.schema.plan import CookingPlan, StageSpan
 
 
@@ -37,3 +38,19 @@ class RecipePlanResponse(BaseModel):
     stages: list[StageSpan] = Field(
         description="Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.",
     )
+
+
+class ImportJobResponse(BaseModel):
+    """`GET /import/{job_id}` — the client polls this (design doc §4.5).
+
+    A separate envelope from `RecipePlanResponse`, which stays the frozen contract for
+    the fixture path (design doc §9 decision 3).
+    """
+
+    job_id: str = Field(description="Id returned by `POST /import`.")
+    status: ImportStatus = Field(description="Where the job is in the pipeline.")
+    result: ImportResult | None = Field(
+        default=None,
+        description="Present once status is a terminal value (done / method_not_grounded).",
+    )
+    error: str | None = Field(default=None, description="Set when status is failed.")

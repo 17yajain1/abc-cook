@@ -416,7 +416,7 @@
         "color_key": "finish"
       }
     ],
-    "stated_total_min": 50
+    "stated_total_min": null
   },
   "plan": {
     "graph_id": "synthetic-two-windows",

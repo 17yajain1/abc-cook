@@ -11,6 +11,10 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
+    "httpx>=0.27",
+    "certifi>=2024.8",
+    "yt-dlp>=2024.12",
+    "anthropic>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -41,6 +45,7 @@ convention = "google"
 testpaths = ["tests"]
 markers = [
     "llm: hits a real LLM provider; excluded from the default run (COOKING_GRAPH.md §7)",
+    "network: hits a real network resource (yt-dlp, a recipe blog); excluded from the default run (docs/M2.9-youtube-import-design.md §8.2)",
 ]
 
 [tool.mypy]
