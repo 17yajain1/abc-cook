@@ -3,12 +3,14 @@ import { useCallback, useEffect, useState } from 'react'
 import type { RecipeSummary } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan, fetchRecipes } from './api/client'
+import { ImportScreen } from './import/ImportScreen'
 import { layoutMap, type MapLayout } from './map/layout'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 
 type View =
   | { kind: 'picker' }
+  | { kind: 'import' }
   | { kind: 'loading'; recipeId: string }
   | { kind: 'plan'; plan: RenderPlan; map: MapLayout }
   | { kind: 'error'; message: string }
@@ -28,8 +30,15 @@ export default function App() {
   }, [])
 
   const backToPicker = useCallback(() => setView({ kind: 'picker' }), [])
+  const openImport = useCallback(() => setView({ kind: 'import' }), [])
+  const onImported = useCallback(
+    (plan: RenderPlan, map: MapLayout) => setView({ kind: 'plan', plan, map }),
+    [],
+  )
 
   switch (view.kind) {
+    case 'import':
+      return <ImportScreen onImported={onImported} onCancel={backToPicker} />
     case 'loading':
       return <Centered>Scheduling {view.recipeId}…</Centered>
     case 'error':
@@ -48,11 +57,17 @@ export default function App() {
     case 'plan':
       return <PlanScreen plan={view.plan} map={view.map} onPickAnother={backToPicker} />
     default:
-      return <RecipePicker onPick={openRecipe} />
+      return <RecipePicker onPick={openRecipe} onImport={openImport} />
   }
 }
 
-function RecipePicker({ onPick }: { onPick: (recipeId: string) => void }) {
+function RecipePicker({
+  onPick,
+  onImport,
+}: {
+  onPick: (recipeId: string) => void
+  onImport: () => void
+}) {
   const [recipes, setRecipes] = useState<RecipeSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -88,6 +103,14 @@ function RecipePicker({ onPick }: { onPick: (recipeId: string) => void }) {
           <li className="py-3.5 text-[15px] text-ink-3">Loading…</li>
         )}
       </ul>
+
+      <button
+        type="button"
+        onClick={onImport}
+        className="mt-6 self-start text-[13px] text-ink-3 underline underline-offset-4"
+      >
+        or paste a recipe link
+      </button>
     </div>
   )
 }
