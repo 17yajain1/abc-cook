@@ -67,7 +67,14 @@ class _FakeAdapter:
     calls: int = 0
 
     def extract(
-        self, *, prompt: str, source_text: str, model: str, max_tokens: int
+        self,
+        *,
+        prompt: str,
+        source_text: str,
+        model: str,
+        max_tokens: int,
+        output_type: type,
+        effort: str | None = None,
     ) -> ExtractResult:
         result = self.results[self.calls]
         self.calls += 1

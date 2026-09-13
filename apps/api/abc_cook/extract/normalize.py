@@ -106,11 +106,19 @@ def normalize(
     source_text = render_source_text(raw)
 
     result = adapter.extract(
-        prompt=prompt, source_text=source_text, model=model, max_tokens=max_tokens
+        prompt=prompt,
+        source_text=source_text,
+        model=model,
+        max_tokens=max_tokens,
+        output_type=NormalizedRecipe,
     )
     if result.recipe is None:
         result = adapter.extract(
-            prompt=prompt, source_text=source_text, model=model, max_tokens=max_tokens
+            prompt=prompt,
+            source_text=source_text,
+            model=model,
+            max_tokens=max_tokens,
+            output_type=NormalizedRecipe,
         )
 
     if result.recipe is None:

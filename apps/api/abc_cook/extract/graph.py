@@ -258,6 +258,7 @@ def build_graph(
     *,
     graph_id: str,
     source: SourceRef,
+    force_linear: bool = False,
 ) -> GraphBuildResult:
     """`NormalizedRecipe` -> `CookingGraph`, or a refusal.
 
@@ -270,6 +271,18 @@ def build_graph(
             substrings of the source, not the model's paraphrase.
         graph_id: Stable id for the resulting `CookingGraph`.
         source: Where this recipe came from.
+        force_linear: Tier 1 degrade mode (`repair.py`, design doc §4.2 row 1 /
+            `COOKING_GRAPH.md` §5 "degrade to a linear chain"). Discards every
+            structural claim beyond stated order — independence claims, produces/
+            consumes branching, and freshness structural steering — so the result is
+            guaranteed to pass invariants 1-4 by construction. Attention, duration,
+            and freshness verification are untouched: only graph *structure*
+            (parallelism) is discarded, never grounded content. Also guarantees
+            invariants 5/6/8 by dropping (never inventing) an assertion the content
+            can't support: an ingredient no step consumes is marked `optional`; a
+            node's `produces` is never asserted (nothing downstream is claimed to
+            consume it in linear mode); `stated_total_min` is dropped if the verified
+            durations don't support it.
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -285,7 +298,7 @@ def build_graph(
     # -- Ingredients --------------------------------------------------------------
     ingredients: list[Ingredient] = []
     seen_ing_ids: set[str] = set()
-    name_to_id: dict[str, str] = {}
+    name_to_ids: dict[str, list[str]] = {}
     for norm_ing in recipe.ingredients:
         base_id = f"ing_{_slugify(norm_ing.name, max_words=3)}"
         ing_id = base_id
@@ -294,7 +307,12 @@ def build_graph(
             ing_id = f"{base_id}_{suffix}"
             suffix += 1
         seen_ing_ids.add(ing_id)
-        name_to_id[norm_ing.name.lower()] = ing_id
+        # A name can legitimately repeat (design doc §10.C, real data: "Garlic
+        # chopped" listed once for the base and again under "Tempering"). Keep every
+        # id sharing a name, not just the last one written -- a single dict[name, id]
+        # made an earlier occurrence permanently unconsumable regardless of what any
+        # step claimed, a real bug found running repair.py against a real recipe.
+        name_to_ids.setdefault(norm_ing.name.lower(), []).append(ing_id)
         ingredients.append(
             Ingredient(
                 id=ing_id,
@@ -310,20 +328,20 @@ def build_graph(
     def _ingredient_ids(names: list[str]) -> list[str]:
         ids = []
         for name in names:
-            matched = name_to_id.get(name.lower())
+            matched = name_to_ids.get(name.lower())
             if matched is None:
                 # Soft fallback: substring match against known ingredient names.
-                for known_name, known_id in name_to_id.items():
+                for known_name, known_ids in name_to_ids.items():
                     if name.lower() in known_name or known_name in name.lower():
-                        matched = known_id
+                        matched = known_ids
                         break
             if matched is not None:
-                ids.append(matched)
+                ids.extend(matched)
             else:
                 warnings.append(
                     f'Step references ingredient "{name}", not found in the ingredient list.'
                 )
-        return ids
+        return list(dict.fromkeys(ids))  # de-dupe, preserve order
 
     # -- Nodes ----------------------------------------------------------------------
     steps = recipe.steps
@@ -353,7 +371,7 @@ def build_graph(
         if index == 0:
             sequential = True
             dep_source: ProvenanceSource = "extracted"
-        elif step.depends_on_previous:
+        elif force_linear or step.depends_on_previous:
             sequential = True
             dep_source = _sequential_source(step.text)
         else:
@@ -396,7 +414,9 @@ def build_graph(
                 depends_on=[],  # filled below, once every node id is known
                 consumes=_ingredient_ids(step.consumes_ingredients),
                 produces=(
-                    f"comp_{_slugify(step.produces_component)}" if step.produces_component else None
+                    None
+                    if force_linear or not step.produces_component
+                    else f"comp_{_slugify(step.produces_component)}"
                 ),
                 interruptible=interruptible,
                 max_lead_min=max_lead_min,
@@ -423,32 +443,40 @@ def build_graph(
     # -- Edges: produces -> consumer, wherever a LATER step names the same product --
     # Strictly later only: a step can't consume something a step after it produces,
     # and matching in both directions is exactly how this created a real dependency
-    # cycle the first time (found live at the M2.9 s15 checkpoint).
-    for index, step in enumerate(steps):
-        if step.produces_component is None:
-            continue
-        producer_id = nodes[index].id
-        produced_name = step.produces_component.lower()
-        for other_index, other_step in enumerate(steps):
-            if other_index <= index:
+    # cycle the first time (found live at the M2.9 s15 checkpoint). Skipped entirely
+    # in force_linear mode -- Tier 1 discards structure, not just this one shortcut.
+    if not force_linear:
+        for index, step in enumerate(steps):
+            if step.produces_component is None:
                 continue
-            names_lower = (name.lower() for name in other_step.consumes_ingredients)
-            if any(produced_name in name or name in produced_name for name in names_lower):
-                consumer = nodes[other_index]
-                if producer_id not in consumer.depends_on:
-                    consumer.depends_on.append(producer_id)
+            producer = nodes[index]
+            produced_name = step.produces_component.lower()
+            for other_index, other_step in enumerate(steps):
+                if other_index <= index:
+                    continue
+                names_lower = (name.lower() for name in other_step.consumes_ingredients)
+                if any(produced_name in name or name in produced_name for name in names_lower):
+                    consumer = nodes[other_index]
+                    if producer.id not in consumer.depends_on:
+                        consumer.depends_on.append(producer.id)
+                    # invariant 6 checks `producer.produces in consumer.consumes` --
+                    # without this, no consumer's `consumes` ever contains a `comp_*`
+                    # id and the invariant fails unconditionally regardless of the
+                    # edge above (a real bug found preparing repair.py's test case).
+                    if producer.produces is not None and producer.produces not in consumer.consumes:
+                        consumer.consumes.append(producer.produces)
 
-    # -- Edges: freshness structural steering (§4.6) --------------------------------
-    for index, decision in enumerate(decisions):
-        if decision.freshness != "stated_unbounded":
-            continue
-        fresh_node = nodes[index]
-        if index + 1 >= len(nodes):
-            continue  # last node is its own "consumer" position; already terminal
-        consumer = nodes[index + 1]
-        for dep in consumer.depends_on:
-            if dep != fresh_node.id and dep not in fresh_node.depends_on:
-                fresh_node.depends_on.append(dep)
+        # -- Edges: freshness structural steering (§4.6) -----------------------------
+        for index, decision in enumerate(decisions):
+            if decision.freshness != "stated_unbounded":
+                continue
+            fresh_node = nodes[index]
+            if index + 1 >= len(nodes):
+                continue  # last node is its own "consumer" position; already terminal
+            consumer = nodes[index + 1]
+            for dep in consumer.depends_on:
+                if dep != fresh_node.id and dep not in fresh_node.depends_on:
+                    fresh_node.depends_on.append(dep)
 
     # -- Stages ----------------------------------------------------------------------
     used_stage_ids = list(dict.fromkeys(node.stage for node in nodes))
@@ -461,6 +489,26 @@ def build_graph(
     if recipe.servings is None:
         warnings.append("Servings not stated in the source; defaulted to 4.")
 
+    stated_total_min = recipe.stated_total_min
+    if force_linear:
+        # Guarantee invariants 5/6/8 by DROPPING an assertion the content can't
+        # support -- never by inventing one. Invariant 6 needs no action: `produces`
+        # is never set above in force_linear mode, so no node claims a component
+        # nothing consumes.
+        consumed_ids = {c for node in nodes for c in node.consumes}
+        for ingredient in ingredients:
+            if ingredient.id not in consumed_ids:
+                ingredient.optional = True
+        if stated_total_min is not None:
+            serial_min = sum(node.duration_typical for node in nodes)
+            if abs(serial_min - stated_total_min) > 0.4 * stated_total_min:
+                warnings.append(
+                    f"Dropped the source's stated total time ({stated_total_min} min): "
+                    f"the verified step durations sum to {serial_min:.0f} min, too far "
+                    "off to assert both — never invented a number to close the gap."
+                )
+                stated_total_min = None
+
     graph = CookingGraph(
         id=graph_id,
         title=recipe.title,
@@ -470,7 +518,7 @@ def build_graph(
         ingredients=ingredients,
         nodes=nodes,
         stages=stages,
-        stated_total_min=recipe.stated_total_min,
+        stated_total_min=stated_total_min,
     )
 
     return GraphBuildResult(
@@ -479,3 +527,15 @@ def build_graph(
         warnings=warnings,
         review_recommended=review_recommended,
     )
+
+
+def build_linear_graph(
+    recipe: NormalizedRecipe, raw_source_text: str, *, graph_id: str, source: SourceRef
+) -> GraphBuildResult:
+    """The Tier 1 degrade: `build_graph(..., force_linear=True)`.
+
+    `COOKING_GRAPH.md` §5: "degrade to a linear ... chain from the raw steps". Named
+    separately from `build_graph` so `repair.py`'s call sites read as what they are —
+    the guaranteed-safe last resort, never the primary path.
+    """
+    return build_graph(recipe, raw_source_text, graph_id=graph_id, source=source, force_linear=True)

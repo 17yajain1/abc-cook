@@ -356,3 +356,31 @@ def test_ingredient_reference_matched_case_insensitively() -> None:
     result = _build(recipe, "Add the onion. Serve.")
     assert result.graph is not None
     assert result.graph.nodes[0].consumes == ["ing_onion"]
+
+
+def test_duplicate_ingredient_names_are_both_consumable() -> None:
+    """Real bug found running repair.py against a real recipe: two ingredients named
+    "Butter" (once in the main list, once under "Tempering") used to collapse into a
+    single name->id mapping, so whichever was written first could never be matched by
+    any step's consumes_ingredients, regardless of what the step actually said --
+    invariant 5 failed unconditionally for it. A step naming "Butter" must now be able
+    to satisfy both entries between the two steps that reference it."""
+    recipe = _recipe(
+        [
+            _step(text="Melt some butter in a pan.", consumes_ingredients=["Butter"]),
+            _step(text="Stir in more butter and serve.", consumes_ingredients=["Butter"]),
+        ],
+        ingredients=[
+            NormalizedIngredient(name="Butter", qty="100", unit="g", prep_note=None, group=None),
+            NormalizedIngredient(
+                name="Butter", qty="2", unit="tbsp", prep_note=None, group="Tempering"
+            ),
+        ],
+    )
+    result = _build(recipe, "Melt some butter in a pan. Stir in more butter and serve.")
+    assert result.graph is not None
+    assert len(result.graph.ingredients) == 2
+    consumed_ids = {c for node in result.graph.nodes for c in node.consumes}
+    assert consumed_ids == {ing.id for ing in result.graph.ingredients}
+    violations = validate(result.graph)
+    assert not any(v.rule == "ingredients_consumed" for v in violations)
