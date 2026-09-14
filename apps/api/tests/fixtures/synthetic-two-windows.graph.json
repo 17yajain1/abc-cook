@@ -28,7 +28,7 @@
     { "id": "garnish", "label": "Garnish", "color_key": "prep" },
     { "id": "finish", "label": "Finish", "color_key": "finish" }
   ],
-  "stated_total_min": 50,
+  "stated_total_min": null,
   "nodes": [
     {
       "id": "chop_vegetables",

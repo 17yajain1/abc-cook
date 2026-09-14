@@ -7,6 +7,8 @@ See docs/COOKING_GRAPH.md §2 for the spec these implement.
 """
 
 from abc_cook.schema.api import (
+    ImportJobResponse,
+    ImportStartResponse,
     RecipeListResponse,
     RecipePlanResponse,
     RecipeSummary,
@@ -14,6 +16,18 @@ from abc_cook.schema.api import (
 from abc_cook.schema.graph import CookingGraph, Edge, EdgeKind, SourceKind, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
 from abc_cook.schema.node import Attention, Node, NodeKind, Station
+from abc_cook.schema.normalized import (
+    Freshness,
+    GraphProvenance,
+    ImportResult,
+    ImportStatus,
+    NodeProvenance,
+    NormalizedChapter,
+    NormalizedIngredient,
+    NormalizedRecipe,
+    NormalizedStep,
+    ProvenanceSource,
+)
 from abc_cook.schema.plan import CookingPlan, ScheduledNode, StageSpan, WaitWindow
 
 __all__ = [
@@ -22,9 +36,21 @@ __all__ = [
     "CookingPlan",
     "Edge",
     "EdgeKind",
+    "Freshness",
+    "GraphProvenance",
+    "ImportJobResponse",
+    "ImportResult",
+    "ImportStartResponse",
+    "ImportStatus",
     "Ingredient",
     "Node",
     "NodeKind",
+    "NodeProvenance",
+    "NormalizedChapter",
+    "NormalizedIngredient",
+    "NormalizedRecipe",
+    "NormalizedStep",
+    "ProvenanceSource",
     "RecipeListResponse",
     "RecipePlanResponse",
     "RecipeSummary",

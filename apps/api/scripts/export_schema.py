@@ -15,13 +15,23 @@ from typing import Any
 
 from pydantic.json_schema import GenerateJsonSchema, models_json_schema
 
-from abc_cook.schema import RecipeListResponse, RecipePlanResponse
+from abc_cook.schema import (
+    ImportJobResponse,
+    ImportStartResponse,
+    RecipeListResponse,
+    RecipePlanResponse,
+)
 
-# Two response roots. `RecipePlanResponse` transitively contains CookingGraph,
+# Response roots. `RecipePlanResponse` transitively contains CookingGraph,
 # CookingPlan, StageSpan and every child model, so listing those separately here would
 # only create duplicate `Foo` / `Foo1` interfaces in the output. Add a root only when
 # the frontend needs a model that nothing else already pulls in.
-ROOTS = [RecipePlanResponse, RecipeListResponse]
+#
+# `ImportJobResponse`/`ImportStartResponse` (M2.9 Step 11, `POST /import` +
+# `GET /import/{job_id}`) pull in NormalizedRecipe/ImportResult/GraphProvenance —
+# added ahead of the ImportScreen.tsx that consumes them (design doc §12 step 12), so
+# the generated types are ready when that step starts.
+ROOTS = [RecipePlanResponse, RecipeListResponse, ImportJobResponse, ImportStartResponse]
 
 OUT = Path(__file__).resolve().parents[3] / "packages" / "schema" / "schema.json"
 

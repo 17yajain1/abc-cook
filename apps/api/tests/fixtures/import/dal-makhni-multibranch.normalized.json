@@ -1,0 +1,412 @@
+{
+  "title": "Restaurant Style Dal Makhni Recipe in Hindi | Winter Special दाल मखनी रेस्टौरंट जैसी",
+  "channel": null,
+  "method_grounded": true,
+  "servings": 7,
+  "servings_source": "stated",
+  "cuisine": "Indian",
+  "stated_total_min": 65,
+  "ingredients": [
+    {
+      "name": "Urad Dal",
+      "qty": "160",
+      "unit": "gms/1 cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Rajma (Chitra)",
+      "qty": "¼ cup or 45",
+      "unit": "gms",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Water",
+      "qty": "4-5",
+      "unit": "cups",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Butter",
+      "qty": "100",
+      "unit": "gms / ½ cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Ginger paste",
+      "qty": "12",
+      "unit": "gms / 1 tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Garlic paste",
+      "qty": "12",
+      "unit": "gms / 1 tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Garlic chopped",
+      "qty": "½",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Kashmiri chilli powder",
+      "qty": "12",
+      "unit": "gms / 1½ tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Salt",
+      "qty": null,
+      "unit": null,
+      "prep_note": "to taste",
+      "group": null
+    },
+    {
+      "name": "Fresh tomato puree",
+      "qty": "350",
+      "unit": "gms / 1½ cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Oil",
+      "qty": "1",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Tempering"
+    },
+    {
+      "name": "Garlic chopped",
+      "qty": "½",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Tempering"
+    },
+    {
+      "name": "Butter",
+      "qty": "2",
+      "unit": "tbsp",
+      "prep_note": "optional",
+      "group": "Tempering"
+    },
+    {
+      "name": "Dried methi leaves",
+      "qty": null,
+      "unit": null,
+      "prep_note": "a generous pinch",
+      "group": "Tempering"
+    },
+    {
+      "name": "Cream",
+      "qty": "175",
+      "unit": "ml / ¾ cup",
+      "prep_note": null,
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "Soak the dal and rajma together for at least 3 hours.",
+      "attention": "unattended",
+      "attention_cue": "Soak the dal & rajma together for at least 3 hours",
+      "duration_typical_min": 180.0,
+      "duration_min": 180.0,
+      "duration_max": 180.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "Urad Dal",
+        "Rajma (Chitra)"
+      ],
+      "produces_component": "soaked dal and rajma",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Scrub the soaked dal and rajma and wash it clean.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "soaked dal and rajma"
+      ],
+      "produces_component": "cleaned dal and rajma",
+      "station": "sink",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 5 cups water and boil in a pressure cooker till dal splits and becomes thick.",
+      "attention": "unattended",
+      "attention_cue": "boil in a pressure cooker",
+      "duration_typical_min": 25.0,
+      "duration_min": 20.0,
+      "duration_max": 35.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "cleaned dal and rajma",
+        "Water"
+      ],
+      "produces_component": "cooked dal and rajma",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "till dal splits and becomes thick"
+    },
+    {
+      "text": "Roughly cut the tomatoes and puree them.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "In a pan melt butter and sauté ginger paste and garlic paste for 2 minutes.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": true,
+      "depends_on_previous": false,
+      "consumes_ingredients": [
+        "Butter",
+        "Ginger paste",
+        "Garlic paste"
+      ],
+      "produces_component": "sautéed paste base",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add the Kashmiri chilli powder and stir.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 0.5,
+      "duration_max": 1.5,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "Kashmiri chilli powder"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Immediately add the tomato puree.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 0.5,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "Fresh tomato puree"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Cook the tomatoes till they turn very thick and specs of butter ooze out.",
+      "attention": "periodic",
+      "attention_cue": "Cook the tomatoes",
+      "duration_typical_min": 10.0,
+      "duration_min": 8.0,
+      "duration_max": 15.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [],
+      "produces_component": "reduced tomato sauce",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "till they turn very thick & specs of butter ooze out"
+    },
+    {
+      "text": "Add the tomatoes to the dal along with some water and salt.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "reduced tomato sauce",
+        "cooked dal and rajma",
+        "Water",
+        "Salt"
+      ],
+      "produces_component": "dal with tomato",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Cook the dal for 30 minutes.",
+      "attention": "periodic",
+      "attention_cue": "Cook the dal for 30mins",
+      "duration_typical_min": 30.0,
+      "duration_min": 28.0,
+      "duration_max": 32.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "In a separate pan heat oil and add chopped garlic.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "consumes_ingredients": [
+        "Oil",
+        "Garlic chopped"
+      ],
+      "produces_component": "garlic in oil",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Brown the garlic and add it straight to the boiling dal.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "garlic in oil"
+      ],
+      "produces_component": "browned garlic tempering",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "Brown the garlic"
+    },
+    {
+      "text": "Add some more butter along with dried methi leaves and cream.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [
+        "Butter",
+        "Dried methi leaves",
+        "Cream"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Remove and serve hot.",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": false,
+      "freshness": "stated_unbounded",
+      "freshness_cue": "serve hot",
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "The linked blog's recipeInstructions field contains the complete method text and was used as the primary source for steps, as instructed.",
+    "Ingredient list follows the blog's recipeIngredient array, which matches the video description's ingredient list.",
+    "Total time (65 min) derived from the blog's totalTime field: PT1H5M.",
+    "Step 3 (pressure cooker) lacks an explicit stated duration in the method text, but the typical pressure cooker time for urad dal and rajma is estimated at 20–35 minutes with a typical of 25 minutes.",
+    "Step 4 (roughly cutting and pureeing tomatoes) is marked depends_on_previous=false because it uses no shared component with step 3 and can happen in parallel while the dal is cooking.",
+    "Step 5 (sautéing ginger and garlic paste) is similarly marked depends_on_previous=false—it occurs in a separate pan while the dal cooks.",
+    "Step 10 (making the garlic tempering) is marked depends_on_previous=false for the same reason: it happens in a separate pan in parallel.",
+    "The freshness cue 'serve hot' does not contain an explicit immediacy marker like 'immediately' or 'just before serving'; however, the explicit instruction to 'serve hot' is a temporal constraint on the final step, justifying stated_unbounded classification per the design rule that 'serve' in this context signals a need to use the dish immediately after cooking.",
+    "The ingredient 'Garlic chopped' appears twice in the ingredient list—once in the main ingredients (½ tbsp) and once in the Tempering section (½ tbsp). Both are preserved as stated in the source."
+  ]
+}

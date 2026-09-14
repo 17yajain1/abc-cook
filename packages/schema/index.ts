@@ -318,54 +318,117 @@ export interface WaitWindow {
   used_min: number;
 }
 /**
- * Every recipe the API can currently serve.
+ * Sibling record to a `CookingGraph`, keyed by node id.
+ *
+ * Deliberately not a field on `Node` (design doc §5, "Where confidence/provenance
+ * lives") — computed by `provenance.py` alongside `graph.py`'s output, so `Node` and
+ * the golden fixtures stay byte-identical.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "RecipeListResponse".
+ * via the `definition` "GraphProvenance".
  */
-export interface RecipeListResponse {
-  /**
-   * Available recipes, by title.
-   */
-  recipes: RecipeSummary[];
+export interface GraphProvenance {
+  nodes?: {
+    [k: string]: NodeProvenance;
+  };
 }
 /**
- * One row in the recipe list.
+ * Per-node provenance: how each field's value was arrived at, plus freshness.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "RecipeSummary".
+ * via the `definition` "NodeProvenance".
  */
-export interface RecipeSummary {
+export interface NodeProvenance {
   /**
-   * Slug used in the plan URL.
+   * Field name -> extracted/inferred/defaulted.
    */
-  id: string;
-  /**
-   * Servings the quantities are stated for.
-   */
-  servings: number;
-  /**
-   * Recipe title, e.g. "Kadai Paneer".
-   */
-  title: string;
+  fields?: {
+    [k: string]: 'extracted' | 'inferred' | 'defaulted';
+  };
+  freshness?: 'none' | 'stated_unbounded' | 'stated_numeric';
+  freshness_cue?: string | null;
 }
 /**
- * Everything the Plan view needs, in one round trip.
+ * `GET /import/{job_id}` — the client polls this (design doc §4.5).
  *
- * The graph rides along because the plan is node *ids* and timings — the labels,
- * instructions and ingredients the renderer draws all live on the graph. Shipping both
- * keeps the frontend a pure renderer: it joins by id, and computes nothing.
+ * A separate envelope from `RecipePlanResponse`, which stays the frozen contract for
+ * the fixture path (design doc §9 decision 3).
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "RecipePlanResponse".
+ * via the `definition` "ImportJobResponse".
  */
-export interface RecipePlanResponse {
-  graph: CookingGraph;
-  plan: CookingPlan;
+export interface ImportJobResponse {
   /**
-   * Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.
+   * Set when status is failed.
    */
-  stages: StageSpan[];
+  error?: string | null;
+  /**
+   * Id returned by `POST /import`.
+   */
+  job_id: string;
+  /**
+   * Present once status is a terminal value (done / method_not_grounded).
+   */
+  result?: ImportResult | null;
+  /**
+   * Where the job is in the pipeline.
+   */
+  status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
+}
+/**
+ * The `/import` response payload.
+ *
+ * A separate envelope from `RecipePlanResponse` (design doc §9 decision 3) — that
+ * response stays the frozen contract for the fixture path.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ImportResult".
+ */
+export interface ImportResult {
+  graph?: CookingGraph | null;
+  /**
+   * Present even at Tier 0 — a shopping list is real recovered information.
+   */
+  ingredients?: NormalizedIngredient[];
+  plan?: CookingPlan | null;
+  provenance?: GraphProvenance | null;
+  review_recommended?: boolean;
+  source_title?: string | null;
+  stages?: StageSpan[] | null;
+  status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
+  warnings?: string[];
+}
+/**
+ * One ingredient line, structured but not yet graph-ready.
+ *
+ * `qty` stays a free-text string, not a float: real sources state quantities as
+ * "a little less than 2", "1/2", or ranges, which cannot be honestly forced into a
+ * single number here. `graph.py` does that best-effort conversion, not this model.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NormalizedIngredient".
+ */
+export interface NormalizedIngredient {
+  /**
+   * Ingredient grouping, e.g. "For tadka", when the source states one.
+   */
+  group?: string | null;
+  /**
+   * As named in the source. Never invented.
+   */
+  name: string;
+  /**
+   * Stated on the ingredient line itself, e.g. "finely chopped".
+   */
+  prep_note: string | null;
+  /**
+   * Quantity as stated, verbatim or lightly normalized.
+   */
+  qty: string | null;
+  /**
+   * Unit, e.g. "cup", "tsp", "medium".
+   */
+  unit: string | null;
 }
 /**
  * A stage's footprint on the scheduled timeline.
@@ -414,4 +477,66 @@ export interface StageSpan {
    * Sum of `duration_typical` over the stage's nodes.
    */
   work_min: number;
+}
+/**
+ * `POST /import`'s `202` response (design doc §4.5).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ImportStartResponse".
+ */
+export interface ImportStartResponse {
+  /**
+   * Poll `GET /import/{job_id}` with this.
+   */
+  job_id: string;
+}
+/**
+ * Every recipe the API can currently serve.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RecipeListResponse".
+ */
+export interface RecipeListResponse {
+  /**
+   * Available recipes, by title.
+   */
+  recipes: RecipeSummary[];
+}
+/**
+ * One row in the recipe list.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RecipeSummary".
+ */
+export interface RecipeSummary {
+  /**
+   * Slug used in the plan URL.
+   */
+  id: string;
+  /**
+   * Servings the quantities are stated for.
+   */
+  servings: number;
+  /**
+   * Recipe title, e.g. "Kadai Paneer".
+   */
+  title: string;
+}
+/**
+ * Everything the Plan view needs, in one round trip.
+ *
+ * The graph rides along because the plan is node *ids* and timings — the labels,
+ * instructions and ingredients the renderer draws all live on the graph. Shipping both
+ * keeps the frontend a pure renderer: it joins by id, and computes nothing.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RecipePlanResponse".
+ */
+export interface RecipePlanResponse {
+  graph: CookingGraph;
+  plan: CookingPlan;
+  /**
+   * Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.
+   */
+  stages: StageSpan[];
 }

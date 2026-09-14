@@ -1,0 +1,108 @@
+Title: Restaurant Style Dal Makhni Recipe in Hindi | Winter Special दाल मखनी रेस्टौरंट जैसी | Kunal Kapur
+
+Channel: Kunal Kapur
+
+Linked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:
+
+{
+  "@context": "http://schema.org/",
+  "@type": "Recipe",
+  "name": "Dal Makhani Recipe By Chef Kunal Kapur",
+  "image": "https://www.chefkunalkapur.com/wp-content/uploads/2021/03/dal-makhni-1300x868.jpeg?v=1619101540",
+  "author": {
+    "@type": "Person",
+    "name": "Chef Kunal Kapur"
+  },
+  "datePublished": "2021-03-04",
+  "description": "",
+  "recipeCuisine": "Indian",
+  "recipeCategory": "Celebrations,Christmas,Curries,Diwali,Gluten Free,Holi,Indian,Main course,Monsoon,New Year,Ramzan &amp; Eid,Sides,Summer,Vegetarian,Winter",
+  "keywords": "bukhara dal,daal makhni recipe,dal makhani mothers recipe,dal makhani recipe,dal makhani recipe in hindi,dal makhani recipe restaurant punjabi style,dal makhani recipe step by step,dal makhni,dal makhni nisha,dal recipe,dal tadka,How to Cook Dal Makhni,How to Cook Dal Makhni in hindi,how to make urad dal,makhni dal,makhni dal recipe,procees of cooking dal makhni in hindi,punjabi dal fry,punjabi dal makhani recipe,punjabi recipes,restaurant style dal makni,traditional dal makhni,urad dal recipe",
+  "aggregateRating": [],
+  "prepTime": "PT15M",
+  "cookTime": "PT50M",
+  "totalTime": "PT1H5M",
+  "recipeYield": "7 Servings",
+  "recipeIngredient": [
+    "Urad Dal: 160 gms/1cup",
+    "Rajma (chitra): ¼cup or 45gms",
+    "Water: 4-5 cups ",
+    "Butter: 100gms/ ½ cup ",
+    "Ginger paste: 12 gms/ 1tbsp",
+    "Garlic paste: 12 gms/1 tbsp",
+    "Garlic chopped: ½ tbsp",
+    "Kashmiri chilli powder: 12gms/ 1½ tbsp ",
+    "Salt: to taste ",
+    ": Fresh tomato puree - 350 gms/ 1 ½ cup",
+    "Oil: 1 tbsp",
+    "Garlic chopped: ½ tbsp",
+    ": Butter(optional) - 2 tbsp",
+    ": Dried methi leaves - a generous pinch",
+    "Cream: 175 ml/ ¾ cup"
+  ],
+  "recipeInstructions": [
+    "Method Soak the dal & rajma together for at least 3 hours. Now scrub it and wash it clean. Add 5 cups water and boil in a pressure cooker till dal splits and becomes thick. \n",
+    "Separately roughly cut the tomatoes and puree them. In a pan melt butter and saute ginger paste, garlic paste for 2 minutes. Now add the Kashmiri chili powder, stir and immediately add the tomato puree. Cook the tomatoes till they turn very thick & specs of butter ooze out. Add the tomatoes to the dal along with some water and salt. \n",
+    "Cook the dal for 30mins. In a separate pan heat oil and add chopped garlic. Brown the garlic and add it straight to the boiling dal. Add some more butter along with dried methi leave and cream. Remove and serve hot.\n"
+  ]
+}
+
+Video description:
+
+अपने पसंदीदा शेफ कुणाल कपूर के साथ घर पर दाल मखनी बनाना सीखें! 
+दाल मखनी सभी शाकाहारियों के लिए एक आनंद है। यह मलाईदार, स्वादिष्ट और बनाने में आसान है|
+
+Dal Makhani Recipe in Hindi | How To Make Dal Makhani At Home | Urad Dal Recipe | Rajma Recipe | Dal Recipe | Chef Kunal Kapur
+
+Dal Makhni is one of the most popular dals in India. This Dal Makhani recipe is a restaurant-style version with subtle smoky flavours and creaminess of the lentils. If you love authentic Punjabi food then you are going to love this Dal Makhani even more. 
+
+#DalMakhani #punjabiDal #MakhniDal #WinterRecipes #ChristmasRecipe #Diwali2021
+
+-------------------------------------------------------------------------------------
+
+Ingredients:
+(Serves 7)
+160 gms/1cup Urad Dal
+¼cup or 45gms Rajma (Chitra)
+4-5 cups Water
+100gms/ ½ cup Butter
+12 gms/ 1tbsp Ginger paste
+12 gms/1 tbsp Garlic paste
+½ tbsp Garlic chopped
+12gms/ 1½ tbsp Kashmiri chilli powder
+to taste Salt
+Fresh tomato puree - 350 gms/ 1 ½ cup
+
+TEMPERING:
+1 tbsp Oil
+½ tbsp Garlic chopped
+Butter(optional) - 2 tbsp
+Dried methi leaves - a generous pinch
+175 ml/ ¾ cup Cream
+
+For the written recipe - http://www.chefkunalkapur.com/dal-makhni/
+
+-------------------------------------------------------------------------------------
+
+Hi, I am Chef Kunal Kapur and this is my space, my channel. Subscribe & Together let's cook.
+#DalMakhni #Chef Kunal#trending #recipes #cooking #KunalKapurRecipes  #KKitchen #kunalkapoor #kunalkapur #chef
+
+-------------------------------------------------------------------------------------
+
+➡️   Check out other Popular Recipes:
+Punjabi Dal Tadka Dal Fry Dhaba Style - https://www.youtube.com/watch?v=tmiGPrOiUQE
+Indian Dal Fry 5 Types - https://www.youtube.com/watch?v=4WKNCsy5q58
+Chana Dal Fry Recipe - https://www.youtube.com/watch?v=VoV7b7XtS2E
+
+-------------------------------------------------------------------------------------
+
+Hi, I am Chef Kunal Kapur and this is my space, my channel. Subscribe & Together let's cook. 
+
+👉🏻  Click here to Subscribe:   https://www.youtube.com/c/KunalKapur
+👉🏻  Website: http://www.chefkunalkapur.com/​​​​​​​...
+
+Follow Chef Kunal Kapur on your favourite Social Media Channels: 
+👉🏻  Facebook: https://www.facebook.com/thekunalkapur​
+👉🏻  Instagram: https://www.instagram.com/chefkunal​​​
+👉🏻  Twitter: https://twitter.com/ChefKunalKapur​​​​
+👉🏻  Pinterest: https://in.pinterest.com/chefkunal

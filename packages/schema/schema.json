@@ -134,6 +134,176 @@
       ],
       "type": "object"
     },
+    "GraphProvenance": {
+      "description": "Sibling record to a `CookingGraph`, keyed by node id.\n\nDeliberately not a field on `Node` (design doc \u00a75, \"Where confidence/provenance\nlives\") \u2014 computed by `provenance.py` alongside `graph.py`'s output, so `Node` and\nthe golden fixtures stay byte-identical.",
+      "properties": {
+        "nodes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/NodeProvenance"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "ImportJobResponse": {
+      "description": "`GET /import/{job_id}` \u2014 the client polls this (design doc \u00a74.5).\n\nA separate envelope from `RecipePlanResponse`, which stays the frozen contract for\nthe fixture path (design doc \u00a79 decision 3).",
+      "properties": {
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set when status is failed."
+        },
+        "job_id": {
+          "description": "Id returned by `POST /import`.",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImportResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Present once status is a terminal value (done / method_not_grounded)."
+        },
+        "status": {
+          "description": "Where the job is in the pipeline.",
+          "enum": [
+            "acquiring",
+            "extracting",
+            "validating",
+            "done",
+            "method_not_grounded",
+            "failed"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "ImportResult": {
+      "description": "The `/import` response payload.\n\nA separate envelope from `RecipePlanResponse` (design doc \u00a79 decision 3) \u2014 that\nresponse stays the frozen contract for the fixture path.",
+      "properties": {
+        "graph": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CookingGraph"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ingredients": {
+          "description": "Present even at Tier 0 \u2014 a shopping list is real recovered information.",
+          "items": {
+            "$ref": "#/$defs/NormalizedIngredient"
+          },
+          "type": "array"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CookingPlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GraphProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_recommended": {
+          "default": false,
+          "type": "boolean"
+        },
+        "source_title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/StageSpan"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "enum": [
+            "acquiring",
+            "extracting",
+            "validating",
+            "done",
+            "method_not_grounded",
+            "failed"
+          ],
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "type": "object"
+    },
+    "ImportStartResponse": {
+      "description": "`POST /import`'s `202` response (design doc \u00a74.5).",
+      "properties": {
+        "job_id": {
+          "description": "Poll `GET /import/{job_id}` with this.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
     "Ingredient": {
       "description": "One ingredient line from the source recipe.\n\nA `prep_note` is a hint that a prep node exists: \"2 onions, finely chopped\"\nimplies a `chop_onion` node even when no written step mentions chopping.",
       "properties": {
@@ -347,6 +517,105 @@
         "duration_max",
         "station",
         "interruptible"
+      ],
+      "type": "object"
+    },
+    "NodeProvenance": {
+      "description": "Per-node provenance: how each field's value was arrived at, plus freshness.",
+      "properties": {
+        "fields": {
+          "additionalProperties": {
+            "enum": [
+              "extracted",
+              "inferred",
+              "defaulted"
+            ],
+            "type": "string"
+          },
+          "description": "Field name -> extracted/inferred/defaulted.",
+          "type": "object"
+        },
+        "freshness": {
+          "default": "none",
+          "enum": [
+            "none",
+            "stated_unbounded",
+            "stated_numeric"
+          ],
+          "type": "string"
+        },
+        "freshness_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "NormalizedIngredient": {
+      "description": "One ingredient line, structured but not yet graph-ready.\n\n`qty` stays a free-text string, not a float: real sources state quantities as\n\"a little less than 2\", \"1/2\", or ranges, which cannot be honestly forced into a\nsingle number here. `graph.py` does that best-effort conversion, not this model.",
+      "properties": {
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ingredient grouping, e.g. \"For tadka\", when the source states one."
+        },
+        "name": {
+          "description": "As named in the source. Never invented.",
+          "type": "string"
+        },
+        "prep_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Stated on the ingredient line itself, e.g. \"finely chopped\"."
+        },
+        "qty": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Quantity as stated, verbatim or lightly normalized."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Unit, e.g. \"cup\", \"tsp\", \"medium\"."
+        }
+      },
+      "required": [
+        "name",
+        "qty",
+        "unit",
+        "prep_note"
       ],
       "type": "object"
     },

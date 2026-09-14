@@ -1,4 +1,9 @@
-import type { RecipeListResponse, RecipePlanResponse } from '@abc-cook/schema'
+import type {
+  ImportJobResponse,
+  ImportStartResponse,
+  RecipeListResponse,
+  RecipePlanResponse,
+} from '@abc-cook/schema'
 
 /**
  * Base URL of the API.
@@ -43,4 +48,31 @@ export function fetchRecipes(): Promise<RecipeListResponse> {
 /** A recipe's graph, its scheduled plan, and per-stage rollups. */
 export function fetchPlan(recipeId: string): Promise<RecipePlanResponse> {
   return getJson<RecipePlanResponse>(`/recipes/${encodeURIComponent(recipeId)}/plan`)
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    throw new ApiError(0, `Could not reach the API at ${API_BASE}. Is it running?`)
+  }
+  if (!response.ok) {
+    throw new ApiError(response.status, `${path} returned ${response.status}`)
+  }
+  return response.json() as Promise<T>
+}
+
+/** Starts an import job for a recipe URL (design doc §4.5). Returns immediately. */
+export function startImport(url: string): Promise<ImportStartResponse> {
+  return postJson<ImportStartResponse>('/import', { url })
+}
+
+/** One poll of an import job's status. */
+export function pollImport(jobId: string): Promise<ImportJobResponse> {
+  return getJson<ImportJobResponse>(`/import/${encodeURIComponent(jobId)}`)
 }
