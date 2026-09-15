@@ -15,6 +15,7 @@ dependencies = [
     "certifi>=2024.8",
     "yt-dlp>=2024.12",
     "anthropic>=1.0",
+    "openai>=1.0",
 ]
 
 [project.optional-dependencies]

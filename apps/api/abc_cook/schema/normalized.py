@@ -34,6 +34,11 @@ ImportStatus = Literal[
 ]
 """Job status for `GET /import/{job_id}` (design doc §4.5)."""
 
+ImportSource = Literal["description", "blog", "transcript"]
+"""Which `RawAcquisition` legs actually fed a given import (M2.10 decision 6's
+sibling: `ImportResult.sources` reports this so a report or a future UI hint can say
+"grounded from the transcript" without a second round trip)."""
+
 
 class NormalizedIngredient(BaseModel):
     """One ingredient line, structured but not yet graph-ready.
@@ -231,3 +236,11 @@ class ImportResult(BaseModel):
     provenance: GraphProvenance | None = Field(default=None)
     review_recommended: bool = Field(default=False)
     warnings: list[str] = Field(default_factory=list)
+    sources: list[ImportSource] = Field(
+        default_factory=list,
+        description=(
+            "Which RawAcquisition legs were non-empty for this import (M2.10). Set on "
+            "both Tier 0 and `done` results — a Tier 0 screen can say 'no captions on "
+            "this video' without another round trip."
+        ),
+    )

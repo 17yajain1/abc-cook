@@ -12,6 +12,12 @@ import re
 import yt_dlp
 
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire.transcript import (
+    TranscriptSegment,
+    fetch_segments,
+    flatten,
+    select_track,
+)
 from abc_cook.schema.normalized import NormalizedChapter
 
 _TIMESTAMP = r"\d{1,2}(?::\d{2}){1,2}"
@@ -68,7 +74,12 @@ def parse_chapters(description: str) -> list[NormalizedChapter]:
 
 
 def fetch(url: str) -> RawAcquisition:
-    """Fetch title/channel/description/chapters for `url`. No LLM.
+    """Fetch title/channel/description/chapters/transcript for `url`. No LLM.
+
+    Leg 3 (captions, M2.10) reads off this same `info` dict rather than a second
+    yt-dlp call, per the design doc §4.4 single-yt-dlp-touchpoint rule. A missing or
+    unfetchable track never fails the import: `transcript` simply stays `None`, same
+    as `blog_recipe` failing soft in `blog.py`.
 
     Raises:
         RuntimeError: yt-dlp could not extract metadata for `url`.
@@ -80,6 +91,28 @@ def fetch(url: str) -> RawAcquisition:
         raise RuntimeError(f"yt-dlp returned no data for {url}")
 
     description = info.get("description")
+
+    transcript = None
+    transcript_segments: list[TranscriptSegment] = []
+    transcript_kind = None
+    transcript_lang = None
+    acquisition_warnings: list[str] = []
+
+    track = select_track(info)
+    if track is not None:
+        kind, lang, track_url = track
+        segments = fetch_segments(track_url)
+        text, truncated = flatten(segments)
+        if text:
+            transcript = text
+            transcript_segments = segments
+            transcript_kind = kind
+            transcript_lang = lang
+            if truncated:
+                acquisition_warnings.append(
+                    f"Transcript truncated to {len(text)} characters (source was longer)."
+                )
+
     return RawAcquisition(
         source_url=url,
         title=info.get("title", ""),
@@ -87,4 +120,9 @@ def fetch(url: str) -> RawAcquisition:
         description=description,
         chapters=parse_chapters(description) if description else [],
         video_duration_sec=info.get("duration"),
+        transcript=transcript,
+        transcript_segments=transcript_segments,
+        transcript_kind=transcript_kind,
+        transcript_lang=transcript_lang,
+        acquisition_warnings=acquisition_warnings,
     )

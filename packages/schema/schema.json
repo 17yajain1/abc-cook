@@ -254,6 +254,18 @@
           ],
           "default": null
         },
+        "sources": {
+          "description": "Which RawAcquisition legs were non-empty for this import (M2.10). Set on both Tier 0 and `done` results \u2014 a Tier 0 screen can say 'no captions on this video' without another round trip.",
+          "items": {
+            "enum": [
+              "description",
+              "blog",
+              "transcript"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "stages": {
           "anyOf": [
             {
@@ -679,6 +691,62 @@
         "id",
         "title",
         "servings"
+      ],
+      "type": "object"
+    },
+    "SavedLibrary": {
+      "description": "The whole saved-recipe library, as stored under one `localStorage` key.",
+      "properties": {
+        "recipes": {
+          "description": "Saved entries, in no particular order.",
+          "items": {
+            "$ref": "#/$defs/SavedRecipe"
+          },
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "description": "Storage format version. Always 1 in v1.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "recipes"
+      ],
+      "type": "object"
+    },
+    "SavedRecipe": {
+      "description": "One recipe a user has saved on this device.",
+      "properties": {
+        "id": {
+          "description": "Stable id for this saved entry, assigned at first save.",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/RecipePlanResponse"
+        },
+        "saved_at": {
+          "description": "When this entry was first saved. Never changes.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "source_key": {
+          "description": "Canonical key derived from the source's URL/text; see module docstring.",
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "When this entry's payload was last replaced. Equals saved_at on first save.",
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source_key",
+        "saved_at",
+        "updated_at",
+        "payload"
       ],
       "type": "object"
     },

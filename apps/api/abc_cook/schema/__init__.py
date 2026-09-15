@@ -15,6 +15,7 @@ from abc_cook.schema.api import (
 )
 from abc_cook.schema.graph import CookingGraph, Edge, EdgeKind, SourceKind, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
+from abc_cook.schema.library import SavedLibrary, SavedRecipe
 from abc_cook.schema.node import Attention, Node, NodeKind, Station
 from abc_cook.schema.normalized import (
     Freshness,
@@ -54,6 +55,8 @@ __all__ = [
     "RecipeListResponse",
     "RecipePlanResponse",
     "RecipeSummary",
+    "SavedLibrary",
+    "SavedRecipe",
     "ScheduledNode",
     "SourceKind",
     "SourceRef",

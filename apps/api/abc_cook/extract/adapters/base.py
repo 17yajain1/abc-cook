@@ -26,19 +26,44 @@ simply ignores it."""
 
 
 @dataclass(frozen=True)
+class CallUsage:
+    """Measured facts about one real LLM call (M2.10 s18 F5).
+
+    Never estimated: a field the provider's response didn't carry stays `None`
+    rather than being guessed, so a reader can tell a measured 0 apart from "not
+    reported".
+    """
+
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cache_read_input_tokens: int | None
+    cache_creation_input_tokens: int | None
+    stop_reason: str | None
+    latency_ms: float
+    max_tokens_requested: int
+
+
+@dataclass(frozen=True)
 class ExtractResult[T: pydantic.BaseModel]:
     """One extraction attempt's outcome.
 
     `recipe` is None whenever no usable structure came back. `truncated=True` means
     the provider cut the response off before it finished (output-token budget too
     small — §10.C finding 5); callers treat this as retry-eligible the same way they
-    treat any other unparseable response. `error` carries a short diagnostic for logs;
-    never shown to the end user.
+    treat any other unparseable response, except that a truncation must never be
+    retried with an identical cap (M2.10 s18 F2) — only escalated or stopped. `error`
+    carries a short diagnostic for logs; never shown to the end user. `usage` is the
+    measured per-call cost/latency data (F5), when a message actually came back.
+    `raw_text` carries the partial response text, but only when `truncated=True` — it
+    exists solely for the caller's runaway-generation check, never for parsing.
     """
 
     recipe: T | None
     truncated: bool = False
     error: str | None = None
+    usage: CallUsage | None = None
+    raw_text: str | None = None
 
 
 class LLMAdapter(Protocol):
