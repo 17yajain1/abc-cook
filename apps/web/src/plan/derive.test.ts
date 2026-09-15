@@ -85,6 +85,24 @@ describe('derivePlan — Kadai Paneer', () => {
   })
 })
 
+describe('derivePlan — hasUnattendedWork (A7)', () => {
+  it('is true when the graph has an unattended or periodic node', () => {
+    expect(derivePlan(KADAI).hasUnattendedWork).toBe(true) // kadai-paneer has a periodic node
+    expect(derivePlan(MAGGI).hasUnattendedWork).toBe(true) // maggi-2min has both
+  })
+
+  it('is false when every node is hands_on', () => {
+    const allHandsOn: RecipePlanResponse = {
+      ...MAGGI,
+      graph: {
+        ...MAGGI.graph,
+        nodes: MAGGI.graph.nodes.map((n) => ({ ...n, attention: 'hands_on' as const })),
+      },
+    }
+    expect(derivePlan(allHandsOn).hasUnattendedWork).toBe(false)
+  })
+})
+
 describe('derivePlan — Maggi (nothing to parallelise)', () => {
   const plan = derivePlan(MAGGI)
 

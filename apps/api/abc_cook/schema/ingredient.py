@@ -13,6 +13,14 @@ class Ingredient(BaseModel):
     id: str = Field(description='Stable id, e.g. "ing_onion".')
     name: str = Field(description='Display name, e.g. "Onion".')
     qty: float | None = Field(description="Quantity, or null when the recipe gives none.")
+    qty_text: str | None = Field(
+        default=None,
+        description=(
+            "Quantity as the source stated it, e.g. \"1 1/4\", \"2-3\", \"a pinch\". "
+            "Display fallback when `qty` cannot be parsed as a single number, and the "
+            "honest form of ranges and vague amounts that `qty` would otherwise lose."
+        ),
+    )
     unit: str | None = Field(description='Unit, e.g. "medium", "g", "tbsp".')
     prep_note: str | None = Field(
         description='Preparation stated on the ingredient line, e.g. "finely chopped".',

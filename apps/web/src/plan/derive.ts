@@ -85,6 +85,9 @@ export interface RenderPlan {
   serialMin: number
   savedMin: number
   warnings: string[]
+  /** Whether any node in the graph is `unattended` or `periodic` (A7) — a categorical
+   * lookup, not a computed value; drives the zero-windows footer's wording. */
+  hasUnattendedWork: boolean
   stages: RenderStage[]
   ingredientGroups: RenderIngredientGroup[]
 }
@@ -216,6 +219,9 @@ export function derivePlan(payload: RecipePlanResponse): RenderPlan {
     serialMin: plan.serial_min,
     savedMin: plan.saved_min,
     warnings: plan.warnings ?? [],
+    hasUnattendedWork: graph.nodes.some(
+      (node) => node.attention === 'unattended' || node.attention === 'periodic',
+    ),
     stages: renderStages,
     ingredientGroups: groupIngredients(graph.ingredients),
   }

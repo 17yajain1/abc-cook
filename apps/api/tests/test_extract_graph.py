@@ -11,7 +11,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from abc_cook.extract.graph import GraphBuildResult, build_graph
+import pytest
+
+from abc_cook.extract.graph import (
+    GraphBuildResult,
+    _clean_cue,
+    _label,
+    _parse_qty,
+    build_graph,
+)
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -384,3 +392,98 @@ def test_duplicate_ingredient_names_are_both_consumable() -> None:
     assert consumed_ids == {ing.id for ing in result.graph.ingredients}
     violations = validate(result.graph)
     assert not any(v.rule == "ingredients_consumed" for v in violations)
+
+
+# ---------------------------------------------------------------------------
+# A2 -- mixed fractions, unicode vulgar fractions, ranges. Conservative: never
+# invents a number the source didn't give.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("qty", "expected"),
+    [
+        ("1 1/4", 1.25),
+        ("1-1/4", 1.25),
+        ("3 1/3", pytest.approx(3 + 1 / 3)),
+        ("½", 0.5),
+        ("1½", 1.5),
+        ("¼", 0.25),
+        ("2-3", 2.0),
+        ("2 to 3", 2.0),
+        (f"2{chr(0x2013)}3", 2.0),  # en dash, as real recipe sites write ranges
+        ("1/2", 0.5),
+        ("2", 2.0),
+        ("2.5", 2.5),
+        ("a pinch", None),
+        ("a little less than 2", None),
+        (None, None),
+        ("", None),
+    ],
+)
+def test_parse_qty(qty: str | None, expected: float | None) -> None:
+    assert _parse_qty(qty) == expected
+
+
+def test_qty_text_populated_alongside_parsed_qty() -> None:
+    recipe = _recipe(
+        [_step(text="Do something.")],
+        ingredients=[
+            NormalizedIngredient(name="Flour", qty="1 1/4", unit="cups", prep_note=None),
+            NormalizedIngredient(name="Salt", qty="a pinch", unit=None, prep_note=None),
+        ],
+    )
+    result = _build(recipe, "Do something.")
+    assert result.graph is not None
+    flour, salt = result.graph.ingredients
+    assert flour.qty == 1.25
+    assert flour.qty_text == "1 1/4"
+    assert salt.qty is None
+    assert salt.qty_text == "a pinch"
+
+
+# ---------------------------------------------------------------------------
+# A3 -- "until until": doneness_cue is stored without a leading until/till.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("cue", "expected"),
+    [
+        ("until golden", "golden"),
+        ("Until golden brown", "golden brown"),
+        ("till doubled in size", "doubled in size"),
+        ("doubled in bulk, holds a dimple", "doubled in bulk, holds a dimple"),  # no leading until
+        (None, None),
+        ("until", "until"),  # bare "until" with no condition following: nothing to strip
+    ],
+)
+def test_clean_cue(cue: str | None, expected: str | None) -> None:
+    assert _clean_cue(cue) == expected
+
+
+def test_doneness_cue_stripped_of_leading_until_on_build() -> None:
+    recipe = _recipe([_step(text="Bake until golden.", doneness_cue="until golden")])
+    result = _build(recipe, "Bake until golden.")
+    assert result.graph is not None
+    assert result.graph.nodes[0].doneness_cue == "golden"
+
+
+# ---------------------------------------------------------------------------
+# A4 -- deterministic label cleanup: whole number/fraction tokens, never ends on a
+# function word, still <= 4 words.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Measure 3 1/3 cups flour into a bowl.", "Measure 3 1/3 cups"),
+        ("Place pizza stone or inverted baking sheet in oven.", "Place pizza stone"),
+        ("Form ball in your hands and set aside.", "Form ball"),
+        ("PREP: Measure flour and sugar.", "Measure flour and sugar"),
+        ("Chop the onion.", "Chop the onion"),
+    ],
+)
+def test_label(text: str, expected: str) -> None:
+    assert _label(text) == expected

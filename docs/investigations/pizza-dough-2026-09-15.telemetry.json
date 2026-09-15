@@ -1,0 +1,38 @@
+{
+  "extraction_calls": [
+    {
+      "model": "gpt-5-mini",
+      "input_tokens": 10727,
+      "output_tokens": 9674,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": null,
+      "stop_reason": "stop",
+      "latency_ms": 158561.99999997625,
+      "max_tokens_requested": 16000
+    }
+  ],
+  "extraction_escalated": false,
+  "extraction_truncations": 0,
+  "repair_calls": [],
+  "violations_pre_repair": [
+    "produces_consumed",
+    "produces_consumed",
+    "produces_consumed",
+    "produces_consumed",
+    "produces_consumed",
+    "produces_consumed",
+    "unattended_kind"
+  ],
+  "tier": "degraded",
+  "step_count": 14,
+  "windows": 0,
+  "saved_min": 0.0,
+  "sources": [
+    "description",
+    "blog",
+    "transcript"
+  ],
+  "repair_attempted": false,
+  "repair_skip_reason": "Skipped repair call: violation(s) outside repair's fixable scope (unattended_kind) -- RepairProposal cannot touch duration, attention, stage, or stated-total fields, so a repair call here would be a guaranteed-wasted spend.",
+  "cost_inr": 1.8725287499999999
+}

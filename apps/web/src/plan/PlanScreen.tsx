@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import type { ImportMeta } from '@abc-cook/schema'
+
 import { MapView } from '@/map/MapView'
 import type { MapLayout } from '@/map/layout'
 
@@ -7,6 +9,15 @@ import type { RenderPlan } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import { StageCard } from './StageCard'
+
+/** A6: at most one calm line under the header, never a warning dump. Degraded takes
+ * priority over review-recommended — a simplified plan is the bigger thing to know. */
+function statusLineFor(importMeta: ImportMeta | null | undefined): string | null {
+  if (!importMeta) return null
+  if (importMeta.degraded) return 'Plan simplified — steps run one after another.'
+  if (importMeta.review_recommended) return 'Some timings are estimates.'
+  return null
+}
 
 type Tab = 'plan' | 'ingredients'
 /**
@@ -21,15 +32,18 @@ export function PlanScreen({
   map,
   onPickAnother,
   save,
+  importMeta,
 }: {
   plan: RenderPlan
   map: MapLayout
   onPickAnother: () => void
   save?: SaveControl
+  importMeta?: ImportMeta | null
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const [mode, setMode] = useState<Mode>('plan')
   const showingMap = tab === 'plan' && mode === 'map'
+  const statusLine = statusLineFor(importMeta)
 
   // The Map's entry animation plays once per recipe, not on every Plan<->Map toggle
   // (`DESIGN_SYSTEM.md` § Map entry animation) — replaying it on every glance would
@@ -67,6 +81,7 @@ export function PlanScreen({
   return (
     <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
       <RecipeHeader plan={plan} save={save} />
+      {statusLine && <p className="px-5 pb-2 text-[13px] text-ink-3">{statusLine}</p>}
 
       <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
         <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>
@@ -121,8 +136,9 @@ export function PlanScreen({
 
             {plan.savedMin === 0 && (
               <p className="pb-4 pt-2 text-[13px] text-ink-3">
-                Nothing in this recipe cooks unattended — there's no prep to slot in
-                while you wait.
+                {plan.hasUnattendedWork
+                  ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
+                  : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
               </p>
             )}
           </div>

@@ -84,6 +84,10 @@ export interface Ingredient {
    */
   qty: number | null;
   /**
+   * Quantity as the source stated it, e.g. "1 1/4", "2-3", "a pinch". Display fallback when `qty` cannot be parsed as a single number, and the honest form of ranges and vague amounts that `qty` would otherwise lose.
+   */
+  qty_text?: string | null;
+  /**
    * Unit, e.g. "medium", "g", "tbsp".
    */
   unit: string | null;
@@ -483,6 +487,25 @@ export interface StageSpan {
   work_min: number;
 }
 /**
+ * Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.
+ *
+ * `RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision
+ * 3); this is a sibling field so a saved-and-reopened recipe can still show that its
+ * plan was simplified or its timings estimated (A6) instead of looking like a normal
+ * plan. `degraded` is computed once by the client at save time from
+ * `"degraded" in warnings` -- not a new server field.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ImportMeta".
+ */
+export interface ImportMeta {
+  degraded?: boolean;
+  provenance?: GraphProvenance | null;
+  review_recommended?: boolean;
+  sources?: ('description' | 'blog' | 'transcript')[];
+  warnings?: string[];
+}
+/**
  * `POST /import`'s `202` response (design doc §4.5).
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
@@ -571,6 +594,10 @@ export interface SavedRecipe {
    * Stable id for this saved entry, assigned at first save.
    */
   id: string;
+  /**
+   * Import-status context alongside `payload` (A6). Null for fixture-path recipes, which never went through `/import`.
+   */
+  import_meta?: ImportMeta | null;
   payload: RecipePlanResponse;
   /**
    * When this entry was first saved. Never changes.

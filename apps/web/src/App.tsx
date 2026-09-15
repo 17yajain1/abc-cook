@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import type { RecipePlanResponse } from '@abc-cook/schema'
+import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan } from './api/client'
 import { ImportScreen } from './import/ImportScreen'
@@ -20,7 +20,7 @@ const library = createLibrary()
 /** Where the plan currently on screen came from — decides what the Save control shows. */
 type PlanOrigin =
   | { kind: 'server'; recipeId: string }
-  | { kind: 'import'; payload: RecipePlanResponse }
+  | { kind: 'import'; payload: RecipePlanResponse; importMeta: ImportMeta }
   | { kind: 'library'; id: string }
 
 type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
@@ -29,7 +29,15 @@ type View =
   | { kind: 'picker' }
   | { kind: 'import' }
   | { kind: 'loading'; recipeId: string }
-  | { kind: 'plan'; plan: RenderPlan; map: MapLayout; origin: PlanOrigin; saveState: SaveState }
+  | {
+      kind: 'plan'
+      plan: RenderPlan
+      map: MapLayout
+      origin: PlanOrigin
+      saveState: SaveState
+      /** A6: null for a fixture recipe (never went through `/import`). */
+      importMeta: ImportMeta | null
+    }
   | { kind: 'error'; message: string }
 
 export default function App() {
@@ -45,6 +53,7 @@ export default function App() {
           map: layoutMap(payload),
           origin: { kind: 'server', recipeId },
           saveState: { status: 'idle' },
+          importMeta: null,
         }),
       )
       .catch((err: unknown) => setView({ kind: 'error', message: messageFor(err) }))
@@ -65,19 +74,21 @@ export default function App() {
       map: layoutMap(recipe.payload),
       origin: { kind: 'library', id },
       saveState: { status: 'saved' },
+      importMeta: recipe.import_meta ?? null,
     })
   }, [])
 
   const backToPicker = useCallback(() => setView({ kind: 'picker' }), [])
   const openImport = useCallback(() => setView({ kind: 'import' }), [])
   const onImported = useCallback(
-    (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse) =>
+    (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse, importMeta: ImportMeta) =>
       setView({
         kind: 'plan',
         plan,
         map,
-        origin: { kind: 'import', payload },
+        origin: { kind: 'import', payload, importMeta },
         saveState: { status: 'idle' },
+        importMeta,
       }),
     [],
   )
@@ -87,7 +98,7 @@ export default function App() {
   const saveCurrent = useCallback(() => {
     setView((prev) => {
       if (prev.kind !== 'plan' || prev.origin.kind !== 'import') return prev
-      const result = library.save(prev.origin.payload)
+      const result = library.save(prev.origin.payload, prev.origin.importMeta)
       if (!result.ok) {
         return { ...prev, saveState: { status: 'error', message: result.message } }
       }
@@ -121,6 +132,7 @@ export default function App() {
           map={view.map}
           onPickAnother={backToPicker}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
+          importMeta={view.importMeta}
         />
       )
     default:

@@ -1,3 +1,4 @@
+import { formatQty } from '../lib/quantity'
 import type { RenderIngredientGroup } from './derive'
 
 /**
@@ -25,9 +26,9 @@ export function IngredientsPanel({ groups }: { groups: RenderIngredientGroup[] }
                     <span className="ml-2 text-[13px] text-ink-3">optional</span>
                   )}
                 </span>
-                {(item.qty != null || item.unit) && (
+                {(item.qty_text != null || item.qty != null || item.unit) && (
                   <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
-                    {[item.qty ?? '', item.unit ?? ''].join(' ').trim()}
+                    {[item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()}
                   </span>
                 )}
               </li>

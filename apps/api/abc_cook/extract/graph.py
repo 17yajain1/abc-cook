@@ -96,27 +96,96 @@ def _slugify(text: str, *, max_words: int = 6) -> str:
     return "_".join(words) if words else "x"
 
 
+_LABEL_VULGAR_FRACTIONS = "¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞"
+_LABEL_TOKEN_RE = re.compile(
+    rf"\d+(?:/\d+)?|[{_LABEL_VULGAR_FRACTIONS}]|[A-Za-z][A-Za-z']*"
+)
+_LABEL_PREFIX_RE = re.compile(r"^[A-Za-z]+:\s+")
+_LABEL_FUNCTION_WORDS = {
+    "in", "on", "or", "and", "with", "to", "your", "the", "a", "of", "for",
+    "until", "then",
+}
+
+
 def _label(text: str, *, max_words: int = 4) -> str:
-    stopwords = {"the", "a", "an", "and", "then", "now", "into", "to", "of", "for"}
-    words = [w for w in re.findall(r"[A-Za-z0-9']+", text) if w.lower() not in stopwords]
-    words = words[:max_words] or re.findall(r"[A-Za-z0-9']+", text)[:max_words]
-    label = " ".join(words)
+    body = _LABEL_PREFIX_RE.sub("", text)
+    tokens = _LABEL_TOKEN_RE.findall(body)[:max_words]
+    while tokens and tokens[-1].lower() in _LABEL_FUNCTION_WORDS:
+        tokens.pop()
+    label = " ".join(tokens)
     return (label[:1].upper() + label[1:]) if label else text[:40]
 
 
+_UNTIL_PREFIX_RE = re.compile(r"^(?:until|till)\s+", re.IGNORECASE)
+
+
+def _clean_cue(cue: str | None) -> str | None:
+    """Strip a leading "until"/"till" so cue text is the bare condition (A3).
+
+    The prompt's own examples ("until golden") teach the model to include it, but
+    every golden fixture's `doneness_cue` is stored *without* it -- the UI convention
+    (`StageCard.tsx`, `WaitWindowBlock`) is "cue = the condition", prepending "until"
+    itself. One strip point here keeps golden data and UI unchanged.
+    """
+    if cue is None:
+        return None
+    stripped = _UNTIL_PREFIX_RE.sub("", cue.strip())
+    return stripped or None
+
+
+_QTY_VULGAR_FRACTIONS = {
+    "¼": 0.25, "½": 0.5, "¾": 0.75,
+    "⅓": 1 / 3, "⅔": 2 / 3,
+    "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8,
+    "⅙": 1 / 6, "⅚": 5 / 6,
+    "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
+}
+_QTY_MIXED_FRACTION_RE = re.compile(r"^(\d+)\s*[-\s]\s*(\d+)\s*/\s*(\d+)$")
+_QTY_PLAIN_FRACTION_RE = re.compile(r"^(\d+)\s*/\s*(\d+)$")
+_QTY_DECIMAL_RE = re.compile(r"^\d+(?:\.\d+)?$")
+_QTY_VULGAR_RE = re.compile(rf"^(\d+)?\s*([{''.join(_QTY_VULGAR_FRACTIONS)}])$")
+_RANGE_DASHES = chr(0x2013) + chr(0x2014)  # en dash, em dash -- ASCII-safe in source (RUF001)
+_QTY_RANGE_RE = re.compile(rf"^(\d+(?:\.\d+)?)\s*(?:-|[{_RANGE_DASHES}]|to)\s*(\d+(?:\.\d+)?)$")
+
+
 def _parse_qty(qty: str | None) -> float | None:
+    """Parse a source quantity to a single number, conservatively (A2).
+
+    Mixed fractions ("1 1/4", "1-1/4") and unicode vulgar fractions ("½", "1½") parse
+    exactly. Ranges ("2-3", "2 to 3", or an en/em-dash range) resolve to their **low
+    end** -- the range text itself is never lost, since `Ingredient.qty_text` carries
+    it verbatim. Vague phrases ("a pinch", "a little less than 2") return `None`; they
+    too survive via `qty_text`. Never invents a number the source didn't give.
+    """
     if qty is None:
         return None
     text = qty.strip()
     if not text:
         return None
-    match = re.match(r"^(\d+)\s*/\s*(\d+)$", text)
+
+    match = _QTY_MIXED_FRACTION_RE.match(text)
+    if match:
+        whole, numerator, denominator = (int(group) for group in match.groups())
+        return whole + numerator / denominator if denominator else None
+
+    match = _QTY_VULGAR_RE.match(text)
+    if match:
+        whole_text, frac_char = match.groups()
+        whole = int(whole_text) if whole_text else 0
+        return whole + _QTY_VULGAR_FRACTIONS[frac_char]
+
+    match = _QTY_PLAIN_FRACTION_RE.match(text)
     if match:
         numerator, denominator = int(match.group(1)), int(match.group(2))
         return numerator / denominator if denominator else None
-    match = re.match(r"^\d+(\.\d+)?$", text)
-    if match:
+
+    if _QTY_DECIMAL_RE.match(text):
         return float(text)
+
+    match = _QTY_RANGE_RE.match(text)
+    if match:
+        return float(match.group(1))  # low end -- conservative, never invents
+
     return None
 
 
@@ -320,6 +389,7 @@ def build_graph(
                 id=ing_id,
                 name=norm_ing.name,
                 qty=_parse_qty(norm_ing.qty),
+                qty_text=norm_ing.qty,
                 unit=norm_ing.unit,
                 prep_note=norm_ing.prep_note,
                 group=norm_ing.group,
@@ -422,7 +492,7 @@ def build_graph(
                 ),
                 interruptible=interruptible,
                 max_lead_min=max_lead_min,
-                doneness_cue=step.doneness_cue,
+                doneness_cue=_clean_cue(step.doneness_cue),
                 tip=None,
             )
         )
