@@ -4,25 +4,65 @@ See docs/M2.9-youtube-import-design.md §4.1 and §10.C, and the M2.9 implementa
 locked decisions (handoff s15). The Tier 0 gate lives here: `method_grounded` is
 independently recomputed as `bool(recipe.steps)`, never trusted from the model's own
 field — §10.C finding 1 caught the model's structured `method_grounded=true` alongside
-a self-contradicting free-text note and an empty `steps` list. Every LLM call in this
-module is exactly one, except when the first attempt is truncated or unparseable, in
-which case it retries once with identical inputs (LOCKED DECISION 3) before degrading.
+a self-contradicting free-text note and an empty `steps` list.
+
+Every LLM call in this module is exactly one, except:
+- the first attempt is unparseable (not truncated): retried once with identical
+  inputs, same cap (LOCKED DECISION 3) -- sampling variance can fix that.
+- the first attempt is truncated (`stop_reason == max_tokens`): NEVER retried at the
+  same cap (M2.10 s18 F2 -- a truncation at a given cap reproduces deterministically).
+  Escalated once to `ESCALATED_MAX_TOKENS`, unless the partial output already looks
+  like a runaway generation, in which case it stops immediately. A second truncation
+  after escalating also stops -- never a third generation call.
 """
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.adapters.base import LLMAdapter
+from abc_cook.extract.adapters.base import CallUsage, ExtractResult, LLMAdapter
 from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
-MAX_TOKENS = 8000
-"""§10.C finding 5: the richest bucket-A/D inputs neared ~4800 output tokens and
-truncated at max_tokens=4000. 8000 gives headroom without changing the model."""
+MAX_TOKENS = 16_000
+"""M2.10 s18 F3: output runs ~250-310 tokens/step + ~800 header; this covers ~50
+steps (Ramen's 46-step transcript sat at the edge of the old 8K/12K caps). A cap
+above this is free when unused -- see ESCALATED_MAX_TOKENS for what fires on
+`max_tokens`, not this default."""
+ESCALATED_MAX_TOKENS = 32_000
+"""The one allowed escalation rung on a real (non-runaway) truncation at MAX_TOKENS.
+Never retried again past this -- see `normalize()`."""
+
+_RUNAWAY_REPEAT_THRESHOLD = 3
+"""A truncated response whose partial `"text"` field value repeats this many times
+is a stuck/looping generation, not a recipe that needed more room -- escalating would
+just pay for more of the same loop (M2.10 s18 diagnosis §D)."""
+
+_STEP_TEXT_RE = re.compile(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"')
+
+
+def _is_runaway(raw_text: str) -> bool:
+    """Heuristic over a truncated response's partial JSON text.
+
+    Never parsed as JSON -- it's incomplete by definition. Two independent signals,
+    per §D: (a) the same step `text` value repeated >= `_RUNAWAY_REPEAT_THRESHOLD`
+    times, or (b) no `"steps"` key at all despite a full-cap response -- the model
+    spent its whole budget before ever reaching the steps list.
+    """
+    if '"steps"' not in raw_text:
+        return True
+    values = _STEP_TEXT_RE.findall(raw_text)
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+        if counts[value] >= _RUNAWAY_REPEAT_THRESHOLD:
+            return True
+    return False
+
 
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "v2.md"
 """v2 adds the M2.10 "Sources" section (per-field precedence across description/blog/
@@ -37,10 +77,16 @@ class NormalizeOutcome:
     Exactly one of the two fields is set. `graph.py` only ever receives `.recipe`;
     a caller that gets `.tier0_result` stops the pipeline there — no graph, no
     scheduler, no repair call (LOCKED DECISION 3).
+
+    `calls`/`escalated`/`truncations` are this import's extraction-call telemetry
+    (M2.10 s18 F5) — every real `adapter.extract` call this function made, in order.
     """
 
     recipe: NormalizedRecipe | None
     tier0_result: ImportResult | None
+    calls: list[CallUsage] = field(default_factory=list)
+    escalated: bool = False
+    truncations: int = 0
 
     @property
     def method_grounded(self) -> bool:
@@ -116,37 +162,96 @@ def normalize(
 ) -> NormalizeOutcome:
     """Turn one `RawAcquisition` into a `NormalizeOutcome`.
 
-    Calls `adapter.extract` once; retries once, identical inputs, only if the first
-    attempt produced nothing usable (LOCKED DECISION 3). If the retry also fails, this
-    degrades to a Tier 0 result — there is no step list to build even a linear chain
-    from, so treating it as anything other than "nothing grounded" would be dishonest.
+    Calls `adapter.extract` once.
+
+    - Unparseable, not truncated: retried once, identical inputs, same cap (LOCKED
+      DECISION 3) — sampling variance can fix that.
+    - Truncated (`stop_reason == max_tokens`): NEVER retried at the same cap (M2.10
+      s18 F2 — a truncation at a given cap reproduces deterministically, so an
+      identical retry just pays for the same cut again). Escalated once to
+      `ESCALATED_MAX_TOKENS`, unless the partial output already looks like a runaway
+      generation (`_is_runaway`), in which case this stops immediately instead of
+      paying for more of the same loop. A second truncation after escalating also
+      stops — never a third generation call.
+
+    If nothing usable ever comes back, this degrades to a Tier 0 result — there is no
+    step list to build even a linear chain from, so treating it as anything other than
+    "nothing grounded" would be dishonest.
     """
     prompt = load_prompt()
     source_text = render_source_text(raw)
+    calls: list[CallUsage] = []
+    escalated = False
+    truncations = 0
 
-    result = adapter.extract(
-        prompt=prompt,
-        source_text=source_text,
-        model=model,
-        max_tokens=max_tokens,
-        output_type=NormalizedRecipe,
-    )
-    if result.recipe is None:
+    def _call(tokens: int) -> ExtractResult[NormalizedRecipe]:
         result = adapter.extract(
             prompt=prompt,
             source_text=source_text,
             model=model,
-            max_tokens=max_tokens,
+            max_tokens=tokens,
             output_type=NormalizedRecipe,
         )
+        if result.usage is not None:
+            calls.append(result.usage)
+        return result
+
+    result = _call(max_tokens)
+
+    if result.truncated:
+        truncations += 1
+        if result.raw_text is not None and _is_runaway(result.raw_text):
+            warning = (
+                f"Extraction output looked like a runaway generation after "
+                f"truncating at {max_tokens} tokens (repeated or missing steps); "
+                "stopping rather than escalating."
+            )
+            return NormalizeOutcome(
+                recipe=None,
+                tier0_result=_tier0_result(raw, None, [warning]),
+                calls=calls,
+                truncations=truncations,
+            )
+        escalated = True
+        result = _call(ESCALATED_MAX_TOKENS)
+        if result.truncated:
+            truncations += 1
+            warning = (
+                f"Extraction truncated at both {max_tokens} and "
+                f"{ESCALATED_MAX_TOKENS} output tokens; stopping rather than "
+                "escalating again."
+            )
+            return NormalizeOutcome(
+                recipe=None,
+                tier0_result=_tier0_result(raw, None, [warning]),
+                calls=calls,
+                escalated=escalated,
+                truncations=truncations,
+            )
+    elif result.recipe is None:
+        result = _call(max_tokens)
 
     if result.recipe is None:
         warning = f"Extraction failed twice; treating as ungrounded (error: {result.error})."
-        return NormalizeOutcome(recipe=None, tier0_result=_tier0_result(raw, None, [warning]))
+        return NormalizeOutcome(
+            recipe=None,
+            tier0_result=_tier0_result(raw, None, [warning]),
+            calls=calls,
+            escalated=escalated,
+            truncations=truncations,
+        )
 
     recipe = result.recipe
     method_grounded = bool(recipe.steps)  # NEVER trust recipe.method_grounded as emitted.
     if not method_grounded:
-        return NormalizeOutcome(recipe=None, tier0_result=_tier0_result(raw, recipe, []))
+        return NormalizeOutcome(
+            recipe=None,
+            tier0_result=_tier0_result(raw, recipe, []),
+            calls=calls,
+            escalated=escalated,
+            truncations=truncations,
+        )
 
-    return NormalizeOutcome(recipe=recipe, tier0_result=None)
+    return NormalizeOutcome(
+        recipe=recipe, tier0_result=None, calls=calls, escalated=escalated, truncations=truncations
+    )

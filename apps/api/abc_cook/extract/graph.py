@@ -278,11 +278,13 @@ def build_graph(
             guaranteed to pass invariants 1-4 by construction. Attention, duration,
             and freshness verification are untouched: only graph *structure*
             (parallelism) is discarded, never grounded content. Also guarantees
-            invariants 5/6/8 by dropping (never inventing) an assertion the content
+            invariants 5/6 by dropping (never inventing) an assertion the content
             can't support: an ingredient no step consumes is marked `optional`; a
             node's `produces` is never asserted (nothing downstream is claimed to
-            consume it in linear mode); `stated_total_min` is dropped if the verified
-            durations don't support it.
+            consume it in linear mode). Invariant 8 (`stated_total_min`) is dropped
+            the same way regardless of `force_linear` — see below; a marketing total
+            ("15 min") next to long verified passive steps must not force an
+            otherwise structurally valid graph into this branch (M2.10 s18 F1).
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -490,8 +492,24 @@ def build_graph(
         warnings.append("Servings not stated in the source; defaulted to 4.")
 
     stated_total_min = recipe.stated_total_min
+    if stated_total_min is not None:
+        # Invariant 8, dropped here (not just in force_linear) so an otherwise
+        # structurally valid non-linear graph is never forced into force_linear
+        # solely because a marketing total ("15 min") doesn't match verified,
+        # cue-grounded passive-step durations (M2.10 s18 F1). Never invented to
+        # close the gap -- only ever dropped.
+        serial_min = sum(node.duration_typical for node in nodes)
+        if abs(serial_min - stated_total_min) > 0.4 * stated_total_min:
+            warnings.append(
+                f"Dropped the source's stated total time ({stated_total_min} min): "
+                f"the verified step durations sum to {serial_min:.0f} min, too far "
+                "off to assert both — never invented a number to close the gap."
+            )
+            stated_total_min = None
+            review_recommended = True
+
     if force_linear:
-        # Guarantee invariants 5/6/8 by DROPPING an assertion the content can't
+        # Guarantee invariants 5/6 by DROPPING an assertion the content can't
         # support -- never by inventing one. Invariant 6 needs no action: `produces`
         # is never set above in force_linear mode, so no node claims a component
         # nothing consumes.
@@ -499,15 +517,6 @@ def build_graph(
         for ingredient in ingredients:
             if ingredient.id not in consumed_ids:
                 ingredient.optional = True
-        if stated_total_min is not None:
-            serial_min = sum(node.duration_typical for node in nodes)
-            if abs(serial_min - stated_total_min) > 0.4 * stated_total_min:
-                warnings.append(
-                    f"Dropped the source's stated total time ({stated_total_min} min): "
-                    f"the verified step durations sum to {serial_min:.0f} min, too far "
-                    "off to assert both — never invented a number to close the gap."
-                )
-                stated_total_min = None
 
     graph = CookingGraph(
         id=graph_id,

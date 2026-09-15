@@ -22,13 +22,21 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 
 import anthropic
 import pydantic
 
-from abc_cook.extract.adapters.base import EffortLevel, ExtractResult
+from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
 
 _CODE_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
+
+_STREAMING_REQUIRED_MAX_TOKENS = 21_333
+"""Mirrors the Anthropic SDK's own non-streaming timeout check
+(`_calculate_nonstreaming_timeout`: `3600 * max_tokens / 128_000 > 600`) -- past this
+point the SDK raises `ValueError` on a plain `.create()` call rather than let a
+request run past its 10-minute non-streaming timeout. M2.10 s18 F2/F3's 32,000-token
+escalation rung sits above this, so this adapter must stream past it."""
 
 _OUTPUT_FORMAT_INSTRUCTIONS = """
 
@@ -37,6 +45,12 @@ _OUTPUT_FORMAT_INSTRUCTIONS = """
 Respond with ONLY a single JSON object valid against the JSON Schema below. No prose
 before or after it, no markdown code fences -- the response body must be parseable by
 `json.loads` as-is.
+
+Output COMPACT JSON: no indentation, no line breaks, no extra whitespace around
+punctuation (comma/colon-separated, like `json.dumps(..., separators=(",", ":"))`
+would produce). This changes formatting only, never content -- every field, value, and
+grounding rule above still applies in full; compact and pretty-printed JSON parse to
+the identical object.
 
 ```json
 {schema}
@@ -62,6 +76,22 @@ def _parse[T: pydantic.BaseModel](text: str, output_type: type[T]) -> T | None:
         return output_type.model_validate(data)
     except pydantic.ValidationError:
         return None
+
+
+def _call_usage(
+    message: anthropic.types.Message, *, model: str, max_tokens: int, latency_ms: float
+) -> CallUsage:
+    usage = message.usage
+    return CallUsage(
+        model=model,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
+        cache_read_input_tokens=usage.cache_read_input_tokens,
+        cache_creation_input_tokens=usage.cache_creation_input_tokens,
+        stop_reason=message.stop_reason,
+        latency_ms=latency_ms,
+        max_tokens_requested=max_tokens,
+    )
 
 
 class AnthropicAdapter:
@@ -91,27 +121,51 @@ class AnthropicAdapter:
         output_config: anthropic.types.OutputConfigParam | anthropic.Omit = (
             {"effort": effort} if effort is not None else anthropic.omit
         )
+        system = _system_prompt(prompt, output_type)
+        messages: list[anthropic.types.MessageParam] = [{"role": "user", "content": source_text}]
+
+        start = time.monotonic()
+        message: anthropic.types.Message
         try:
-            message = self._client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                system=_system_prompt(prompt, output_type),
-                messages=[{"role": "user", "content": source_text}],
-                output_config=output_config,
-            )
+            if max_tokens > _STREAMING_REQUIRED_MAX_TOKENS:
+                with self._client.messages.stream(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=messages,
+                    output_config=output_config,
+                ) as stream:
+                    message = stream.get_final_message()
+            else:
+                message = self._client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=messages,
+                    output_config=output_config,
+                )
         except anthropic.APIError as exc:
             return ExtractResult(recipe=None, error=f"{type(exc).__name__}: {exc}")
+        latency_ms = (time.monotonic() - start) * 1000
+        usage = _call_usage(message, model=model, max_tokens=max_tokens, latency_ms=latency_ms)
+
+        text = "".join(block.text for block in message.content if block.type == "text")
 
         if message.stop_reason == "max_tokens":
             # §10.C finding 5: the richest bucket-A/D inputs neared ~4800 output
             # tokens at max_tokens=4000 and truncated mid-JSON. A truncated response
-            # is retry-eligible, not a hard failure — the caller owns the retry.
-            return ExtractResult(recipe=None, truncated=True, error="max_tokens")
+            # is retry-eligible, not a hard failure — but never at the same cap
+            # (M2.10 s18 F2): the caller owns the escalate-or-stop decision, and
+            # `raw_text` is what its runaway-generation check reads.
+            return ExtractResult(
+                recipe=None, truncated=True, error="max_tokens", usage=usage, raw_text=text
+            )
 
-        text = "".join(block.text for block in message.content if block.type == "text")
         parsed = _parse(text, output_type)
         if parsed is None:
             return ExtractResult(
-                recipe=None, error=f"response was not valid {output_type.__name__} JSON"
+                recipe=None,
+                error=f"response was not valid {output_type.__name__} JSON",
+                usage=usage,
             )
-        return ExtractResult(recipe=parsed)
+        return ExtractResult(recipe=parsed, usage=usage)
