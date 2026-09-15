@@ -5,7 +5,7 @@ import type { MapLayout } from '@/map/layout'
 
 import type { RenderPlan } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
-import { RecipeHeader } from './RecipeHeader'
+import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import { StageCard } from './StageCard'
 
 type Tab = 'plan' | 'ingredients'
@@ -20,10 +20,12 @@ export function PlanScreen({
   plan,
   map,
   onPickAnother,
+  save,
 }: {
   plan: RenderPlan
   map: MapLayout
   onPickAnother: () => void
+  save?: SaveControl
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const [mode, setMode] = useState<Mode>('plan')
@@ -64,7 +66,7 @@ export function PlanScreen({
   // against a sub-390px viewport.
   return (
     <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
-      <RecipeHeader plan={plan} />
+      <RecipeHeader plan={plan} save={save} />
 
       <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
         <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>

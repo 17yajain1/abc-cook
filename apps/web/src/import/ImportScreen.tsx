@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { ImportJobResponse, NormalizedIngredient } from '@abc-cook/schema'
+import type { ImportJobResponse, NormalizedIngredient, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, pollImport, startImport } from '../api/client'
 import { layoutMap, type MapLayout } from '../map/layout'
@@ -40,7 +40,7 @@ export function ImportScreen({
   onImported,
   onCancel,
 }: {
-  onImported: (plan: RenderPlan, map: MapLayout) => void
+  onImported: (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse) => void
   onCancel: () => void
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
@@ -70,7 +70,7 @@ export function ImportScreen({
             plan: job.result.plan,
             stages: job.result.stages,
           }
-          onImported(derivePlan(payload), layoutMap(payload))
+          onImported(derivePlan(payload), layoutMap(payload), payload)
           return
         }
         if (job.status === 'method_not_grounded') {
