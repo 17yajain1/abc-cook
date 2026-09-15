@@ -24,7 +24,10 @@ MAX_TOKENS = 8000
 """§10.C finding 5: the richest bucket-A/D inputs neared ~4800 output tokens and
 truncated at max_tokens=4000. 8000 gives headroom without changing the model."""
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v1.md"
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v2.md"
+"""v2 adds the M2.10 "Sources" section (per-field precedence across description/blog/
+transcript, and the transcript-chatter rule); v1 kicked off M2.9. Kept as separate
+files rather than editing v1 in place so a prior prompt version stays reproducible."""
 
 
 @dataclass(frozen=True)
@@ -50,13 +53,29 @@ def load_prompt() -> str:
     return _PROMPT_PATH.read_text(encoding="utf-8")
 
 
+_TRANSCRIPT_KIND_LABEL = {"manual": "creator subtitles", "auto": "auto-generated captions"}
+
+
+def _transcript_label(raw: RawAcquisition) -> str:
+    """`"Transcript (auto-generated captions, hi):"` etc. (M2.10 decision 6).
+
+    Telling the model a transcript's provenance lets it weigh manual subtitles above
+    auto-captions when they'd otherwise conflict, per the Sources section of the
+    prompt.
+    """
+    kind = _TRANSCRIPT_KIND_LABEL.get(raw.transcript_kind or "", raw.transcript_kind or "unknown")
+    lang = raw.transcript_lang or "unknown language"
+    return f"Transcript ({kind}, {lang}):"
+
+
 def render_source_text(raw: RawAcquisition) -> str:
     """Render a `RawAcquisition` as the text the model sees.
 
     Blog JSON-LD (leg 2), when present, is included alongside the description rather
     than instead of it — the description may carry ingredient detail the blog omits,
     and the prompt is told to prefer the blog's structured instructions when both
-    exist (design doc §4.4).
+    exist (design doc §4.4). The transcript (leg 3), when present, is always included
+    too (M2.10 decision 4) — never withheld behind a "sufficiency" check.
     """
     parts = [f"Title: {raw.title}"]
     if raw.channel:
@@ -71,7 +90,7 @@ def render_source_text(raw: RawAcquisition) -> str:
         parts.append("Video description:")
         parts.append(raw.description)
     if raw.transcript:
-        parts.append("Transcript:")
+        parts.append(_transcript_label(raw))
         parts.append(raw.transcript)
     return "\n\n".join(parts)
 

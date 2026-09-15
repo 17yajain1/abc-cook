@@ -153,6 +153,94 @@ def test_ingredients_only_recipe_stops_at_tier_0() -> None:
     assert adapter.calls == 1  # normalize only -- Tier 0 never reaches repair.py
 
 
+# ---------------------------------------------------------------------------
+# M2.10: ImportResult.sources and acquisition_warnings, on both tiers.
+# ---------------------------------------------------------------------------
+
+
+def test_done_result_reports_all_three_sources_when_all_present() -> None:
+    def _acquire_with_all_legs(url: str) -> RawAcquisition:
+        return _raw(
+            source_url=url,
+            blog_recipe={"@type": "Recipe", "recipeIngredient": ["1 onion"]},
+            transcript="heat oil, add onion, cook until golden, serve hot",
+            transcript_kind="auto",
+            transcript_lang="en",
+        )
+
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _acquire_with_all_legs
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_grounded_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.status == "done"
+    assert job.result is not None
+    assert job.result.sources == ["description", "blog", "transcript"]
+
+
+def test_tier0_result_reports_only_the_legs_that_were_present() -> None:
+    """No blog, no transcript -- `sources` must not claim legs that weren't there."""
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _fake_acquire  # description only
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_ingredients_only_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.status == "method_not_grounded"
+    assert job.result is not None
+    assert job.result.sources == ["description"]
+
+
+def test_tier0_result_carries_acquisition_warnings() -> None:
+    """A transcript truncation warning from acquisition must survive into the Tier 0
+    result too, not just the `done` path -- a human reviewing a refusal should still
+    see it."""
+
+    def _acquire_with_warning(url: str) -> RawAcquisition:
+        return _raw(source_url=url, acquisition_warnings=["Transcript truncated to 24000 chars."])
+
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _acquire_with_warning
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_ingredients_only_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.result is not None
+    assert "Transcript truncated to 24000 chars." in job.result.warnings
+
+
+def test_done_result_carries_acquisition_warnings_alongside_corroboration() -> None:
+    def _acquire_with_warning(url: str) -> RawAcquisition:
+        return _raw(source_url=url, acquisition_warnings=["Transcript truncated to 24000 chars."])
+
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _acquire_with_warning
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_grounded_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.status == "done"
+    assert job.result is not None
+    assert "Transcript truncated to 24000 chars." in job.result.warnings
+
+
 def test_acquire_failure_reports_as_a_failed_job() -> None:
     """An unexpected exception must never leave a job stuck mid-flight (design doc
     §4.5's `failed` status exists for exactly this)."""

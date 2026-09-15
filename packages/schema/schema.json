@@ -254,6 +254,18 @@
           ],
           "default": null
         },
+        "sources": {
+          "description": "Which RawAcquisition legs were non-empty for this import (M2.10). Set on both Tier 0 and `done` results \u2014 a Tier 0 screen can say 'no captions on this video' without another round trip.",
+          "items": {
+            "enum": [
+              "description",
+              "blog",
+              "transcript"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "stages": {
           "anyOf": [
             {

@@ -28,11 +28,23 @@ from abc_cook.extract.repair import repair_or_degrade
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema.graph import SourceRef
-from abc_cook.schema.normalized import ImportResult, ImportStatus
+from abc_cook.schema.normalized import ImportResult, ImportSource, ImportStatus
 
 DEFAULT_BURNER_CAPACITY = 1
 """Imports carry no kitchen sidecar (unlike `api/routes/recipes.py`'s fixtures) --
 one burner is the safe default (COOKING_GRAPH.md §4.6)."""
+
+
+def _sources(raw: RawAcquisition) -> list[ImportSource]:
+    """Which acquisition legs actually produced something, in leg order (M2.10)."""
+    sources: list[ImportSource] = []
+    if raw.description:
+        sources.append("description")
+    if raw.blog_recipe is not None:
+        sources.append("blog")
+    if raw.transcript:
+        sources.append("transcript")
+    return sources
 
 
 def run_import(
@@ -71,11 +83,17 @@ def run_import(
 
     _status("acquiring")
     raw = acquire_fn(url)
+    sources = _sources(raw)
 
     _status("extracting")
     outcome = normalize(raw, adapter)
     if outcome.tier0_result is not None:
-        return outcome.tier0_result
+        return outcome.tier0_result.model_copy(
+            update={
+                "sources": sources,
+                "warnings": [*outcome.tier0_result.warnings, *raw.acquisition_warnings],
+            }
+        )
     recipe = outcome.recipe
     assert recipe is not None  # NormalizeOutcome: exactly one of recipe/tier0_result is set
 
@@ -92,7 +110,12 @@ def run_import(
             status="method_not_grounded",
             source_title=recipe.title,
             ingredients=recipe.ingredients,
-            warnings=[*build_result.warnings, "graph.py refused after normalize.py passed."],
+            warnings=[
+                *build_result.warnings,
+                *raw.acquisition_warnings,
+                "graph.py refused after normalize.py passed.",
+            ],
+            sources=sources,
         )
 
     violations = validate(build_result.graph)
@@ -115,5 +138,6 @@ def run_import(
         stages=stage_spans(graph, plan),
         provenance=compute_provenance(build_result),
         review_recommended=build_result.review_recommended,
-        warnings=[*build_result.warnings, *corroborate(recipe, graph)],
+        warnings=[*build_result.warnings, *raw.acquisition_warnings, *corroborate(recipe, graph)],
+        sources=sources,
     )

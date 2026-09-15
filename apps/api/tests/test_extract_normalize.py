@@ -93,6 +93,28 @@ def test_render_source_text_includes_blog_recipe_when_present() -> None:
     assert "recipeIngredient" in text
 
 
+def test_render_source_text_labels_auto_generated_transcript() -> None:
+    raw = _raw(
+        transcript="cover and cook for five minutes", transcript_kind="auto", transcript_lang="hi"
+    )
+    text = render_source_text(raw)
+    assert "Transcript (auto-generated captions, hi):" in text
+    assert "cover and cook for five minutes" in text
+
+
+def test_render_source_text_labels_manual_transcript() -> None:
+    raw = _raw(
+        transcript="cover and cook for five minutes", transcript_kind="manual", transcript_lang="en"
+    )
+    text = render_source_text(raw)
+    assert "Transcript (creator subtitles, en):" in text
+
+
+def test_render_source_text_omits_transcript_block_when_absent() -> None:
+    text = render_source_text(_raw())
+    assert "Transcript" not in text
+
+
 def test_tier0_gate_ignores_models_own_method_grounded_claim() -> None:
     """§10.C finding 1: the model's structured method_grounded field is untrustworthy
     even when it claims True -- normalize.py must recompute from bool(steps)."""

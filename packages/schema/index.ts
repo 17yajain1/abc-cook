@@ -394,6 +394,10 @@ export interface ImportResult {
   provenance?: GraphProvenance | null;
   review_recommended?: boolean;
   source_title?: string | null;
+  /**
+   * Which RawAcquisition legs were non-empty for this import (M2.10). Set on both Tier 0 and `done` results — a Tier 0 screen can say 'no captions on this video' without another round trip.
+   */
+  sources?: ('description' | 'blog' | 'transcript')[];
   stages?: StageSpan[] | null;
   status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
   warnings?: string[];

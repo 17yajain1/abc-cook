@@ -13,9 +13,11 @@ import json
 from pathlib import Path
 
 import pytest
+import yt_dlp
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.blog import fetch_recipe, find_candidate_links
+from abc_cook.extract.acquire.transcript import select_track
 from abc_cook.extract.acquire.youtube import fetch, parse_chapters
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "import"
@@ -28,6 +30,10 @@ USELESS_URL = "https://youtu.be/88MTFAXFh0A"  # Cholle Bhature, bucket E
 # The two blog links verified live in §10.A.
 CHEFKUNALKAPUR_URL = "http://www.chefkunalkapur.com/dal-makhni/"
 RASGULLA_BLOG_URL = "https://bit.ly/2DbcxhJ"
+
+# M2.10 leg-3 source videos (same ones frozen into tests/fixtures/import/).
+SHAHI_TUKDA_URL = "https://www.youtube.com/watch?v=pxpJmXq2w7c"
+RASMALAI_URL = "https://www.youtube.com/watch?v=ZLaz2azNJl0"
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +123,13 @@ def test_find_candidate_links_empty_description() -> None:
         ("partial-ingredients-only", False),
         ("blog-link-only", True),
         ("useless", False),
+        # M2.10 leg-3 fixtures: bucket C (ingredients-only description), transcript
+        # differs. All four have a real description, hence True here -- "grounded"
+        # only means "has description or blog_recipe", not "has a method".
+        ("captions-auto-hi", True),
+        ("captions-manual-en", True),
+        ("captions-auto-en-long", True),
+        ("no-captions", True),
     ],
 )
 def test_frozen_fixture_parses_as_raw_acquisition(slug: str, expect_grounded_shape: bool) -> None:
@@ -160,6 +173,58 @@ def test_useless_fixture_has_almost_nothing() -> None:
     assert acquisition.blog_recipe is None
     assert acquisition.chapters == []
     assert (acquisition.description or "").strip().count("\n") == 0
+
+
+# ---------------------------------------------------------------------------
+# M2.10 leg-3 fixtures: real caption fetches, frozen once. All four are bucket C
+# (ingredients-only description, no written method) -- transcript is what M2.10 adds.
+# ---------------------------------------------------------------------------
+
+
+def test_captions_auto_hi_fixture_has_hindi_auto_transcript() -> None:
+    """Sabudana: yt-dlp `language` metadata is "hi" with a matching auto-caption track."""
+    data = json.loads((FIXTURES_DIR / "captions-auto-hi.raw.json").read_text(encoding="utf-8"))
+    acquisition = RawAcquisition.model_validate(data)
+    assert acquisition.transcript_kind == "auto"
+    assert acquisition.transcript_lang == "hi"
+    assert acquisition.transcript
+    assert acquisition.transcript_segments
+    # No glued event boundaries (design doc M2.10: normalization must add the space).
+    assert "किहम" not in acquisition.transcript
+
+
+def test_captions_manual_en_fixture_has_creator_subtitles() -> None:
+    """Shahi Tukda: creator-uploaded English subtitles, even though `language` is "hi" --
+    manual beats auto regardless of the video-language match (decision 3)."""
+    data = json.loads((FIXTURES_DIR / "captions-manual-en.raw.json").read_text(encoding="utf-8"))
+    acquisition = RawAcquisition.model_validate(data)
+    assert acquisition.transcript_kind == "manual"
+    assert acquisition.transcript_lang == "en"
+    assert acquisition.transcript
+
+
+def test_captions_auto_en_long_fixture_has_long_english_transcript() -> None:
+    """Ramen: the largest realistic single-track input; exercises the cap machinery
+    even if it doesn't trip it."""
+    data = json.loads(
+        (FIXTURES_DIR / "captions-auto-en-long.raw.json").read_text(encoding="utf-8")
+    )
+    acquisition = RawAcquisition.model_validate(data)
+    assert acquisition.transcript_kind == "auto"
+    assert acquisition.transcript_lang == "en"
+    assert acquisition.transcript
+    assert len(acquisition.transcript) > 10_000
+
+
+def test_no_captions_fixture_has_no_transcript() -> None:
+    """Rasmalai: a silent video with no caption track -- must stay Tier 0 honestly,
+    never a fabricated transcript."""
+    data = json.loads((FIXTURES_DIR / "no-captions.raw.json").read_text(encoding="utf-8"))
+    acquisition = RawAcquisition.model_validate(data)
+    assert acquisition.transcript is None
+    assert acquisition.transcript_kind is None
+    assert acquisition.transcript_segments == []
+    assert acquisition.description  # ingredients are still there
 
 
 # ---------------------------------------------------------------------------
@@ -211,3 +276,26 @@ def test_fetch_recipe_rasgulla_blog_via_redirect_live() -> None:
 def test_fetch_recipe_returns_none_for_non_recipe_page() -> None:
     recipe = fetch_recipe("https://example.com")
     assert recipe is None
+
+
+def _extract_info(url: str) -> dict[str, object]:
+    opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+    assert info is not None
+    return info
+
+
+@pytest.mark.network
+def test_select_track_live_shahi_tukda_yields_manual_english() -> None:
+    """Creator-uploaded English subtitles, live -- matches the frozen fixture."""
+    track = select_track(_extract_info(SHAHI_TUKDA_URL))
+    assert track is not None
+    kind, lang, _url = track
+    assert (kind, lang) == ("manual", "en")
+
+
+@pytest.mark.network
+def test_select_track_live_rasmalai_yields_none() -> None:
+    """A silent video: no caption track of any kind -- must stay Tier 0 honestly."""
+    assert select_track(_extract_info(RASMALAI_URL)) is None
