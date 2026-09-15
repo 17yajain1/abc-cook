@@ -25,8 +25,8 @@ from pydantic import BaseModel, Field
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
-from abc_cook.extract.adapters.anthropic import AnthropicAdapter
 from abc_cook.extract.adapters.base import LLMAdapter
+from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.import_pipeline import run_import
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus
@@ -95,8 +95,12 @@ def get_job_store() -> JobStore:
 
 
 def get_adapter() -> LLMAdapter:
-    """FastAPI dependency: the LLM provider adapter. Overridden in tests with a fake."""
-    return AnthropicAdapter()
+    """FastAPI dependency: the LLM provider adapter. Overridden in tests with a fake.
+
+    M2.11: `build_default_adapter()` routes extraction to GPT-5-mini and repair to
+    Sonnet by model id (`adapters/routing.py`) -- one adapter object, two providers.
+    """
+    return build_default_adapter()
 
 
 def get_acquire() -> Callable[[str], RawAcquisition]:

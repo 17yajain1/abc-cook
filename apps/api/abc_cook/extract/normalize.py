@@ -27,7 +27,12 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.adapters.base import CallUsage, ExtractResult, LLMAdapter
 from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
-DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+DEFAULT_MODEL = "gpt-5-mini"
+"""M2.11: extraction moved from Haiku to GPT-5-mini per the M2.10 model bake-offs
+(directional evidence: comparable/better grounding, cheaper, ~4x fewer output tokens
+than Haiku on the same recipes). Repair stays on Sonnet (`repair.REPAIR_MODEL`) --
+`adapters.routing.build_default_adapter` is what lets one call site request two
+different providers by model id without this module knowing that."""
 MAX_TOKENS = 16_000
 """M2.10 s18 F3: output runs ~250-310 tokens/step + ~800 header; this covers ~50
 steps (Ramen's 46-step transcript sat at the edge of the old 8K/12K caps). A cap

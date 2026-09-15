@@ -19,17 +19,14 @@ validation posture rather than depending on one provider's enforcement.
 
 from __future__ import annotations
 
-import json
 import os
-import re
 import time
 
 import anthropic
 import pydantic
 
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
-
-_CODE_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
+from abc_cook.extract.adapters.prompting import parse, system_prompt
 
 _STREAMING_REQUIRED_MAX_TOKENS = 21_333
 """Mirrors the Anthropic SDK's own non-streaming timeout check
@@ -37,45 +34,6 @@ _STREAMING_REQUIRED_MAX_TOKENS = 21_333
 point the SDK raises `ValueError` on a plain `.create()` call rather than let a
 request run past its 10-minute non-streaming timeout. M2.10 s18 F2/F3's 32,000-token
 escalation rung sits above this, so this adapter must stream past it."""
-
-_OUTPUT_FORMAT_INSTRUCTIONS = """
-
-## Output format
-
-Respond with ONLY a single JSON object valid against the JSON Schema below. No prose
-before or after it, no markdown code fences -- the response body must be parseable by
-`json.loads` as-is.
-
-Output COMPACT JSON: no indentation, no line breaks, no extra whitespace around
-punctuation (comma/colon-separated, like `json.dumps(..., separators=(",", ":"))`
-would produce). This changes formatting only, never content -- every field, value, and
-grounding rule above still applies in full; compact and pretty-printed JSON parse to
-the identical object.
-
-```json
-{schema}
-```
-"""
-
-
-def _system_prompt(prompt: str, output_type: type[pydantic.BaseModel]) -> str:
-    schema = json.dumps(output_type.model_json_schema(), ensure_ascii=False)
-    return prompt + _OUTPUT_FORMAT_INSTRUCTIONS.format(schema=schema)
-
-
-def _strip_code_fences(text: str) -> str:
-    return _CODE_FENCE.sub("", text.strip()).strip()
-
-
-def _parse[T: pydantic.BaseModel](text: str, output_type: type[T]) -> T | None:
-    try:
-        data = json.loads(_strip_code_fences(text))
-    except json.JSONDecodeError:
-        return None
-    try:
-        return output_type.model_validate(data)
-    except pydantic.ValidationError:
-        return None
 
 
 def _call_usage(
@@ -121,7 +79,7 @@ class AnthropicAdapter:
         output_config: anthropic.types.OutputConfigParam | anthropic.Omit = (
             {"effort": effort} if effort is not None else anthropic.omit
         )
-        system = _system_prompt(prompt, output_type)
+        system = system_prompt(prompt, output_type)
         messages: list[anthropic.types.MessageParam] = [{"role": "user", "content": source_text}]
 
         start = time.monotonic()
@@ -161,7 +119,7 @@ class AnthropicAdapter:
                 recipe=None, truncated=True, error="max_tokens", usage=usage, raw_text=text
             )
 
-        parsed = _parse(text, output_type)
+        parsed = parse(text, output_type)
         if parsed is None:
             return ExtractResult(
                 recipe=None,

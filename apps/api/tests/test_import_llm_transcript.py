@@ -39,11 +39,15 @@ def _load_raw(slug: str) -> RawAcquisition:
 def test_caption_fixture_reaches_done_with_a_grounded_graph(slug: str) -> None:
     """The three bucket-C-with-captions fixtures must now produce a real plan --
     this is the whole point of M2.10. Whatever the model returns, print it: the
-    Checkpoint 2 report is a human read of this output, not just these assertions."""
-    from abc_cook.extract.adapters.anthropic import AnthropicAdapter
+    Checkpoint 2 report is a human read of this output, not just these assertions.
+
+    M2.11: uses the real production adapter (`build_default_adapter` -- GPT-5-mini
+    extracts, Sonnet repairs if needed), not a hardcoded single-provider adapter, so
+    this test exercises the actual pipeline wiring, not a stale one."""
+    from abc_cook.extract.adapters.routing import build_default_adapter
 
     raw = _load_raw(slug)
-    adapter = AnthropicAdapter()
+    adapter = build_default_adapter()
     result = run_import(
         raw.source_url, adapter, graph_id=f"g_{slug}_llm_test", acquire_fn=lambda url: raw
     )
@@ -112,10 +116,10 @@ def test_no_captions_fixture_stays_tier_0() -> None:
     """Rasmalai: a silent video with no caption track. Must still refuse honestly --
     M2.10 must not weaken the Tier 0 gate for the one bucket-C case with nothing to
     ground a method in."""
-    from abc_cook.extract.adapters.anthropic import AnthropicAdapter
+    from abc_cook.extract.adapters.routing import build_default_adapter
 
     raw = _load_raw("no-captions")
-    adapter = AnthropicAdapter()
+    adapter = build_default_adapter()
     result = run_import(
         raw.source_url, adapter, graph_id="g_no_captions_llm_test", acquire_fn=lambda url: raw
     )

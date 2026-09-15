@@ -12,6 +12,20 @@ multipliers (0.1x / 1.25x of the input rate) are Anthropic's standard published
 convention; harmless to include now even though nothing in this phase sets
 `cache_control` yet (F6, not built), since the cache token fields are 0/None on every
 real call until then.
+
+`gpt-5-mini` added M2.11 (production extraction model change): $0.25/$2.00 per M
+tokens (in/out), checked live against OpenAI's own pricing docs 2026-09-15, same
+INR85/$ card. OpenAI has no published cache-write premium (its caching is automatic,
+not an opt-in `cache_control` write), so `gpt-5-mini` has no separate write multiplier
+here -- `adapters/openai.py`'s `CallUsage.cache_creation_input_tokens` is always None,
+so the existing write-multiplier term in `call_cost_inr` contributes 0 for this model
+without this file needing a provider-specific branch. The 0.1x cache-*read* multiplier
+below is reused as-is for `gpt-5-mini` too (OpenAI's cached-input rate is also 1/10th
+of its standard input rate, confirmed against the same pricing doc) -- `adapters/
+openai.py` normalizes `input_tokens` to exclude cached tokens before this formula ever
+sees them (OpenAI's `prompt_tokens` includes cache hits as a subset; Anthropic's
+`input_tokens` already excludes them), so this formula needed no change to stay
+correct for the new provider.
 """
 
 from __future__ import annotations
@@ -21,6 +35,7 @@ from abc_cook.extract.adapters.base import CallUsage
 INR_PER_1K_TOKENS: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5-20251001": (0.085, 0.425),
     "claude-sonnet-5": (0.17, 0.85),
+    "gpt-5-mini": (0.02125, 0.17),
 }
 """model -> (input ₹/1K tokens, output ₹/1K tokens)."""
 
