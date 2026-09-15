@@ -20,6 +20,7 @@ from abc_cook.schema import (
     ImportStartResponse,
     RecipeListResponse,
     RecipePlanResponse,
+    SavedLibrary,
 )
 
 # Response roots. `RecipePlanResponse` transitively contains CookingGraph,
@@ -31,7 +32,16 @@ from abc_cook.schema import (
 # `GET /import/{job_id}`) pull in NormalizedRecipe/ImportResult/GraphProvenance —
 # added ahead of the ImportScreen.tsx that consumes them (design doc §12 step 12), so
 # the generated types are ready when that step starts.
-ROOTS = [RecipePlanResponse, RecipeListResponse, ImportJobResponse, ImportStartResponse]
+#
+# `SavedLibrary` (M2.12) pulls in `SavedRecipe`; its `payload` field is
+# `RecipePlanResponse`, already a root above, so this adds no duplicate interfaces.
+ROOTS = [
+    RecipePlanResponse,
+    RecipeListResponse,
+    ImportJobResponse,
+    ImportStartResponse,
+    SavedLibrary,
+]
 
 OUT = Path(__file__).resolve().parents[3] / "packages" / "schema" / "schema.json"
 

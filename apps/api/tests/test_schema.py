@@ -5,11 +5,16 @@ They deliberately assert nothing about scheduling — there is no scheduler yet.
 
 from datetime import UTC, datetime
 
+from fastapi.testclient import TestClient
+
+from abc_cook.api.main import create_app
 from abc_cook.schema import (
     CookingGraph,
     CookingPlan,
     Ingredient,
     Node,
+    RecipePlanResponse,
+    SavedRecipe,
     ScheduledNode,
     SourceRef,
     Stage,
@@ -126,3 +131,22 @@ def test_json_schema_generates() -> None:
     """`make types` generates TS from these schemas, so they must be emittable."""
     for model in (CookingGraph, CookingPlan):
         assert model.model_json_schema()["title"] == model.__name__
+
+
+def test_saved_recipe_round_trips_a_real_plan_response() -> None:
+    """A fixture `RecipePlanResponse`, wrapped in `SavedRecipe`, survives storage as JSON
+    losslessly — the property M2.12's `localStorage` persistence depends on."""
+    client = TestClient(create_app())
+    response = client.get("/recipes/kadai-paneer/plan")
+    assert response.status_code == 200
+    payload = RecipePlanResponse.model_validate(response.json())
+
+    saved = SavedRecipe(
+        id="s1",
+        source_key="text:kadai-paneer",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+    )
+    assert SavedRecipe.model_validate_json(saved.model_dump_json()) == saved
+    assert saved.payload == payload

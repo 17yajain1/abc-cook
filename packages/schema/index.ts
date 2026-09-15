@@ -544,3 +544,44 @@ export interface RecipePlanResponse {
    */
   stages: StageSpan[];
 }
+/**
+ * The whole saved-recipe library, as stored under one `localStorage` key.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SavedLibrary".
+ */
+export interface SavedLibrary {
+  /**
+   * Saved entries, in no particular order.
+   */
+  recipes: SavedRecipe[];
+  /**
+   * Storage format version. Always 1 in v1.
+   */
+  version?: 1;
+}
+/**
+ * One recipe a user has saved on this device.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SavedRecipe".
+ */
+export interface SavedRecipe {
+  /**
+   * Stable id for this saved entry, assigned at first save.
+   */
+  id: string;
+  payload: RecipePlanResponse;
+  /**
+   * When this entry was first saved. Never changes.
+   */
+  saved_at: string;
+  /**
+   * Canonical key derived from the source's URL/text; see module docstring.
+   */
+  source_key: string;
+  /**
+   * When this entry's payload was last replaced. Equals saved_at on first save.
+   */
+  updated_at: string;
+}
