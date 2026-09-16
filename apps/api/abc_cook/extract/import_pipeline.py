@@ -14,6 +14,7 @@ own; it only sequences calls already owned by `normalize.py` and `repair.py`.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -36,6 +37,8 @@ from abc_cook.schema.normalized import ImportResult, ImportSource, ImportStatus
 DEFAULT_BURNER_CAPACITY = 1
 """Imports carry no kitchen sidecar (unlike `api/routes/recipes.py`'s fixtures) --
 one burner is the safe default (COOKING_GRAPH.md §4.6)."""
+
+_logger = logging.getLogger(__name__)
 
 Tier = Literal["tier0", "clean", "repaired", "degraded"]
 
@@ -238,6 +241,23 @@ def run_import(
 
     graph = build_result.graph
     assert graph is not None  # both build_graph and repair_or_degrade guarantee this
+
+    # §2.2 of docs/cooking-plan-investigation.md: repair_or_degrade's docstring claims
+    # its output is "guaranteed to pass all ten invariants by construction" (true as
+    # of B2), but this was never actually re-checked here, so a violation of that
+    # guarantee could ship silently -- exactly how a still-invalid degraded plan
+    # reached the client before B2. Never raises: CLAUDE.md's "the app must never
+    # fail to show a recipe just because the graph was malformed" applies here too --
+    # this is a monitoring signal, not a gate.
+    final_violations = validate(graph)
+    if final_violations:
+        _logger.error(
+            "run_import: graph_id=%s shipped a plan despite failing validate() after "
+            "%s -- this should be structurally impossible; violations: %s",
+            graph_id,
+            "repair/degrade" if violations else "build_graph",
+            [v.rule for v in final_violations],
+        )
 
     plan = schedule(graph, burner_capacity=DEFAULT_BURNER_CAPACITY)
     _telemetry(

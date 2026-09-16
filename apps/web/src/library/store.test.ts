@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { RecipePlanResponse } from '@abc-cook/schema'
+import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import { canonicalSourceKey } from './sourceKey'
 import { createLibrary, type StorageLike } from './store'
@@ -71,6 +71,53 @@ describe('createLibrary — save, list, get', () => {
 
     const reopenedPayload = library.get(saved.recipe.id)!.payload
     expect(derivePlan(reopenedPayload)).toEqual(derivePlan(KADAI))
+  })
+})
+
+describe('createLibrary — import_meta persistence (A6)', () => {
+  const META: ImportMeta = {
+    warnings: ['degraded', 'uses 2 burners'],
+    review_recommended: true,
+    sources: ['transcript', 'blog'],
+    provenance: null,
+    degraded: true,
+  }
+
+  it('is null when save() is called without one — the fixture-recipe path', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI)
+    expect(saved.ok).toBe(true)
+    if (!saved.ok) return
+    expect(saved.recipe.import_meta).toBeNull()
+    expect(library.get(saved.recipe.id)?.import_meta).toBeNull()
+  })
+
+  it('persists and survives a reload', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI, META)
+    expect(saved.ok).toBe(true)
+    if (!saved.ok) return
+    expect(saved.recipe.import_meta).toEqual(META)
+
+    const reopened = createLibrary(storage, clock('2026-09-15T11:00:00Z'))
+    expect(reopened.get(saved.recipe.id)?.import_meta).toEqual(META)
+  })
+
+  it('a second save replaces the previous import_meta in place', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const first = library.save(KADAI, META)
+    expect(first.ok).toBe(true)
+    if (!first.ok) return
+
+    const clean: ImportMeta = { warnings: [], review_recommended: false, sources: [], provenance: null, degraded: false }
+    const second = library.save(KADAI, clean)
+    expect(second.ok).toBe(true)
+    if (!second.ok) return
+    expect(second.recipe.id).toBe(first.recipe.id)
+    expect(second.recipe.import_meta).toEqual(clean)
   })
 })
 

@@ -96,27 +96,111 @@ def _slugify(text: str, *, max_words: int = 6) -> str:
     return "_".join(words) if words else "x"
 
 
+_LABEL_VULGAR_FRACTIONS = "¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞"
+_LABEL_TOKEN_RE = re.compile(
+    rf"\d+(?:/\d+)?|[{_LABEL_VULGAR_FRACTIONS}]|[A-Za-z][A-Za-z']*"
+)
+_LABEL_PREFIX_RE = re.compile(r"^[A-Za-z]+:\s+")
+_LABEL_FUNCTION_WORDS = {
+    "in", "on", "or", "and", "with", "to", "your", "the", "a", "of", "for",
+    "until", "then", "about", "onto", "over",
+}
+"""Closed-class prepositions/conjunctions/articles a label must not start or end on
+(A1.1) -- a label ending or opening on one of these reads as a truncated fragment
+rather than a phrase, regardless of which specific words the source used."""
+_LABEL_BARE_NUMBER_RE = re.compile(r"^\d+$")
+"""A trailing token that is a bare integer (no unit, no fraction) is almost always a
+duration/quantity fragment truncated by max_words (e.g. "...2" of "2 minutes"), not a
+meaningful label ending -- drop it (A1.1)."""
+
+
 def _label(text: str, *, max_words: int = 4) -> str:
-    stopwords = {"the", "a", "an", "and", "then", "now", "into", "to", "of", "for"}
-    words = [w for w in re.findall(r"[A-Za-z0-9']+", text) if w.lower() not in stopwords]
-    words = words[:max_words] or re.findall(r"[A-Za-z0-9']+", text)[:max_words]
-    label = " ".join(words)
+    body = _LABEL_PREFIX_RE.sub("", text)
+    all_tokens = _LABEL_TOKEN_RE.findall(body)
+
+    start = 0
+    while start < len(all_tokens) - 1 and all_tokens[start].lower() in _LABEL_FUNCTION_WORDS:
+        start += 1
+
+    tokens = all_tokens[start : start + max_words]
+    while tokens and (
+        tokens[-1].lower() in _LABEL_FUNCTION_WORDS or _LABEL_BARE_NUMBER_RE.fullmatch(tokens[-1])
+    ):
+        tokens.pop()
+    label = " ".join(tokens)
     return (label[:1].upper() + label[1:]) if label else text[:40]
 
 
+_UNTIL_PREFIX_RE = re.compile(r"^(?:until|till)\s+", re.IGNORECASE)
+
+
+def _clean_cue(cue: str | None) -> str | None:
+    """Strip a leading "until"/"till" so cue text is the bare condition (A3).
+
+    The prompt's own examples ("until golden") teach the model to include it, but
+    every golden fixture's `doneness_cue` is stored *without* it -- the UI convention
+    (`StageCard.tsx`, `WaitWindowBlock`) is "cue = the condition", prepending "until"
+    itself. One strip point here keeps golden data and UI unchanged.
+    """
+    if cue is None:
+        return None
+    stripped = _UNTIL_PREFIX_RE.sub("", cue.strip())
+    return stripped or None
+
+
+_QTY_VULGAR_FRACTIONS = {
+    "¼": 0.25, "½": 0.5, "¾": 0.75,
+    "⅓": 1 / 3, "⅔": 2 / 3,
+    "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8,
+    "⅙": 1 / 6, "⅚": 5 / 6,
+    "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
+}
+_QTY_MIXED_FRACTION_RE = re.compile(r"^(\d+)\s*[-\s]\s*(\d+)\s*/\s*(\d+)$")
+_QTY_PLAIN_FRACTION_RE = re.compile(r"^(\d+)\s*/\s*(\d+)$")
+_QTY_DECIMAL_RE = re.compile(r"^\d+(?:\.\d+)?$")
+_QTY_VULGAR_RE = re.compile(rf"^(\d+)?\s*([{''.join(_QTY_VULGAR_FRACTIONS)}])$")
+_RANGE_DASHES = chr(0x2013) + chr(0x2014)  # en dash, em dash -- ASCII-safe in source (RUF001)
+_QTY_RANGE_RE = re.compile(rf"^(\d+(?:\.\d+)?)\s*(?:-|[{_RANGE_DASHES}]|to)\s*(\d+(?:\.\d+)?)$")
+
+
 def _parse_qty(qty: str | None) -> float | None:
+    """Parse a source quantity to a single number, conservatively (A2).
+
+    Mixed fractions ("1 1/4", "1-1/4") and unicode vulgar fractions ("½", "1½") parse
+    exactly. Ranges ("2-3", "2 to 3", or an en/em-dash range) resolve to their **low
+    end** -- the range text itself is never lost, since `Ingredient.qty_text` carries
+    it verbatim. Vague phrases ("a pinch", "a little less than 2") return `None`; they
+    too survive via `qty_text`. Never invents a number the source didn't give.
+    """
     if qty is None:
         return None
     text = qty.strip()
     if not text:
         return None
-    match = re.match(r"^(\d+)\s*/\s*(\d+)$", text)
+
+    match = _QTY_MIXED_FRACTION_RE.match(text)
+    if match:
+        whole, numerator, denominator = (int(group) for group in match.groups())
+        return whole + numerator / denominator if denominator else None
+
+    match = _QTY_VULGAR_RE.match(text)
+    if match:
+        whole_text, frac_char = match.groups()
+        whole = int(whole_text) if whole_text else 0
+        return whole + _QTY_VULGAR_FRACTIONS[frac_char]
+
+    match = _QTY_PLAIN_FRACTION_RE.match(text)
     if match:
         numerator, denominator = int(match.group(1)), int(match.group(2))
         return numerator / denominator if denominator else None
-    match = re.match(r"^\d+(\.\d+)?$", text)
-    if match:
+
+    if _QTY_DECIMAL_RE.match(text):
         return float(text)
+
+    match = _QTY_RANGE_RE.match(text)
+    if match:
+        return float(match.group(1))  # low end -- conservative, never invents
+
     return None
 
 
@@ -235,6 +319,27 @@ def _verify_independence(previous: NormalizedStep, current: NormalizedStep) -> b
     return not _consumes_others_product(previous, current)
 
 
+def _depends_transitively(node: Node, target_id: str, nodes_by_id: dict[str, Node]) -> bool:
+    """Whether `node` depends on `target_id`, directly or through other nodes (B3).
+
+    Mirrors `validate._depends_transitively` (kept separate: this runs during
+    construction, before a `CookingGraph` exists to hand to that module).
+    """
+    seen: set[str] = set()
+    stack = list(node.depends_on)
+    while stack:
+        dep = stack.pop()
+        if dep == target_id:
+            return True
+        if dep in seen:
+            continue
+        seen.add(dep)
+        dep_node = nodes_by_id.get(dep)
+        if dep_node is not None:
+            stack.extend(dep_node.depends_on)
+    return False
+
+
 def _sequential_source(step_text: str) -> ProvenanceSource:
     stripped = step_text.strip().lower()
     first_word = stripped.split(" ", 1)[0].rstrip(",.;:") if stripped else ""
@@ -285,6 +390,14 @@ def build_graph(
             the same way regardless of `force_linear` — see below; a marketing total
             ("15 min") next to long verified passive steps must not force an
             otherwise structurally valid graph into this branch (M2.10 s18 F1).
+            Invariant 9 is guaranteed too, but not by anything `force_linear` itself
+            does: this branch never touches `attention` or `kind`, so a source whose
+            final, grounded instruction is genuinely unattended ("let cool slightly
+            before serving") still forces `kind="finish"` (line ~454) with
+            `attention="unattended"` — invalid before B2, valid after it
+            (`COOKING_GRAPH.md` §5.9 allows `finish` in the unattended set). The
+            guarantee holds only because that relaxation exists, not because
+            `force_linear` does anything special for it.
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -320,6 +433,7 @@ def build_graph(
                 id=ing_id,
                 name=norm_ing.name,
                 qty=_parse_qty(norm_ing.qty),
+                qty_text=norm_ing.qty,
                 unit=norm_ing.unit,
                 prep_note=norm_ing.prep_note,
                 group=norm_ing.group,
@@ -422,7 +536,7 @@ def build_graph(
                 ),
                 interruptible=interruptible,
                 max_lead_min=max_lead_min,
-                doneness_cue=step.doneness_cue,
+                doneness_cue=_clean_cue(step.doneness_cue),
                 tip=None,
             )
         )
@@ -437,10 +551,25 @@ def build_graph(
             )
         )
 
-    # -- Edges: base sequential chain -----------------------------------------------
+    # -- Edges: base chain, with fork/join for honored independence (B1) ------------
+    # `open_deps` is the set of node ids a NEW sequential step must join on -- every
+    # node that forked off since the last sequential join point and has not yet been
+    # re-joined. A sequential step depends on the whole open set (the join) and then
+    # becomes the new, sole open member. An honored-independent step never invents a
+    # dependency: it copies its immediate predecessor's own `depends_on` (a sibling
+    # may start whenever that predecessor could start, never earlier) and is added to
+    # the open set so a later join includes it. A chain of only sequential steps is
+    # byte-identical to the old `[nodes[index - 1].id]` chain (each join's open set
+    # has exactly one member); edges only ever point to already-built nodes, so no
+    # cycle can be introduced.
+    open_deps: list[str] = []
     for index, node in enumerate(nodes):
-        if index > 0 and depends_on_previous_verified[index]:
-            node.depends_on = [nodes[index - 1].id]
+        if depends_on_previous_verified[index]:
+            node.depends_on = list(open_deps)
+            open_deps = [node.id]
+        else:
+            node.depends_on = list(nodes[index - 1].depends_on)
+            open_deps.append(node.id)
 
     # -- Edges: produces -> consumer, wherever a LATER step names the same product --
     # Strictly later only: a step can't consume something a step after it produces,
@@ -448,16 +577,19 @@ def build_graph(
     # cycle the first time (found live at the M2.9 s15 checkpoint). Skipped entirely
     # in force_linear mode -- Tier 1 discards structure, not just this one shortcut.
     if not force_linear:
+        nodes_by_id = {node.id: node for node in nodes}
         for index, step in enumerate(steps):
             if step.produces_component is None:
                 continue
             producer = nodes[index]
             produced_name = step.produces_component.lower()
+            consumer_found = False
             for other_index, other_step in enumerate(steps):
                 if other_index <= index:
                     continue
                 names_lower = (name.lower() for name in other_step.consumes_ingredients)
                 if any(produced_name in name or name in produced_name for name in names_lower):
+                    consumer_found = True
                     consumer = nodes[other_index]
                     if producer.id not in consumer.depends_on:
                         consumer.depends_on.append(producer.id)
@@ -467,6 +599,30 @@ def build_graph(
                     # edge above (a real bug found preparing repair.py's test case).
                     if producer.produces is not None and producer.produces not in consumer.consumes:
                         consumer.consumes.append(producer.produces)
+
+            # B3: nothing named this component by id. Pre-B1 this was always a
+            # violation worth repairing (the graph was a strict chain, so the "is it
+            # redundant" question never came up). Post-B1 a produces edge can be the
+            # *only* connector between two siblings (§6 B3) -- dropping on sight would
+            # silently discard real ordering information. Only drop, with a warning,
+            # when every strictly-later node already depends on the producer
+            # transitively through some other edge: in that case a repair call could
+            # only ever add a redundant edge, so there is nothing to fix and no
+            # violation is worth spending a repair call on. Otherwise leave `produces`
+            # set and let invariant 6 fire -- exactly the case a repair pass earns its
+            # cost fixing.
+            if not consumer_found:
+                later_nodes = nodes[index + 1 :]
+                if later_nodes and all(
+                    _depends_transitively(later, producer.id, nodes_by_id) for later in later_nodes
+                ):
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." was marked as producing '
+                        f'"{step.produces_component}", but no later step names it; '
+                        "dropped -- every later step already depends on it, so nothing "
+                        "downstream loses ordering information."
+                    )
+                    producer.produces = None
 
         # -- Edges: freshness structural steering (§4.6) -----------------------------
         for index, decision in enumerate(decisions):

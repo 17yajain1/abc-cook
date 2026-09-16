@@ -431,7 +431,11 @@ Run in `abc_cook/extract/validate.py`. These are hard gates, not warnings.
 7. `duration_min ≤ duration_typical ≤ duration_max`, all > 0.
 8. If `stated_total_min` is present, `|serial_min − stated_total_min| ≤ 0.4 ×
    stated_total_min`. A big gap means the model invented or dropped work.
-9. `attention == "unattended"` implies `kind in {"passive", "prep"}`.
+9. `attention == "unattended"` implies `kind in {"passive", "prep", "finish"}`. `finish`
+   is admitted alongside `passive`/`prep` because rule 3 (the sink is always
+   `kind="finish"`) and a grounded, unattended final instruction ("let cool slightly
+   before serving") are otherwise jointly unsatisfiable — a real, common recipe shape,
+   not an edge case. A mid-recipe unattended node must still be `passive` or `prep`.
 10. Every `stage` referenced by a node exists in `stages`.
 
 **On failure:** one repair pass — send the model its own output plus the specific

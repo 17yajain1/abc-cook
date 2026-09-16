@@ -102,6 +102,46 @@ def test_nothing_available_returns_none() -> None:
     assert select_track(info) is None
 
 
+def test_manual_variant_used_when_exact_manual_key_missing() -> None:
+    """A1: link 1's real case -- `language="en"`, manual subtitles include `en-GB`
+    but not plain `en`. The creator's own subtitles must win over auto captions."""
+    info = {
+        "language": "en",
+        "subtitles": {"en-GB": _json3("manual-en-gb")},
+        "automatic_captions": {"en": _json3("auto-en")},
+    }
+    assert select_track(info) == ("manual", "en-GB", "manual-en-gb")
+
+
+def test_manual_variant_tried_for_video_language_before_en() -> None:
+    """A1: `language="hi"` with only a `hi-IN` manual track (no plain `hi`, no `en`)
+    -- the `hi` variant group is tried before falling through to `en`."""
+    info = {
+        "language": "hi",
+        "subtitles": {"hi-IN": _json3("manual-hi-in")},
+        "automatic_captions": {},
+    }
+    assert select_track(info) == ("manual", "hi-IN", "manual-hi-in")
+
+
+def test_manual_variant_group_sorted_for_determinism() -> None:
+    info = {
+        "language": "en",
+        "subtitles": {"en-US": _json3("manual-en-us"), "en-GB": _json3("manual-en-gb")},
+        "automatic_captions": {},
+    }
+    assert select_track(info) == ("manual", "en-GB", "manual-en-gb")
+
+
+def test_no_manual_variant_falls_through_to_auto_path_unchanged() -> None:
+    info = {
+        "language": "hi",
+        "subtitles": {},
+        "automatic_captions": {"hi-orig": _json3("auto-hi-orig")},
+    }
+    assert select_track(info) == ("auto", "hi", "auto-hi-orig")
+
+
 def test_track_without_json3_format_is_skipped() -> None:
     info = {
         "language": "en",

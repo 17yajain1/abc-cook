@@ -56,15 +56,19 @@ def _json3_url(pool: dict[str, Any], key: str) -> str | None:
 def select_track(info: dict[str, Any]) -> tuple[Literal["manual", "auto"], str, str] | None:
     """Pick one caption track from a yt-dlp `info` dict. Deterministic, no LLM.
 
-    Order (binding decision 3): manual subtitles in the video's own `language`, then
-    manual `en`; failing that, auto-captions `<lang>-orig`, then `<lang>`, then auto
-    `en`. `<lang>-orig` is tried before plain `<lang>` because YouTube's own `language`
-    metadata can be wrong or absent, and when it is, the plain `<lang>` auto-caption key
-    may itself be a machine *translation* of a different spoken language rather than
-    the original ASR transcript -- exactly what happened to the ramen probe video.
-    No other auto-caption language is ever tried: every other key in
-    `automatic_captions` is a translation, and translated ASR is a double degradation
-    the design doc's "never invent" rule can't absorb.
+    Order (binding decision 3, extended by A1): manual subtitles in the video's own
+    `language`, then manual `en`; failing that, manual variants whose base language
+    matches (`<lang>-*`, then `en-*`, each group sorted for determinism -- e.g. a
+    creator's `en-GB` track when only plain `en` was tried); failing that,
+    auto-captions `<lang>-orig`, then `<lang>`, then auto `en`. `<lang>-orig` is tried
+    before plain `<lang>` because YouTube's own `language` metadata can be wrong or
+    absent, and when it is, the plain `<lang>` auto-caption key may itself be a machine
+    *translation* of a different spoken language rather than the original ASR
+    transcript -- exactly what happened to the ramen probe video. No other auto-caption
+    language is ever tried: every other key in `automatic_captions` is a translation,
+    and translated ASR is a double degradation the design doc's "never invent" rule
+    can't absorb. The auto pass's `-orig` guard is unrelated to the manual-variant
+    widening above and is not loosened.
 
     Args:
         info: the yt-dlp `extract_info` result for one video.
@@ -82,6 +86,13 @@ def select_track(info: dict[str, Any]) -> tuple[Literal["manual", "auto"], str, 
         url = _json3_url(manual, key)
         if url:
             return "manual", key, url
+
+    variant_prefixes = [lang, "en"] if lang else ["en"]
+    for prefix in dict.fromkeys(variant_prefixes):
+        for key in sorted(k for k in manual if k.startswith(f"{prefix}-")):
+            url = _json3_url(manual, key)
+            if url:
+                return "manual", key, url
 
     auto_keys = [f"{lang}-orig", lang] if lang else []
     auto_keys.append("en")

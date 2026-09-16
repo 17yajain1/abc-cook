@@ -11,7 +11,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from abc_cook.extract.graph import GraphBuildResult, build_graph
+import pytest
+
+from abc_cook.extract.graph import (
+    GraphBuildResult,
+    _clean_cue,
+    _label,
+    _parse_qty,
+    build_graph,
+)
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -267,8 +275,14 @@ def test_independence_claim_honored_with_no_shared_ingredient_or_component() -> 
     source_text = "Chop the onions. Meanwhile, preheat the oven. Bake everything together."
     result = _build(_recipe(steps), source_text)
     assert result.graph is not None
-    preheat = result.graph.nodes[1]
+    chop, preheat, bake = result.graph.nodes
     assert preheat.depends_on == []  # independence claim honored -> true parallel source
+    # B1: the honored-independent sibling must still be safely joined back in by the
+    # next sequential step -- not left as a second, orphaned sink (this exact shape
+    # used to fail single_finish_sink/no_orphans before B1's fork/join construction;
+    # docs/cooking-plan-investigation.md §5 B1, "verdict B").
+    assert set(bake.depends_on) == {chop.id, preheat.id}
+    assert validate(result.graph) == []
 
 
 def test_independence_claim_rejected_when_ingredient_shared() -> None:
@@ -301,6 +315,222 @@ def test_independence_claim_rejected_when_consumes_others_product() -> None:
     assert result.graph is not None
     second = result.graph.nodes[1]
     assert result.graph.nodes[0].id in second.depends_on
+
+
+# ---------------------------------------------------------------------------
+# B1 -- fork/join edge construction (docs/cooking-plan-investigation.md §5 B1).
+# ---------------------------------------------------------------------------
+
+
+def test_fork_join_two_independent_siblings_converge_at_next_sequential_step() -> None:
+    """Two steps independently forked off the same join point (mirrors
+    `homemade-donuts`' `fry_donuts <- {proof, heat_oil}` shape) must both be picked up
+    by the next sequential step's `depends_on` -- not just the last-opened sibling --
+    and the result must be a single, valid sink."""
+    steps = [
+        _step(text="Mix and knead the dough.", consumes_ingredients=["Flour"]),
+        _step(
+            text="Let the dough proof.",
+            attention="unattended",
+            attention_cue="proof",
+            depends_on_previous=False,
+        ),
+        _step(
+            text="Heat the oil to 180C.",
+            attention="unattended",
+            attention_cue="heat the oil",
+            depends_on_previous=False,
+        ),
+        _step(text="Fry the donuts in the hot oil."),
+    ]
+    source_text = (
+        "Mix and knead the dough. Let the dough proof. Heat the oil to 180C. Fry the donuts."
+    )
+    flour = NormalizedIngredient(name="Flour", qty="2", unit="cups", prep_note=None)
+    recipe = _recipe(steps, ingredients=[flour])
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+    knead, proof, heat_oil, fry = result.graph.nodes
+    # Both siblings start exactly where knead could start -- never earlier, never
+    # invented: each copies knead's own (empty) depends_on rather than depending on
+    # knead's id, matching the spec's "sibling of the previous step" rule.
+    assert proof.depends_on == knead.depends_on == []
+    assert heat_oil.depends_on == proof.depends_on
+    # The join: fry is sequential, so it depends on the whole open set, not just the
+    # immediately preceding sibling.
+    assert set(fry.depends_on) == {knead.id, proof.id, heat_oil.id}
+    assert validate(result.graph) == []
+
+
+def test_chain_of_only_sequential_steps_is_byte_identical_to_old_construction() -> None:
+    """No independence claim anywhere -> every node depends on exactly its
+    predecessor, same as the pre-B1 base-chain loop (`docs/cooking-plan-
+    investigation.md` §5 B1: "a chain of only sequential steps is byte-identical")."""
+    steps = [
+        _step(text="Chop the onions.", consumes_ingredients=["Onion"]),
+        _step(text="Fry the onions."),
+        _step(text="Serve hot."),
+    ]
+    result = _build(_recipe(steps), "Chop the onions. Fry the onions. Serve hot.")
+    assert result.graph is not None
+    chop, fry, serve = result.graph.nodes
+    assert chop.depends_on == []
+    assert fry.depends_on == [chop.id]
+    assert serve.depends_on == [fry.id]
+
+
+# ---------------------------------------------------------------------------
+# B2 -- unattended final-finish invariant (docs/cooking-plan-investigation.md §5 B2).
+# ---------------------------------------------------------------------------
+
+
+def test_unattended_final_step_produces_a_valid_finish_sink() -> None:
+    """A grounded unattended final instruction ("let it cool slightly before
+    serving") must not make the graph invalid: kind=finish + attention=unattended is
+    now allowed (COOKING_GRAPH.md §5.9). The node is NOT converted to hands_on."""
+    steps = [
+        _step(text="Bake for 20 minutes."),
+        _step(
+            text="Let it cool slightly before serving.",
+            attention="unattended",
+            attention_cue="cool slightly before serving",
+        ),
+    ]
+    source_text = "Bake for 20 minutes. Let it cool slightly before serving."
+    result = _build(_recipe(steps, ingredients=[]), source_text)
+    assert result.graph is not None
+    sink = result.graph.nodes[-1]
+    assert sink.kind == "finish"
+    assert sink.attention == "unattended"  # never forced back to hands_on
+    assert validate(result.graph) == []
+
+
+def test_build_linear_graph_validates_even_with_an_unattended_finish_sink() -> None:
+    """`build_linear_graph`'s "guaranteed to pass all ten invariants by construction"
+    claim (repair.py) now actually holds for invariant 9 too -- it never touches
+    attention/kind, so it depends entirely on the B2 relaxation."""
+    from abc_cook.extract.graph import build_linear_graph
+
+    steps = [
+        _step(text="Bake for 20 minutes."),
+        _step(
+            text="Let it cool slightly before serving.",
+            attention="unattended",
+            attention_cue="cool slightly before serving",
+        ),
+    ]
+    source_text = "Bake for 20 minutes. Let it cool slightly before serving."
+    result = build_linear_graph(
+        _recipe(steps, ingredients=[]), source_text, graph_id="g_test", source=SOURCE
+    )
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+# ---------------------------------------------------------------------------
+# B3 -- produces/consumes, re-evaluated post-B1 (docs/cooking-plan-investigation.md
+# §5 B3). "Drop only when provably transitively redundant, never on sight."
+# ---------------------------------------------------------------------------
+
+
+def test_fork_produces_is_the_only_connector_and_must_be_retained() -> None:
+    """Producer and consumer are siblings separated by an unrelated sibling -- the
+    two-condition independence test only ever looks at the immediately preceding
+    step, so nothing but the produces edge orders producer before consumer (both
+    would otherwise be unordered siblings of "Chop", not of each other). Dropping it
+    here would silently lose real ordering information; it must be retained and the
+    consumer must end up depending on the producer. A final sequential step joins
+    every open branch (chop/fry/toast/add_onions) so the graph is otherwise valid --
+    isolating produces_consumed as the only thing under test."""
+    steps = [
+        _step(text="Chop the onions.", consumes_ingredients=["Onion"]),
+        _step(
+            text="Fry the onions until golden.",
+            attention="unattended",
+            attention_cue="fry the onions",
+            depends_on_previous=False,  # sibling of chop: no shared ingredient/component
+            produces_component="fried onions",
+        ),
+        _step(
+            text="Toast the spices.",
+            attention="unattended",
+            attention_cue="toast the spices",
+            depends_on_previous=False,  # sibling of fry: no shared ingredient/component
+        ),
+        _step(
+            text="Add the fried onions to the gravy.",
+            depends_on_previous=False,  # sibling of toast: doesn't share w/ toast directly
+            consumes_ingredients=["fried onions"],
+        ),
+        _step(text="Serve."),  # sequential -- joins every still-open branch
+    ]
+    source_text = (
+        "Chop the onions. Fry the onions until golden. Toast the spices. "
+        "Add the fried onions to the gravy. Serve."
+    )
+    result = _build(_recipe(steps), source_text)
+    assert result.graph is not None
+    chop, fry, toast, add_onions, serve = result.graph.nodes
+    assert fry.produces is not None  # retained, never dropped
+    assert fry.id in add_onions.depends_on  # the produces edge is the real connector
+    assert set(serve.depends_on) == {chop.id, fry.id, toast.id, add_onions.id}
+    assert validate(result.graph) == []
+
+
+def test_unconsumed_produces_without_redundant_dependency_stays_a_violation() -> None:
+    """A produces claim nothing ever names, where later nodes do NOT all transitively
+    depend on the producer (a genuine sibling fork) -- must NOT be silently dropped.
+    The whole point of B3 is that a repair call here would earn its cost. A final
+    sequential step joins every branch so the only remaining violation is the
+    produces claim itself."""
+    steps = [
+        _step(text="Chop the onions.", consumes_ingredients=["Onion"]),
+        _step(
+            text="Fry the onions until golden.",
+            attention="unattended",
+            attention_cue="fry the onions",
+            depends_on_previous=False,  # sibling of chop
+            produces_component="fried onions",  # never named by any later step
+        ),
+        _step(
+            text="Toast the spices.",
+            attention="unattended",
+            attention_cue="toast the spices",
+            depends_on_previous=False,  # sibling of fry -- does NOT depend on fry
+        ),
+        _step(text="Serve."),  # sequential -- joins chop/fry/toast, but not via fry for toast
+    ]
+    source_text = "Chop the onions. Fry the onions until golden. Toast the spices. Serve."
+    result = _build(_recipe(steps), source_text)
+    assert result.graph is not None
+    fry = result.graph.nodes[1]
+    assert fry.produces is not None  # kept, not dropped -- toast never depends on fry
+    violations = validate(result.graph)
+    assert violations == [
+        v for v in violations if v.rule == "produces_consumed"
+    ]  # the ONLY violation
+    assert violations != []
+
+
+def test_unconsumed_produces_in_a_pure_chain_is_safely_dropped_with_a_warning() -> None:
+    """No independence claim anywhere -> a strict chain, exactly the pizza-dough
+    replay's shape. Every later node transitively depends on the producer purely by
+    being downstream in the chain, so an unconsumed produces claim is provably
+    redundant and safely dropped, never invented, mirroring force_linear's own
+    drop-never-invent rule."""
+    steps = [
+        _step(text="Mix the dough.", produces_component="mixed dough"),
+        _step(text="Knead the dough."),
+        _step(text="Bake the dough."),
+    ]
+    result = _build(
+        _recipe(steps, ingredients=[]), "Mix the dough. Knead the dough. Bake the dough."
+    )
+    assert result.graph is not None
+    mix = result.graph.nodes[0]
+    assert mix.produces is None  # dropped
+    assert any("dropped" in w.lower() for w in result.warnings)
+    assert validate(result.graph) == []
 
 
 # ---------------------------------------------------------------------------
@@ -384,3 +614,158 @@ def test_duplicate_ingredient_names_are_both_consumable() -> None:
     assert consumed_ids == {ing.id for ing in result.graph.ingredients}
     violations = validate(result.graph)
     assert not any(v.rule == "ingredients_consumed" for v in violations)
+
+
+# ---------------------------------------------------------------------------
+# A2 -- mixed fractions, unicode vulgar fractions, ranges. Conservative: never
+# invents a number the source didn't give.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("qty", "expected"),
+    [
+        ("1 1/4", 1.25),
+        ("1-1/4", 1.25),
+        ("3 1/3", pytest.approx(3 + 1 / 3)),
+        ("½", 0.5),
+        ("1½", 1.5),
+        ("¼", 0.25),
+        ("2-3", 2.0),
+        ("2 to 3", 2.0),
+        (f"2{chr(0x2013)}3", 2.0),  # en dash, as real recipe sites write ranges
+        ("1/2", 0.5),
+        ("2", 2.0),
+        ("2.5", 2.5),
+        ("a pinch", None),
+        ("a little less than 2", None),
+        (None, None),
+        ("", None),
+    ],
+)
+def test_parse_qty(qty: str | None, expected: float | None) -> None:
+    assert _parse_qty(qty) == expected
+
+
+def test_qty_text_populated_alongside_parsed_qty() -> None:
+    recipe = _recipe(
+        [_step(text="Do something.")],
+        ingredients=[
+            NormalizedIngredient(name="Flour", qty="1 1/4", unit="cups", prep_note=None),
+            NormalizedIngredient(name="Salt", qty="a pinch", unit=None, prep_note=None),
+        ],
+    )
+    result = _build(recipe, "Do something.")
+    assert result.graph is not None
+    flour, salt = result.graph.ingredients
+    assert flour.qty == 1.25
+    assert flour.qty_text == "1 1/4"
+    assert salt.qty is None
+    assert salt.qty_text == "a pinch"
+
+
+# ---------------------------------------------------------------------------
+# A3 -- "until until": doneness_cue is stored without a leading until/till.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("cue", "expected"),
+    [
+        ("until golden", "golden"),
+        ("Until golden brown", "golden brown"),
+        ("till doubled in size", "doubled in size"),
+        ("doubled in bulk, holds a dimple", "doubled in bulk, holds a dimple"),  # no leading until
+        (None, None),
+        ("until", "until"),  # bare "until" with no condition following: nothing to strip
+    ],
+)
+def test_clean_cue(cue: str | None, expected: str | None) -> None:
+    assert _clean_cue(cue) == expected
+
+
+def test_doneness_cue_stripped_of_leading_until_on_build() -> None:
+    recipe = _recipe([_step(text="Bake until golden.", doneness_cue="until golden")])
+    result = _build(recipe, "Bake until golden.")
+    assert result.graph is not None
+    assert result.graph.nodes[0].doneness_cue == "golden"
+
+
+# ---------------------------------------------------------------------------
+# A4 -- deterministic label cleanup: whole number/fraction tokens, never ends on a
+# function word, still <= 4 words.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Measure 3 1/3 cups flour into a bowl.", "Measure 3 1/3 cups"),
+        ("Place pizza stone or inverted baking sheet in oven.", "Place pizza stone"),
+        ("Form ball in your hands and set aside.", "Form ball"),
+        ("PREP: Measure flour and sugar.", "Measure flour and sugar"),
+        ("Chop the onion.", "Chop the onion"),
+    ],
+)
+def test_label(text: str, expected: str) -> None:
+    assert _label(text) == expected
+
+
+# ---------------------------------------------------------------------------
+# A1.1 -- generalizable label cleanup regression: the six real pizza-import labels
+# that were still broken after A4 (trailing prepositions the A4 function-word set
+# didn't cover, and a trailing bare number fragment), plus leading function words.
+# The fix is a general word-class rule (trim leading/trailing function words, drop a
+# trailing bare number), not a lookup table keyed to these six strings -- the
+# synthetic cases below use different words/numbers to prove that.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # The six real pizza-dough labels flagged in the Phase A review.
+        (
+            "When dough is about room temperature and oven is preheated, transfer 1 piece.",
+            "When dough is",
+        ),
+        ("Lift the dough over both knuckles and roll.", "Lift the dough"),
+        ("Slide pizza onto the preheated pizza stone and bake.", "Slide pizza"),
+        ("Knead by hand 2 minutes (dough will be sticky).", "Knead by hand"),
+        ("Remove the dough 1 hour before using to let it relax.", "Remove the dough"),
+        ("In a small bowl, stir together water, honey, and salt.", "Small bowl stir together"),
+        # Synthetic cases, NOT among the six above, exercising the same general rules.
+        ("Simmer covered for 5 more minutes on low heat.", "Simmer covered"),
+        ("Drizzle the sauce over the top before serving.", "Drizzle the sauce"),
+        ("On the stovetop, heat oil until shimmering.", "Stovetop heat oil"),
+    ],
+)
+def test_label_generalized_trim(text: str, expected: str) -> None:
+    assert _label(text) == expected
+
+
+def test_label_never_ends_on_bare_number_or_function_word_via_build_graph() -> None:
+    """A1.1: exercise the fix through build_graph(), not just the private helper, and
+    pin Node.instruction == original step.text through the label/cue transformations
+    (CLAUDE.md: the LLM's claim is a hint; instruction must still be the verbatim
+    step text the scheduler and Cooking Mode render)."""
+    texts = [
+        "In a small bowl, stir together water, honey, and salt then sprinkle yeast.",
+        "Knead by hand 2 minutes (dough will be sticky).",
+        "Remove the dough 1 hour before using to let it relax.",
+        "When dough is about room temperature, transfer to a floured surface.",
+        "Lift the dough over both knuckles and roll your knuckles under.",
+        "Slide pizza onto the preheated pizza stone and bake until golden.",
+    ]
+    steps = [_step(text=t) for t in texts]
+    result = _build(_recipe(steps), " ".join(texts))
+    assert result.graph is not None
+    assert [n.instruction for n in result.graph.nodes] == texts
+    function_words = {
+        "in", "on", "or", "and", "with", "to", "your", "the", "a", "of", "for",
+        "until", "then", "about", "onto", "over",
+    }
+    for node in result.graph.nodes:
+        last_word = node.label.rsplit(" ", 1)[-1].lower()
+        assert last_word not in function_words
+        assert not last_word.isdigit()

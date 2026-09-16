@@ -325,6 +325,18 @@ def test_unattended_prep_kind_is_fine() -> None:
     assert violations == []
 
 
+def test_unattended_finish_kind_is_fine() -> None:
+    """B2: the sink may be attention=unattended with kind=finish. Rules 3 (the sink
+    is kind=finish) and 9 and "the last step is always kind=finish" (graph.py) are
+    otherwise jointly unsatisfiable whenever a source's grounded final instruction is
+    itself unattended (e.g. "let it cool slightly before serving") --
+    docs/cooking-plan-investigation.md §5 B2."""
+    data = _base_dict()
+    data["nodes"][1]["attention"] = "unattended"  # "serve" -- kind stays "finish"
+    violations = validate(CookingGraph.model_validate(data))
+    assert violations == []
+
+
 def test_stage_refs_violation() -> None:
     data = _base_dict()
     data["nodes"][0]["stage"] = "nonexistent_stage"

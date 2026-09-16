@@ -1,4 +1,4 @@
-import type { RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
+import type { ImportMeta, RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
 
 import { canonicalSourceKey } from './sourceKey'
 
@@ -29,8 +29,9 @@ export interface Library {
   get(id: string): SavedRecipe | undefined
   findBySource(sourceKey: string): SavedRecipe | undefined
   /** Saves `payload`. Replaces the existing entry in place when its source was already
-   * saved (keeps `id`/`saved_at`, bumps `updated_at`); otherwise creates one. */
-  save(payload: RecipePlanResponse): SaveResult
+   * saved (keeps `id`/`saved_at`, bumps `updated_at`); otherwise creates one.
+   * `importMeta` is `null` for a fixture recipe (never went through `/import`). */
+  save(payload: RecipePlanResponse, importMeta?: ImportMeta | null): SaveResult
 }
 
 /** Builds a `Library` backed by `storage` (`window.localStorage` by default) and reads
@@ -54,14 +55,21 @@ export function createLibrary(
       return recipes.find((r) => r.source_key === sourceKey)
     },
 
-    save(payload: RecipePlanResponse): SaveResult {
+    save(payload: RecipePlanResponse, importMeta: ImportMeta | null = null): SaveResult {
       const sourceKey = canonicalSourceKey(payload.graph.source)
       const existing = recipes.find((r) => r.source_key === sourceKey)
       const timestamp = now().toISOString()
 
       const recipe: SavedRecipe = existing
-        ? { ...existing, payload, updated_at: timestamp }
-        : { id: generateId(), source_key: sourceKey, saved_at: timestamp, updated_at: timestamp, payload }
+        ? { ...existing, payload, import_meta: importMeta, updated_at: timestamp }
+        : {
+            id: generateId(),
+            source_key: sourceKey,
+            saved_at: timestamp,
+            updated_at: timestamp,
+            payload,
+            import_meta: importMeta,
+          }
 
       const next = existing ? recipes.map((r) => (r.id === recipe.id ? recipe : r)) : [...recipes, recipe]
 

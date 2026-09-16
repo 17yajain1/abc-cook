@@ -68,6 +68,27 @@ class StageSpan(BaseModel):
     inline_work_min: float = Field(
         description="`work_min - windowed_work_min`. What the stage's own card still shows.",
     )
+    hands_on_min: float | None = Field(
+        default=None,
+        description=(
+            "Of `inline_work_min`, minutes on nodes with `attention == \"hands_on\"`. "
+            "`hands_on_min + unattended_min == inline_work_min`. Optional for backward "
+            "compatibility with plans serialized before this field existed."
+        ),
+    )
+    unattended_min: float | None = Field(
+        default=None,
+        description=(
+            "Of `inline_work_min`, minutes on nodes with `attention in (\"unattended\", "
+            "\"periodic\")` — the nodes that do not continuously occupy the cook (§4) and "
+            "are the only ones that can host a window (§4.3). Includes `periodic`, despite "
+            'the name: "not hands-on" is the scheduler\'s own binary. '
+            "`work_min == hands_on_min + unattended_min + windowed_work_min`, since windowed "
+            "work is always hands-on (`scheduler.py` only claims `hands_on` nodes into a "
+            "window). Optional for backward compatibility with plans serialized before this "
+            "field existed."
+        ),
+    )
     node_ids: list[str] = Field(description="This stage's nodes, in scheduled order.")
 
 

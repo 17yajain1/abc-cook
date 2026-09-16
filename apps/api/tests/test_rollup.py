@@ -84,6 +84,30 @@ def test_span_arithmetic_is_self_consistent(slug: str) -> None:
         assert span.start_min <= span.end_min
 
 
+def test_hands_on_unattended_split_partitions_inline_work(slug: str) -> None:
+    """C1: `StageSpan.hands_on_min` / `unattended_min` partition `inline_work_min`, and
+    together with `windowed_work_min` (always hands-on — the scheduler only claims
+    `hands_on` nodes into a window) they partition `work_min`."""
+    graph = _graph(slug)
+    plan = _plan(slug)
+    spans = stage_spans(graph, plan)
+    attention = {n.id: n.attention for n in graph.nodes}
+    durations = {n.id: n.duration_typical for n in graph.nodes}
+
+    for span in spans:
+        assert span.hands_on_min is not None
+        assert span.unattended_min is not None
+        assert span.hands_on_min >= 0
+        assert span.unattended_min >= 0
+        assert span.hands_on_min + span.unattended_min == pytest.approx(span.inline_work_min)
+        assert span.work_min == pytest.approx(
+            span.hands_on_min + span.unattended_min + span.windowed_work_min,
+        )
+        assert span.unattended_min == pytest.approx(
+            sum(durations[n] for n in span.node_ids if attention[n] != "hands_on"),
+        )
+
+
 def test_spans_cover_the_whole_makespan(slug: str) -> None:
     plan = _plan(slug)
     spans = stage_spans(_graph(slug), plan)
@@ -125,9 +149,28 @@ def test_kadai_paneer_stages_overlap() -> None:
     assert cook_base.inline_work_min == 17.0
 
 
+def test_kadai_paneer_hands_on_unattended_split() -> None:
+    """C1's headline case: `cook_base`'s inline 17 min is 5 hands-on + 12 unattended
+    (the periodic `cook_tomato_base` host), not 17 undifferentiated minutes."""
+    graph = _graph("kadai-paneer")
+    spans = {span.stage_id: span for span in stage_spans(graph, _plan("kadai-paneer"))}
+
+    prep, cook_base = spans["prep"], spans["cook_base"]
+    add_veggies, finish = spans["add_veggies"], spans["finish"]
+
+    # Prep's own 5 inline minutes (chop_onion + chop_tomato) are all hands-on.
+    assert (prep.hands_on_min, prep.unattended_min) == (5.0, 0.0)
+    assert (cook_base.hands_on_min, cook_base.unattended_min) == (5.0, 12.0)
+    assert add_veggies.unattended_min == 0.0
+    assert finish.unattended_min == 0.0
+
+
 def test_maggi_has_no_windowed_work() -> None:
     """Nothing to parallelise: every stage keeps all of its own work."""
     graph = _graph("maggi-2min")
     for span in stage_spans(graph, _plan("maggi-2min")):
         assert span.windowed_work_min == 0.0
         assert span.inline_work_min == span.work_min
+        assert span.hands_on_min is not None
+        assert span.unattended_min is not None
+        assert span.hands_on_min == pytest.approx(span.inline_work_min - span.unattended_min)

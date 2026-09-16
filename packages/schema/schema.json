@@ -196,6 +196,48 @@
       ],
       "type": "object"
     },
+    "ImportMeta": {
+      "description": "Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.\n\n`RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision\n3); this is a sibling field so a saved-and-reopened recipe can still show that its\nplan was simplified or its timings estimated (A6) instead of looking like a normal\nplan. `degraded` is computed once by the client at save time from\n`\"degraded\" in warnings` -- not a new server field.",
+      "properties": {
+        "degraded": {
+          "default": false,
+          "type": "boolean"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GraphProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_recommended": {
+          "default": false,
+          "type": "boolean"
+        },
+        "sources": {
+          "items": {
+            "enum": [
+              "description",
+              "blog",
+              "transcript"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "ImportResult": {
       "description": "The `/import` response payload.\n\nA separate envelope from `RecipePlanResponse` (design doc \u00a79 decision 3) \u2014 that\nresponse stays the frozen contract for the fixture path.",
       "properties": {
@@ -364,6 +406,18 @@
             }
           ],
           "description": "Quantity, or null when the recipe gives none."
+        },
+        "qty_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Quantity as the source stated it, e.g. \"1 1/4\", \"2-3\", \"a pinch\". Display fallback when `qty` cannot be parsed as a single number, and the honest form of ranges and vague amounts that `qty` would otherwise lose."
         },
         "unit": {
           "anyOf": [
@@ -723,6 +777,18 @@
           "description": "Stable id for this saved entry, assigned at first save.",
           "type": "string"
         },
+        "import_meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImportMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Import-status context alongside `payload` (A6). Null for fixture-path recipes, which never went through `/import`."
+        },
         "payload": {
           "$ref": "#/$defs/RecipePlanResponse"
         },
@@ -865,6 +931,18 @@
           "description": "Latest end among this stage's nodes.",
           "type": "number"
         },
+        "hands_on_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Of `inline_work_min`, minutes on nodes with `attention == \"hands_on\"`. `hands_on_min + unattended_min == inline_work_min`. Optional for backward compatibility with plans serialized before this field existed."
+        },
         "inline_work_min": {
           "description": "`work_min - windowed_work_min`. What the stage's own card still shows.",
           "type": "number"
@@ -883,6 +961,18 @@
         "start_min": {
           "description": "Earliest start among this stage's nodes.",
           "type": "number"
+        },
+        "unattended_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Of `inline_work_min`, minutes on nodes with `attention in (\"unattended\", \"periodic\")` \u2014 the nodes that do not continuously occupy the cook (\u00a74) and are the only ones that can host a window (\u00a74.3). Includes `periodic`, despite the name: \"not hands-on\" is the scheduler's own binary. `work_min == hands_on_min + unattended_min + windowed_work_min`, since windowed work is always hands-on (`scheduler.py` only claims `hands_on` nodes into a window). Optional for backward compatibility with plans serialized before this field existed."
         },
         "windowed_work_min": {
           "description": "Of `work_min`, the minutes absorbed into another stage's wait window.",

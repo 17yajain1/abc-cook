@@ -1,5 +1,6 @@
-import type { CookingGraph, Node, RecipePlanResponse, ScheduledNode, WaitWindow } from '@abc-cook/schema'
+import type { CookingGraph, RecipePlanResponse, ScheduledNode, WaitWindow } from '@abc-cook/schema'
 
+import { attentionNote } from '@/lib/attention'
 import { formatMinutes } from '@/lib/duration'
 
 /**
@@ -97,13 +98,6 @@ function clamp(value: number, min: number, max: number): number {
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100
-}
-
-/** Attention note text — a categorical lookup, never a computed or authored string. */
-function attentionNote(attention: Node['attention']): string | null {
-  if (attention === 'periodic') return '(low attention)'
-  if (attention === 'unattended') return '(hands off)'
-  return null
 }
 
 interface Interval {

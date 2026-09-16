@@ -66,6 +66,20 @@ def stage_spans(graph: CookingGraph, plan: CookingPlan) -> list[StageSpan]:
         in_window = float(
             sum(nodes[node_id].duration_typical for node_id in node_ids if node_id in windowed),
         )
+        hands_on = float(
+            sum(
+                nodes[node_id].duration_typical
+                for node_id in node_ids
+                if nodes[node_id].attention == "hands_on" and node_id not in windowed
+            ),
+        )
+        unattended = float(
+            sum(
+                nodes[node_id].duration_typical
+                for node_id in node_ids
+                if nodes[node_id].attention != "hands_on"
+            ),
+        )
 
         spans.append(
             StageSpan(
@@ -76,6 +90,8 @@ def stage_spans(graph: CookingGraph, plan: CookingPlan) -> list[StageSpan]:
                 work_min=_round(work),
                 windowed_work_min=_round(in_window),
                 inline_work_min=_round(work - in_window),
+                hands_on_min=_round(hands_on),
+                unattended_min=_round(unattended),
                 node_ids=node_ids,
             ),
         )

@@ -21,6 +21,24 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from abc_cook.schema.api import RecipePlanResponse
+from abc_cook.schema.normalized import GraphProvenance, ImportSource
+
+
+class ImportMeta(BaseModel):
+    """Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.
+
+    `RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision
+    3); this is a sibling field so a saved-and-reopened recipe can still show that its
+    plan was simplified or its timings estimated (A6) instead of looking like a normal
+    plan. `degraded` is computed once by the client at save time from
+    `"degraded" in warnings` -- not a new server field.
+    """
+
+    warnings: list[str] = Field(default_factory=list)
+    review_recommended: bool = Field(default=False)
+    sources: list[ImportSource] = Field(default_factory=list)
+    provenance: GraphProvenance | None = Field(default=None)
+    degraded: bool = Field(default=False)
 
 
 class SavedRecipe(BaseModel):
@@ -36,6 +54,13 @@ class SavedRecipe(BaseModel):
     )
     payload: RecipePlanResponse = Field(
         description="The exact graph/plan/stages a successful import or fetch produced.",
+    )
+    import_meta: ImportMeta | None = Field(
+        default=None,
+        description=(
+            "Import-status context alongside `payload` (A6). Null for fixture-path "
+            "recipes, which never went through `/import`."
+        ),
     )
 
 

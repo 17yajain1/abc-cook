@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { ImportJobResponse, NormalizedIngredient, RecipePlanResponse } from '@abc-cook/schema'
+import type {
+  ImportJobResponse,
+  ImportMeta,
+  ImportResult,
+  NormalizedIngredient,
+  RecipePlanResponse,
+} from '@abc-cook/schema'
 
 import { ApiError, pollImport, startImport } from '../api/client'
 import { layoutMap, type MapLayout } from '../map/layout'
 import { derivePlan, type RenderPlan } from '../plan/derive'
+import { notGroundedCopy } from './notGroundedCopy'
 
 /** No standalone `ImportStatus` export exists in the generated package (it's inlined
  * as a literal union on `ImportJobResponse.status`) — derive it rather than duplicate
@@ -40,7 +47,12 @@ export function ImportScreen({
   onImported,
   onCancel,
 }: {
-  onImported: (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse) => void
+  onImported: (
+    plan: RenderPlan,
+    map: MapLayout,
+    payload: RecipePlanResponse,
+    importMeta: ImportMeta,
+  ) => void
   onCancel: () => void
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
@@ -70,7 +82,12 @@ export function ImportScreen({
             plan: job.result.plan,
             stages: job.result.stages,
           }
-          onImported(derivePlan(payload), layoutMap(payload), payload)
+          onImported(
+            derivePlan(payload, job.result.provenance ?? null),
+            layoutMap(payload),
+            payload,
+            importMetaFrom(job.result),
+          )
           return
         }
         if (job.status === 'method_not_grounded') {
@@ -180,15 +197,18 @@ function NotGroundedResult({
 }) {
   const result = job.result
   const groups = groupIngredients(result?.ingredients ?? [])
-  const title = result?.source_title
+  const truncationWarning = result?.warnings?.find((w) => w.startsWith('Transcript truncated'))
 
   return (
     <div className="flex h-full flex-col bg-paper px-5 pt-16">
       <h1 className="text-[22px] font-semibold text-ink">No method found</h1>
       <p className="mt-1 text-[15px] text-ink-2">
-        {title ? `“${title}” doesn't` : 'That link doesn’t'} state how the dish is made, so
-        there's no cooking plan to build{groups.length > 0 ? ' — but here’s the shopping list.' : '.'}
+        {notGroundedCopy(result?.sources ?? [], groups.length > 0)}
+        {groups.length > 0 ? ' — but here’s the shopping list.' : ''}
       </p>
+      {truncationWarning && (
+        <p className="mt-1 text-[13px] text-ink-3">{truncationWarning}</p>
+      )}
 
       {groups.length > 0 && (
         <div className="mt-6 border-t border-rule">
@@ -259,6 +279,20 @@ function groupIngredients(
     bucket.items.push(item)
   }
   return groups
+}
+
+/** A6: import-status fields the frozen `RecipePlanResponse` doesn't carry, computed
+ * once here so App/PlanScreen/the saved-library entry all thread the same value
+ * rather than re-deriving `degraded` at each hop. */
+function importMetaFrom(result: ImportResult): ImportMeta {
+  const warnings = result.warnings ?? []
+  return {
+    warnings,
+    review_recommended: result.review_recommended ?? false,
+    sources: result.sources ?? [],
+    provenance: result.provenance ?? null,
+    degraded: warnings.includes('degraded'),
+  }
 }
 
 function messageFor(err: unknown): string {

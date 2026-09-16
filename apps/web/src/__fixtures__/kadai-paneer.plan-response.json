@@ -14,6 +14,7 @@
         "id": "ing_onion",
         "name": "Onion",
         "qty": 2.0,
+        "qty_text": null,
         "unit": "medium",
         "prep_note": "finely chopped",
         "group": "For the base",
@@ -23,6 +24,7 @@
         "id": "ing_tomato",
         "name": "Tomato",
         "qty": 3.0,
+        "qty_text": null,
         "unit": "medium",
         "prep_note": "finely chopped",
         "group": "For the base",
@@ -32,6 +34,7 @@
         "id": "ing_capsicum",
         "name": "Capsicum",
         "qty": 1.0,
+        "qty_text": null,
         "unit": "large",
         "prep_note": "cut into cubes",
         "group": "For the kadai",
@@ -41,6 +44,7 @@
         "id": "ing_paneer",
         "name": "Paneer",
         "qty": 250.0,
+        "qty_text": null,
         "unit": "g",
         "prep_note": "cubed",
         "group": "For the kadai",
@@ -50,6 +54,7 @@
         "id": "ing_kadai_masala",
         "name": "Kadai masala whole spices",
         "qty": 2.0,
+        "qty_text": null,
         "unit": "tbsp",
         "prep_note": "dry roasted and coarsely ground",
         "group": "For the kadai masala",
@@ -59,6 +64,7 @@
         "id": "ing_ginger_garlic",
         "name": "Ginger-garlic paste",
         "qty": 1.0,
+        "qty_text": null,
         "unit": "tbsp",
         "prep_note": null,
         "group": "For the base",
@@ -68,6 +74,7 @@
         "id": "ing_oil",
         "name": "Oil",
         "qty": 3.0,
+        "qty_text": null,
         "unit": "tbsp",
         "prep_note": null,
         "group": "For the base",
@@ -77,6 +84,7 @@
         "id": "ing_salt",
         "name": "Salt",
         "qty": null,
+        "qty_text": null,
         "unit": "to taste",
         "prep_note": null,
         "group": null,
@@ -460,6 +468,8 @@
       "work_min": 14.0,
       "windowed_work_min": 9.0,
       "inline_work_min": 5.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "chop_onion",
         "chop_tomato",
@@ -476,6 +486,8 @@
       "work_min": 17.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 17.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 12.0,
       "node_ids": [
         "saute_onion",
         "cook_tomato_base"
@@ -489,6 +501,8 @@
       "work_min": 5.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 5.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "add_veggies"
       ]
@@ -501,6 +515,8 @@
       "work_min": 7.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 7.0,
+      "hands_on_min": 7.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "add_paneer",
         "finish"

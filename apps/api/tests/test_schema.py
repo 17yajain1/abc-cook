@@ -11,6 +11,7 @@ from abc_cook.api.main import create_app
 from abc_cook.schema import (
     CookingGraph,
     CookingPlan,
+    ImportMeta,
     Ingredient,
     Node,
     RecipePlanResponse,
@@ -150,3 +151,47 @@ def test_saved_recipe_round_trips_a_real_plan_response() -> None:
     )
     assert SavedRecipe.model_validate_json(saved.model_dump_json()) == saved
     assert saved.payload == payload
+
+
+def test_saved_recipe_round_trips_without_import_meta() -> None:
+    """A6: fixture-path recipes never went through `/import`; `import_meta` is null."""
+    client = TestClient(create_app())
+    response = client.get("/recipes/kadai-paneer/plan")
+    payload = RecipePlanResponse.model_validate(response.json())
+
+    saved = SavedRecipe(
+        id="s1",
+        source_key="text:kadai-paneer",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+    )
+    assert saved.import_meta is None
+    assert SavedRecipe.model_validate_json(saved.model_dump_json()).import_meta is None
+
+
+def test_saved_recipe_round_trips_with_import_meta() -> None:
+    """A6: a degraded/estimated import's status survives a save/reopen round trip."""
+    client = TestClient(create_app())
+    response = client.get("/recipes/kadai-paneer/plan")
+    payload = RecipePlanResponse.model_validate(response.json())
+
+    meta = ImportMeta(
+        warnings=["degraded", "some other note"],
+        review_recommended=True,
+        sources=["transcript", "blog"],
+        provenance=None,
+        degraded=True,
+    )
+    saved = SavedRecipe(
+        id="s1",
+        source_key="text:kadai-paneer",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+        import_meta=meta,
+    )
+    round_tripped = SavedRecipe.model_validate_json(saved.model_dump_json())
+    assert round_tripped == saved
+    assert round_tripped.import_meta is not None
+    assert round_tripped.import_meta.degraded is True

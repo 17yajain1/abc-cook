@@ -292,15 +292,23 @@ def _check_stated_total(graph: CookingGraph) -> list[Violation]:
 
 
 def _check_unattended_kind(graph: CookingGraph) -> list[Violation]:
-    """Invariant 9: `attention == "unattended"` implies `kind in {"passive", "prep"}`."""
+    """Invariant 9 (B2: relaxed to admit `finish` alongside `passive`/`prep`).
+
+    Rules 3 ("the sink is kind=finish"), 9, and "the last step is always kind=finish"
+    (`graph.py`, unconditional) are jointly unsatisfiable without this relaxation
+    whenever a source's grounded final instruction is itself unattended ("let it cool
+    slightly before serving", "rest before slicing") -- a real, common shape, not an
+    edge case. `finish` is admitted here, never substituted for `passive`/`prep`
+    elsewhere: a mid-recipe unattended node must still be `passive` or `prep`.
+    """
     violations = []
     for node in graph.nodes:
-        if node.attention == "unattended" and node.kind not in ("passive", "prep"):
+        if node.attention == "unattended" and node.kind not in ("passive", "prep", "finish"):
             violations.append(
                 Violation(
                     "unattended_kind",
                     f'Node "{node.id}" is "unattended" but kind is "{node.kind}", '
-                    'expected "passive" or "prep".',
+                    'expected "passive", "prep", or "finish".',
                 )
             )
     return violations
