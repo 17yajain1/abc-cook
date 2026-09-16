@@ -370,9 +370,16 @@ def test_degraded_provenance_also_covers_every_node() -> None:
 
 # ---------------------------------------------------------------------------
 # The real failure: a frozen NormalizedRecipe from the M2.9 s15 checkpoint (Kunal
-# Kapur's Dal Makhni), which genuinely failed 12 invariants on real extraction --
-# three parallel prep branches (dal, tomato puree, tempering) converging at the end.
-# Excluded from the default run: this makes one real Sonnet call.
+# Kapur's Dal Makhni) -- three parallel prep branches (dal, tomato puree, tempering)
+# converging before "Add the tomatoes to the dal". It genuinely failed validation at
+# the M2.9 s15 checkpoint (12 invariants) and, per the investigation's offline audit,
+# still failed on `produces_consumed` under B1 alone. Verified live post-B3
+# (2026-09-16, zero LLM cost -- see docs/cooking-plan-investigation.md's Phase B
+# report): B1's fork/join construction plus B3's conditional produces-drop now
+# resolve it completely, 0 violations, no repair call needed at all. Kept
+# `@pytest.mark.llm` and the live repair path below for the case violations reappear
+# (a prompt/schema change, a different capture) -- excluded from the default run
+# since that branch makes one real Sonnet call.
 # ---------------------------------------------------------------------------
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "import"
@@ -391,14 +398,25 @@ def _load_real_failure() -> tuple[NormalizedRecipe, str]:
 @pytest.mark.llm
 def test_real_multibranch_failure_repairs_or_degrades_safely() -> None:
     """The primary repair test (per the owner's Step 10 instructions): run the actual
-    repair pass against the actual recipe that failed validation live. Whatever
-    happens, the result must be a graph that fully validates -- print the outcome so
-    it can be reported, don't just assert success."""
-    from abc_cook.extract.adapters.anthropic import AnthropicAdapter
-
+    repair pass against the actual recipe that failed validation live -- unless B1+B3
+    already resolve it by construction, in which case there is nothing to repair and
+    no LLM call is made at all (verified live 2026-09-16: this is the current
+    outcome). Whatever happens, the result must be a graph that fully validates --
+    print the outcome so it can be reported, don't just assert success."""
     recipe, source_text = _load_real_failure()
-    violations = _build_and_validate(recipe, source_text)
-    assert violations  # confirms the frozen fixture still reproduces the failure
+    build_result = build_graph(
+        recipe, source_text, graph_id="g_dal_makhni_repair_test", source=SOURCE
+    )
+    assert build_result.graph is not None
+    violations = validate(build_result.graph)
+
+    if not violations:
+        print("\nrepair outcome: not needed -- build_graph alone already validates cleanly")
+        for node in build_result.graph.nodes:
+            print(f"  {node.id} <- {node.depends_on}")
+        return
+
+    from abc_cook.extract.adapters.anthropic import AnthropicAdapter
 
     adapter = AnthropicAdapter()
     outcome = repair_or_degrade(
