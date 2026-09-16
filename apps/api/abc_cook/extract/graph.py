@@ -319,6 +319,27 @@ def _verify_independence(previous: NormalizedStep, current: NormalizedStep) -> b
     return not _consumes_others_product(previous, current)
 
 
+def _depends_transitively(node: Node, target_id: str, nodes_by_id: dict[str, Node]) -> bool:
+    """Whether `node` depends on `target_id`, directly or through other nodes (B3).
+
+    Mirrors `validate._depends_transitively` (kept separate: this runs during
+    construction, before a `CookingGraph` exists to hand to that module).
+    """
+    seen: set[str] = set()
+    stack = list(node.depends_on)
+    while stack:
+        dep = stack.pop()
+        if dep == target_id:
+            return True
+        if dep in seen:
+            continue
+        seen.add(dep)
+        dep_node = nodes_by_id.get(dep)
+        if dep_node is not None:
+            stack.extend(dep_node.depends_on)
+    return False
+
+
 def _sequential_source(step_text: str) -> ProvenanceSource:
     stripped = step_text.strip().lower()
     first_word = stripped.split(" ", 1)[0].rstrip(",.;:") if stripped else ""
@@ -369,6 +390,14 @@ def build_graph(
             the same way regardless of `force_linear` — see below; a marketing total
             ("15 min") next to long verified passive steps must not force an
             otherwise structurally valid graph into this branch (M2.10 s18 F1).
+            Invariant 9 is guaranteed too, but not by anything `force_linear` itself
+            does: this branch never touches `attention` or `kind`, so a source whose
+            final, grounded instruction is genuinely unattended ("let cool slightly
+            before serving") still forces `kind="finish"` (line ~454) with
+            `attention="unattended"` — invalid before B2, valid after it
+            (`COOKING_GRAPH.md` §5.9 allows `finish` in the unattended set). The
+            guarantee holds only because that relaxation exists, not because
+            `force_linear` does anything special for it.
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -522,10 +551,25 @@ def build_graph(
             )
         )
 
-    # -- Edges: base sequential chain -----------------------------------------------
+    # -- Edges: base chain, with fork/join for honored independence (B1) ------------
+    # `open_deps` is the set of node ids a NEW sequential step must join on -- every
+    # node that forked off since the last sequential join point and has not yet been
+    # re-joined. A sequential step depends on the whole open set (the join) and then
+    # becomes the new, sole open member. An honored-independent step never invents a
+    # dependency: it copies its immediate predecessor's own `depends_on` (a sibling
+    # may start whenever that predecessor could start, never earlier) and is added to
+    # the open set so a later join includes it. A chain of only sequential steps is
+    # byte-identical to the old `[nodes[index - 1].id]` chain (each join's open set
+    # has exactly one member); edges only ever point to already-built nodes, so no
+    # cycle can be introduced.
+    open_deps: list[str] = []
     for index, node in enumerate(nodes):
-        if index > 0 and depends_on_previous_verified[index]:
-            node.depends_on = [nodes[index - 1].id]
+        if depends_on_previous_verified[index]:
+            node.depends_on = list(open_deps)
+            open_deps = [node.id]
+        else:
+            node.depends_on = list(nodes[index - 1].depends_on)
+            open_deps.append(node.id)
 
     # -- Edges: produces -> consumer, wherever a LATER step names the same product --
     # Strictly later only: a step can't consume something a step after it produces,
@@ -533,16 +577,19 @@ def build_graph(
     # cycle the first time (found live at the M2.9 s15 checkpoint). Skipped entirely
     # in force_linear mode -- Tier 1 discards structure, not just this one shortcut.
     if not force_linear:
+        nodes_by_id = {node.id: node for node in nodes}
         for index, step in enumerate(steps):
             if step.produces_component is None:
                 continue
             producer = nodes[index]
             produced_name = step.produces_component.lower()
+            consumer_found = False
             for other_index, other_step in enumerate(steps):
                 if other_index <= index:
                     continue
                 names_lower = (name.lower() for name in other_step.consumes_ingredients)
                 if any(produced_name in name or name in produced_name for name in names_lower):
+                    consumer_found = True
                     consumer = nodes[other_index]
                     if producer.id not in consumer.depends_on:
                         consumer.depends_on.append(producer.id)
@@ -552,6 +599,30 @@ def build_graph(
                     # edge above (a real bug found preparing repair.py's test case).
                     if producer.produces is not None and producer.produces not in consumer.consumes:
                         consumer.consumes.append(producer.produces)
+
+            # B3: nothing named this component by id. Pre-B1 this was always a
+            # violation worth repairing (the graph was a strict chain, so the "is it
+            # redundant" question never came up). Post-B1 a produces edge can be the
+            # *only* connector between two siblings (§6 B3) -- dropping on sight would
+            # silently discard real ordering information. Only drop, with a warning,
+            # when every strictly-later node already depends on the producer
+            # transitively through some other edge: in that case a repair call could
+            # only ever add a redundant edge, so there is nothing to fix and no
+            # violation is worth spending a repair call on. Otherwise leave `produces`
+            # set and let invariant 6 fire -- exactly the case a repair pass earns its
+            # cost fixing.
+            if not consumer_found:
+                later_nodes = nodes[index + 1 :]
+                if later_nodes and all(
+                    _depends_transitively(later, producer.id, nodes_by_id) for later in later_nodes
+                ):
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." was marked as producing '
+                        f'"{step.produces_component}", but no later step names it; '
+                        "dropped -- every later step already depends on it, so nothing "
+                        "downstream loses ordering information."
+                    )
+                    producer.produces = None
 
         # -- Edges: freshness structural steering (§4.6) -----------------------------
         for index, decision in enumerate(decisions):

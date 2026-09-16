@@ -55,10 +55,16 @@ def _recipe(steps: list[NormalizedStep], **overrides: object) -> NormalizedRecip
     return NormalizedRecipe(**defaults)  # type: ignore[arg-type]
 
 
-# A recipe shaped exactly like the real failure: two branches (chop onion; melt
-# butter) that never converge, so one of them becomes an orphan/second sink, and
-# "Butter" is never consumed by anything -- ingredients_consumed + single_finish_sink
-# + no_orphans all fail, same fault family as the real checkpoint case.
+# Two branches (chop onion; melt butter) that a real multi-branch recipe shape would
+# produce, one of them honestly independent (no shared ingredient/component with its
+# predecessor). B1 (fork/join edge construction) now joins both branches back in at
+# "Serve hot." by construction -- this recipe no longer reproduces the *structural*
+# failure (single_finish_sink/no_orphans) the old chain-break used to cause; see
+# docs/cooking-plan-investigation.md §5 B1. It is re-broken here by a genuine,
+# structure-independent violation instead: "Salt" is listed as an ingredient but no
+# step consumes it (ingredients_consumed) -- still repairable (REPAIRABLE_RULES),
+# still the same fault family (a real recipe's ingredient list not fully wired to its
+# steps), just no longer dependent on the chain-break this fixture used to rely on.
 def _broken_two_branch_recipe() -> NormalizedRecipe:
     return _recipe(
         [
@@ -69,7 +75,12 @@ def _broken_two_branch_recipe() -> NormalizedRecipe:
                 consumes_ingredients=["Butter"],
             ),
             _step(text="Serve hot.", consumes_ingredients=[]),
-        ]
+        ],
+        ingredients=[
+            NormalizedIngredient(name="Onion", qty="1", unit=None, prep_note=None),
+            NormalizedIngredient(name="Butter", qty="1", unit="tbsp", prep_note=None),
+            NormalizedIngredient(name="Salt", qty="1", unit="tsp", prep_note=None),  # unconsumed
+        ],
     )
 
 
@@ -123,12 +134,13 @@ def _build_and_validate(recipe: NormalizedRecipe, source_text: str) -> list:
 
 
 def test_confirms_the_broken_fixture_actually_fails_first() -> None:
-    """Sanity check: the synthetic recipe reproduces a real multi-branch failure
-    before repair.py ever gets involved."""
+    """Sanity check: the synthetic recipe reproduces a real failure before repair.py
+    ever gets involved. Under B1 the two branches join structurally (single sink, no
+    orphans) -- the fixture's remaining, genuine failure is the unconsumed "Salt"."""
     violations = _build_and_validate(_broken_two_branch_recipe(), _source_text())
     assert violations  # must actually fail, or this test fixture proves nothing
     rules = {v.rule for v in violations}
-    assert "single_finish_sink" in rules or "no_orphans" in rules
+    assert rules == {"ingredients_consumed"}
 
 
 def test_raises_if_called_with_no_violations() -> None:
@@ -147,8 +159,10 @@ def test_raises_if_called_with_no_violations() -> None:
 
 
 def test_successful_repair_is_fully_revalidated() -> None:
-    """A repair response that correctly wires the second branch back in (merge step
-    consumes both components) must produce a graph that passes every invariant."""
+    """A repair response that fixes the fixture's genuine failure -- "Salt" named by
+    the merge step -- must produce a graph that passes every invariant. (The two
+    branches themselves no longer need a repair to join: B1 already does that by
+    construction -- see `_broken_two_branch_recipe`'s docstring.)"""
     recipe = _broken_two_branch_recipe()
     violations = _build_and_validate(recipe, _source_text())
 
@@ -156,7 +170,7 @@ def test_successful_repair_is_fully_revalidated() -> None:
         [
             (["Onion"], "chopped onion", True),
             (["Butter"], "melted butter", False),
-            (["chopped onion", "melted butter"], None, True),
+            (["chopped onion", "melted butter", "Salt"], None, True),
         ]
     )
     adapter = _FakeAdapter(results=[ExtractResult(recipe=proposal)])
@@ -272,7 +286,7 @@ def test_repair_naming_an_unknown_ingredient_is_a_warning_not_an_invention() -> 
         [
             (["Onion", "Unicorn Dust"], "chopped onion", True),
             (["Butter"], "melted butter", False),
-            (["chopped onion", "melted butter"], None, True),
+            (["chopped onion", "melted butter", "Salt"], None, True),
         ]
     )
     adapter = _FakeAdapter(results=[ExtractResult(recipe=proposal)])
@@ -281,7 +295,7 @@ def test_repair_naming_an_unknown_ingredient_is_a_warning_not_an_invention() -> 
         recipe, _source_text(), violations, adapter, graph_id="g", source=SOURCE
     )
     assert outcome.build_result.graph is not None
-    assert len(outcome.build_result.graph.ingredients) == 2  # never grew to 3
+    assert len(outcome.build_result.graph.ingredients) == 3  # never grew past the recipe's own 3
     assert any("Unicorn Dust" in w for w in outcome.build_result.warnings)
 
 

@@ -125,11 +125,18 @@ class NormalizedStep(BaseModel):
     )
     consumes_ingredients: list[str] = Field(
         default_factory=list,
-        description="Ingredient names (matching NormalizedIngredient.name) this step uses.",
+        description=(
+            "Ingredient names (matching NormalizedIngredient.name), OR a "
+            "produces_component label from an earlier step, when this step uses "
+            "that earlier step's output."
+        ),
     )
     produces_component: str | None = Field(
         default=None,
-        description="Freeform label for what this step yields, if a later step needs it.",
+        description=(
+            "Freeform label for what this step yields -- set it only when a LATER "
+            "step will name this exact label in its own consumes_ingredients."
+        ),
     )
 
     station: Station = Field(description="Explicit if stated; else the §4.7 verb-based default.")
