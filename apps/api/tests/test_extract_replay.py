@@ -16,6 +16,7 @@ from pathlib import Path
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import render_source_text
+from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema.graph import SourceRef
@@ -118,3 +119,26 @@ def test_pizza_dough_replay_full_pipeline_validates_schedules_and_spans_cleanly(
 
     spans = stage_spans(result.graph, plan)
     assert spans  # every node lands in some stage; no exception, no empty plan
+
+
+def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> None:
+    """C1/C2 gate: this is the exact §2.2 case (`Cook ~304 min` showing 289 min of
+    unattended waits as undifferentiated work). The split must separate the two, and
+    the preheat host's inferred duration must still be marked inferred."""
+    recipe, source_text = _load_fixture()
+    result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
+    assert result.graph is not None
+
+    plan = schedule(result.graph, burner_capacity=1)
+    spans = {span.stage_id: span for span in stage_spans(result.graph, plan)}
+
+    prep, cook, finish = spans["prep"], spans["cook"], spans["finish"]
+    assert (prep.hands_on_min, prep.unattended_min, prep.inline_work_min) == (20.0, 1145.0, 1165.0)
+    assert (cook.hands_on_min, cook.unattended_min, cook.inline_work_min) == (15.0, 289.0, 304.0)
+    assert (finish.hands_on_min, finish.unattended_min, finish.inline_work_min) == (0.0, 1.0, 1.0)
+
+    provenance = compute_provenance(result)
+    preheat = provenance.nodes["step_place_a_pizza_stone_or_inverted"]
+    assert preheat.fields["duration"] == "inferred"
+    host = next(n for n in result.graph.nodes if n.id == "step_place_a_pizza_stone_or_inverted")
+    assert host.attention == "unattended"

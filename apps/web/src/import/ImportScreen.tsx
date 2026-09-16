@@ -82,7 +82,12 @@ export function ImportScreen({
             plan: job.result.plan,
             stages: job.result.stages,
           }
-          onImported(derivePlan(payload), layoutMap(payload), payload, importMetaFrom(job.result))
+          onImported(
+            derivePlan(payload, job.result.provenance ?? null),
+            layoutMap(payload),
+            payload,
+            importMetaFrom(job.result),
+          )
           return
         }
         if (job.status === 'method_not_grounded') {

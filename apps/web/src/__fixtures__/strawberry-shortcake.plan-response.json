@@ -427,6 +427,8 @@
       "work_min": 34.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 34.0,
+      "hands_on_min": 6.0,
+      "unattended_min": 28.0,
       "node_ids": [
         "mix_dough",
         "bake_shortcakes",
@@ -441,6 +443,8 @@
       "work_min": 28.0,
       "windowed_work_min": 5.0,
       "inline_work_min": 23.0,
+      "hands_on_min": 3.0,
+      "unattended_min": 20.0,
       "node_ids": [
         "hull_and_slice_berries",
         "macerate_berries",
@@ -455,6 +459,8 @@
       "work_min": 4.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 4.0,
+      "hands_on_min": 4.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "whip_cream"
       ]
@@ -467,6 +473,8 @@
       "work_min": 6.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 6.0,
+      "hands_on_min": 6.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "assemble_shortcakes"
       ]

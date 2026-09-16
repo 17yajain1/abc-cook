@@ -211,6 +211,8 @@
       "work_min": 3.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 3.0,
+      "hands_on_min": 0.0,
+      "unattended_min": 3.0,
       "node_ids": [
         "boil_water"
       ]
@@ -223,6 +225,8 @@
       "work_min": 3.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 3.0,
+      "hands_on_min": 1.0,
+      "unattended_min": 2.0,
       "node_ids": [
         "add_noodles_masala",
         "cook_noodles"
@@ -236,6 +240,8 @@
       "work_min": 1.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 1.0,
+      "hands_on_min": 1.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "serve"
       ]

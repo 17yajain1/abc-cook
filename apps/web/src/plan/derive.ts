@@ -1,11 +1,16 @@
 import type {
   CookingGraph,
+  GraphProvenance,
   Ingredient,
   Node,
+  NodeProvenance,
   RecipePlanResponse,
   ScheduledNode,
   StageSpan,
 } from '@abc-cook/schema'
+
+/** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
+export type ProvenanceSource = NonNullable<NodeProvenance['fields']>[string]
 
 /**
  * Joins a scheduled plan to its graph into rows the Plan view can render directly.
@@ -25,6 +30,8 @@ export interface RenderTask {
   durationTypical: number
   donenessCue: string | null
   attention: Node['attention']
+  /** How `durationTypical` was arrived at, or `null` when no provenance was supplied. */
+  durationProvenance: ProvenanceSource | null
   /** Position in `graph.stages` of the stage this task actually belongs to. Drives its tint. */
   homeStageIndex: number
 }
@@ -100,7 +107,11 @@ function stageIndexOf(graph: CookingGraph): Map<string, number> {
   return new Map(graph.stages.map((stage, index) => [stage.id, index]))
 }
 
-function toTask(node: Node, homeStageIndex: number): RenderTask {
+function toTask(
+  node: Node,
+  homeStageIndex: number,
+  provenance: GraphProvenance | null,
+): RenderTask {
   return {
     nodeId: node.id,
     label: node.label,
@@ -108,6 +119,7 @@ function toTask(node: Node, homeStageIndex: number): RenderTask {
     durationTypical: node.duration_typical,
     donenessCue: node.doneness_cue ?? null,
     attention: node.attention,
+    durationProvenance: provenance?.nodes?.[node.id]?.fields?.duration ?? null,
     homeStageIndex,
   }
 }
@@ -131,7 +143,10 @@ function groupIngredients(ingredients: readonly Ingredient[]): RenderIngredientG
   return groups
 }
 
-export function derivePlan(payload: RecipePlanResponse): RenderPlan {
+export function derivePlan(
+  payload: RecipePlanResponse,
+  provenance: GraphProvenance | null = null,
+): RenderPlan {
   const { graph, plan, stages } = payload
 
   const nodes = byId(graph.nodes)
@@ -162,7 +177,7 @@ export function derivePlan(payload: RecipePlanResponse): RenderPlan {
       tasks: window.assigned.map((nodeId) => {
         const node = nodes.get(nodeId)!
         return {
-          ...toTask(node, homeIndexOf(nodeId)),
+          ...toTask(node, homeIndexOf(nodeId), provenance),
           rankInWindow: scheduledByNode.get(nodeId)?.rank_in_window ?? 0,
         }
       }),
@@ -186,7 +201,7 @@ export function derivePlan(payload: RecipePlanResponse): RenderPlan {
         const node = nodes.get(entry.node_id)!
         return node.stage === stage.id && entry.window_id == null
       })
-      .map((entry) => toTask(nodes.get(entry.node_id)!, index))
+      .map((entry) => toTask(nodes.get(entry.node_id)!, index, provenance))
 
     const windows = (windowsByHostStage.get(stage.id) ?? []).sort((a, b) => {
       const aStart = scheduledByNode.get(a.hostNodeId)?.start_min ?? 0

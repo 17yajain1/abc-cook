@@ -462,6 +462,10 @@ export interface StageSpan {
    */
   end_min: number;
   /**
+   * Of `inline_work_min`, minutes on nodes with `attention == "hands_on"`. `hands_on_min + unattended_min == inline_work_min`. Optional for backward compatibility with plans serialized before this field existed.
+   */
+  hands_on_min?: number | null;
+  /**
    * `work_min - windowed_work_min`. What the stage's own card still shows.
    */
   inline_work_min: number;
@@ -477,6 +481,10 @@ export interface StageSpan {
    * Earliest start among this stage's nodes.
    */
   start_min: number;
+  /**
+   * Of `inline_work_min`, minutes on nodes with `attention in ("unattended", "periodic")` — the nodes that do not continuously occupy the cook (§4) and are the only ones that can host a window (§4.3). Includes `periodic`, despite the name: "not hands-on" is the scheduler's own binary. `work_min == hands_on_min + unattended_min + windowed_work_min`, since windowed work is always hands-on (`scheduler.py` only claims `hands_on` nodes into a window). Optional for backward compatibility with plans serialized before this field existed.
+   */
+  unattended_min?: number | null;
   /**
    * Of `work_min`, the minutes absorbed into another stage's wait window.
    */

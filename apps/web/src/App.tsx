@@ -70,7 +70,7 @@ export default function App() {
     }
     setView({
       kind: 'plan',
-      plan: derivePlan(recipe.payload),
+      plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
       map: layoutMap(recipe.payload),
       origin: { kind: 'library', id },
       saveState: { status: 'saved' },

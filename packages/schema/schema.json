@@ -931,6 +931,18 @@
           "description": "Latest end among this stage's nodes.",
           "type": "number"
         },
+        "hands_on_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Of `inline_work_min`, minutes on nodes with `attention == \"hands_on\"`. `hands_on_min + unattended_min == inline_work_min`. Optional for backward compatibility with plans serialized before this field existed."
+        },
         "inline_work_min": {
           "description": "`work_min - windowed_work_min`. What the stage's own card still shows.",
           "type": "number"
@@ -949,6 +961,18 @@
         "start_min": {
           "description": "Earliest start among this stage's nodes.",
           "type": "number"
+        },
+        "unattended_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Of `inline_work_min`, minutes on nodes with `attention in (\"unattended\", \"periodic\")` \u2014 the nodes that do not continuously occupy the cook (\u00a74) and are the only ones that can host a window (\u00a74.3). Includes `periodic`, despite the name: \"not hands-on\" is the scheduler's own binary. `work_min == hands_on_min + unattended_min + windowed_work_min`, since windowed work is always hands-on (`scheduler.py` only claims `hands_on` nodes into a window). Optional for backward compatibility with plans serialized before this field existed."
         },
         "windowed_work_min": {
           "description": "Of `work_min`, the minutes absorbed into another stage's wait window.",

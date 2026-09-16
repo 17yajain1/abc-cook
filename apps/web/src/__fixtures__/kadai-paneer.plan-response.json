@@ -468,6 +468,8 @@
       "work_min": 14.0,
       "windowed_work_min": 9.0,
       "inline_work_min": 5.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "chop_onion",
         "chop_tomato",
@@ -484,6 +486,8 @@
       "work_min": 17.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 17.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 12.0,
       "node_ids": [
         "saute_onion",
         "cook_tomato_base"
@@ -497,6 +501,8 @@
       "work_min": 5.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 5.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "add_veggies"
       ]
@@ -509,6 +515,8 @@
       "work_min": 7.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 7.0,
+      "hands_on_min": 7.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "add_paneer",
         "finish"

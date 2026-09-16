@@ -531,6 +531,8 @@
       "work_min": 21.0,
       "windowed_work_min": 3.0,
       "inline_work_min": 18.0,
+      "hands_on_min": 18.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "bloom_yeast",
         "mix_dough",
@@ -546,6 +548,8 @@
       "work_min": 60.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 60.0,
+      "hands_on_min": 0.0,
+      "unattended_min": 60.0,
       "node_ids": [
         "first_rise"
       ]
@@ -558,6 +562,8 @@
       "work_min": 35.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 35.0,
+      "hands_on_min": 10.0,
+      "unattended_min": 25.0,
       "node_ids": [
         "shape_and_cut",
         "proof_donuts"
@@ -571,6 +577,8 @@
       "work_min": 26.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 26.0,
+      "hands_on_min": 0.0,
+      "unattended_min": 26.0,
       "node_ids": [
         "heat_oil",
         "fry_donuts"
@@ -584,6 +592,8 @@
       "work_min": 11.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 11.0,
+      "hands_on_min": 11.0,
+      "unattended_min": 0.0,
       "node_ids": [
         "make_glaze",
         "glaze_donuts"
