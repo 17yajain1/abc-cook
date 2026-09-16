@@ -12,7 +12,7 @@ import { StageCard } from './StageCard'
 
 /** A6: at most one calm line under the header, never a warning dump. Degraded takes
  * priority over review-recommended — a simplified plan is the bigger thing to know. */
-function statusLineFor(importMeta: ImportMeta | null | undefined): string | null {
+export function statusLineFor(importMeta: ImportMeta | null | undefined): string | null {
   if (!importMeta) return null
   if (importMeta.degraded) return 'Plan simplified — steps run one after another.'
   if (importMeta.review_recommended) return 'Some timings are estimates.'

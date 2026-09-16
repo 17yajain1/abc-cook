@@ -487,3 +487,63 @@ def test_doneness_cue_stripped_of_leading_until_on_build() -> None:
 )
 def test_label(text: str, expected: str) -> None:
     assert _label(text) == expected
+
+
+# ---------------------------------------------------------------------------
+# A1.1 -- generalizable label cleanup regression: the six real pizza-import labels
+# that were still broken after A4 (trailing prepositions the A4 function-word set
+# didn't cover, and a trailing bare number fragment), plus leading function words.
+# The fix is a general word-class rule (trim leading/trailing function words, drop a
+# trailing bare number), not a lookup table keyed to these six strings -- the
+# synthetic cases below use different words/numbers to prove that.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # The six real pizza-dough labels flagged in the Phase A review.
+        (
+            "When dough is about room temperature and oven is preheated, transfer 1 piece.",
+            "When dough is",
+        ),
+        ("Lift the dough over both knuckles and roll.", "Lift the dough"),
+        ("Slide pizza onto the preheated pizza stone and bake.", "Slide pizza"),
+        ("Knead by hand 2 minutes (dough will be sticky).", "Knead by hand"),
+        ("Remove the dough 1 hour before using to let it relax.", "Remove the dough"),
+        ("In a small bowl, stir together water, honey, and salt.", "Small bowl stir together"),
+        # Synthetic cases, NOT among the six above, exercising the same general rules.
+        ("Simmer covered for 5 more minutes on low heat.", "Simmer covered"),
+        ("Drizzle the sauce over the top before serving.", "Drizzle the sauce"),
+        ("On the stovetop, heat oil until shimmering.", "Stovetop heat oil"),
+    ],
+)
+def test_label_generalized_trim(text: str, expected: str) -> None:
+    assert _label(text) == expected
+
+
+def test_label_never_ends_on_bare_number_or_function_word_via_build_graph() -> None:
+    """A1.1: exercise the fix through build_graph(), not just the private helper, and
+    pin Node.instruction == original step.text through the label/cue transformations
+    (CLAUDE.md: the LLM's claim is a hint; instruction must still be the verbatim
+    step text the scheduler and Cooking Mode render)."""
+    texts = [
+        "In a small bowl, stir together water, honey, and salt then sprinkle yeast.",
+        "Knead by hand 2 minutes (dough will be sticky).",
+        "Remove the dough 1 hour before using to let it relax.",
+        "When dough is about room temperature, transfer to a floured surface.",
+        "Lift the dough over both knuckles and roll your knuckles under.",
+        "Slide pizza onto the preheated pizza stone and bake until golden.",
+    ]
+    steps = [_step(text=t) for t in texts]
+    result = _build(_recipe(steps), " ".join(texts))
+    assert result.graph is not None
+    assert [n.instruction for n in result.graph.nodes] == texts
+    function_words = {
+        "in", "on", "or", "and", "with", "to", "your", "the", "a", "of", "for",
+        "until", "then", "about", "onto", "over",
+    }
+    for node in result.graph.nodes:
+        last_word = node.label.rsplit(" ", 1)[-1].lower()
+        assert last_word not in function_words
+        assert not last_word.isdigit()

@@ -103,14 +103,29 @@ _LABEL_TOKEN_RE = re.compile(
 _LABEL_PREFIX_RE = re.compile(r"^[A-Za-z]+:\s+")
 _LABEL_FUNCTION_WORDS = {
     "in", "on", "or", "and", "with", "to", "your", "the", "a", "of", "for",
-    "until", "then",
+    "until", "then", "about", "onto", "over",
 }
+"""Closed-class prepositions/conjunctions/articles a label must not start or end on
+(A1.1) -- a label ending or opening on one of these reads as a truncated fragment
+rather than a phrase, regardless of which specific words the source used."""
+_LABEL_BARE_NUMBER_RE = re.compile(r"^\d+$")
+"""A trailing token that is a bare integer (no unit, no fraction) is almost always a
+duration/quantity fragment truncated by max_words (e.g. "...2" of "2 minutes"), not a
+meaningful label ending -- drop it (A1.1)."""
 
 
 def _label(text: str, *, max_words: int = 4) -> str:
     body = _LABEL_PREFIX_RE.sub("", text)
-    tokens = _LABEL_TOKEN_RE.findall(body)[:max_words]
-    while tokens and tokens[-1].lower() in _LABEL_FUNCTION_WORDS:
+    all_tokens = _LABEL_TOKEN_RE.findall(body)
+
+    start = 0
+    while start < len(all_tokens) - 1 and all_tokens[start].lower() in _LABEL_FUNCTION_WORDS:
+        start += 1
+
+    tokens = all_tokens[start : start + max_words]
+    while tokens and (
+        tokens[-1].lower() in _LABEL_FUNCTION_WORDS or _LABEL_BARE_NUMBER_RE.fullmatch(tokens[-1])
+    ):
         tokens.pop()
     label = " ".join(tokens)
     return (label[:1].upper() + label[1:]) if label else text[:40]
