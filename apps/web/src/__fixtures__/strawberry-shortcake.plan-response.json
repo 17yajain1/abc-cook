@@ -479,5 +479,30 @@
         "assemble_shortcakes"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 24.0,
+    "attended_min": 24.0,
+    "elapsed_min": 47.0,
+    "elapsed_high_min": 57.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 47.0,
+        "active_min": 24.0,
+        "node_ids": [
+          "mix_dough",
+          "bake_shortcakes",
+          "hull_and_slice_berries",
+          "macerate_berries",
+          "cool_shortcakes",
+          "whip_cream",
+          "slice_garnish_berries",
+          "assemble_shortcakes"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": []
+  }
 }

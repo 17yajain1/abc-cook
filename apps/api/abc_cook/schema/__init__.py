@@ -29,7 +29,15 @@ from abc_cook.schema.normalized import (
     NormalizedStep,
     ProvenanceSource,
 )
-from abc_cook.schema.plan import CookingPlan, ScheduledNode, StageSpan, WaitWindow
+from abc_cook.schema.plan import (
+    CookingPlan,
+    LongWait,
+    PlanSummary,
+    ScheduledNode,
+    Session,
+    StageSpan,
+    WaitWindow,
+)
 
 __all__ = [
     "Attention",
@@ -45,6 +53,7 @@ __all__ = [
     "ImportStartResponse",
     "ImportStatus",
     "Ingredient",
+    "LongWait",
     "Node",
     "NodeKind",
     "NodeProvenance",
@@ -52,6 +61,7 @@ __all__ = [
     "NormalizedIngredient",
     "NormalizedRecipe",
     "NormalizedStep",
+    "PlanSummary",
     "ProvenanceSource",
     "RecipeListResponse",
     "RecipePlanResponse",
@@ -59,6 +69,7 @@ __all__ = [
     "SavedLibrary",
     "SavedRecipe",
     "ScheduledNode",
+    "Session",
     "SourceKind",
     "SourceRef",
     "Stage",

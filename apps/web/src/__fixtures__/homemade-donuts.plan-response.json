@@ -599,5 +599,42 @@
         "glaze_donuts"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 42.0,
+    "attended_min": 56.0,
+    "elapsed_min": 138.0,
+    "elapsed_high_min": 158.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 138.0,
+        "active_min": 42.0,
+        "node_ids": [
+          "bloom_yeast",
+          "mix_dough",
+          "knead_dough",
+          "first_rise",
+          "grease_pan",
+          "shape_and_cut",
+          "heat_oil",
+          "proof_donuts",
+          "fry_donuts",
+          "make_glaze",
+          "glaze_donuts"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": [
+      {
+        "start_min": 21.0,
+        "end_min": 78.0,
+        "idle_min": 57.0,
+        "host_node_ids": [
+          "first_rise"
+        ]
+      }
+    ]
+  }
 }

@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from abc_cook.schedule import schedule, stage_spans
+from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema import (
     CookingGraph,
     RecipeListResponse,
@@ -122,5 +122,11 @@ async def get_recipe_plan(recipe_id: str) -> RecipePlanResponse:
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Unknown recipe {recipe_id!r}") from exc
 
-    plan = schedule(graph, burner_capacity=burner_capacity_for(recipe_id))
-    return RecipePlanResponse(graph=graph, plan=plan, stages=stage_spans(graph, plan))
+    capacity = burner_capacity_for(recipe_id)
+    plan = schedule(graph, burner_capacity=capacity)
+    return RecipePlanResponse(
+        graph=graph,
+        plan=plan,
+        stages=stage_spans(graph, plan),
+        summary=summarize(graph, plan, burner_capacity=capacity),
+    )

@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 from abc_cook.schema.graph import CookingGraph
 from abc_cook.schema.node import Attention, Station
-from abc_cook.schema.plan import CookingPlan, StageSpan
+from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
 Freshness = Literal["none", "stated_unbounded", "stated_numeric"]
 """Three-valued freshness (design doc §4.6). Never collapse "unknown" into "none"."""
@@ -240,6 +240,7 @@ class ImportResult(BaseModel):
     graph: CookingGraph | None = Field(default=None)
     plan: CookingPlan | None = Field(default=None)
     stages: list[StageSpan] | None = Field(default=None)
+    summary: PlanSummary | None = Field(default=None)
     provenance: GraphProvenance | None = Field(default=None)
     review_recommended: bool = Field(default=False)
     warnings: list[str] = Field(default_factory=list)

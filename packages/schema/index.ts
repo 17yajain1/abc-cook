@@ -404,6 +404,7 @@ export interface ImportResult {
   sources?: ('description' | 'blog' | 'transcript')[];
   stages?: StageSpan[] | null;
   status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
+  summary?: PlanSummary | null;
   warnings?: string[];
 }
 /**
@@ -495,6 +496,100 @@ export interface StageSpan {
   work_min: number;
 }
 /**
+ * Recipe-level timing, derived from the scheduled plan. See `schedule/summary.py`.
+ *
+ * Every field here is computed, never authored — the frontend is forbidden from
+ * deriving any of these numbers itself (`CLAUDE.md`). Optional on `RecipePlanResponse`
+ * so a plan serialized before this field existed still round-trips.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "PlanSummary".
+ */
+export interface PlanSummary {
+  /**
+   * Σ `duration_typical` over every `hands_on` node.
+   */
+  active_min: number;
+  /**
+   * `active_min` plus Σ `duration_typical` over every `periodic` node — what being in the kitchen costs, not just what the cook's hands do.
+   */
+  attended_min: number;
+  /**
+   * Makespan with every `hands_on` node's `duration_typical` set to its `duration_max`; hands-off nodes untouched. The honest upper bound of the range.
+   */
+  elapsed_high_min: number;
+  /**
+   * Copy of `plan.total_min`, so the UI reads one object.
+   */
+  elapsed_min: number;
+  /**
+   * Idle stretches >= `LONG_WAIT_MIN` that are not session breaks.
+   */
+  long_waits: LongWait[];
+  /**
+   * The timeline partitioned at idle stretches >= `SESSION_BREAK_MIN`.
+   */
+  sessions: Session[];
+}
+/**
+ * An idle stretch long enough to leave the kitchen.
+ *
+ * Not long enough to be a separate sitting (`LONG_WAIT_MIN` <= idle < `SESSION_BREAK_MIN`).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "LongWait".
+ */
+export interface LongWait {
+  /**
+   * End of the idle stretch.
+   */
+  end_min: number;
+  /**
+   * Hands-off nodes running during the stretch, in scheduled order. Often more than one consecutive unattended node with no single host.
+   */
+  host_node_ids: string[];
+  /**
+   * `end_min - start_min`.
+   */
+  idle_min: number;
+  /**
+   * Start of the idle stretch.
+   */
+  start_min: number;
+}
+/**
+ * A contiguous sitting: cooking activity uninterrupted by a session-break wait.
+ *
+ * Internal name — never shown to the user (`CLAUDE.md` § Vocabulary). The Plan and
+ * Cooking Mode talk about the *situation* ("start about 24 hr before you eat"), never
+ * the model.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "Session".
+ */
+export interface Session {
+  /**
+   * Σ `duration_typical` over this sitting's `hands_on` nodes.
+   */
+  active_min: number;
+  /**
+   * End of this sitting's hands-on footprint.
+   */
+  end_min: number;
+  /**
+   * Every node assigned to this sitting, in scheduled order.
+   */
+  node_ids: string[];
+  /**
+   * Length of the session-break gap immediately before this sitting. `None` for the first sitting.
+   */
+  preceded_by_wait_min?: number | null;
+  /**
+   * Start of this sitting's hands-on footprint.
+   */
+  start_min: number;
+}
+/**
  * Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.
  *
  * `RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision
@@ -574,6 +669,10 @@ export interface RecipePlanResponse {
    * Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.
    */
   stages: StageSpan[];
+  /**
+   * Recipe-level timing. See schedule/summary.py. `None` for a plan serialized before this field existed.
+   */
+  summary?: PlanSummary | null;
 }
 /**
  * The whole saved-recipe library, as stored under one `localStorage` key.

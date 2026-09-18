@@ -758,5 +758,36 @@
         "rest_and_serve"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 22.0,
+    "attended_min": 51.0,
+    "elapsed_min": 66.0,
+    "elapsed_high_min": 72.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 66.0,
+        "active_min": 22.0,
+        "node_ids": [
+          "boil_spiced_water",
+          "slice_onions",
+          "soak_rice",
+          "chop_mint_coriander",
+          "fry_birista",
+          "mix_marinade",
+          "marinate_chicken",
+          "soak_saffron",
+          "parboil_rice",
+          "cook_chicken",
+          "drain_rice",
+          "layer_biryani",
+          "dum",
+          "rest_and_serve"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": []
+  }
 }
