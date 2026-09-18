@@ -656,5 +656,34 @@
         "serve_bowl"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 29.0,
+    "attended_min": 29.0,
+    "elapsed_min": 49.0,
+    "elapsed_high_min": 56.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 49.0,
+        "active_min": 29.0,
+        "node_ids": [
+          "chop_vegetables",
+          "toast_whole_spices",
+          "dice_potatoes",
+          "simmer_stew",
+          "soak_dried_beans",
+          "crush_spice_blend",
+          "mince_garlic_ginger",
+          "rinse_rice",
+          "combine_stew_and_rice",
+          "chop_fresh_herbs",
+          "rest_bowl",
+          "serve_bowl"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": []
+  }
 }

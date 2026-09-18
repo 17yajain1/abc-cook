@@ -522,5 +522,32 @@
         "finish"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 31.0,
+    "attended_min": 43.0,
+    "elapsed_min": 34.0,
+    "elapsed_high_min": 46.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 34.0,
+        "active_min": 31.0,
+        "node_ids": [
+          "chop_onion",
+          "saute_onion",
+          "chop_tomato",
+          "chop_capsicum",
+          "cook_tomato_base",
+          "cube_paneer",
+          "make_kadai_masala",
+          "add_veggies",
+          "add_paneer",
+          "finish"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": []
+  }
 }

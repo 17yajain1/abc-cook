@@ -108,3 +108,67 @@ class CookingPlan(BaseModel):
         default_factory=list,
         description='Safety-check findings (§4.5). "degraded" means extraction fell back.',
     )
+
+
+class Session(BaseModel):
+    """A contiguous sitting: cooking activity uninterrupted by a session-break wait.
+
+    Internal name — never shown to the user (`CLAUDE.md` § Vocabulary). The Plan and
+    Cooking Mode talk about the *situation* ("start about 24 hr before you eat"), never
+    the model.
+    """
+
+    start_min: float = Field(description="Start of this sitting's hands-on footprint.")
+    end_min: float = Field(description="End of this sitting's hands-on footprint.")
+    active_min: float = Field(
+        description="Σ `duration_typical` over this sitting's `hands_on` nodes.",
+    )
+    node_ids: list[str] = Field(
+        description="Every node assigned to this sitting, in scheduled order.",
+    )
+    preceded_by_wait_min: float | None = Field(
+        default=None,
+        description="Length of the session-break gap immediately before this sitting. "
+        "`None` for the first sitting.",
+    )
+
+
+class LongWait(BaseModel):
+    """An idle stretch long enough to leave the kitchen.
+
+    Not long enough to be a separate sitting (`LONG_WAIT_MIN` <= idle < `SESSION_BREAK_MIN`).
+    """
+
+    start_min: float = Field(description="Start of the idle stretch.")
+    end_min: float = Field(description="End of the idle stretch.")
+    idle_min: float = Field(description="`end_min - start_min`.")
+    host_node_ids: list[str] = Field(
+        description="Hands-off nodes running during the stretch, in scheduled order. "
+        "Often more than one consecutive unattended node with no single host.",
+    )
+
+
+class PlanSummary(BaseModel):
+    """Recipe-level timing, derived from the scheduled plan. See `schedule/summary.py`.
+
+    Every field here is computed, never authored — the frontend is forbidden from
+    deriving any of these numbers itself (`CLAUDE.md`). Optional on `RecipePlanResponse`
+    so a plan serialized before this field existed still round-trips.
+    """
+
+    active_min: float = Field(description="Σ `duration_typical` over every `hands_on` node.")
+    attended_min: float = Field(
+        description="`active_min` plus Σ `duration_typical` over every `periodic` node — "
+        "what being in the kitchen costs, not just what the cook's hands do.",
+    )
+    elapsed_min: float = Field(description="Copy of `plan.total_min`, so the UI reads one object.")
+    elapsed_high_min: float = Field(
+        description="Makespan with every `hands_on` node's `duration_typical` set to its "
+        "`duration_max`; hands-off nodes untouched. The honest upper bound of the range.",
+    )
+    sessions: list[Session] = Field(
+        description="The timeline partitioned at idle stretches >= `SESSION_BREAK_MIN`.",
+    )
+    long_waits: list[LongWait] = Field(
+        description="Idle stretches >= `LONG_WAIT_MIN` that are not session breaks.",
+    )

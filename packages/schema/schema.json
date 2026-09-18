@@ -333,6 +333,17 @@
           ],
           "type": "string"
         },
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "warnings": {
           "items": {
             "type": "string"
@@ -438,6 +449,37 @@
         "unit",
         "prep_note",
         "group"
+      ],
+      "type": "object"
+    },
+    "LongWait": {
+      "description": "An idle stretch long enough to leave the kitchen.\n\nNot long enough to be a separate sitting (`LONG_WAIT_MIN` <= idle < `SESSION_BREAK_MIN`).",
+      "properties": {
+        "end_min": {
+          "description": "End of the idle stretch.",
+          "type": "number"
+        },
+        "host_node_ids": {
+          "description": "Hands-off nodes running during the stretch, in scheduled order. Often more than one consecutive unattended node with no single host.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "idle_min": {
+          "description": "`end_min - start_min`.",
+          "type": "number"
+        },
+        "start_min": {
+          "description": "Start of the idle stretch.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_min",
+        "end_min",
+        "idle_min",
+        "host_node_ids"
       ],
       "type": "object"
     },
@@ -685,6 +727,50 @@
       ],
       "type": "object"
     },
+    "PlanSummary": {
+      "description": "Recipe-level timing, derived from the scheduled plan. See `schedule/summary.py`.\n\nEvery field here is computed, never authored \u2014 the frontend is forbidden from\nderiving any of these numbers itself (`CLAUDE.md`). Optional on `RecipePlanResponse`\nso a plan serialized before this field existed still round-trips.",
+      "properties": {
+        "active_min": {
+          "description": "\u03a3 `duration_typical` over every `hands_on` node.",
+          "type": "number"
+        },
+        "attended_min": {
+          "description": "`active_min` plus \u03a3 `duration_typical` over every `periodic` node \u2014 what being in the kitchen costs, not just what the cook's hands do.",
+          "type": "number"
+        },
+        "elapsed_high_min": {
+          "description": "Makespan with every `hands_on` node's `duration_typical` set to its `duration_max`; hands-off nodes untouched. The honest upper bound of the range.",
+          "type": "number"
+        },
+        "elapsed_min": {
+          "description": "Copy of `plan.total_min`, so the UI reads one object.",
+          "type": "number"
+        },
+        "long_waits": {
+          "description": "Idle stretches >= `LONG_WAIT_MIN` that are not session breaks.",
+          "items": {
+            "$ref": "#/$defs/LongWait"
+          },
+          "type": "array"
+        },
+        "sessions": {
+          "description": "The timeline partitioned at idle stretches >= `SESSION_BREAK_MIN`.",
+          "items": {
+            "$ref": "#/$defs/Session"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "active_min",
+        "attended_min",
+        "elapsed_min",
+        "elapsed_high_min",
+        "sessions",
+        "long_waits"
+      ],
+      "type": "object"
+    },
     "RecipeListResponse": {
       "description": "Every recipe the API can currently serve.",
       "properties": {
@@ -716,6 +802,18 @@
             "$ref": "#/$defs/StageSpan"
           },
           "type": "array"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Recipe-level timing. See schedule/summary.py. `None` for a plan serialized before this field existed."
         }
       },
       "required": [
@@ -865,6 +963,49 @@
         "start_min",
         "end_min",
         "occupies_cook"
+      ],
+      "type": "object"
+    },
+    "Session": {
+      "description": "A contiguous sitting: cooking activity uninterrupted by a session-break wait.\n\nInternal name \u2014 never shown to the user (`CLAUDE.md` \u00a7 Vocabulary). The Plan and\nCooking Mode talk about the *situation* (\"start about 24 hr before you eat\"), never\nthe model.",
+      "properties": {
+        "active_min": {
+          "description": "\u03a3 `duration_typical` over this sitting's `hands_on` nodes.",
+          "type": "number"
+        },
+        "end_min": {
+          "description": "End of this sitting's hands-on footprint.",
+          "type": "number"
+        },
+        "node_ids": {
+          "description": "Every node assigned to this sitting, in scheduled order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "preceded_by_wait_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Length of the session-break gap immediately before this sitting. `None` for the first sitting."
+        },
+        "start_min": {
+          "description": "Start of this sitting's hands-on footprint.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_min",
+        "end_min",
+        "active_min",
+        "node_ids"
       ],
       "type": "object"
     },

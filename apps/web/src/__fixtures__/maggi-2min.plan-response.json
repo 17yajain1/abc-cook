@@ -246,5 +246,26 @@
         "serve"
       ]
     }
-  ]
+  ],
+  "summary": {
+    "active_min": 2.0,
+    "attended_min": 4.0,
+    "elapsed_min": 7.0,
+    "elapsed_high_min": 9.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 7.0,
+        "active_min": 2.0,
+        "node_ids": [
+          "boil_water",
+          "add_noodles_masala",
+          "cook_noodles",
+          "serve"
+        ],
+        "preceded_by_wait_min": null
+      }
+    ],
+    "long_waits": []
+  }
 }

@@ -30,7 +30,7 @@ from abc_cook.extract.pricing import total_cost_inr
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.repair import repair_or_degrade
 from abc_cook.extract.validate import validate
-from abc_cook.schedule import schedule, stage_spans
+from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import ImportResult, ImportSource, ImportStatus
 
@@ -280,6 +280,7 @@ def run_import(
         graph=graph,
         plan=plan,
         stages=stage_spans(graph, plan),
+        summary=summarize(graph, plan, burner_capacity=DEFAULT_BURNER_CAPACITY),
         provenance=compute_provenance(build_result),
         review_recommended=build_result.review_recommended,
         warnings=[*build_result.warnings, *raw.acquisition_warnings, *corroborate(recipe, graph)],

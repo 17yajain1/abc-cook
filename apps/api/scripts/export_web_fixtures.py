@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from abc_cook.api.routes.recipes import burner_capacity_for, load_graph
-from abc_cook.schedule import schedule, stage_spans
+from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema import RecipePlanResponse
 
 # Straightforward (kadai-paneer), degrades to nothing (maggi-2min), two windows and
@@ -38,8 +38,14 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for slug in SLUGS:
         graph = load_graph(slug)
-        plan = schedule(graph, burner_capacity=burner_capacity_for(slug))
-        payload = RecipePlanResponse(graph=graph, plan=plan, stages=stage_spans(graph, plan))
+        capacity = burner_capacity_for(slug)
+        plan = schedule(graph, burner_capacity=capacity)
+        payload = RecipePlanResponse(
+            graph=graph,
+            plan=plan,
+            stages=stage_spans(graph, plan),
+            summary=summarize(graph, plan, burner_capacity=capacity),
+        )
         (OUT / f"{slug}.plan-response.json").write_text(
             payload.model_dump_json(indent=2) + "\n",
             encoding="utf-8",

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from abc_cook.schema.graph import CookingGraph
 from abc_cook.schema.normalized import ImportResult, ImportStatus
-from abc_cook.schema.plan import CookingPlan, StageSpan
+from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
 
 class RecipeSummary(BaseModel):
@@ -37,6 +37,11 @@ class RecipePlanResponse(BaseModel):
     plan: CookingPlan = Field(description="The scheduled plan. Source of every number shown.")
     stages: list[StageSpan] = Field(
         description="Per-stage rollups, in `graph.stages` order. See schedule/rollup.py.",
+    )
+    summary: PlanSummary | None = Field(
+        default=None,
+        description="Recipe-level timing. See schedule/summary.py. `None` for a plan "
+        "serialized before this field existed.",
     )
 
 
