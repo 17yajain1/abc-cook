@@ -7,16 +7,31 @@ import { stageColor } from '@/lib/stageColor'
 import { derivePlan, type RenderStage, type RenderTask } from './derive'
 import {
   collapsedStageDurationText,
+  expandedStageDurationText,
   meanwhileLabels,
-  stageDurationText,
   stageOrdinal,
   taskDurationText,
+  youllNeedText,
 } from './StageCard'
+import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
+import maggi from '@/__fixtures__/maggi-2min.plan-response.json'
+import pizzaDough from '@/__fixtures__/pizza-dough.plan-response.json'
+import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
+import syntheticTwoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
+import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 
 const KADAI = kadaiPaneer as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse
+const MAGGI = maggi as RecipePlanResponse
+const DONUTS = homemadeDonuts as RecipePlanResponse
+const SHORTCAKE = strawberryShortcake as RecipePlanResponse
+const PIZZA = pizzaDough as RecipePlanResponse
+const TWO_SITTINGS = syntheticTwoSittings as RecipePlanResponse
+const TWO_WINDOWS = syntheticTwoWindows as RecipePlanResponse
+
+const ALL_FIXTURES = [KADAI, MAGGI, BIRYANI, DONUTS, SHORTCAKE, PIZZA, TWO_SITTINGS, TWO_WINDOWS]
 
 describe('stageOrdinal — badge number and badge tint agree', () => {
   it('derives the ordinal from the same stage.index the tint uses, for every stage', () => {
@@ -53,25 +68,35 @@ function span(overrides: Partial<StageSpan>): StageSpan {
   }
 }
 
-describe('stageDurationText (C1)', () => {
-  it('splits hands-on and waiting minutes when both fields are present and there is waiting time', () => {
+describe('expandedStageDurationText (C1 split, M3.2 tilde)', () => {
+  it('splits hands-on and waiting minutes when both fields are present and there is waiting time, tilde on hands-on only', () => {
     const cookBase = span({ inline_work_min: 17, hands_on_min: 5, unattended_min: 12 })
-    expect(stageDurationText(cookBase)).toBe('5 min hands-on · 12 min waiting')
+    expect(expandedStageDurationText(cookBase)).toBe('~5 min hands-on · 12 min waiting')
   })
 
   it('formats long waits as hours', () => {
     const s = span({ inline_work_min: 1165, hands_on_min: 20, unattended_min: 1145 })
-    expect(stageDurationText(s)).toBe('20 min hands-on · 19 hr 5 min waiting')
+    expect(expandedStageDurationText(s)).toBe('~20 min hands-on · 19 hr 5 min waiting')
   })
 
   it('falls back to the plain ~N min figure when the stage is entirely hands-on', () => {
     const prep = span({ inline_work_min: 5, hands_on_min: 5, unattended_min: 0 })
-    expect(stageDurationText(prep)).toBe('~5 min')
+    expect(expandedStageDurationText(prep)).toBe('~5 min')
   })
 
   it('falls back to the plain ~N min figure when the fields are absent (a pre-C1 saved recipe)', () => {
     const oldSave = span({ inline_work_min: 12 })
-    expect(stageDurationText(oldSave)).toBe('~12 min')
+    expect(expandedStageDurationText(oldSave)).toBe('~12 min')
+  })
+
+  it('formats a legacy fallback span over an hour via formatMinutes, matching collapsedStageDurationText', () => {
+    const legacy = span({ inline_work_min: 65 })
+    expect(expandedStageDurationText(legacy)).toBe('~1 hr 5 min')
+  })
+
+  it('still takes the fallback branch when unattended_min is 0 even though hands_on_min is present', () => {
+    const allHandsOn = span({ inline_work_min: 9, hands_on_min: 9, unattended_min: 0 })
+    expect(expandedStageDurationText(allHandsOn)).toBe('~9 min')
   })
 })
 
@@ -187,5 +212,34 @@ describe('meanwhileLabels (M3.2)', () => {
       tasks: [windowTask('Task C', 0)],
     }
     expect(meanwhileLabels(stage({ windows: [w1, w2] }))).toEqual(['Task A', 'Task B', 'Task C'])
+  })
+})
+
+describe('youllNeedText (M3.2)', () => {
+  it('is null for a stage with no graph ingredients', () => {
+    expect(youllNeedText(stage({ ingredients: [] }))).toBeNull()
+  })
+
+  it("reads Kadai's Prep stage, names only, graph order — including nodes windowed away into Cook Base", () => {
+    const plan = derivePlan(KADAI)
+    const prep = plan.stages.find((s) => s.stageId === 'prep')!
+    expect(youllNeedText(prep)).toBe(
+      "You'll need: Onion, Tomato, Capsicum, Paneer, Kadai masala whole spices",
+    )
+  })
+
+  it("reads Kadai's Cook Base stage, excluding component ids", () => {
+    const plan = derivePlan(KADAI)
+    const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
+    expect(youllNeedText(cookBase)).toBe("You'll need: Ginger-garlic paste, Oil, Salt")
+  })
+
+  it('is null exactly when the stage has no ingredients, for every rendered stage in every fixture', () => {
+    for (const payload of ALL_FIXTURES) {
+      const plan = derivePlan(payload)
+      for (const s of plan.stages) {
+        expect(youllNeedText(s) === null).toBe(s.ingredients.length === 0)
+      }
+    }
   })
 })

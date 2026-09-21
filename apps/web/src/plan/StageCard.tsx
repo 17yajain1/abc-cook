@@ -3,7 +3,7 @@ import { Fragment } from 'react'
 import type { StageSpan } from '@abc-cook/schema'
 
 import { attentionNote } from '@/lib/attention'
-import { formatMinutes, roundMin } from '@/lib/duration'
+import { formatMinutes } from '@/lib/duration'
 import { stageColor, stageGround } from '@/lib/stageColor'
 
 import type { RenderStage, RenderTask } from './derive'
@@ -58,19 +58,32 @@ export function StageCard({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="flex w-full items-baseline gap-3 text-left"
+          className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 text-left"
         >
-          <span className="expanded min-w-0 flex-1 text-[18px] font-semibold text-ink">
+          {/* flex-auto (basis: auto), not flex-1 (basis: 0%): the flex-wrap decision
+           * below sizes each item by its flex-basis, and a 0%-basis item counts as ~0
+           * width for that check regardless of its actual text. That let a long
+           * duration string fit "on the line" by the wrap algorithm's math while still
+           * crushing the label's box past its own content width during layout — with no
+           * min-w-0 here, the label's unbreakable text then overflowed the crushed box
+           * with no visible gap before the duration. basis: auto makes the label's real
+           * text width count, so wrap correctly moves the duration group to its own
+           * line instead. */}
+          <span className="expanded flex-auto text-[18px] font-semibold text-ink">
             {stage.label}
           </span>
-          <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
-            {expanded ? stageDurationText(stage.span) : collapsedStageDurationText(stage.span)}
-          </span>
-          <span
-            aria-hidden
-            className="flex-shrink-0 text-[15px] font-medium leading-none text-ink-2"
-          >
-            {expanded ? '−' : '+'}
+          {/* Duration + toggle travel together as one flex-shrink-0 unit so a long
+           * duration string (e.g. the expanded hands-on/waiting split) wraps whole onto
+           * its own line under the label. */}
+          <span className="flex flex-shrink-0 items-baseline gap-3">
+            <span className="tabular text-[13px] font-medium text-ink-2">
+              {expanded
+                ? expandedStageDurationText(stage.span)
+                : collapsedStageDurationText(stage.span)}
+            </span>
+            <span aria-hidden className="text-[15px] font-medium leading-none text-ink-2">
+              {expanded ? '−' : '+'}
+            </span>
           </span>
         </button>
 
@@ -90,6 +103,12 @@ export function StageCard({
 
         {expanded && (
           <div className="mt-3">
+            {stage.ingredients.length > 0 && (
+              <p className="mb-3 text-[13px] text-ink-2">
+                <span className="font-medium text-ink">{YOULL_NEED_LABEL}</span>
+                {ingredientNames(stage)}
+              </p>
+            )}
             {stage.inlineTasks.map((task) => {
               const win = windowByHost.get(task.nodeId)
               return (
@@ -128,21 +147,43 @@ export function meanwhileLabels(stage: RenderStage): string[] {
   return stage.windows.flatMap((w) => w.tasks).map((t) => t.label)
 }
 
+const YOULL_NEED_LABEL = "You'll need: "
+
+function ingredientNames(stage: RenderStage): string {
+  return stage.ingredients.map((i) => i.name).join(', ')
+}
+
 /**
- * The stage header's duration text (C1). Splits into hands-on / waiting minutes when
- * the rollup provided both — `StageSpan.hands_on_min` / `unattended_min`, a partition of
- * `inline_work_min` computed in `abc_cook/schedule/rollup.py` (never summed here). Falls
- * back to today's single `~N min` figure when the stage is all hands-on
- * (`unattended_min === 0`) or the fields are absent (a plan saved before this field
- * existed — CLAUDE.md backward-compatibility). No `~` on the split: `~` keeps its one
- * meaning, the fallback rollup figure.
+ * The expanded body's `You'll need:` line (M3.2) — names only, `stage.ingredients`'
+ * graph order, comma-joined. `null` when the stage consumes no graph ingredients, so
+ * the caller omits the line entirely rather than showing an empty lead-in. Quantities
+ * stay on the Ingredients tab; this is the same "labelled secondary line" idiom as
+ * `Meanwhile: ` on the collapsed card.
  */
-export function stageDurationText(span: StageSpan): string {
+export function youllNeedText(stage: RenderStage): string | null {
+  if (stage.ingredients.length === 0) return null
+  return `${YOULL_NEED_LABEL}${ingredientNames(stage)}`
+}
+
+/**
+ * The expanded stage header's duration text (C1 split, M3.2 tilde). Splits into
+ * hands-on / waiting minutes when the rollup provided both — `StageSpan.hands_on_min` /
+ * `unattended_min`, a partition of `inline_work_min` computed in
+ * `abc_cook/schedule/rollup.py` (never summed here). The hands-on part carries the same
+ * `~` cue as every other hands-on figure (`taskDurationText`, `collapsedStageDurationText`)
+ * — it's the cook's own rough figure, not a scheduler promise; the waiting part stays
+ * plain, since a wait window's length is the one number here that isn't an estimate.
+ * Falls back to the single `~N min` rollup figure, via `formatMinutes` so a long legacy
+ * span reads `~1 hr 5 min` like the collapsed figure, when the stage is all hands-on
+ * (`unattended_min === 0`) or the fields are absent (a plan saved before this field
+ * existed — CLAUDE.md backward-compatibility).
+ */
+export function expandedStageDurationText(span: StageSpan): string {
   const { hands_on_min, unattended_min } = span
   if (hands_on_min != null && unattended_min != null && unattended_min > 0) {
-    return `${formatMinutes(hands_on_min)} hands-on · ${formatMinutes(unattended_min)} waiting`
+    return `~${formatMinutes(hands_on_min)} hands-on · ${formatMinutes(unattended_min)} waiting`
   }
-  return `~${roundMin(span.inline_work_min)} min`
+  return `~${formatMinutes(span.inline_work_min)}`
 }
 
 /**
@@ -168,12 +209,23 @@ function TaskRow({ task }: { task: RenderTask }) {
     <div className="flex items-baseline gap-3 border-b border-rule py-3 last:border-b-0">
       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
         <span className="block text-[15px] font-medium text-ink">{task.label}</span>
+        {task.instruction && (
+          <span className="mt-0.5 block text-[15px] leading-[1.5] text-ink-2">
+            {task.instruction}
+          </span>
+        )}
         {task.donenessCue && (
           <span className="mt-0.5 block text-[13px] leading-[1.42] text-ink-2">
             until {task.donenessCue}
           </span>
         )}
         {note && <span className="mt-0.5 block text-[13px] text-ink-2">{note}</span>}
+        {task.tip != null && (
+          <span className="mt-0.5 block text-[13px] text-ink-2">
+            <span className="font-medium text-ink">Tip: </span>
+            {task.tip}
+          </span>
+        )}
       </span>
       <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
         {taskDurationText(task)}

@@ -416,6 +416,69 @@ Do not add burner counts, oven counts, or other kitchen inventory to the schema.
 a second contended resource genuinely needs configuring, revisit this as one small
 `KitchenConfig`, not a scatter of keyword arguments.
 
+### 4.7 Timing summary
+
+M3.1/M3.2 add a second view over a finished plan, alongside `StageSpan` above: a
+recipe-level one. Same rule as the rest of this section — every number here is computed
+once, in Python, and the frontend only formats and displays it (`CLAUDE.md`).
+
+**`StageSpan.hands_on_min` / `unattended_min`** (`abc_cook/schedule/rollup.py`), M2.13 C1:
+a stage's own `inline_work_min` split by whether the cook is doing the work
+(`attention == "hands_on"`) or not (`unattended` or `periodic` — "not hands-on" is the
+scheduler's own binary, despite the name). `hands_on_min + unattended_min ==
+inline_work_min`. Both are `None` on a plan serialized before this field existed. This is
+what the Plan view's expanded stage figure reads (`~5 min hands-on · 12 min waiting`,
+`DESIGN_SYSTEM.md` § StageCard) — never a client-side split of `inline_work_min`.
+
+**`PlanSummary`** (`abc_cook/schedule/summary.py`, `summarize()`), M3.1: the recipe-level
+number the header range, the head-start line, and the between-stage wait row all need.
+Optional on `RecipePlanResponse` for the same backward-compatibility reason as the
+`StageSpan` fields above.
+
+- `active_min` / `attended_min` — Σ `duration_typical` over `hands_on` nodes, and over
+  `hands_on` + `periodic` nodes respectively: what the cook's hands do, versus what being
+  in the kitchen costs.
+- `elapsed_min` — a copy of `plan.total_min`, so the summary is one self-contained object
+  rather than two the frontend has to reconcile.
+- `elapsed_high_min` — the **honest upper bound**: the graph rescheduled once more with
+  every `hands_on` node's `duration_typical` raised to its `duration_max` (hands-off nodes
+  untouched, since they are result-dependent, not cook-dependent), and the resulting
+  makespan taken as-is. Not a padded guess — the same scheduler, run twice.
+- `sessions: list[Session]` — see below.
+- `long_waits: list[LongWait]` — an idle stretch long enough to leave the kitchen
+  (`LONG_WAIT_MIN = 45` min) but not long enough to start a new sitting (below
+  `SESSION_BREAK_MIN`, next). `host_node_ids` names the hands-off nodes occupying the gap.
+
+**`Session`** — a contiguous sitting: cooking activity uninterrupted by a
+`SESSION_BREAK_MIN` (120 min) idle stretch. Internal name, never user-facing — the product
+vocabulary word is **Sitting**, prose only (`CLAUDE.md` § Vocabulary). Sitting boundaries
+come from the cook-*occupied* intervals alone (`_merge`, `summarize()`): a gap shorter
+than the break threshold keeps both sides in one sitting even if the dish itself is idle
+for a while inside it; a gap at or past the threshold starts a new one. The outer edges of
+the first and last sitting are widened to the plan's own `0` and `total_min` bounds, since
+a recipe rarely opens or closes on a hands-on beat — pizza's first sitting includes several
+idle minutes of mixing before the first chop.
+
+- `elapsed_min` — `end_min - start_min` at typical pace. For the last sitting, the
+  header range's lower bound; for a single-sitting recipe, equal to `plan.total_min`.
+- `elapsed_high_min` — this sitting's own **occupied footprint**, measured on the same
+  slowed-pace timeline used for `PlanSummary.elapsed_high_min` (scheduled once, reused for
+  every sitting), *not* a re-clustering of that slower timeline into new sittings — a
+  slower cook upstream can shift this sitting's nodes later without lengthening them, so
+  the raw footprint can undershoot `elapsed_min`.
+- **The CP0 clamp:** `elapsed_high_min = max(footprint, elapsed_min)`. A converging-chains
+  recipe (independent branches merging into one, e.g. two prep chains before Kadai's `Add
+  veggies`) can pin the raw footprint below the sitting's own typical-pace span. The
+  field's contract is "at least what the shown schedule already takes" — a slower cook can
+  never make the honest range *shrink* — so the clamp takes the greater of the two. This
+  is why `lib/duration.ts`'s `headerTiming` on the frontend re-clamps defensively against
+  `low` for a plan saved before this fix landed: the contract is enforced here, in Python,
+  but a stale saved plan predates the enforcement.
+- `preceded_by_wait_min` / `preceded_by_host_node_ids` — the gap immediately before this
+  sitting, and the hands-off nodes occupying it (`None` / `[]` for the first sitting). Same
+  host predicate as `LongWait.host_node_ids`: a session break and a long wait are both just
+  gaps of different lengths, so "what's the dish busy with" is one question asked twice.
+
 ---
 
 ## 5. Graph invariants — validate every extraction

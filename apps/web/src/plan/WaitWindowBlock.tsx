@@ -13,8 +13,8 @@ import { taskDurationText } from './StageCard'
  *
  * The head states the relationship in words — "Meanwhile, do these" plus a line derived
  * from the host's `attention` — never a numeral; the host's own duration already lives
- * one row above, in its `TaskRow`. Then the ranked borrowed tasks, then one qualitative
- * footer line that carries no second number.
+ * one row above, in its `TaskRow`. Then the ranked borrowed tasks, each with its
+ * instruction, then one qualitative footer line that carries no second number.
  *
  * Every value here is the scheduler's or the graph's, looked up by id. Nothing is added.
  */
@@ -115,6 +115,11 @@ function WindowTask({
         {primary && (
           <span className="mt-0.5 block text-[12px] font-medium text-signal">
             Start with this
+          </span>
+        )}
+        {task.instruction && (
+          <span className="mt-0.5 block text-[15px] leading-[1.5] text-ink-2">
+            {task.instruction}
           </span>
         )}
       </span>
