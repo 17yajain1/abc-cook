@@ -623,7 +623,10 @@
           "make_glaze",
           "glaze_donuts"
         ],
-        "preceded_by_wait_min": null
+        "preceded_by_wait_min": null,
+        "elapsed_min": 138.0,
+        "elapsed_high_min": 158.0,
+        "preceded_by_host_node_ids": []
       }
     ],
     "long_waits": [

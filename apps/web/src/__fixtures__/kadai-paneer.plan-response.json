@@ -545,7 +545,10 @@
           "add_paneer",
           "finish"
         ],
-        "preceded_by_wait_min": null
+        "preceded_by_wait_min": null,
+        "elapsed_min": 34.0,
+        "elapsed_high_min": 46.0,
+        "preceded_by_host_node_ids": []
       }
     ],
     "long_waits": []

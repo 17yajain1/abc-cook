@@ -785,7 +785,10 @@
           "dum",
           "rest_and_serve"
         ],
-        "preceded_by_wait_min": null
+        "preceded_by_wait_min": null,
+        "elapsed_min": 66.0,
+        "elapsed_high_min": 72.0,
+        "preceded_by_host_node_ids": []
       }
     ],
     "long_waits": []

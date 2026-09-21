@@ -1,0 +1,66 @@
+{
+  "graph_id": "synthetic-two-sittings",
+  "scheduled": [
+    {
+      "node_id": "rinse_beans",
+      "start_min": 0.0,
+      "end_min": 3.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "soak_beans",
+      "start_min": 3.0,
+      "end_min": 483.0,
+      "occupies_cook": false,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "saute_and_add_beans",
+      "start_min": 483.0,
+      "end_min": 488.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "simmer_beans",
+      "start_min": 488.0,
+      "end_min": 528.0,
+      "occupies_cook": false,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "season_beans",
+      "start_min": 528.0,
+      "end_min": 533.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "serve_rajma",
+      "start_min": 533.0,
+      "end_min": 535.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    }
+  ],
+  "windows": [],
+  "total_min": 535.0,
+  "serial_min": 535.0,
+  "saved_min": 0.0,
+  "critical_path": [
+    "rinse_beans",
+    "soak_beans",
+    "saute_and_add_beans",
+    "simmer_beans",
+    "season_beans",
+    "serve_rajma"
+  ],
+  "warnings": []
+}

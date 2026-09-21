@@ -263,7 +263,10 @@
           "cook_noodles",
           "serve"
         ],
-        "preceded_by_wait_min": null
+        "preceded_by_wait_min": null,
+        "elapsed_min": 7.0,
+        "elapsed_high_min": 9.0,
+        "preceded_by_host_node_ids": []
       }
     ],
     "long_waits": []

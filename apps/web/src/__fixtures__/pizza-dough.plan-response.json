@@ -1,0 +1,645 @@
+{
+  "graph": {
+    "id": "g_pizza_dough_replay",
+    "title": "Best Homemade Pizza Dough Recipe | How To Make Pizza Crust",
+    "servings": 8,
+    "cuisine": "American, Italian",
+    "source": {
+      "kind": "url",
+      "value": "https://youtu.be/WM1XcYXix0Y",
+      "imported_at": "2026-01-01T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_warm_water_105",
+        "name": "warm water (105-110˚F)",
+        "qty": 1.25,
+        "qty_text": "1 1/4",
+        "unit": "cups",
+        "prep_note": "105-110˚F",
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_active_dry_yeast",
+        "name": "active dry yeast",
+        "qty": 0.5,
+        "qty_text": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_honey",
+        "name": "honey",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_fine_sea_salt",
+        "name": "fine sea salt",
+        "qty": 0.5,
+        "qty_text": "1/2",
+        "unit": "Tbsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_all_purpose_flour",
+        "name": "all-purpose flour",
+        "qty": 3.3333333333333335,
+        "qty_text": "3 1/3",
+        "unit": "cups",
+        "prep_note": "420 grams",
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "step_in_a_small_bowl_stir_together",
+        "stage": "prep",
+        "label": "Small bowl stir together",
+        "instruction": "In a small bowl, stir together water, honey, and salt then sprinkle the top with 1/2 tsp yeast and let sit 5 minutes then stir.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 4,
+        "duration_typical": 5,
+        "duration_max": 6,
+        "station": "none",
+        "depends_on": [],
+        "consumes": [
+          "ing_warm_water_105",
+          "ing_honey",
+          "ing_fine_sea_salt",
+          "ing_active_dry_yeast"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_measure_3_1_3_cups_flour",
+        "stage": "prep",
+        "label": "Measure 3 1/3 cups",
+        "instruction": "Measure 3 1/3 cups flour in a large mixing bowl and make a well in the center. Pour yeast mixture into the center then stir with a firm spatula until the dough comes together.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 5,
+        "station": "counter",
+        "depends_on": [
+          "step_in_a_small_bowl_stir_together"
+        ],
+        "consumes": [
+          "ing_all_purpose_flour"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "the dough comes together",
+        "tip": null
+      },
+      {
+        "id": "step_knead_by_hand_2_minutes_dough",
+        "stage": "prep",
+        "label": "Knead by hand",
+        "instruction": "Knead by hand 2 minutes (dough will be sticky).",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 2,
+        "duration_max": 2,
+        "station": "counter",
+        "depends_on": [
+          "step_measure_3_1_3_cups_flour"
+        ],
+        "consumes": [
+          "ing_all_purpose_flour"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "dough will be sticky",
+        "tip": null
+      },
+      {
+        "id": "step_cover_the_bowl_with_plastic_wrap",
+        "stage": "cook",
+        "label": "Cover the bowl",
+        "instruction": "Cover the bowl with plastic wrap and let rise at room temperature 4-5 hours or until doubled in size.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 240,
+        "duration_typical": 270,
+        "duration_max": 300,
+        "station": "none",
+        "depends_on": [
+          "step_knead_by_hand_2_minutes_dough"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "doubled in size",
+        "tip": null
+      },
+      {
+        "id": "step_transfer_dough_to_a_floured_surface",
+        "stage": "cook",
+        "label": "Transfer dough",
+        "instruction": "Transfer dough to a floured surface, turn to coat lightly in flour so it isn’t sticky then divide in half. Fold each piece of dough in half 8 times, gently pulling the sides over the center like closing a book, turning the dough each time and repeating for 8 folds. Form a ball in your hands and transfer each piece of dough to a lightly oiled bowl seam-side-down.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 5,
+        "duration_typical": 10,
+        "duration_max": 15,
+        "station": "counter",
+        "depends_on": [
+          "step_cover_the_bowl_with_plastic_wrap"
+        ],
+        "consumes": [],
+        "produces": "comp_dough_balls",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_cover_and_refrigerate_overnight_18_hours",
+        "stage": "prep",
+        "label": "Cover and refrigerate overnight",
+        "instruction": "Cover and refrigerate overnight (18 hours) or up to 1 week.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 1080,
+        "duration_typical": 1080,
+        "duration_max": 10080,
+        "station": "fridge",
+        "depends_on": [
+          "step_transfer_dough_to_a_floured_surface"
+        ],
+        "consumes": [],
+        "produces": "comp_cold_dough_balls",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_remove_the_dough_1_hour_before",
+        "stage": "prep",
+        "label": "Remove the dough",
+        "instruction": "Remove the dough 1 hour before using to let it relax and come to room temperature.",
+        "kind": "prep",
+        "attention": "unattended",
+        "duration_min": 55,
+        "duration_typical": 60,
+        "duration_max": 70,
+        "station": "none",
+        "depends_on": [
+          "step_cover_and_refrigerate_overnight_18_hours",
+          "step_transfer_dough_to_a_floured_surface"
+        ],
+        "consumes": [
+          "comp_dough_balls",
+          "comp_cold_dough_balls"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_place_a_pizza_stone_or_inverted",
+        "stage": "cook",
+        "label": "Place a pizza stone",
+        "instruction": "Place a pizza stone or inverted baking sheet onto the center rack of the oven and preheat to 550˚F. Make sure the oven is fully preheated before you start forming your pizza.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 10,
+        "duration_typical": 10,
+        "duration_max": 30,
+        "station": "oven",
+        "depends_on": [
+          "step_remove_the_dough_1_hour_before"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "fully preheat your oven",
+        "tip": null
+      },
+      {
+        "id": "step_lightly_flour_a_pizza_peel_and",
+        "stage": "prep",
+        "label": "Lightly flour a pizza",
+        "instruction": "Lightly flour a pizza peel and prep toppings.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 5,
+        "duration_max": 10,
+        "station": "counter",
+        "depends_on": [
+          "step_place_a_pizza_stone_or_inverted"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_when_dough_is_about_room_temperature",
+        "stage": "cook",
+        "label": "When dough is",
+        "instruction": "When dough is about room temperature and oven is preheated, transfer 1 piece of dough to a floured surface, turning to lightly coat in flour. Pat the center of the dough gently with fingertips. DO NOT pop any bubbles present.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 8,
+        "station": "counter",
+        "depends_on": [
+          "step_lightly_flour_a_pizza_peel_and"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_lift_the_dough_over_both_knuckles",
+        "stage": "prep",
+        "label": "Lift the dough",
+        "instruction": "Lift the dough over both knuckles and roll your knuckles under the center of the dough, working outward as you rotate the dough along your knuckles and leaving a thicker crust at the edge. Continue working the dough until a 10-12” pizza has formed. Place the dough down on a lightly floured pizza peel. Give the pizza peel a little shake to make sure the pizza slides over it and is not sticking.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 5,
+        "duration_typical": 7,
+        "duration_max": 12,
+        "station": "counter",
+        "depends_on": [
+          "step_when_dough_is_about_room_temperature"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "a 10-12” pizza has formed.",
+        "tip": null
+      },
+      {
+        "id": "step_spread_on_desired_pizza_sauce_and",
+        "stage": "prep",
+        "label": "Spread on desired pizza",
+        "instruction": "Spread on desired pizza sauce and toppings. Give the pizza another jolt to make sure it slides on the pizza peel (you don’t want it to stick while transferring it into the oven).",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 2,
+        "duration_typical": 3,
+        "duration_max": 6,
+        "station": "counter",
+        "depends_on": [
+          "step_lift_the_dough_over_both_knuckles"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_slide_pizza_onto_the_preheated_pizza",
+        "stage": "cook",
+        "label": "Slide pizza",
+        "instruction": "Slide pizza onto the preheated pizza stone and bake at 550˚F for 8-10 minutes or until crust is golden brown and some of the larger bubbles on the crust are lightly scorched to ensure a crisp crust.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 8,
+        "duration_typical": 9,
+        "duration_max": 10,
+        "station": "oven",
+        "depends_on": [
+          "step_spread_on_desired_pizza_sauce_and"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "crust is golden brown and some of the larger bubbles on the crust are lightly scorched to ensure a crisp crust.",
+        "tip": null
+      },
+      {
+        "id": "step_transfer_the_pizza_to_a_cutting",
+        "stage": "finish",
+        "label": "Transfer the pizza",
+        "instruction": "Transfer the pizza to a cutting board and let it cool slightly before serving.",
+        "kind": "finish",
+        "attention": "unattended",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 10,
+        "station": "counter",
+        "depends_on": [
+          "step_slide_pizza_onto_the_preheated_pizza"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "let it cool slightly before serving.",
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "color_key": "prep"
+      },
+      {
+        "id": "cook",
+        "label": "Cook",
+        "color_key": "cook"
+      },
+      {
+        "id": "finish",
+        "label": "Finish",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": 1450
+  },
+  "plan": {
+    "graph_id": "g_pizza_dough_replay",
+    "scheduled": [
+      {
+        "node_id": "step_in_a_small_bowl_stir_together",
+        "start_min": 0.0,
+        "end_min": 5.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_measure_3_1_3_cups_flour",
+        "start_min": 5.0,
+        "end_min": 8.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_knead_by_hand_2_minutes_dough",
+        "start_min": 8.0,
+        "end_min": 10.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_cover_the_bowl_with_plastic_wrap",
+        "start_min": 10.0,
+        "end_min": 280.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_transfer_dough_to_a_floured_surface",
+        "start_min": 280.0,
+        "end_min": 290.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_cover_and_refrigerate_overnight_18_hours",
+        "start_min": 290.0,
+        "end_min": 1370.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_remove_the_dough_1_hour_before",
+        "start_min": 1370.0,
+        "end_min": 1430.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_place_a_pizza_stone_or_inverted",
+        "start_min": 1430.0,
+        "end_min": 1440.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_lightly_flour_a_pizza_peel_and",
+        "start_min": 1440.0,
+        "end_min": 1445.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_when_dough_is_about_room_temperature",
+        "start_min": 1445.0,
+        "end_min": 1450.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_lift_the_dough_over_both_knuckles",
+        "start_min": 1450.0,
+        "end_min": 1457.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_spread_on_desired_pizza_sauce_and",
+        "start_min": 1457.0,
+        "end_min": 1460.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_slide_pizza_onto_the_preheated_pizza",
+        "start_min": 1460.0,
+        "end_min": 1469.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_transfer_the_pizza_to_a_cutting",
+        "start_min": 1469.0,
+        "end_min": 1470.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [],
+    "total_min": 1470.0,
+    "serial_min": 1470.0,
+    "saved_min": 0.0,
+    "critical_path": [
+      "step_in_a_small_bowl_stir_together",
+      "step_measure_3_1_3_cups_flour",
+      "step_knead_by_hand_2_minutes_dough",
+      "step_cover_the_bowl_with_plastic_wrap",
+      "step_transfer_dough_to_a_floured_surface",
+      "step_cover_and_refrigerate_overnight_18_hours",
+      "step_remove_the_dough_1_hour_before",
+      "step_place_a_pizza_stone_or_inverted",
+      "step_lightly_flour_a_pizza_peel_and",
+      "step_when_dough_is_about_room_temperature",
+      "step_lift_the_dough_over_both_knuckles",
+      "step_spread_on_desired_pizza_sauce_and",
+      "step_slide_pizza_onto_the_preheated_pizza",
+      "step_transfer_the_pizza_to_a_cutting"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "prep",
+      "start_min": 0.0,
+      "end_min": 1460.0,
+      "elapsed_min": 1460.0,
+      "work_min": 1165.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 1165.0,
+      "hands_on_min": 20.0,
+      "unattended_min": 1145.0,
+      "node_ids": [
+        "step_in_a_small_bowl_stir_together",
+        "step_measure_3_1_3_cups_flour",
+        "step_knead_by_hand_2_minutes_dough",
+        "step_cover_and_refrigerate_overnight_18_hours",
+        "step_remove_the_dough_1_hour_before",
+        "step_lightly_flour_a_pizza_peel_and",
+        "step_lift_the_dough_over_both_knuckles",
+        "step_spread_on_desired_pizza_sauce_and"
+      ]
+    },
+    {
+      "stage_id": "cook",
+      "start_min": 10.0,
+      "end_min": 1469.0,
+      "elapsed_min": 1459.0,
+      "work_min": 304.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 304.0,
+      "hands_on_min": 15.0,
+      "unattended_min": 289.0,
+      "node_ids": [
+        "step_cover_the_bowl_with_plastic_wrap",
+        "step_transfer_dough_to_a_floured_surface",
+        "step_place_a_pizza_stone_or_inverted",
+        "step_when_dough_is_about_room_temperature",
+        "step_slide_pizza_onto_the_preheated_pizza"
+      ]
+    },
+    {
+      "stage_id": "finish",
+      "start_min": 1469.0,
+      "end_min": 1470.0,
+      "elapsed_min": 1.0,
+      "work_min": 1.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 1.0,
+      "hands_on_min": 0.0,
+      "unattended_min": 1.0,
+      "node_ids": [
+        "step_transfer_the_pizza_to_a_cutting"
+      ]
+    }
+  ],
+  "summary": {
+    "active_min": 35.0,
+    "attended_min": 35.0,
+    "elapsed_min": 1470.0,
+    "elapsed_high_min": 1493.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 10.0,
+        "active_min": 5.0,
+        "node_ids": [
+          "step_in_a_small_bowl_stir_together",
+          "step_measure_3_1_3_cups_flour",
+          "step_knead_by_hand_2_minutes_dough",
+          "step_cover_the_bowl_with_plastic_wrap"
+        ],
+        "preceded_by_wait_min": null,
+        "elapsed_min": 10.0,
+        "elapsed_high_min": 12.0,
+        "preceded_by_host_node_ids": []
+      },
+      {
+        "start_min": 280.0,
+        "end_min": 290.0,
+        "active_min": 10.0,
+        "node_ids": [
+          "step_transfer_dough_to_a_floured_surface",
+          "step_cover_and_refrigerate_overnight_18_hours",
+          "step_remove_the_dough_1_hour_before",
+          "step_place_a_pizza_stone_or_inverted"
+        ],
+        "preceded_by_wait_min": 270.0,
+        "elapsed_min": 10.0,
+        "elapsed_high_min": 15.0,
+        "preceded_by_host_node_ids": [
+          "step_cover_the_bowl_with_plastic_wrap"
+        ]
+      },
+      {
+        "start_min": 1440.0,
+        "end_min": 1470.0,
+        "active_min": 20.0,
+        "node_ids": [
+          "step_lightly_flour_a_pizza_peel_and",
+          "step_when_dough_is_about_room_temperature",
+          "step_lift_the_dough_over_both_knuckles",
+          "step_spread_on_desired_pizza_sauce_and",
+          "step_slide_pizza_onto_the_preheated_pizza",
+          "step_transfer_the_pizza_to_a_cutting"
+        ],
+        "preceded_by_wait_min": 1150.0,
+        "elapsed_min": 30.0,
+        "elapsed_high_min": 46.0,
+        "preceded_by_host_node_ids": [
+          "step_cover_and_refrigerate_overnight_18_hours",
+          "step_remove_the_dough_1_hour_before",
+          "step_place_a_pizza_stone_or_inverted"
+        ]
+      }
+    ],
+    "long_waits": []
+  }
+}

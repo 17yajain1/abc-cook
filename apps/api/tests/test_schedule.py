@@ -25,7 +25,9 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # Slugs with both a `.graph.json` and a `.plan.json` in tests/fixtures/ — the five
 # golden recipes from COOKING_GRAPH.md §7, plus a sixth hand-authored purely to prove
-# the M2.75 Map layout algorithm generalizes (docs/DESIGN_SYSTEM.md § The Map grammar).
+# the M2.75 Map layout algorithm generalizes (docs/DESIGN_SYSTEM.md § The Map grammar),
+# plus a seventh (M3.1a) proving the multi-sitting timing summary is generic over any
+# long unattended node, not just pizza's dough rest.
 GOLDEN = [
     "kadai-paneer",
     "maggi-2min",
@@ -33,6 +35,7 @@ GOLDEN = [
     "homemade-donuts",
     "strawberry-shortcake",
     "synthetic-two-windows",
+    "synthetic-two-sittings",
 ]
 
 

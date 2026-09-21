@@ -573,6 +573,14 @@ export interface Session {
    */
   active_min: number;
   /**
+   * The occupied footprint of this sitting's own `node_ids`, measured on a timeline where every `hands_on` node's `duration_typical` is set to its `duration_max`. The header range's upper bound for the last sitting. Not derivable from `PlanSummary.elapsed_high_min - start_min`: slowness in earlier sittings shifts later ones on that timeline, but this sitting's own steps still take the same honest-worst-case time regardless of what came before.
+   */
+  elapsed_high_min: number;
+  /**
+   * `end_min - start_min`. How long this sitting takes at typical pace. For the last sitting, the header range's lower bound; for a single-sitting recipe, equal to `plan.total_min`.
+   */
+  elapsed_min: number;
+  /**
    * End of this sitting's hands-on footprint.
    */
   end_min: number;
@@ -580,6 +588,10 @@ export interface Session {
    * Every node assigned to this sitting, in scheduled order.
    */
   node_ids: string[];
+  /**
+   * The hands-off nodes whose interval overlaps the open gap between the previous sitting's end and this sitting's start -- what the dish is busy with during the break. `[]` for the first sitting. Same predicate as `LongWait.host_node_ids`.
+   */
+  preceded_by_host_node_ids: string[];
   /**
    * Length of the session-break gap immediately before this sitting. `None` for the first sitting.
    */
