@@ -973,12 +973,27 @@
           "description": "\u03a3 `duration_typical` over this sitting's `hands_on` nodes.",
           "type": "number"
         },
+        "elapsed_high_min": {
+          "description": "The occupied footprint of this sitting's own `node_ids`, measured on a timeline where every `hands_on` node's `duration_typical` is set to its `duration_max`. The header range's upper bound for the last sitting. Not derivable from `PlanSummary.elapsed_high_min - start_min`: slowness in earlier sittings shifts later ones on that timeline, but this sitting's own steps still take the same honest-worst-case time regardless of what came before.",
+          "type": "number"
+        },
+        "elapsed_min": {
+          "description": "`end_min - start_min`. How long this sitting takes at typical pace. For the last sitting, the header range's lower bound; for a single-sitting recipe, equal to `plan.total_min`.",
+          "type": "number"
+        },
         "end_min": {
           "description": "End of this sitting's hands-on footprint.",
           "type": "number"
         },
         "node_ids": {
           "description": "Every node assigned to this sitting, in scheduled order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "preceded_by_host_node_ids": {
+          "description": "The hands-off nodes whose interval overlaps the open gap between the previous sitting's end and this sitting's start -- what the dish is busy with during the break. `[]` for the first sitting. Same predicate as `LongWait.host_node_ids`.",
           "items": {
             "type": "string"
           },
@@ -1005,7 +1020,10 @@
         "start_min",
         "end_min",
         "active_min",
-        "node_ids"
+        "node_ids",
+        "elapsed_min",
+        "elapsed_high_min",
+        "preceded_by_host_node_ids"
       ],
       "type": "object"
     },

@@ -20,7 +20,7 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.schedule import LONG_WAIT_MIN, SESSION_BREAK_MIN, schedule, summarize
-from abc_cook.schema import CookingGraph, CookingPlan, PlanSummary
+from abc_cook.schema import CookingGraph, CookingPlan, Node, PlanSummary, Stage
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedRecipe
 
@@ -35,6 +35,11 @@ GOLDEN = [
     "strawberry-shortcake",
     "synthetic-two-windows",
 ]
+
+# The M3.1a multi-sitting golden (rajma: rinse -> soak 8 hr -> cook), tested separately
+# from GOLDEN below since it is not single-sitting -- most of this module's `slug`
+# tests assert the single-sitting invariant.
+MULTI_SITTING_SLUG = "synthetic-two-sittings"
 
 # active_min, attended_min, elapsed_high_min -- the V2 table, per fixture.
 EXPECTED = {
@@ -55,6 +60,11 @@ EXPECTED_LONG_WAITS = {
 
 @pytest.fixture(params=GOLDEN)
 def slug(request: pytest.FixtureRequest) -> str:
+    return str(request.param)
+
+
+@pytest.fixture(params=[*GOLDEN, MULTI_SITTING_SLUG])
+def any_slug(request: pytest.FixtureRequest) -> str:
     return str(request.param)
 
 
@@ -148,6 +158,178 @@ def test_summary_is_deterministic(slug: str) -> None:
     )
 
 
+# --- M3.1a: Session.elapsed_min / elapsed_high_min / preceded_by_host_node_ids ------
+# Generic invariants over every golden plus the multi-sitting one, so nothing here is
+# tuned to a single recipe shape. See docs: the M3.1a section of the M3.2 plan §2/§3/§4.
+
+
+def test_session_elapsed_min_is_its_own_span(any_slug: str) -> None:
+    for session in _summary(any_slug).sessions:
+        assert session.elapsed_min == pytest.approx(session.end_min - session.start_min)
+
+
+def test_session_elapsed_high_is_never_below_elapsed(any_slug: str) -> None:
+    """A cook is never faster than typical, even within a single sitting."""
+    for session in _summary(any_slug).sessions:
+        assert session.elapsed_high_min >= session.elapsed_min
+
+
+def test_single_sitting_session_matches_the_whole_recipe_range(slug: str) -> None:
+    """Degenerate case: with one sitting, its range IS the recipe's range."""
+    summary = _summary(slug)
+    (session,) = summary.sessions
+    assert session.elapsed_min == pytest.approx(summary.elapsed_min)
+    assert session.elapsed_high_min == pytest.approx(summary.elapsed_high_min)
+
+
+def test_first_session_has_no_preceding_host(any_slug: str) -> None:
+    summary = _summary(any_slug)
+    assert summary.sessions[0].preceded_by_host_node_ids == []
+
+
+def test_preceding_host_nodes_are_hands_off_and_overlap_the_gap(any_slug: str) -> None:
+    graph = _graph(any_slug)
+    nodes = {n.id: n for n in graph.nodes}
+    plan = _plan(any_slug)
+    scheduled = {s.node_id: s for s in plan.scheduled}
+    summary = _summary(any_slug)
+
+    for previous, current in zip(summary.sessions, summary.sessions[1:], strict=False):
+        for host_id in current.preceded_by_host_node_ids:
+            assert nodes[host_id].attention != "hands_on"
+            host = scheduled[host_id]
+            assert host.start_min < current.start_min
+            assert host.end_min > previous.end_min
+
+
+def test_sum_of_session_elapsed_never_exceeds_the_plan(any_slug: str) -> None:
+    """Session-break gaps are excluded from every sitting's span, so the sittings'
+    spans can only fall short of the makespan, never exceed it."""
+    plan = _plan(any_slug)
+    summary = _summary(any_slug)
+    assert sum(s.elapsed_min for s in summary.sessions) <= plan.total_min + 1e-6
+
+
+def test_synthetic_two_sittings_matches_the_pinned_values() -> None:
+    """M3.1a plan §2 row 2': rinse -> soak 8 hr -> cook, a non-pizza multi-sitting
+    shape, proving the algorithm doesn't name a source or a process."""
+    summary = _summary(MULTI_SITTING_SLUG)
+
+    assert [(s.start_min, s.end_min) for s in summary.sessions] == [(0.0, 3.0), (483.0, 535.0)]
+    assert [(s.elapsed_min, s.elapsed_high_min) for s in summary.sessions] == [
+        (3.0, 5.0),
+        (52.0, 58.0),
+    ]
+    assert [s.preceded_by_host_node_ids for s in summary.sessions] == [[], ["soak_beans"]]
+
+
+# --- §3: the high bound is per-sitting node identity, never a re-clustering --------
+
+
+def _mismatch_graph() -> CookingGraph:
+    """A hands-on task placed right after a shared step, ahead of a long unattended
+    rest, whose `duration_max` is large enough that slowing it collapses what were two
+    typical-pace sittings into one -- if the high bound were computed by independently
+    re-clustering the slowed timeline and pairing sittings by index, the counts would
+    mismatch (2 typical sittings vs. 1 slow-timeline cluster) and there would be
+    nothing to pair. `summarize` never re-clusters, so this must resolve cleanly: each
+    sitting's high is the footprint of ITS OWN nodes on the slowed timeline.
+    """
+    src = SourceRef(kind="text", value="mismatch test", imported_at=datetime.now(UTC))
+    common = {"stage": "s", "doneness_cue": None, "tip": None, "max_lead_min": None}
+    return CookingGraph(
+        id="mismatch",
+        title="Mismatch",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=[
+            Node(
+                id="start",
+                label="Start",
+                instruction="Do the shared first step.",
+                kind="prep",
+                attention="hands_on",
+                duration_min=8,
+                duration_typical=10,
+                duration_max=12,
+                station="counter",
+                depends_on=[],
+                consumes=[],
+                produces="comp_start",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="rest",
+                label="Rest",
+                instruction="Leave it to rest.",
+                kind="passive",
+                attention="unattended",
+                duration_min=140,
+                duration_typical=150,
+                duration_max=160,
+                station="none",
+                depends_on=["start"],
+                consumes=["comp_start"],
+                produces="comp_rested",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="chop",
+                label="Chop",
+                instruction="Chop a side ingredient.",
+                kind="prep",
+                attention="hands_on",
+                duration_min=4,
+                duration_typical=5,
+                duration_max=100,
+                station="counter",
+                depends_on=["start"],
+                consumes=["comp_start"],
+                produces="comp_chopped",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="finish",
+                label="Finish",
+                instruction="Bring it together and serve.",
+                kind="finish",
+                attention="hands_on",
+                duration_min=1,
+                duration_typical=2,
+                duration_max=3,
+                station="none",
+                depends_on=["rest", "chop"],
+                consumes=["comp_rested", "comp_chopped"],
+                produces=None,
+                interruptible=False,
+                **common,
+            ),
+        ],
+    )
+
+
+def test_high_bound_resolves_without_a_fallback_on_the_mismatch_case() -> None:
+    graph = _mismatch_graph()
+    plan = schedule(graph)
+    summary = summarize(graph, plan)
+
+    # Two sittings at typical pace: the 5-min chop keeps the gap at 145 min (>= 120).
+    assert [(s.start_min, s.end_min) for s in summary.sessions] == [(0.0, 15.0), (160.0, 162.0)]
+
+    # No exception, nothing null: each sitting's high is its own occupied footprint on
+    # the slowed timeline, not a re-clustered pairing.
+    highs = [s.elapsed_high_min for s in summary.sessions]
+    assert all(h >= 0 for h in highs)
+    assert highs == [112.0, 3.0]
+
+
 # --- The real pizza-dough import: the multi-session case (§V2's "deciding case"). ---
 
 SOURCE = SourceRef(kind="url", value="https://youtu.be/WM1XcYXix0Y", imported_at=datetime.now(UTC))
@@ -191,6 +373,25 @@ def test_pizza_is_a_three_sitting_recipe() -> None:
     ]
     assert [s.active_min for s in summary.sessions] == [5.0, 10.0, 20.0]
     assert [s.preceded_by_wait_min for s in summary.sessions] == [None, 270.0, 1150.0]
+
+    # M3.1a: the middle sitting is pizza's only real (non-synthetic) case, and the one
+    # the mismatch-graph test can't stand in for -- pin it so a regression in the
+    # middle-session branch of `summarize` can't hide behind single- or two-sitting
+    # coverage alone.
+    assert [(s.elapsed_min, s.elapsed_high_min) for s in summary.sessions] == [
+        (10.0, 12.0),
+        (10.0, 15.0),
+        (30.0, 46.0),
+    ]
+    assert [s.preceded_by_host_node_ids for s in summary.sessions] == [
+        [],
+        ["step_cover_the_bowl_with_plastic_wrap"],
+        [
+            "step_cover_and_refrigerate_overnight_18_hours",
+            "step_remove_the_dough_1_hour_before",
+            "step_place_a_pizza_stone_or_inverted",
+        ],
+    ]
     assert summary.long_waits == []  # both gaps are >= SESSION_BREAK_MIN, not long waits
 
     listed = [node_id for session in summary.sessions for node_id in session.node_ids]

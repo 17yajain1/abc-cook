@@ -131,6 +131,25 @@ class Session(BaseModel):
         description="Length of the session-break gap immediately before this sitting. "
         "`None` for the first sitting.",
     )
+    elapsed_min: float = Field(
+        description="`end_min - start_min`. How long this sitting takes at typical pace. "
+        "For the last sitting, the header range's lower bound; for a single-sitting "
+        "recipe, equal to `plan.total_min`.",
+    )
+    elapsed_high_min: float = Field(
+        description="The occupied footprint of this sitting's own `node_ids`, measured on "
+        "a timeline where every `hands_on` node's `duration_typical` is set to its "
+        "`duration_max`. The header range's upper bound for the last sitting. Not "
+        "derivable from `PlanSummary.elapsed_high_min - start_min`: slowness in earlier "
+        "sittings shifts later ones on that timeline, but this sitting's own steps still "
+        "take the same honest-worst-case time regardless of what came before.",
+    )
+    preceded_by_host_node_ids: list[str] = Field(
+        description="The hands-off nodes whose interval overlaps the open gap between the "
+        "previous sitting's end and this sitting's start -- what the dish is busy with "
+        "during the break. `[]` for the first sitting. Same predicate as "
+        "`LongWait.host_node_ids`.",
+    )
 
 
 class LongWait(BaseModel):

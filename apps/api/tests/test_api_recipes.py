@@ -23,6 +23,7 @@ GOLDEN = [
     "homemade-donuts",
     "strawberry-shortcake",
     "synthetic-two-windows",
+    "synthetic-two-sittings",
 ]
 
 
