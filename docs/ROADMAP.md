@@ -103,6 +103,71 @@ can't tell which one is different, the direction hasn't landed.
 
 ---
 
+## M3.1 — Recipe-level timing summary  ·  ~1 evening
+
+Python only, no UI. `PlanSummary` (`abc_cook/schedule/summary.py`) — active/attended
+minutes, the honest upper bound from a second scheduler run with every hands-on node
+slowed to `duration_max`, and the timeline split into sittings and long waits — rides in
+as an optional `RecipePlanResponse` sidecar field next to `stage_spans`, the same
+discipline `StageSpan` already established. `CookingPlan`, the scheduler, and every
+golden `*.plan.json` fixture stay untouched. See `docs/COOKING_GRAPH.md` §4.7.
+
+**Exit:** `pytest` green with `PlanSummary` computed for all golden fixtures; the six
+existing golden `.plan.json` files byte-identical (nothing rides anywhere but the sidecar).
+
+---
+
+## M3.1a — Per-sitting range and wait-row hosts  ·  ~1 evening
+
+Adds `Session.elapsed_min`, `elapsed_high_min`, and `preceded_by_host_node_ids` so M3.2's
+header range and wait row are lookups, never frontend arithmetic (`docs/COOKING_GRAPH.md`
+§4.7). The high bound reuses the already-slowed timeline's occupied footprint for that
+sitting's own nodes — not a re-clustering of it, which could produce a different sitting
+count with nothing to pair against.
+
+**Exit:** new golden `synthetic-two-sittings` fixture (rinse → soak 8 hr → cook) proves
+the split is generic over any long unattended node, not tuned to pizza's dough rest; all
+six pre-existing golden `.plan.json` files stay byte-identical.
+
+---
+
+## M3.2 — Plan overview and timing header  ·  ~2–3 evenings
+
+Makes the Plan view overview-first. Every stage starts collapsed — rollup figure, task
+chain, `Meanwhile:` line — with one control to expand or collapse every stage at once
+(`Show full recipe` / `Show overview`, on the `Plan · Map` mode row). The recipe header
+gains a range-plus-secondary timing line computed from `PlanSummary` (Option A —
+`docs/DESIGN_SYSTEM.md` § *Resolved in M3.2*), and a `WaitRow` states a sitting-boundary
+gap between two rendered stages. An expanded stage shows its hands-on/waiting split
+(tilde on the hands-on half only), a `You'll need:` ingredient line, and each task's full
+instruction with its tip when it has one — inline and inside a hosted wait window alike.
+Every number here is a lookup on `PlanSummary` / `StageSpan` / the graph; nothing is
+computed on the client (`CLAUDE.md`).
+
+**Exit:** `vitest` and `lint` green; the collapsed and expanded states checked at 390×844
+against `DESIGN_SYSTEM.md`'s StageCard and Resolved-in-M3.2 sections row by row, not
+approved from a token table (`CLAUDE.md` § Working style) — Kadai's `Cook the base` and
+Chicken Biryani's `Chicken` and `Rice` stages are the checkpoints that surfaced real
+layout issues (a stage header collision on a long hands-on/waiting split) worth checking
+again on any future change to the header row.
+
+---
+
+## M3.2b — Source-section stages and in-stage waits  ·  scope not yet estimated
+
+Deferred out of M3.2: stages keyed to a recipe's own written sections rather than the
+scheduler's inferred grouping, a wait row that can sit *inside* a stage rather than only
+between two rendered stages, and pizza's `cook` stage — the one shipped case whose
+rendered nodes span more than one sitting, which `deriveWaitRows` currently handles by
+dropping the ambiguous wait row rather than guessing at a split. None of these are a
+`derive.ts` or scheduler defect; they are product questions about what a "stage" should
+mean once its rendered content can straddle a sitting boundary.
+
+**Exit:** not yet written — scope this milestone properly before starting it, per
+`CLAUDE.md` § Working style ("ask instead of inventing product behaviour").
+
+---
+
 ## M3 — Cooking mode  ·  ~4–5 evenings
 
 The interaction that proves the thesis:

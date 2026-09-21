@@ -4,13 +4,34 @@ import type { RecipePlanResponse, StageSpan } from '@abc-cook/schema'
 
 import { stageColor } from '@/lib/stageColor'
 
-import { derivePlan, type RenderTask } from './derive'
-import { freeMinForStage, stageDurationText, stageOrdinal, taskDurationText } from './StageCard'
+import { derivePlan, type RenderStage, type RenderTask } from './derive'
+import {
+  collapsedStageDurationText,
+  expandedStageDurationText,
+  meanwhileLabels,
+  stageOrdinal,
+  taskDurationText,
+  youllNeedText,
+} from './StageCard'
+import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
+import maggi from '@/__fixtures__/maggi-2min.plan-response.json'
+import pizzaDough from '@/__fixtures__/pizza-dough.plan-response.json'
+import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
+import syntheticTwoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
+import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 
 const KADAI = kadaiPaneer as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse
+const MAGGI = maggi as RecipePlanResponse
+const DONUTS = homemadeDonuts as RecipePlanResponse
+const SHORTCAKE = strawberryShortcake as RecipePlanResponse
+const PIZZA = pizzaDough as RecipePlanResponse
+const TWO_SITTINGS = syntheticTwoSittings as RecipePlanResponse
+const TWO_WINDOWS = syntheticTwoWindows as RecipePlanResponse
+
+const ALL_FIXTURES = [KADAI, MAGGI, BIRYANI, DONUTS, SHORTCAKE, PIZZA, TWO_SITTINGS, TWO_WINDOWS]
 
 describe('stageOrdinal — badge number and badge tint agree', () => {
   it('derives the ordinal from the same stage.index the tint uses, for every stage', () => {
@@ -47,25 +68,52 @@ function span(overrides: Partial<StageSpan>): StageSpan {
   }
 }
 
-describe('stageDurationText (C1)', () => {
-  it('splits hands-on and waiting minutes when both fields are present and there is waiting time', () => {
+describe('expandedStageDurationText (C1 split, M3.2 tilde)', () => {
+  it('splits hands-on and waiting minutes when both fields are present and there is waiting time, tilde on hands-on only', () => {
     const cookBase = span({ inline_work_min: 17, hands_on_min: 5, unattended_min: 12 })
-    expect(stageDurationText(cookBase)).toBe('5 min hands-on · 12 min waiting')
+    expect(expandedStageDurationText(cookBase)).toBe('~5 min hands-on · 12 min waiting')
   })
 
   it('formats long waits as hours', () => {
     const s = span({ inline_work_min: 1165, hands_on_min: 20, unattended_min: 1145 })
-    expect(stageDurationText(s)).toBe('20 min hands-on · 19 hr 5 min waiting')
+    expect(expandedStageDurationText(s)).toBe('~20 min hands-on · 19 hr 5 min waiting')
   })
 
   it('falls back to the plain ~N min figure when the stage is entirely hands-on', () => {
     const prep = span({ inline_work_min: 5, hands_on_min: 5, unattended_min: 0 })
-    expect(stageDurationText(prep)).toBe('~5 min')
+    expect(expandedStageDurationText(prep)).toBe('~5 min')
   })
 
   it('falls back to the plain ~N min figure when the fields are absent (a pre-C1 saved recipe)', () => {
     const oldSave = span({ inline_work_min: 12 })
-    expect(stageDurationText(oldSave)).toBe('~12 min')
+    expect(expandedStageDurationText(oldSave)).toBe('~12 min')
+  })
+
+  it('formats a legacy fallback span over an hour via formatMinutes, matching collapsedStageDurationText', () => {
+    const legacy = span({ inline_work_min: 65 })
+    expect(expandedStageDurationText(legacy)).toBe('~1 hr 5 min')
+  })
+
+  it('still takes the fallback branch when unattended_min is 0 even though hands_on_min is present', () => {
+    const allHandsOn = span({ inline_work_min: 9, hands_on_min: 9, unattended_min: 0 })
+    expect(expandedStageDurationText(allHandsOn)).toBe('~9 min')
+  })
+})
+
+describe('collapsedStageDurationText (M3.2)', () => {
+  it('always uses ~, even when the stage is entirely hands-on (hands_on_min === 0 elsewhere is irrelevant here)', () => {
+    const allHandsOn = span({ inline_work_min: 5, hands_on_min: 5, unattended_min: 0 })
+    expect(collapsedStageDurationText(allHandsOn)).toBe('~5 min')
+  })
+
+  it('always uses ~ even when the stage has real waiting time, unlike the expanded stageDurationText split', () => {
+    const cookBase = span({ inline_work_min: 17, hands_on_min: 5, unattended_min: 12 })
+    expect(collapsedStageDurationText(cookBase)).toBe('~17 min')
+  })
+
+  it('works on a pre-C1 saved recipe with no hands_on_min/unattended_min fields', () => {
+    const oldSave = span({ inline_work_min: 12 })
+    expect(collapsedStageDurationText(oldSave)).toBe('~12 min')
   })
 })
 
@@ -79,23 +127,25 @@ function task(overrides: Partial<RenderTask>): RenderTask {
     attention: 'hands_on',
     durationProvenance: null,
     homeStageIndex: 0,
+    tip: null,
     ...overrides,
   }
 }
 
-describe('taskDurationText (C2)', () => {
-  it('formats a long duration as hours, with no estimate cue', () => {
-    expect(taskDurationText(task({ durationTypical: 270 }))).toBe('4 hr 30 min')
+describe('taskDurationText (C2, M3.2 three-way)', () => {
+  it('marks a hands-on row with ~, with no estimate cue, regardless of duration length', () => {
+    expect(taskDurationText(task({ durationTypical: 270 }))).toBe('~4 hr 30 min')
+    expect(taskDurationText(task({ durationTypical: 10 }))).toBe('~10 min')
+  })
+
+  it('marks a hands-on row with ~ even if its provenance is inferred — hands-on always wins the first branch', () => {
+    const t = task({ attention: 'hands_on', durationProvenance: 'inferred', durationTypical: 10 })
+    expect(taskDurationText(t)).toBe('~10 min')
   })
 
   it('prefixes "about " for a non-hands-on row whose duration provenance is inferred', () => {
     const t = task({ attention: 'unattended', durationProvenance: 'inferred', durationTypical: 10 })
     expect(taskDurationText(t)).toBe('about 10 min')
-  })
-
-  it('does not mark a hands-on row, even if its provenance is inferred', () => {
-    const t = task({ attention: 'hands_on', durationProvenance: 'inferred', durationTypical: 10 })
-    expect(taskDurationText(t)).toBe('10 min')
   })
 
   it('does not mark a defaulted duration as an estimate', () => {
@@ -107,18 +157,89 @@ describe('taskDurationText (C2)', () => {
     const t = task({ attention: 'unattended', durationProvenance: 'extracted', durationTypical: 10 })
     expect(taskDurationText(t)).toBe('10 min')
   })
+
+  it('is plain for a non-hands-on row with no provenance at all (legacy/null metadata)', () => {
+    const t = task({ attention: 'periodic', durationProvenance: null, durationTypical: 10 })
+    expect(taskDurationText(t)).toBe('10 min')
+  })
 })
 
-describe('freeMinForStage', () => {
-  it('sums the window hosts\' duration_typical for Kadai\'s Cook Base stage', () => {
-    const plan = derivePlan(KADAI)
-    const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
-    expect(freeMinForStage(cookBase)).toBe(12)
+function stage(overrides: Partial<RenderStage>): RenderStage {
+  return {
+    stageId: 's',
+    label: 'Stage',
+    index: 0,
+    span: span({}),
+    inlineTasks: [],
+    windows: [],
+    ingredients: [],
+    ...overrides,
+  }
+}
+
+function windowTask(label: string, rankInWindow: number) {
+  return { ...task({ label }), rankInWindow }
+}
+
+describe('meanwhileLabels (M3.2)', () => {
+  it('is empty when the stage hosts no windows', () => {
+    expect(meanwhileLabels(stage({ windows: [] }))).toEqual([])
   })
 
-  it('is zero for a stage with no windows', () => {
+  it('reads Kadai\'s real Cook Base window in rank order', () => {
+    const plan = derivePlan(KADAI)
+    const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
+    expect(meanwhileLabels(cookBase)).toEqual(['Cube capsicum', 'Cube paneer', 'Make kadai masala'])
+  })
+
+  it('flattens multiple windows in host-time order, each window\'s own tasks staying in rank order', () => {
+    const w1 = {
+      id: 'w1',
+      hostNodeId: 'h1',
+      hostLabel: 'Host 1',
+      hostDurationTypical: 10,
+      hostAttention: 'unattended' as const,
+      hostDonenessCue: null,
+      usedMin: 5,
+      slackMin: 5,
+      capacityMin: 10,
+      tasks: [windowTask('Task A', 0), windowTask('Task B', 1)],
+    }
+    const w2 = {
+      ...w1,
+      id: 'w2',
+      hostNodeId: 'h2',
+      tasks: [windowTask('Task C', 0)],
+    }
+    expect(meanwhileLabels(stage({ windows: [w1, w2] }))).toEqual(['Task A', 'Task B', 'Task C'])
+  })
+})
+
+describe('youllNeedText (M3.2)', () => {
+  it('is null for a stage with no graph ingredients', () => {
+    expect(youllNeedText(stage({ ingredients: [] }))).toBeNull()
+  })
+
+  it("reads Kadai's Prep stage, names only, graph order — including nodes windowed away into Cook Base", () => {
     const plan = derivePlan(KADAI)
     const prep = plan.stages.find((s) => s.stageId === 'prep')!
-    expect(freeMinForStage(prep)).toBe(0)
+    expect(youllNeedText(prep)).toBe(
+      "You'll need: Onion, Tomato, Capsicum, Paneer, Kadai masala whole spices",
+    )
+  })
+
+  it("reads Kadai's Cook Base stage, excluding component ids", () => {
+    const plan = derivePlan(KADAI)
+    const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
+    expect(youllNeedText(cookBase)).toBe("You'll need: Ginger-garlic paste, Oil, Salt")
+  })
+
+  it('is null exactly when the stage has no ingredients, for every rendered stage in every fixture', () => {
+    for (const payload of ALL_FIXTURES) {
+      const plan = derivePlan(payload)
+      for (const s of plan.stages) {
+        expect(youllNeedText(s) === null).toBe(s.ingredients.length === 0)
+      }
+    }
   })
 })

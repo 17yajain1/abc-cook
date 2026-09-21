@@ -20,6 +20,7 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.schedule import LONG_WAIT_MIN, SESSION_BREAK_MIN, schedule, summarize
+from abc_cook.schedule.summary import _slow_plan
 from abc_cook.schema import CookingGraph, CookingPlan, Node, PlanSummary, Stage
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedRecipe
@@ -328,6 +329,160 @@ def test_high_bound_resolves_without_a_fallback_on_the_mismatch_case() -> None:
     highs = [s.elapsed_high_min for s in summary.sessions]
     assert all(h >= 0 for h in highs)
     assert highs == [112.0, 3.0]
+
+
+# --- CP0: the high bound is clamped, never reported raw when chains converge --------
+
+
+def _converging_chains_graph() -> CookingGraph:
+    """Two independent chains that converge on the last sitting's `finish` node.
+
+    Chain 1 (hands-on, slowable): `sear` (typical 10, max 30) -> `braise` (unattended,
+    540, untouched by pace) -> `plate` (hands-on, 5). Chain 2 (hands-off, untouched):
+    `marinate` (unattended, 600) alone. `finish` needs both.
+
+    At typical pace the cook returns for `plate` at 550 (braise's end) and the sitting
+    runs to 605 -- 45 of its 55 min spent waiting on `marinate`, which is still running.
+    On the slowed timeline `sear` takes its full 30, pushing `braise` (untouched) to end
+    at 570 instead of 550; `plate` now starts at 570, but `finish` still starts at 600 --
+    pinned by `marinate`, which never moved. The sitting's raw slow-timeline footprint
+    (`plate` start to `finish` end) is therefore 35, *below* the typical 55: the slow
+    cook spent all their extra time in sitting 1, not this one. Reproduced and recorded
+    in the M3.2 plan §2 (bug B) / §12a (CP0 semantic validation).
+    """
+    src = SourceRef(kind="text", value="converging chains test", imported_at=datetime.now(UTC))
+    common = {"stage": "s", "doneness_cue": None, "tip": None, "max_lead_min": None}
+    return CookingGraph(
+        id="converging",
+        title="Converging Chains",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=[
+            Node(
+                id="sear",
+                label="Sear",
+                instruction="Sear until browned.",
+                kind="active",
+                attention="hands_on",
+                duration_min=8,
+                duration_typical=10,
+                duration_max=30,
+                station="burner",
+                depends_on=[],
+                consumes=[],
+                produces="comp_seared",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="braise",
+                label="Braise",
+                instruction="Braise low and slow.",
+                kind="passive",
+                attention="unattended",
+                duration_min=540,
+                duration_typical=540,
+                duration_max=540,
+                station="oven",
+                depends_on=["sear"],
+                consumes=["comp_seared"],
+                produces="comp_braised",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="plate",
+                label="Plate",
+                instruction="Plate the braise.",
+                kind="combine",
+                attention="hands_on",
+                duration_min=4,
+                duration_typical=5,
+                duration_max=5,
+                station="counter",
+                depends_on=["braise"],
+                consumes=["comp_braised"],
+                produces="comp_plated",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="marinate",
+                label="Marinate",
+                instruction="Marinate separately.",
+                kind="passive",
+                attention="unattended",
+                duration_min=600,
+                duration_typical=600,
+                duration_max=600,
+                station="fridge",
+                depends_on=[],
+                consumes=[],
+                produces="comp_marinated",
+                interruptible=True,
+                **common,
+            ),
+            Node(
+                id="finish",
+                label="Finish",
+                instruction="Bring both together and serve.",
+                kind="finish",
+                attention="hands_on",
+                duration_min=4,
+                duration_typical=5,
+                duration_max=5,
+                station="none",
+                depends_on=["plate", "marinate"],
+                consumes=["comp_plated", "comp_marinated"],
+                produces=None,
+                interruptible=False,
+                **common,
+            ),
+        ],
+    )
+
+
+def test_converging_chains_high_bound_is_clamped_not_reported_raw() -> None:
+    graph = _converging_chains_graph()
+    plan = schedule(graph)
+    summary = summarize(graph, plan)
+
+    # (f) Two sittings, no exception getting here.
+    assert len(summary.sessions) == 2
+    sitting1, sitting2 = summary.sessions
+
+    # (a) Sitting 1: the slowness lands here -- typical 10, slow footprint 30 (sear's
+    # own duration_max, from 0).
+    assert (sitting1.elapsed_min, sitting1.elapsed_high_min) == pytest.approx((10.0, 30.0))
+
+    # (b)/(c) The raw slow-plan placements pin the unclamped footprint at exactly 35,
+    # below sitting 2's normal 55 -- reproduced directly on the slow schedule, not just
+    # asserted through the clamped field.
+    slow_plan = _slow_plan(graph, burner_capacity=1)
+    slow_by_id = {s.node_id: s for s in slow_plan.scheduled}
+    assert slow_by_id["plate"].start_min == pytest.approx(570.0)
+    assert slow_by_id["finish"].start_min == pytest.approx(600.0)
+    assert slow_by_id["finish"].end_min == pytest.approx(605.0)
+    unclamped_footprint = slow_by_id["finish"].end_min - slow_by_id["plate"].start_min
+    assert unclamped_footprint == pytest.approx(35.0)
+    assert sitting2.elapsed_min == pytest.approx(55.0)
+    assert unclamped_footprint < sitting2.elapsed_min
+
+    # (d) After the clamp: sitting 2's high equals its own elapsed, not the raw 35.
+    assert sitting2.elapsed_high_min == pytest.approx(sitting2.elapsed_min) == pytest.approx(55.0)
+
+    # (e) Recipe level is unaffected by the clamp -- the honest upper bound was always
+    # 605 here, since the marinate chain (never slowed) dominates the critical path
+    # regardless of the sear/braise/plate chain's pace.
+    assert summary.elapsed_high_min == pytest.approx(summary.elapsed_min) == pytest.approx(605.0)
+
+    # (f) Host ids for the gap between the sittings, in scheduled-start order: marinate
+    # (start 0) before braise (start 10) -- both overlap the gap, ordering is by_start.
+    assert sitting2.preceded_by_host_node_ids == ["marinate", "braise"]
 
 
 # --- The real pizza-dough import: the multi-session case (§V2's "deciding case"). ---

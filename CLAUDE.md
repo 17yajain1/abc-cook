@@ -138,6 +138,8 @@ Mixing these up in code or copy is how the product gets muddy.
 |---|---|---|
 | **Cooking Graph** | The internal DAG of nodes and dependencies | No — internal only |
 | **Cooking Plan** | The scheduled, renderable output the user sees | Yes |
+| **Session** | A contiguous sitting of hands-on activity, unbroken by a session-break wait (`Session`, `PlanSummary.sessions`) | No — internal only; the product talks about the *situation* ("start about 24 hr before you eat"), never the model |
+| **Sitting** | The user-facing word for a Session | Prose only — never a UI label, button, or component name |
 | **Stage** | A named group of nodes: Prep, Cook Base, Add Veggies, Finish | Yes |
 | **Node** | One unit of work in the graph | No |
 | **Wait window** | An unattended interval that can host prep work | No |

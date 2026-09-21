@@ -406,6 +406,32 @@ function independentOnlyPlan(): RecipePlanResponse {
   } as unknown as RecipePlanResponse
 }
 
+describe('layoutMap — durationLabel tilde (M3.2)', () => {
+  it('marks every hands-on card\'s label with a leading ~, in every fixture', () => {
+    for (const [, fixture] of ALL) {
+      const attentionOf = new Map(fixture.graph.nodes.map((n) => [n.id, n.attention]))
+      const layout = layoutMap(fixture)
+      for (const card of layout.cards) {
+        if (attentionOf.get(card.nodeId) === 'hands_on') {
+          expect(card.durationLabel.startsWith('~')).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('never marks an unattended card\'s label with ~, in every fixture', () => {
+    for (const [, fixture] of ALL) {
+      const attentionOf = new Map(fixture.graph.nodes.map((n) => [n.id, n.attention]))
+      const layout = layoutMap(fixture)
+      for (const card of layout.cards) {
+        if (attentionOf.get(card.nodeId) === 'unattended') {
+          expect(card.durationLabel.startsWith('~')).toBe(false)
+        }
+      }
+    }
+  })
+})
+
 describe('layoutMap — hasParallel semantics (CP2)', () => {
   it('is false for an independent-only plan: an independent card draws no bracket, so it must not key the dashed legend entry', () => {
     const layout = layoutMap(independentOnlyPlan())

@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
 import { MapView } from '@/map/MapView'
 import type { MapLayout } from '@/map/layout'
 
-import type { RenderPlan } from './derive'
+import type { RenderPlan, RenderWaitRow } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import { StageCard } from './StageCard'
+import { WaitRow } from './WaitRow'
 
 /** A6: at most one calm line under the header, never a warning dump. Degraded takes
  * priority over review-recommended — a simplified plan is the bigger thing to know. */
@@ -17,6 +18,27 @@ export function statusLineFor(importMeta: ImportMeta | null | undefined): string
   if (importMeta.degraded) return 'Plan simplified — steps run one after another.'
   if (importMeta.review_recommended) return 'Some timings are estimates.'
   return null
+}
+
+/** M3.2: toggles one stage id in an expansion set, leaving every other id untouched. */
+export function toggleStageSet(expanded: ReadonlySet<string>, stageId: string): Set<string> {
+  const next = new Set(expanded)
+  if (next.has(stageId)) next.delete(stageId)
+  else next.add(stageId)
+  return next
+}
+
+/** Whether every rendered stage is open — an empty stage list is never "all expanded"
+ *  (an empty recipe never shows the toggle control at all; see its call site). */
+export function allStagesExpanded(stageIds: readonly string[], expanded: ReadonlySet<string>): boolean {
+  return stageIds.length > 0 && stageIds.every((id) => expanded.has(id))
+}
+
+/** "Show full recipe" flips every stage open; "Show overview" is only offered once
+ *  they already are, so it always describes what tapping it will do next, not the
+ *  current state. */
+export function overviewControlLabel(allExpanded: boolean): string {
+  return allExpanded ? 'Show overview' : 'Show full recipe'
 }
 
 type Tab = 'plan' | 'ingredients'
@@ -44,6 +66,25 @@ export function PlanScreen({
   const [mode, setMode] = useState<Mode>('plan')
   const showingMap = tab === 'plan' && mode === 'map'
   const statusLine = statusLineFor(importMeta)
+
+  // M3.2: overview-first — every stage starts collapsed. This is ordinary component
+  // state, not a ref, so it re-renders on toggle like any other UI state; it survives
+  // a Plan<->Map round trip for the same reason `hasAnimatedMapRef` does (see above) —
+  // switching `mode` never unmounts this component, only a recipe change does.
+  const stageIds = plan.stages.map((s) => s.stageId)
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
+  const allExpanded = allStagesExpanded(stageIds, expandedStages)
+  const toggleStage = (stageId: string) =>
+    setExpandedStages((prev) => toggleStageSet(prev, stageId))
+  const toggleAllStages = () =>
+    setExpandedStages(allExpanded ? new Set() : new Set(stageIds))
+
+  const waitRowsAfter = new Map<number, RenderWaitRow[]>()
+  for (const row of plan.waitRows) {
+    const bucket = waitRowsAfter.get(row.afterStageIndex) ?? []
+    bucket.push(row)
+    waitRowsAfter.set(row.afterStageIndex, bucket)
+  }
 
   // The Map's entry animation plays once per recipe, not on every Plan<->Map toggle
   // (`DESIGN_SYSTEM.md` § Map entry animation) — replaying it on every glance would
@@ -100,13 +141,24 @@ export function PlanScreen({
       </div>
 
       {tab === 'plan' && (
-        <div className="flex flex-shrink-0 items-stretch gap-4 px-5 pt-2.5">
-          <ModeButton active={mode === 'plan'} onClick={() => setMode('plan')}>
-            Plan
-          </ModeButton>
-          <ModeButton active={mode === 'map'} onClick={() => setMode('map')}>
-            Map
-          </ModeButton>
+        <div className="flex flex-shrink-0 items-center justify-between gap-4 px-5 pt-2.5">
+          <div className="flex items-stretch gap-4">
+            <ModeButton active={mode === 'plan'} onClick={() => setMode('plan')}>
+              Plan
+            </ModeButton>
+            <ModeButton active={mode === 'map'} onClick={() => setMode('map')}>
+              Map
+            </ModeButton>
+          </div>
+          {mode === 'plan' && stageIds.length > 0 && (
+            <button
+              type="button"
+              onClick={toggleAllStages}
+              className="pb-1.5 text-[13px] font-medium text-ink-3 underline underline-offset-4"
+            >
+              {overviewControlLabel(allExpanded)}
+            </button>
+          )}
         </div>
       )}
 
@@ -130,8 +182,20 @@ export function PlanScreen({
           </div>
         ) : (
           <div className="px-5 pt-6">
-            {plan.stages.map((stage) => (
-              <StageCard key={stage.stageId} stage={stage} defaultExpanded />
+            {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
+              <WaitRow key={`wait-pre-${i}`} row={row} />
+            ))}
+            {plan.stages.map((stage, index) => (
+              <Fragment key={stage.stageId}>
+                <StageCard
+                  stage={stage}
+                  expanded={expandedStages.has(stage.stageId)}
+                  onToggle={() => toggleStage(stage.stageId)}
+                />
+                {(waitRowsAfter.get(index) ?? []).map((row, i) => (
+                  <WaitRow key={`wait-${index}-${i}`} row={row} />
+                ))}
+              </Fragment>
             ))}
 
             {plan.savedMin === 0 && (

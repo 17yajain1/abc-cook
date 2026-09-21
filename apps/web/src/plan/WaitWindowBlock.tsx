@@ -1,6 +1,7 @@
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderWindow } from './derive'
+import { taskDurationText } from './StageCard'
 
 /**
  * The signature component — Direction 3, "Two Kinds of Minute" (docs/DESIGN_SYSTEM.md
@@ -12,8 +13,8 @@ import type { RenderWindow } from './derive'
  *
  * The head states the relationship in words — "Meanwhile, do these" plus a line derived
  * from the host's `attention` — never a numeral; the host's own duration already lives
- * one row above, in its `TaskRow`. Then the ranked borrowed tasks, then one qualitative
- * footer line that carries no second number.
+ * one row above, in its `TaskRow`. Then the ranked borrowed tasks, each with its
+ * instruction, then one qualitative footer line that carries no second number.
  *
  * Every value here is the scheduler's or the graph's, looked up by id. Nothing is added.
  */
@@ -116,9 +117,14 @@ function WindowTask({
             Start with this
           </span>
         )}
+        {task.instruction && (
+          <span className="mt-0.5 block text-[15px] leading-[1.5] text-ink-2">
+            {task.instruction}
+          </span>
+        )}
       </span>
       <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
-        {task.durationTypical} min
+        {taskDurationText(task)}
       </span>
     </li>
   )

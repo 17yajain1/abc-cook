@@ -193,6 +193,8 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
             [] if i == 0 else _host_node_ids(by_start, clusters[i - 1][1], cluster[0])
         )
 
+        session_elapsed_min = _round(cluster[1] - cluster[0])
+
         sessions.append(
             Session(
                 start_min=_round(cluster[0]),
@@ -200,8 +202,14 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
                 active_min=_round(session_active),
                 node_ids=node_ids,
                 preceded_by_wait_min=preceded_by_wait_min,
-                elapsed_min=_round(cluster[1] - cluster[0]),
-                elapsed_high_min=_round(high - low),
+                elapsed_min=session_elapsed_min,
+                # Converging independent chains can pin this sitting's slow-timeline
+                # footprint below its typical-pace span -- a slower cook upstream shifts
+                # this sitting's own nodes later without lengthening them, so the raw
+                # footprint can undershoot `elapsed_min`. Clamped: the field's contract is
+                # "at least what the shown schedule takes", and being slower can never
+                # shrink this sitting.
+                elapsed_high_min=max(_round(high - low), session_elapsed_min),
                 preceded_by_host_node_ids=preceded_by_host_node_ids,
             ),
         )

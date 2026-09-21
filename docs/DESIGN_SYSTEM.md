@@ -616,6 +616,24 @@ govern:** capacity never consumption, ranked never flat, no UI to explain the co
 The specific `9 of 12` / `9 min prep · fits in 12 min` examples there illustrate those
 principles; Direction 3 satisfies all three by other means.
 
+**The `~` / `about` / plain duration vocabulary** (M2.13 C2, extended to the stage figures
+in M3.2) is a separate device from the retired meta-dot above and is not touched by its
+retirement:
+
+| Case | Prefix | Where it appears |
+|---|---|---|
+| Hands-on work (`attention: hands_on`) | `~N min` | every hands-on figure: the collapsed stage rollup, the expanded stage's hands-on half, any hands-on task row (`taskDurationText`, `collapsedStageDurationText`, `expandedStageDurationText`) |
+| Not hands-on, duration provenance `inferred` | `about N min` | a task row whose duration the extractor estimated rather than read off the recipe |
+| Not hands-on, provenance `extracted` / `defaulted` / absent | `N min`, plain | a task row whose duration came from the recipe text or a safe default — never presented as a guess the model made |
+
+**The ` · ` inside the expanded stage split (`~5 min hands-on · 12 min waiting`) and
+inside a `WaitRow` (`First rise · about 1 hr`) is not a reintroduction of the retired
+meta-dot.** Both were already shipped — the split in M2.13 C1, before this section's
+retirement was written; the wait row in M3.2, joining two figures that already live in
+their own timetable row, not standing in for a missing column. The retirement above
+targets a dot substituting for a column that doesn't exist; here the column exists and the
+dot is local punctuation joining two clauses inside one of its cells.
+
 ## Arrows and chevrons
 
 Resolved: **an arrow is permitted only where it encodes a dependency. Never as
@@ -735,8 +753,11 @@ chart.** Its stages stay rows.
 **M2.5 states: `collapsed` and `expanded`.** The `active` and `complete` states are M3 —
 see the *Future Milestone Reference* blocks below.
 
-Collapsed shows: the stage rail, label, `~N min`, a one-line task summary. Expanded shows
-the task rows and any wait-window block this stage hosts.
+Collapsed shows: the stage rail, label, the collapsed `~N min` figure, a one-line task
+chain (`line-clamp-2`), and — when the stage hosts a wait window — a `Meanwhile: ` line
+naming the borrowed tasks (M3.2; see below, and § *Resolved in M3.2*). Expanded shows the
+`You'll need:` line, the task rows, and any wait-window block this stage hosts (M3.2; see
+below).
 
 `~N min` is the stage's **inline** work — `StageSpan.inline_work_min`, the tasks still on
 this card after the scheduler moved others into a window. A stage whose tasks *all* got
@@ -755,20 +776,49 @@ Chicken Biryani stage ① was drawn in stage-1's tint and the two counters could
 read together. **Both must derive from the same ordered stage list.** The badge returns;
 the defect does not.
 
-**Stages open expanded** (M2.5 decision — previously an unrecorded `defaultExpanded`
-prop in `PlanScreen.tsx`). The collapsed state stays specified and reachable; it is not
-the default. Resolves § Authority conflict 7.
+**Stages open expanded (M2.5 decision) — reversed in M3.2.** Previously an unrecorded
+`defaultExpanded` prop in `PlanScreen.tsx`; the collapsed state stayed specified and
+reachable, closing § Authority conflict 7, but was not the default. That reasoning is
+kept above as history — it is still correct, just no longer the product's answer.
+**M3.2 reverses the default: every stage now starts collapsed.** `PlanScreen` owns
+expansion as a `Set<stageId>`, independent per stage, surviving a Plan → Map → Plan round
+trip (`expandedStages`, `PlanScreen.tsx`); `Show full recipe` / `Show overview` toggle
+every stage at once and sit on the `Plan · Map` mode row, not as a separate control (§
+*Resolved in M3.2*). The reversal follows directly from making the Plan view
+overview-first — a screenful of every stage pre-expanded was never an overview.
 
-A stage that hosts a wait window states its free minutes as a **second value in the
+A stage that hosts a wait window stated its free minutes as a **second value in the
 duration column when the stage is collapsed** — `12 free` then `~17 min`, two aligned
-values, no middle dot (the `·`-string retirement in § Metadata and punctuation applies
-here too). **Not when it is expanded:** the panel below is then visible and its rows
-carry the same information, so the figure is a second statement of one fact. The rule is
-general — *state free time where the detail is not visible, and never twice on one
-screen.*
+values, no middle dot. **Retired in M3.2**, replaced by the `Meanwhile: ` line under the
+collapsed chain (`meanwhileLabels`, `StageCard.tsx`) — the borrowed tasks named instead of
+their spare minutes counted. The rule this satisfied is unchanged and still general:
+**state free time where the detail is not visible, and never twice on one screen** — a
+named list under the chain is one way to say that, and reads better beside a chain of
+names than another number crowding the duration column. Still true of the M3.2 line as it
+was of the retired figure: **not shown when the stage is expanded** — the panel below is
+then visible and its rows carry the same information.
 
 It is set in `ink-2`, never in the stage tint: the tints clear 3:1 as **non-text marks**
 only, and measured as 13px text on their own 18% ground they run 3.2–4.1:1.
+
+**Expanded content (M3.2).** The header figure switches from the collapsed always-`~N
+min` rollup to the M2.13 C1 hands-on/waiting split, tilde on the hands-on half only —
+`~5 min hands-on · 12 min waiting` (`expandedStageDurationText`, `StageCard.tsx`) —
+falling back to the collapsed figure's own `~N min`, via the same `formatMinutes`
+formatter, when the stage is entirely hands-on or the split fields are absent (a plan
+saved before M2.13 C1). The ` · ` joining the two halves is not a reintroduction of the
+retired meta-dot (§ Metadata and punctuation) — see the note there. The body opens with a
+`You'll need:` line (`youllNeedText`) — the graph ingredients the stage's own nodes
+consume, names only, comma-joined, in graph order; omitted when the stage consumes none.
+Quantities stay on the Ingredients tab; this line only orients the cook to what the stage
+touches. Each task row then reads, top to bottom: **label → instruction → doneness cue
+(`until …`) → attention note → `Tip:`.** Instruction and tip are `RenderTask` fields
+carried straight from the graph's `Node.instruction` / `Node.tip`; `Tip:` is omitted when
+the node has none. The cue keeps the title (§ *A task row is titled by its task*, above);
+the instruction is the line that answers "so what do I actually do", which neither the
+label nor the cue carries on its own. A `WindowTask` row inside a hosted wait-window panel
+gets the same instruction line under its label — no tip there, since no shipped fixture
+exercises a windowed tip and an unseen treatment should not ship speculatively.
 
 ### WaitWindowBlock — the signature component
 
@@ -897,6 +947,22 @@ schema change, that is a product decision — stop and raise it, do not make it.
 
 `CLAUDE.md` § Vocabulary is updated to match: the **Parallel task** row no longer mandates
 `while this cooks` as the user-facing phrase, and points here.
+
+### WaitRow (M3.2)
+
+A sitting-boundary gap — a rule-style line between two rendered stages, not a card and
+not a wait window. `PlanSummary.sessions` marks where the cook would leave the kitchen
+(a `preceded_by_wait_min` on a session boundary); `WaitRow` states that gap exists before
+the cook wonders why the plan jumped ahead in time. No numeral treatment, no field
+ground, no timer, no action — the app is not tracking this wait, only naming it.
+
+Rendered only **between** two stages the Plan actually draws, never inside one: a hairline
+top border, `13px ink-3`, one line — `First rise · about 1 hr` when the boundary has a
+single host node, `Wait about 1 hr` when it has none or more than one
+(`approxDurationPhrase`, `WaitRow.tsx`). `deriveWaitRows` (`derive.ts`) drops the row
+entirely rather than guess when a rendered stage's own nodes straddle the boundary (a
+stage whose work runs through more than one sitting, e.g. pizza's `cook` stage) — an
+ambiguous placement is worse than a missing row.
 
 ### PrimaryCTA (M2.5)
 Full-width, fixed above the safe area, 52px tall, `--color-signal`, radius 2px; exactly
@@ -1112,6 +1178,22 @@ protanopia, functionally the same colour. **No action taken in M2.75 CP2** — t
 M2.5-era tokens shared with the Plan view, not part of this milestone's approved grammar,
 and the owner's decision was to log this rather than touch the shared palette here. See
 § *Still open*, item 10.
+
+## Resolved in M3.2
+
+M3.2 makes the Plan view overview-first (its own brief: the collapsed screen should read
+as a summary, not a stub). Each row below is a decision made against that brief, not a
+Map-style reversal of an approved mock — recorded here in the same table shape as
+§ *Resolved in M2.5* for the same reason: an open item and its answer, legible without
+re-deriving the argument.
+
+| Open item | Resolution |
+|---|---|
+| Recipe-level timing header | **Option A**: a primary range (`formatRange`'s `low–high min`, rounded to a 5-minute bucket, collapsing to `about N min` under 15 min) plus **at most one** secondary line — either the multi-sitting head-start (`Start about N before you eat`) or the single-sitting hands-on note (`~N min hands-on`), never both. Two secondary claims at once was the exact "double timing statement" the design review flagged. `headerTiming`, `lib/duration.ts`. |
+| Collapsed stage figure | Always `~N min`, even when the stage is entirely hands-on — unlike the expanded split, this single numeral is already a rollup of possibly-several tasks, so it is never a plain fact the way one task's own duration is. `collapsedStageDurationText`. |
+| Wait row placement | Between rendered stages only, never inside one, and dropped rather than drawn when a stage's own rendered nodes straddle the sitting boundary. § *WaitRow*, above. |
+| Stage expansion state | Owned by `PlanScreen`, not by `StageCard` — a `Set<stageId>`, independent per stage, starting empty (collapsed), surviving a Plan → Map → Plan round trip. Reverses M2.5's "stages open expanded" — see § *StageCard*, above. |
+| `Show full recipe` / `Show overview` | One control, on the `Plan · Map` mode row (not a separate row, not per-stage), toggling every stage at once. Always names what tapping it does *next*, never the current state — `overviewControlLabel`, `PlanScreen.tsx`. |
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
