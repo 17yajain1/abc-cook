@@ -373,6 +373,25 @@ def test_pizza_is_a_three_sitting_recipe() -> None:
     ]
     assert [s.active_min for s in summary.sessions] == [5.0, 10.0, 20.0]
     assert [s.preceded_by_wait_min for s in summary.sessions] == [None, 270.0, 1150.0]
+
+    # M3.1a: the middle sitting is pizza's only real (non-synthetic) case, and the one
+    # the mismatch-graph test can't stand in for -- pin it so a regression in the
+    # middle-session branch of `summarize` can't hide behind single- or two-sitting
+    # coverage alone.
+    assert [(s.elapsed_min, s.elapsed_high_min) for s in summary.sessions] == [
+        (10.0, 12.0),
+        (10.0, 15.0),
+        (30.0, 46.0),
+    ]
+    assert [s.preceded_by_host_node_ids for s in summary.sessions] == [
+        [],
+        ["step_cover_the_bowl_with_plastic_wrap"],
+        [
+            "step_cover_and_refrigerate_overnight_18_hours",
+            "step_remove_the_dough_1_hour_before",
+            "step_place_a_pizza_stone_or_inverted",
+        ],
+    ]
     assert summary.long_waits == []  # both gaps are >= SESSION_BREAK_MIN, not long waits
 
     listed = [node_id for session in summary.sessions for node_id in session.node_ids]
