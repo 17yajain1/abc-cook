@@ -451,7 +451,13 @@ export function layoutMap(payload: RecipePlanResponse): MapLayout {
       nodeId: p.nodeId,
       label: node.label,
       labelLines: p.labelLines,
-      durationLabel: formatMinutes(node.duration_typical),
+      // M3.2: `~` marks a hands-on figure as rough, the same cue `taskDurationText`
+      // gives its Plan-view row — an unattended card's timing stays plain, since
+      // nobody is watching the clock on it the way they are for their own hands.
+      durationLabel:
+        node.attention === 'hands_on'
+          ? `~${formatMinutes(node.duration_typical)}`
+          : formatMinutes(node.duration_typical),
       note,
       x: p.role === 'mainline' ? MAIN_X : RIGHT_X,
       y,

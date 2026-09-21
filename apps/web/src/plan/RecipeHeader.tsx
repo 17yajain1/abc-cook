@@ -1,4 +1,4 @@
-import { formatMinutes } from '@/lib/duration'
+import { formatMinutes, headerTiming } from '@/lib/duration'
 
 import type { RenderPlan } from './derive'
 
@@ -24,6 +24,8 @@ export interface SaveControl {
  * Cooking" (M2.12 design decision 4).
  */
 export function RecipeHeader({ plan, save }: { plan: RenderPlan; save?: SaveControl }) {
+  const timing = headerTiming(plan.summary, plan.totalMin)
+
   return (
     <header className="flex-shrink-0 px-5 pb-4 pt-7">
       <div className="flex items-start justify-between gap-3">
@@ -38,8 +40,9 @@ export function RecipeHeader({ plan, save }: { plan: RenderPlan; save?: SaveCont
         <span>
           {plan.servings} {plan.servings === 1 ? 'serving' : 'servings'}
         </span>
-        <span>{formatMinutes(plan.totalMin)} total</span>
+        <span>{timing.primary}</span>
       </div>
+      {timing.secondary && <p className="mt-0.5 text-[13px] text-ink-3">{timing.secondary}</p>}
 
       {plan.savedMin > 0 && (
         <p className="mt-4 text-[18px] font-semibold leading-snug text-ink">

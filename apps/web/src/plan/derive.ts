@@ -4,6 +4,7 @@ import type {
   Ingredient,
   Node,
   NodeProvenance,
+  PlanSummary,
   RecipePlanResponse,
   ScheduledNode,
   StageSpan,
@@ -34,6 +35,8 @@ export interface RenderTask {
   durationProvenance: ProvenanceSource | null
   /** Position in `graph.stages` of the stage this task actually belongs to. Drives its tint. */
   homeStageIndex: number
+  /** `Node.tip`, verbatim. `null` when the graph gave none. */
+  tip: string | null
 }
 
 /** A task the scheduler placed inside a wait window — borrowed from another stage. */
@@ -75,6 +78,24 @@ export interface RenderStage {
   inlineTasks: RenderTask[]
   /** Wait windows whose host node lives in this stage, earliest first. */
   windows: RenderWindow[]
+  /** Graph ingredients consumed by a node whose *home* stage (`Node.stage`) is this
+   * one — independent of where the scheduler physically placed the node (inline vs.
+   * borrowed into another stage's window). Graph order, not consumption order; a
+   * `consumes` id that names a component rather than an ingredient is silently
+   * absent, since it never matches an `Ingredient.id`. */
+  ingredients: Ingredient[]
+}
+
+/** M3.2: a sitting boundary long enough to leave the kitchen, placed between two
+ * rendered stages. Only ever produced between stages — see `deriveWaitRows`. */
+export interface RenderWaitRow {
+  /** Render this row immediately after `RenderPlan.stages[afterStageIndex]`; `-1`
+   * means before the first rendered stage. */
+  afterStageIndex: number
+  waitMin: number
+  /** `Session.preceded_by_host_node_ids`, resolved to labels, in that order. Empty
+   * when the gap has no single host (zero, or more than one). */
+  hostLabels: string[]
 }
 
 export interface RenderIngredientGroup {
@@ -97,6 +118,11 @@ export interface RenderPlan {
   hasUnattendedWork: boolean
   stages: RenderStage[]
   ingredientGroups: RenderIngredientGroup[]
+  /** Recipe-level timing (M3.1/M3.2). `null` for a plan saved before `summary`
+   * existed — `headerTiming` falls back to the plain total for that case. */
+  summary: PlanSummary | null
+  /** Sitting-boundary rows to interleave between `stages`, in `stages` order. */
+  waitRows: RenderWaitRow[]
 }
 
 function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
@@ -121,7 +147,17 @@ function toTask(
     attention: node.attention,
     durationProvenance: provenance?.nodes?.[node.id]?.fields?.duration ?? null,
     homeStageIndex,
+    tip: node.tip ?? null,
   }
+}
+
+/** Graph ingredients a stage's own nodes (by `Node.stage`, not rendered placement)
+ * consume, in `graph.ingredients` order (§ `RenderStage.ingredients`). */
+function stageIngredients(graph: CookingGraph, stageId: string): Ingredient[] {
+  const consumed = new Set(
+    graph.nodes.filter((n) => n.stage === stageId).flatMap((n) => n.consumes ?? []),
+  )
+  return graph.ingredients.filter((ingredient) => consumed.has(ingredient.id))
 }
 
 function groupIngredients(ingredients: readonly Ingredient[]): RenderIngredientGroup[] {
@@ -222,8 +258,11 @@ export function derivePlan(
       span,
       inlineTasks,
       windows,
+      ingredients: stageIngredients(graph, stage.id),
     })
   })
+
+  const waitRows = deriveWaitRows(renderStages, nodes, payload.summary ?? null)
 
   return {
     recipeId: graph.id,
@@ -239,5 +278,80 @@ export function derivePlan(
     ),
     stages: renderStages,
     ingredientGroups: groupIngredients(graph.ingredients),
+    summary: payload.summary ?? null,
+    waitRows,
   }
+}
+
+/**
+ * Sitting-boundary wait rows (M3.2), placed between two *rendered* stages.
+ *
+ * A boundary before `sessions[k]` (its `preceded_by_wait_min` is set) gets a row only
+ * when every rendered stage falls entirely before or entirely at-or-after session `k` —
+ * using each stage's *rendered* membership (`inlineTasks` plus `windows`' borrowed
+ * tasks), not `Node.stage`, since a windowed task is drawn under its host stage. A
+ * stage whose rendered nodes span the boundary (pizza's `cook` stage runs through
+ * every sitting) makes the boundary ambiguous; the whole row is dropped rather than
+ * guessed at.
+ */
+function deriveWaitRows(
+  stages: readonly RenderStage[],
+  nodes: Map<string, Node>,
+  summary: PlanSummary | null,
+): RenderWaitRow[] {
+  if (!summary || summary.sessions.length < 2) return []
+
+  const sessionOf = new Map<string, number>()
+  summary.sessions.forEach((session, index) => {
+    for (const nodeId of session.node_ids) sessionOf.set(nodeId, index)
+  })
+
+  const renderedIdsOf = (stage: RenderStage): string[] => [
+    ...stage.inlineTasks.map((t) => t.nodeId),
+    ...stage.windows.flatMap((w) => w.tasks.map((t) => t.nodeId)),
+  ]
+  const stageSessions = stages.map((stage) =>
+    renderedIdsOf(stage)
+      .map((id) => sessionOf.get(id))
+      .filter((s): s is number => s != null),
+  )
+
+  const rows: RenderWaitRow[] = []
+  for (let k = 1; k < summary.sessions.length; k++) {
+    const session = summary.sessions[k]
+    if (session.preceded_by_wait_min == null) continue
+
+    type Side = 'before' | 'after' | 'straddle' | 'unknown'
+    const sideOf = (sessions: number[]): Side => {
+      if (sessions.length === 0) return 'unknown'
+      const before = sessions.some((s) => s < k)
+      const after = sessions.some((s) => s >= k)
+      if (before && after) return 'straddle'
+      return before ? 'before' : 'after'
+    }
+    const sides = stageSessions.map(sideOf)
+    if (sides.some((side) => side === 'straddle' || side === 'unknown')) continue
+
+    // A clean boundary is every 'before' stage followed by every 'after' stage, with
+    // no interleaving — anything else is exactly as ambiguous as a straddling stage.
+    let splitIndex = -1
+    let seenAfter = false
+    let ambiguous = false
+    sides.forEach((side, i) => {
+      if (side === 'after') {
+        if (!seenAfter) splitIndex = i - 1
+        seenAfter = true
+      } else if (seenAfter) {
+        ambiguous = true
+      }
+    })
+    if (ambiguous || !seenAfter) continue
+
+    rows.push({
+      afterStageIndex: splitIndex,
+      waitMin: session.preceded_by_wait_min,
+      hostLabels: session.preceded_by_host_node_ids.map((id) => nodes.get(id)?.label ?? id),
+    })
+  }
+  return rows
 }

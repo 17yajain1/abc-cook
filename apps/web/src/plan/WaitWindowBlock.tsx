@@ -1,6 +1,7 @@
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderWindow } from './derive'
+import { taskDurationText } from './StageCard'
 
 /**
  * The signature component — Direction 3, "Two Kinds of Minute" (docs/DESIGN_SYSTEM.md
@@ -118,7 +119,7 @@ function WindowTask({
         )}
       </span>
       <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
-        {task.durationTypical} min
+        {taskDurationText(task)}
       </span>
     </li>
   )

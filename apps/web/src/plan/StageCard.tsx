@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment } from 'react'
 
 import type { StageSpan } from '@abc-cook/schema'
 
@@ -18,27 +18,26 @@ import { WaitWindowBlock } from './WaitWindowBlock'
  * header, task rows, and any wait-window panel nested inside it. A wait window the stage
  * hosts renders as a panel directly beneath its host's own task row, never in place of
  * it, never full-bleed.
+ *
+ * M3.2: a controlled component. `PlanScreen` owns which stages are open — the overview
+ * starts every stage collapsed, and "Show full recipe" / "Show overview" toggle them
+ * all at once, neither of which a stage can know about from inside itself.
  */
 export function StageCard({
   stage,
-  defaultExpanded,
+  expanded,
+  onToggle,
 }: {
   stage: RenderStage
-  /**
-   * Stages open expanded (M2.5 decision — previously an unrecorded `defaultExpanded`
-   * default). The collapsed state stays specified and reachable; it is not the default.
-   * Resolves § Authority conflict 7. Do not "clean this up" to a computed value.
-   */
-  defaultExpanded: boolean
+  expanded: boolean
+  onToggle: () => void
 }) {
   const tint = stageColor(stage.index)
   const ordinal = stageOrdinal(stage)
-  const freeMin = freeMinForStage(stage)
 
   const windowByHost = new Map(stage.windows.map((w) => [w.hostNodeId, w]))
-
-  const [expanded, setExpanded] = useState(defaultExpanded)
-  const summary = stage.inlineTasks.map((t) => t.label).join(' → ')
+  const chain = stage.inlineTasks.map((t) => t.label).join(' → ')
+  const meanwhile = meanwhileLabels(stage)
 
   return (
     <div className="mb-6 flex gap-3">
@@ -57,23 +56,16 @@ export function StageCard({
       >
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={onToggle}
           aria-expanded={expanded}
           className="flex w-full items-baseline gap-3 text-left"
         >
           <span className="expanded min-w-0 flex-1 text-[18px] font-semibold text-ink">
             {stage.label}
           </span>
-          {!expanded && freeMin > 0 ? (
-            <span className="tabular flex-shrink-0 text-right text-[13px] font-medium text-ink-2">
-              <span className="block">{freeMin} free</span>
-              <span className="block">{stageDurationText(stage.span)}</span>
-            </span>
-          ) : (
-            <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
-              {stageDurationText(stage.span)}
-            </span>
-          )}
+          <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
+            {expanded ? stageDurationText(stage.span) : collapsedStageDurationText(stage.span)}
+          </span>
           <span
             aria-hidden
             className="flex-shrink-0 text-[15px] font-medium leading-none text-ink-2"
@@ -82,8 +74,18 @@ export function StageCard({
           </span>
         </button>
 
-        {summary && !expanded && (
-          <p className="mt-1 truncate text-[13px] text-ink-2">{summary}</p>
+        {!expanded && (
+          <div className="mt-1">
+            {chain && (
+              <p className="line-clamp-2 text-[13px] text-ink-2">{chain}</p>
+            )}
+            {meanwhile.length > 0 && (
+              <p className="mt-1 text-[13px] text-ink-2">
+                <span className="font-medium text-ink">Meanwhile: </span>
+                {meanwhile.join(', ')}
+              </p>
+            )}
+          </div>
         )}
 
         {expanded && (
@@ -110,10 +112,20 @@ export function stageOrdinal(stage: RenderStage): number {
   return stage.index + 1
 }
 
-/** Sum of `duration_typical` across the stage's window hosts — the stage's free minutes,
- *  shown in the duration column only while collapsed (§ StageCard). */
-export function freeMinForStage(stage: RenderStage): number {
-  return stage.windows.reduce((sum, w) => sum + w.hostDurationTypical, 0)
+/**
+ * The collapsed stage figure (M3.2). Always `~`, even when the stage is entirely
+ * hands-on: unlike `stageDurationText`'s expanded split, this single numeral is
+ * already a rollup of possibly-several tasks, so it is never a plain fact the way one
+ * task's own duration is.
+ */
+export function collapsedStageDurationText(span: StageSpan): string {
+  return `~${formatMinutes(span.inline_work_min)}`
+}
+
+/** The stage's window tasks, host-time order then rank order — same order the "Start
+ *  with this" promotion inside the expanded `WaitWindowBlock` uses (§ StageCard). */
+export function meanwhileLabels(stage: RenderStage): string[] {
+  return stage.windows.flatMap((w) => w.tasks).map((t) => t.label)
 }
 
 /**
@@ -134,16 +146,20 @@ export function stageDurationText(span: StageSpan): string {
 }
 
 /**
- * A task row's duration text (C1 long-duration formatting, C2 estimate cue). Prefixed
- * `about ` only when the row is not hands-on AND its duration's provenance is
- * `inferred` — never for `defaulted` (`graph.py`: a defaulted number must never be
- * presented as an estimate the model made) and never for a hands-on row (the cue
- * belongs to window hosts, the only nodes duration inference applies to).
+ * A task row's duration text (C1 long-duration formatting, C2 estimate cue, M3.2
+ * three-way). Three mutually exclusive cases, checked in order:
+ *  - hands-on: `~N min` — the cook is doing this themselves, so it's a rough figure
+ *    the way the collapsed stage figure is, never a promise.
+ *  - not hands-on and the duration's provenance is `inferred`: `about N min` — never
+ *    for `defaulted` (`graph.py`: a defaulted number must never be presented as an
+ *    estimate the model made).
+ *  - otherwise: `N min`, plain.
  */
 export function taskDurationText(task: RenderTask): string {
   const formatted = formatMinutes(task.durationTypical)
-  const isEstimate = task.attention !== 'hands_on' && task.durationProvenance === 'inferred'
-  return isEstimate ? `about ${formatted}` : formatted
+  if (task.attention === 'hands_on') return `~${formatted}`
+  if (task.durationProvenance === 'inferred') return `about ${formatted}`
+  return formatted
 }
 
 function TaskRow({ task }: { task: RenderTask }) {

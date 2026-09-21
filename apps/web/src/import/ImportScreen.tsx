@@ -81,6 +81,7 @@ export function ImportScreen({
             graph: job.result.graph,
             plan: job.result.plan,
             stages: job.result.stages,
+            summary: job.result.summary ?? null,
           }
           onImported(
             derivePlan(payload, job.result.provenance ?? null),
