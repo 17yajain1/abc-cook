@@ -86,7 +86,7 @@ only thing we do.
 - The scheduler and the Cooking Plan
 - Cooking mode: one instruction at a time, timers, "while this cooks" tasks
 - Parallel task detail → mark complete → return to the running timer
-- Stage completion → next stage
+- Node completion → next node (node-driven, not stage-driven — M3.3's session core)
 - Local persistence of imported recipes
 
 **Out, deliberately:**

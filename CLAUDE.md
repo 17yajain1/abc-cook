@@ -76,6 +76,8 @@ abc-cook/
 │   └── ROADMAP.md             ← milestones M0–M5 and their exit criteria
 ├── apps/
 │   ├── web/                   ← React + Vite PWA
+│   │   └── src/
+│   │       └── cooking/       ← session engine: pure reducer, store, useSession — no JSX
 │   └── api/                   ← FastAPI
 │       ├── abc_cook/
 │       │   ├── schema/        ← Pydantic models = single source of truth

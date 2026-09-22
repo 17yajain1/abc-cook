@@ -1195,6 +1195,32 @@ re-deriving the argument.
 | Stage expansion state | Owned by `PlanScreen`, not by `StageCard` — a `Set<stageId>`, independent per stage, starting empty (collapsed), surviving a Plan → Map → Plan round trip. Reverses M2.5's "stages open expanded" — see § *StageCard*, above. |
 | `Show full recipe` / `Show overview` | One control, on the `Plan · Map` mode row (not a separate row, not per-stage), toggling every stage at once. Always names what tapping it does *next*, never the current state — `overviewControlLabel`, `PlanScreen.tsx`. |
 
+## Resolved in M3.3
+
+M3.3's session-core design contract (`apps/web/src/cooking/`) worked through sixteen
+conflicts between the earlier Cooking Mode drafts (`ROADMAP.md`, `PRODUCT.md`, the M3.4
+UX reconciliation) and the shipped scheduler/graph — recorded here in the same table
+shape as § *Resolved in M3.2*, one open item and its answer per row.
+
+| Open item | Resolution |
+|---|---|
+| Stage-driven vs node-driven loop | **Node-driven.** The unit Cooking Mode tracks and advances is a graph node, not a stage — a stage can straddle a wait window or a sitting boundary in ways a single "current stage" pointer can't represent. `ROADMAP.md`/`PRODUCT.md` corrected. |
+| Pause/resume | **No pause** — a pause that cannot pause a pan is a screen that lies. `leave`/`resume` only, plus a `stale` lifecycle report on a long-gap reopen that is never silently resumed. |
+| A hands-off node's start moment | **Explicit.** A hands-off node's initiation is a hands-on moment: shown as the calm `task` screen (label, instruction, quantities) whose solid primary starts its timer. Auto-starting on `Start Cooking` or on becoming current would skip a real instruction ("rinse and soak", "mix and refrigerate"). |
+| Execution order for same-minute ties | Cooking Mode derives its own `order` — `plan.scheduled` re-keyed by `(start_min, occupies_cook ? 1 : 0, node_id)` — restoring the scheduler's own tick order (it starts every ready hands-off node before one hands-on node at the same minute; the plan's own `sort(key=(start_min, node_id))` serialisation discards that). `plan.scheduled` and the goldens are untouched — this is a derived reading, held on `CookingModel`, never written back. |
+| Cook-required / handover predicate | `required(H) ⇔ expired(H) ∧ (attention(H) = periodic ∨ H is the sink ∨ a consumer is ready but for expired producers)`. Consumer-readiness alone (the earlier draft) lets a periodic pan burn once its own consumer is blocked by something else — `attention`, not `interruptible` (verified: gates window placement for a hands-on task, not whether a finished hands-off node can be left), is the field `DESIGN_SYSTEM.md` already calls the single authority on whether the cook is free. |
+| "Give it longer" amount | `EXTEND_MS = 60 000` (flat, per the M3.4 UX direction), added to the *existing* `endsAt` regardless of expiry. |
+| Store shape | No Zustand, no `src/store/`/`src/hooks/` split. `createSessionStore(storage, now)` — the same injectable-storage pattern as `library/store.ts` — plus a pure reducer (`engine.ts`) and a `useSyncExternalStore` binding (`useSession.ts`). Zero new dependencies; selector-level re-render comes from `useSyncExternalStore` itself. |
+| Wake lock / notifications | Neither in M3.3 — both need a mounted screen (M3.4). The engine exposes `nextRequiredAt` so a later screen can *state* a moment to remember; the app never promises a call it can't schedule (no service worker/manifest today). |
+| Sitting-break resume moment | The engine's own `nextRequiredAt` (derived from live `endsAt`s), never `PlanSummary.sessions[k].start_min` — the latter is the next *hands-on* minute at typical pace and can be well after the cook is actually needed (a fridge rest that must come out of the fridge before the next sitting's first chop). |
+| Skip ("window has closed") | Translated to the engine's actual vocabulary: hands-on only, and only when another non-`deferred` executable node exists. A skipped node is `deferred`, never `done` — it never satisfies a consumer until it is actually completed. |
+| Done / undo | `markDone` requires the node be current (hands-on) or running (hands-off, any time — the cue governs). The engine keeps one reversible `lastTransition` (`undo` until the next `startNode`); the tap affordance itself is M3.5. |
+| Session lifecycle vs `Role` | A third concept, above `Role`: `finished \| stale \| active`. `finished` takes precedence and is never stale-checked; `stale` is its own screen (Continue / Start again), never an ordinary role; only `active` proceeds to `role`/`current`/`handover`/away-class. `returning` is neither a lifecycle value nor a `Role` member — it overlays whatever role is computed, read directly off `session.leftAt != null`. |
+| Stale threshold | `max(6h, 2 × plan.total_min)` since the last running node's `endsAt` or `lastSeenAt`, whichever is later. Reported, never auto-resumed or auto-cleared. |
+| `interruptible` reuse | **Rejected.** It means "can the cook set *this* task down mid-way", is read only for a hands-on task being placed in a `periodic` window, and is `kind`-derived (not really authored) on three of four import kinds — a different claim from "can the finished result be left once its timer is up." |
+| Vocabulary | Internal state ids (`sitting_break`, `sitting_resume`) are allowed; the product never says "sitting" in copy, per `CLAUDE.md`'s vocabulary table. |
+| One session at a time | Opening a plan while a session for a *different* plan is stored reports `conflict`; the engine never ends one session to start another on its own. |
+
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
 | # | Item | Class | Note |

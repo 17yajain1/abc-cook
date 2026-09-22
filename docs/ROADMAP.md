@@ -170,32 +170,57 @@ mean once its rendered content can straddle a sitting boundary.
 
 ## M3 — Cooking mode  ·  ~4–5 evenings
 
-The interaction that proves the thesis:
+The interaction that proves the thesis. Corrected here from an earlier draft of this
+milestone (M3.3's design contract, 2026-09-22): Cooking Mode is **node-driven, not
+stage-driven** — the unit the app tracks and shows is a graph node, not a stage, because
+a stage can straddle a wait window or a sitting boundary in ways a single "current stage"
+pointer can't represent. And there is **no pause** — a pause that cannot pause a pan is a
+screen that lies about the stove. The app instead supports `leave`/`resume` (the cook
+stepping away and coming back) and reports a stale reopen (gone long enough that nothing
+should be trusted silently) rather than ever resuming across a long gap without asking.
 
 ```
-Start Cooking → Cook Base timer → "While this cooks" → Chop capsicum
-→ Mark complete → back to the running timer → timer ends → next stage
+Start Cooking → cook_tomato_base timer starts → chop_capsicum (fits the wait window)
+→ mark done → timer expires → handover → next node
 ```
 
-Timers that survive backgrounding, screen wake lock, pause/resume, skip.
+Timers survive backgrounding: every running node stores an absolute wall-clock end time,
+never a counting-down integer (`CLAUDE.md`).
 
-Two structural pieces land here, and deliberately not earlier:
+One structural piece lands here, and deliberately not earlier, and deliberately not as
+`src/store/` + `src/hooks/` + Zustand (an earlier draft of this milestone assumed both):
 
-**`src/store/`** — a live session (current stage, running timers, what's been marked
-done) is the first genuinely global state in the app. Until now a view union in one
-`useState` in `App.tsx` has been enough, and adding a store before there was state to
-put in it would have been ceremony. Prefer Zustand to React context: a context whose
-value object isn't memoised re-renders every consumer, which with a timer ticking means
-the whole tree once a second on a phone. Its `persist` middleware is also the natural
-home for the wall-clock end times — store the absolute end time, never a counting-down
-integer (`CLAUDE.md`).
+**`apps/web/src/cooking/`** — a pure session reducer (`engine.ts`) over a persisted
+`CookingSession`, a storage-backed store (`store.ts`, the same injectable-storage
+pattern as `library/store.ts`) and a `useSyncExternalStore` binding (`useSession.ts`).
+No new dependency: `useSyncExternalStore` already gives selector-level subscription
+without Zustand or a memoised context value, and the reducer is exactly as testable
+either way. A feature-first folder, not `src/store/`/`src/hooks/`, so the whole feature
+is deletable by deleting one directory.
 
-**`src/hooks/`** — logic that isn't visual: `useTimer`, `useWakeLock`. Components stay
-presentational, and the timer arithmetic becomes testable without rendering anything,
-which matters because a timer bug shows up an hour into a real dinner.
+Split into:
 
-**Exit:** you cook one real dish end to end using only the app. Not a click-through —
-an actual dinner. Write down every moment you got confused or had to look away.
+- **M3.3 — Session core.** The reducer, store and derivations: execution order, the
+  handover/holding predicate, wait subject, away-class (`sitting_break`/`long_wait`/
+  `wait`), stale/finished lifecycle, skip/undo. No screen — `Start Cooking` stays inert.
+  Every number the UI will eventually show (remaining time, parallel-task ranking,
+  handover reason) is computed here, never in a component (`CLAUDE.md`).
+- **M3.4 — Cooking screens.** Wires M3.3's model to the shells and states in the
+  Cooking Mode UX direction: the calm `task` screen (including the explicit start tap
+  a hands-off node needs before its timer exists — auto-starting one would hide a real
+  instruction like "rinse and soak"), the handover screen, the what's-cooking sheet, the
+  whisper, wake lock, and `useNow`. `Start Cooking` becomes functional.
+- **M3.5 — Session polish.** The undo affordance (M3.3 ships the engine capability;
+  M3.5 gives it a control), `Continue cooking` on the Plan view, and (only if a real
+  dinner asks for it) `StageCard` active/complete marks.
+
+**M3.2b** (source-section stages, in-stage waits) is deferred and unscoped independently
+of this split — it can land before or after M3.3–M3.5; nothing in the session core
+depends on it.
+
+**Exit (M3.5):** you cook one real dish end to end using only the app. Not a
+click-through — an actual dinner. Write down every moment you got confused or had to
+look away.
 
 ---
 
