@@ -3,6 +3,8 @@ import { useCallback, useState } from 'react'
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan } from './api/client'
+import { createSessionStore } from './cooking/store'
+import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { ImportScreen } from './import/ImportScreen'
 import { LibraryScreen } from './library/LibraryScreen'
 import { canonicalSourceKey } from './library/sourceKey'
@@ -16,6 +18,11 @@ import type { SaveControl } from './plan/RecipeHeader'
  * at module load; every save/read after that goes through this same closure (M2.12
  * design: this becomes M3's Zustand `persist` storage unchanged). */
 const library = createLibrary()
+
+/** Same instantiation pattern as `library` above — one `SessionStore` for the app's
+ * lifetime, reading `localStorage['abc-cook:session:v1']` once at module load
+ * (`@/cooking/store.ts`). `useSession` binds React to it with `useSyncExternalStore`. */
+const sessionStore = createSessionStore(window.localStorage, () => Date.now())
 
 /** Where the plan currently on screen came from — decides what the Save control shows. */
 type PlanOrigin =
@@ -37,7 +44,12 @@ type View =
       saveState: SaveState
       /** A6: null for a fixture recipe (never went through `/import`). */
       importMeta: ImportMeta | null
+      /** The raw payload `plan`/`map` were derived from — Cooking Mode's
+       * `deriveCookingModel` needs the full graph (`depends_on`, `consumes`,
+       * `interruptible`…), which `RenderPlan` doesn't retain. */
+      payload: RecipePlanResponse
     }
+  | { kind: 'cooking'; payload: RecipePlanResponse; planKey: string; returnTo: View }
   | { kind: 'error'; message: string }
 
 export default function App() {
@@ -54,6 +66,7 @@ export default function App() {
           origin: { kind: 'server', recipeId },
           saveState: { status: 'idle' },
           importMeta: null,
+          payload,
         }),
       )
       .catch((err: unknown) => setView({ kind: 'error', message: messageFor(err) }))
@@ -75,6 +88,7 @@ export default function App() {
       origin: { kind: 'library', id },
       saveState: { status: 'saved' },
       importMeta: recipe.import_meta ?? null,
+      payload: recipe.payload,
     })
   }, [])
 
@@ -89,9 +103,21 @@ export default function App() {
         origin: { kind: 'import', payload, importMeta },
         saveState: { status: 'idle' },
         importMeta,
+        payload,
       }),
     [],
   )
+
+  const startCooking = useCallback(() => {
+    setView((prev) => {
+      if (prev.kind !== 'plan') return prev
+      return { kind: 'cooking', payload: prev.payload, planKey: planKey(prev.origin), returnTo: prev }
+    })
+  }, [])
+
+  const exitCooking = useCallback(() => {
+    setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
+  }, [])
 
   // No network, no LLM call — `library.save` writes straight to `localStorage`
   // (M2.12 acceptance requirement 2). A functional update avoids a stale `view` closure.
@@ -131,8 +157,19 @@ export default function App() {
           plan={view.plan}
           map={view.map}
           onPickAnother={backToPicker}
+          onStartCooking={startCooking}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}
+        />
+      )
+    case 'cooking':
+      return (
+        <CookingModeScreen
+          key={view.planKey}
+          payload={view.payload}
+          planKey={view.planKey}
+          store={sessionStore}
+          onExit={exitCooking}
         />
       )
     default:

@@ -53,12 +53,14 @@ export function PlanScreen({
   plan,
   map,
   onPickAnother,
+  onStartCooking,
   save,
   importMeta,
 }: {
   plan: RenderPlan
   map: MapLayout
   onPickAnother: () => void
+  onStartCooking: () => void
   save?: SaveControl
   importMeta?: ImportMeta | null
 }) {
@@ -214,13 +216,11 @@ export function PlanScreen({
       {!showingMap && (
         <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-rule bg-paper px-5 pb-6 pt-4">
           {/* Signal, and the label is just "Start Cooking" (DESIGN_SYSTEM.md § PrimaryCTA).
-              It does nothing until M3 — that limitation lives in the person-test caveat,
-              not on the button — so it is aria-disabled with no handler rather than a
-              greyed `disabled`, which would dim the one signal mark on the screen. */}
+              M3.4: wired to Cooking Mode. */}
           <button
             type="button"
-            aria-disabled="true"
-            className="flex h-[52px] w-full cursor-default items-center justify-center rounded-control bg-signal text-[18px] font-semibold text-paper"
+            onClick={onStartCooking}
+            className="flex h-[52px] w-full items-center justify-center rounded-control bg-signal text-[18px] font-semibold text-paper"
           >
             Start Cooking
           </button>
