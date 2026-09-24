@@ -84,7 +84,12 @@ def fetch(url: str) -> RawAcquisition:
     Raises:
         RuntimeError: yt-dlp could not extract metadata for `url`.
     """
-    ydl_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 30,
+    }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
     if info is None:

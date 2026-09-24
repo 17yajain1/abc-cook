@@ -25,6 +25,21 @@ repair pass). Optional and provider-dependent — an adapter that has no such co
 simply ignores it."""
 
 
+MAX_RETRIES = 1
+"""SDK-level retries per call. The SDK defaults (OpenAI/Anthropic: 2) multiply a
+timed-out call's wait; one retry still covers a transient 429/5xx."""
+
+
+def request_timeout_s(max_tokens: int) -> float:
+    """Per-call timeout, scaled to the output budget so the 32K rung isn't cut short.
+
+    Assumes a 50 tok/s floor (GPT-5-mini measured ~100 tok/s: 11,261 output tokens in
+    112s on 2026-09-24) plus 60s for the request and time-to-first-token. It exists so a
+    stuck call ends the import job as `failed` instead of leaving it mid-status.
+    """
+    return 60.0 + max_tokens / 50
+
+
 @dataclass(frozen=True)
 class CallUsage:
     """Measured facts about one real LLM call (M2.10 s18 F5).
