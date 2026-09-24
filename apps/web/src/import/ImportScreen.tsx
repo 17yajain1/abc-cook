@@ -19,9 +19,14 @@ import { notGroundedCopy } from './notGroundedCopy'
 type ImportStatus = ImportJobResponse['status']
 
 const POLL_INTERVAL_MS = 1200
-const MAX_POLLS = 60
-/** ~72s ceiling. Typical imports finish in 5-15s (design doc §4.5); this only guards
- * against a genuinely stuck job so the screen doesn't poll forever. */
+const MAX_POLLS = 150
+/** ~180s ceiling. Typical imports finish in 5-15s (design doc §4.5), but a job that
+ * needs the one-repair-pass fallback (`CLAUDE.md`'s repair loop, a second LLM call)
+ * reliably takes 90-100s+ end to end — observed directly, repeatedly, against the real
+ * API: every repair-pass import finished successfully server-side, but the previous
+ * 72s ceiling (`MAX_POLLS=60`) abandoned the poll before the result ever arrived, so
+ * the screen reported failure on a request that was actually still going to succeed.
+ * This only guards against a genuinely stuck job, not a slow-but-working one. */
 
 /** design doc §4.5: the three-stage status maps directly onto this copy. */
 const STATUS_COPY: Partial<Record<ImportStatus, string>> = {
