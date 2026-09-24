@@ -19,14 +19,12 @@ import { notGroundedCopy } from './notGroundedCopy'
 type ImportStatus = ImportJobResponse['status']
 
 const POLL_INTERVAL_MS = 1200
-const MAX_POLLS = 150
-/** ~180s ceiling. Typical imports finish in 5-15s (design doc §4.5), but a job that
- * needs the one-repair-pass fallback (`CLAUDE.md`'s repair loop, a second LLM call)
- * reliably takes 90-100s+ end to end — observed directly, repeatedly, against the real
- * API: every repair-pass import finished successfully server-side, but the previous
- * 72s ceiling (`MAX_POLLS=60`) abandoned the poll before the result ever arrived, so
- * the screen reported failure on a request that was actually still going to succeed.
- * This only guards against a genuinely stuck job, not a slow-but-working one. */
+const MAX_POLLS = 250
+/** ~5 min before asking the user. Measured 2026-09-24: a clean GPT-5-mini import took
+ * 124s (112s in the one extraction call), and a repair pass adds a Sonnet call on top.
+ * Hitting the ceiling never abandons the job — the `slow` phase keeps its id so
+ * "Keep waiting" resumes polling; the server's own per-call timeouts are what end a
+ * genuinely stuck job (as `failed`). */
 
 /** design doc §4.5: the three-stage status maps directly onto this copy. */
 const STATUS_COPY: Partial<Record<ImportStatus, string>> = {
@@ -40,6 +38,7 @@ type Phase =
   | { kind: 'polling'; status: ImportStatus }
   | { kind: 'not_grounded'; job: ImportJobResponse }
   | { kind: 'error'; message: string }
+  | { kind: 'slow'; jobId: string; token: number; status: ImportStatus }
 
 /**
  * Paste-a-link import flow (design doc §4.5/§12 step 12): submit a URL, poll the job,
@@ -105,7 +104,7 @@ export function ImportScreen({
           return
         }
         if (attempt >= MAX_POLLS) {
-          setPhase({ kind: 'error', message: 'This is taking longer than expected.' })
+          setPhase({ kind: 'slow', jobId, token, status: job.status })
           return
         }
         setPhase({ kind: 'polling', status: job.status })
@@ -134,6 +133,12 @@ export function ImportScreen({
         if (tokenRef.current !== token) return
         setPhase({ kind: 'error', message: messageFor(err) })
       })
+  }
+
+  const keepWaiting = () => {
+    if (phase.kind !== 'slow' || tokenRef.current !== phase.token) return
+    setPhase({ kind: 'polling', status: phase.status })
+    poll(phase.jobId, phase.token, 0)
   }
 
   const reset = () => {
@@ -170,6 +175,18 @@ export function ImportScreen({
 
       {phase.kind === 'error' && (
         <p className="mt-3 text-[13px] text-signal">{phase.message}</p>
+      )}
+      {phase.kind === 'slow' && (
+        <p className="mt-3 text-[13px] text-signal">
+          This is taking longer than expected.{' '}
+          <button
+            type="button"
+            onClick={keepWaiting}
+            className="font-semibold underline underline-offset-4"
+          >
+            Keep waiting
+          </button>
+        </p>
       )}
 
       <button
