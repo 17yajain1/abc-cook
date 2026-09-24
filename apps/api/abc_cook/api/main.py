@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+import logging
 import os
 
 from fastapi import FastAPI
@@ -31,12 +32,27 @@ def _is_local() -> bool:
     return os.environ.get("APP_ENV", "local") == "local"
 
 
+def _configure_logging() -> None:
+    """Emit `abc_cook` INFO logs (import stage timings) without enabling INFO globally.
+
+    Python's root logger defaults to WARNING with no handler, so without this the
+    import pipeline's INFO lines are silently dropped under uvicorn.
+    """
+    logger = logging.getLogger("abc_cook")
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
+        logger.addHandler(handler)
+
+
 def create_app() -> FastAPI:
     """Build the ABC Cook API application.
 
     Returns:
         A configured FastAPI instance.
     """
+    _configure_logging()
     app = FastAPI(title="ABC Cook API", version=__version__)
 
     app.add_middleware(

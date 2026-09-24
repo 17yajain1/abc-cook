@@ -15,6 +15,7 @@ own; it only sequences calls already owned by `normalize.py` and `repair.py`.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -128,8 +129,12 @@ def run_import(
         an ordinary extraction failure. Only a genuinely unexpected error (a bug, a
         network exception `acquire_fn` doesn't catch) propagates to the caller.
     """
+    started = time.monotonic()
 
     def _status(status: ImportStatus) -> None:
+        _logger.info(
+            "run_import: graph_id=%s -> %s at %.1fs", graph_id, status, time.monotonic() - started
+        )
         if on_status is not None:
             on_status(status)
 
@@ -147,6 +152,13 @@ def run_import(
         repair_attempted: bool | None = None,
         repair_skip_reason: str | None = None,
     ) -> None:
+        _logger.info(
+            "run_import: graph_id=%s finished tier=%s in %.1fs (llm calls: %s)",
+            graph_id,
+            tier,
+            time.monotonic() - started,
+            [f"{c.model} {c.latency_ms / 1000:.1f}s" for c in [*extraction_calls, *repair_calls]],
+        )
         if on_telemetry is not None:
             on_telemetry(
                 ImportTelemetry(
