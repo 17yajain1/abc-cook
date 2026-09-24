@@ -94,17 +94,22 @@ export default function App() {
 
   const backToPicker = useCallback(() => setView({ kind: 'picker' }), [])
   const openImport = useCallback(() => setView({ kind: 'import' }), [])
+  // Every finished import lands in the library straight away; re-importing the same
+  // source replaces its entry (`library.save` dedups by source key). On a failed write
+  // the origin stays `import`, so the header's Save control still offers a retry.
   const onImported = useCallback(
-    (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse, importMeta: ImportMeta) =>
+    (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse, importMeta: ImportMeta) => {
+      const result = library.save(payload, importMeta)
       setView({
         kind: 'plan',
         plan,
         map,
         origin: { kind: 'import', payload, importMeta },
-        saveState: { status: 'idle' },
+        saveState: result.ok ? { status: 'saved' } : { status: 'error', message: result.message },
         importMeta,
         payload,
-      }),
+      })
+    },
     [],
   )
 
