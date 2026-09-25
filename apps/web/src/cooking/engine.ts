@@ -1,6 +1,15 @@
 import { EXTEND_MS } from './constants'
-import { current, handover, lifecycle, skipAllowed } from './select'
-import type { CookingModel, CookingSession, NodeState, Rejected, SessionLifecycle, Transition, TransitionEntry } from './types'
+import { current, foreignLifecycle, handover, lifecycle, skipAllowed } from './select'
+import type {
+  CookingModel,
+  CookingSession,
+  NodeState,
+  Rejected,
+  SessionConflict,
+  SessionLifecycle,
+  Transition,
+  TransitionEntry,
+} from './types'
 
 /**
  * The session reducer — every action in plan §E as `(session, model, now) -> session |
@@ -58,30 +67,42 @@ function isRejected(value: CookingSession | Rejected): value is Rejected {
 
 export type OpenResult =
   | { status: 'none' }
-  | { status: 'conflict' }
+  | { status: 'conflict'; conflict: SessionConflict }
   | { status: 'ok'; session: CookingSession; lifecycle: SessionLifecycle }
 
 /**
  * `open(payload, now)` (plan §E/§C9/§B15). Read-only — never mutates or persists.
  * `stored` is whatever the store already holds (there is at most one session, C9).
  * `none` when nothing is stored; `conflict` when a session exists for a *different*
- * plan (planKey mismatch) or fails the defensive `graphId` check (C9); otherwise `ok`
- * with `lifecycle` computed by `select.ts`'s `lifecycle()` — never reimplemented here,
- * per the lifecycle boundary above.
+ * plan (planKey mismatch) or fails the defensive `graphId` check (C9) — carrying a
+ * `SessionConflict` (CP1a) so the caller can identify and classify the other session
+ * without a `CookingModel` for it; otherwise `ok` with `lifecycle` computed by
+ * `select.ts`'s `lifecycle()` — never reimplemented here, per the lifecycle boundary
+ * above.
  */
 export function open(stored: CookingSession | null, model: CookingModel, planKey: string, now: number): OpenResult {
   if (stored == null) return { status: 'none' }
-  if (stored.planKey !== planKey || stored.graphId !== model.graphId) return { status: 'conflict' }
+  if (stored.planKey !== planKey || stored.graphId !== model.graphId) {
+    return {
+      status: 'conflict',
+      conflict: { planKey: stored.planKey, title: stored.recipeTitle ?? null, state: foreignLifecycle(stored, now) },
+    }
+  }
   return { status: 'ok', session: stored, lifecycle: lifecycle(model, stored, now) }
 }
 
 /** `start(now)` (plan §E): only when no session is stored (or after `end`) — one active
- * session at a time (§B15). Every node starts `pending`. */
+ * session at a time (§B15). Every node starts `pending`. `recipeTitle` (CP1a) snapshots
+ * `payload.graph.title` onto the session so a future *foreign* conflict can name it;
+ * optional (and `totalMin` always taken from `model` regardless) so every existing call
+ * site that doesn't pass one keeps compiling — the field itself stays optional on
+ * `CookingSession` for the matching legacy-read reason. */
 export function start(
   existing: CookingSession | null,
   model: CookingModel,
   planKey: string,
   now: number,
+  recipeTitle?: string,
 ): CookingSession | Rejected {
   if (existing != null) return reject('session_exists')
   const nodes: Record<string, NodeState> = {}
@@ -96,6 +117,8 @@ export function start(
     finishedAt: null,
     nodes,
     lastTransition: null,
+    recipeTitle,
+    totalMin: model.totalMin,
   }
 }
 

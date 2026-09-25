@@ -28,6 +28,16 @@ export interface CookingSession {
   nodes: Record<string, NodeState>
   /** Undo support (engine only in M3.3 — plan §C8, §E `undo`). */
   lastTransition: Transition | null
+  /** Snapshotted at `start()` from `payload.graph.title` (CP1a, M3.4.5 session-lockout
+   * plan). Optional — absent on a session persisted before CP1a, which must remain
+   * readable (never treated as a parse failure). Lets a *foreign* plan-key conflict name
+   * the other recipe without an app-level lookup (`engine.open()`'s `conflict.title`). */
+  recipeTitle?: string
+  /** Snapshotted at `start()` from `model.totalMin` (CP1a). Optional for the same
+   * legacy-read reason as `recipeTitle`. The only input `foreignLifecycle` needs beyond
+   * the session itself to classify a *foreign* session as stale — `staleThresholdMs`
+   * requires a `totalMin`, and a foreign open has no `CookingModel` for the other plan. */
+  totalMin?: number
 }
 
 /** A hands-on node's lifecycle is `pending -> done` or `pending -> deferred -> done`,
@@ -75,6 +85,31 @@ export interface Rejected {
  * `role`/`current`/`handover`/`awayClass`. See `select.ts`'s `lifecycle`.
  */
 export type SessionLifecycle = 'finished' | 'stale' | 'active'
+
+/**
+ * The lifecycle of a *foreign* stored session — one that belongs to a different plan
+ * than the one being opened (CP1a, M3.4.5 session-lockout plan §CP1a). A superset of
+ * `SessionLifecycle`'s classification, computed by `select.ts`'s `foreignLifecycle`
+ * without a `CookingModel` for the other plan (there isn't one to hand): `finished`/
+ * `active`/`stale` read the same as `SessionLifecycle`, plus `unknown` for a session
+ * persisted before CP1a, which lacks the `totalMin` snapshot `stale` classification
+ * needs. `unknown` is never silently treated as `stale` or `active` — the conflict
+ * screen reports it as its own state (plan decision 2: "never silently clear" applies
+ * here too).
+ */
+export type ForeignSessionState = 'finished' | 'stale' | 'active' | 'unknown'
+
+/**
+ * What `engine.open()` reports on a plan-key conflict (CP1a): enough to identify and
+ * classify the *other* stored session without exposing its full `CookingSession` (the
+ * caller has no `CookingModel` to safely interpret it against). `title` is `null` when
+ * the stored session predates the `recipeTitle` snapshot (legacy — never invented).
+ */
+export interface SessionConflict {
+  planKey: string
+  title: string | null
+  state: ForeignSessionState
+}
 
 /**
  * What M3.4 renders for the current screen, once `lifecycle === 'active'` (plan §F5,

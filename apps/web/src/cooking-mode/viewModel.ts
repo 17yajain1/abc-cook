@@ -15,10 +15,11 @@ import {
   whisperInput,
   current,
 } from '@/cooking/select'
-import type { CookingModel, CookingSession } from '@/cooking/types'
+import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/types'
 import type { HeaderTiming } from '@/lib/duration'
 
 import { aboutMinutes, cap, dayClock, splitCopy, wordFor } from './copy'
+import { canResolveConflictTarget } from './conflictResolve'
 import { quantityLine } from './quantity'
 
 /**
@@ -29,10 +30,12 @@ import { quantityLine } from './quantity'
  * `role`, `awayClass` or any other scheduling/session decision. This file only turns
  * their outputs into the strings and action descriptors the screens render.
  *
- * `conflict` is deliberately not a case this module produces — a plan-key conflict
- * means the stored session does not belong to `model` at all, so there is no
- * `(model, session)` pair to build a view from. The caller (`CookingModeScreen`)
- * renders that screen directly from `OpenResult`, before this module is ever reached.
+ * `conflict` is deliberately not a `ScreenId` case `resolveScreen`/`buildCookingView`
+ * ever reach — a plan-key conflict means the stored session does not belong to `model`
+ * at all, so there is no `(model, session)` pair to build a view from. The caller
+ * (`CookingModeScreen`) renders that screen directly from `OpenResult.conflict`, via
+ * this module's own `buildConflictView` (CP1a) — a separate, smaller view model than
+ * `CookingView`, built from a `SessionConflict` rather than a `(model, session)` pair.
  */
 
 export type ScreenId =
@@ -397,4 +400,79 @@ export function buildSheetView(model: CookingModel, session: CookingSession, now
   const nextHands = model.order.find((id) => model.nodes[id].occupiesCook && session.nodes[id].state !== 'done')
   const next = nextHands ? `Next in your hands: ${model.nodes[nextHands].label}.` : null
   return { rows, note, next }
+}
+
+// ---------------------------------------------------------------------------
+// Conflict — CP1a (M3.4.5 session-lockout plan). Built from a `SessionConflict`
+// (`@/cooking/types`), not a `(model, session)` pair — see the file-top comment.
+// ---------------------------------------------------------------------------
+
+export type ConflictActionKind = 'goTo' | 'endAndStart' | 'close'
+
+export interface ConflictAction {
+  kind: ConflictActionKind
+  label: string
+}
+
+export interface ConflictViewModel {
+  planKey: string
+  title: string | null
+  state: SessionConflict['state']
+  /** One line naming the other cook and, where known, its state — never a bare
+   * "Already cooking" once a title is available (plan decision 1: "clearly identify the
+   * other recipe when possible"). */
+  message: string
+  /**
+   * Ordered `goTo?, endAndStart, close` (plan decision 1: "allow 'Go to <recipe>' when
+   * that recipe can be resolved... allow 'End it and start this'... retain 'Close'").
+   * `goTo` is present only when `canGoTo(planKey)` says so; `endAndStart`/`close` are
+   * unconditional. `CookingModeScreen` (CP1b) wires each `kind` to real behavior —
+   * `goTo` to `App.tsx`'s navigation, `endAndStart` to `session.end()`, `close` to
+   * `onExit` — this module only decides which actions apply and how they read.
+   */
+  actions: ConflictAction[]
+}
+
+/**
+ * Whether a `planKey` is offered as a "Go to" destination (CP1a's shape, CP1b's real
+ * check). Defaults to `resolveConflictTarget`'s prefix rule presuming every `library:`
+ * id still exists — `server:`/`library:` addressable, `import:` never (an unsaved
+ * import has no address to return to once superseded — M3.4 CP2 investigation §1: a
+ * fresh import's `graph.id` is a random UUID nothing else is keyed to). The real,
+ * App-wired check (`CookingModeScreen` passing a predicate backed by the actual
+ * `Library`) additionally hides `library:` when that specific entry no longer exists —
+ * `buildConflictView`'s own `canGoTo` parameter, below, is how CP1b overrides this
+ * default without `viewModel.ts` needing to know about the library at all.
+ */
+function defaultCanGoTo(planKey: string): boolean {
+  return canResolveConflictTarget(planKey, () => true)
+}
+
+const CONFLICT_MESSAGE: Record<SessionConflict['state'], (title: string) => string> = {
+  active: (title) => `${title} is still cooking.`,
+  finished: (title) => `You already finished cooking ${title}.`,
+  stale: (title) => `${title} was left a while ago.`,
+  unknown: (title) => `${title} may still be cooking.`,
+}
+
+/**
+ * `buildConflictView` (CP1a, `canGoTo` added CP1b): the conflict screen's copy and
+ * action list, from the `SessionConflict` `engine.open()` reports. Never silently drops
+ * the conflict (plan decision 2) — `endAndStart`/`close` are always present regardless
+ * of `state`. `canGoTo` defaults to the prefix-only rule (every CP1a call site, and
+ * every test that doesn't care about library existence, keeps working unchanged); the
+ * real caller (`CookingModeScreen`) passes one backed by the actual `Library`.
+ */
+export function buildConflictView(conflict: SessionConflict, canGoTo: (planKey: string) => boolean = defaultCanGoTo): ConflictViewModel {
+  const message =
+    conflict.title != null ? CONFLICT_MESSAGE[conflict.state](conflict.title) : 'Another cook is already on.'
+
+  const actions: ConflictAction[] = []
+  if (canGoTo(conflict.planKey)) {
+    actions.push({ kind: 'goTo', label: `Go to ${conflict.title ?? 'that recipe'}` })
+  }
+  actions.push({ kind: 'endAndStart', label: 'End it and start this' })
+  actions.push({ kind: 'close', label: 'Close' })
+
+  return { planKey: conflict.planKey, title: conflict.title, state: conflict.state, message, actions }
 }

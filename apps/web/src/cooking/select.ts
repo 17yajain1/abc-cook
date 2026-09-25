@@ -1,5 +1,5 @@
 import { LONG_WAIT_MS, SESSION_BREAK_MS, staleThresholdMs } from './constants'
-import type { CookingModel, CookingSession, NodeState, Role, SessionLifecycle } from './types'
+import type { CookingModel, CookingSession, ForeignSessionState, NodeState, Role, SessionLifecycle } from './types'
 
 /**
  * Pure derivations over `(model, session, now)` — M3.3 plan §F. Nothing here is stored
@@ -295,6 +295,42 @@ export function lifecycle(model: CookingModel, session: CookingSession, now: num
   if (session.finishedAt != null) return 'finished'
   if (isStale(model, session, now)) return 'stale'
   return 'active'
+}
+
+// ---------------------------------------------------------------------------
+// CP1a (M3.4.5 session-lockout plan) — foreign session lifecycle, for a plan-key
+// conflict. No CookingModel for the other plan exists at conflict time, so this cannot
+// reuse `isStale`/`lifecycle` (both take one) — it reads only the stored session's own
+// snapshot fields.
+// ---------------------------------------------------------------------------
+
+/** `isStale`'s "nothing running has a future `endsAt`, and the gap since the later of
+ * `lastSeenAt`/the latest `endsAt` exceeds the threshold" test, without a `CookingModel`
+ * to enumerate node ids from — every `session.nodes` value is read directly instead of
+ * going through `model.order`, which changes nothing: the set of running nodes and their
+ * `endsAt`s is the same either way, and order is irrelevant to a min/max reduction. */
+function foreignIsStale(session: CookingSession, totalMin: number, now: number): boolean {
+  const runningEndsAt = Object.values(session.nodes)
+    .filter((s): s is Extract<NodeState, { state: 'running' }> => s.state === 'running')
+    .map((s) => s.endsAt)
+  if (runningEndsAt.some((endsAt) => endsAt > now)) return false
+  const latestEndsAt = runningEndsAt.reduce((max, endsAt) => Math.max(max, endsAt), Number.NEGATIVE_INFINITY)
+  const reference = Math.max(session.lastSeenAt, latestEndsAt)
+  return now - reference > staleThresholdMs(totalMin)
+}
+
+/**
+ * The lifecycle of a *foreign* stored session, for `engine.open()`'s conflict report
+ * (plan decision 2: finished/stale foreign sessions still show the explicit conflict
+ * flow, never silently cleared). `finished` takes precedence, exactly as in `lifecycle`,
+ * and needs no `totalMin`. Absent that snapshot (a session persisted before CP1a),
+ * staleness cannot be evaluated at all — reported as `unknown` rather than guessed as
+ * either `active` or `stale`.
+ */
+export function foreignLifecycle(session: CookingSession, now: number): ForeignSessionState {
+  if (session.finishedAt != null) return 'finished'
+  if (session.totalMin == null) return 'unknown'
+  return foreignIsStale(session, session.totalMin, now) ? 'stale' : 'active'
 }
 
 // ---------------------------------------------------------------------------

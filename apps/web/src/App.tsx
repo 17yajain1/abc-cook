@@ -4,7 +4,9 @@ import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan } from './api/client'
 import { createSessionStore } from './cooking/store'
+import { canResolveConflictTarget, resolveConflictTarget } from './cooking-mode/conflictResolve'
 import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
+import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
 import { ImportScreen } from './import/ImportScreen'
 import { LibraryScreen } from './library/LibraryScreen'
 import { canonicalSourceKey } from './library/sourceKey'
@@ -23,12 +25,6 @@ const library = createLibrary()
  * lifetime, reading `localStorage['abc-cook:session:v1']` once at module load
  * (`@/cooking/store.ts`). `useSession` binds React to it with `useSyncExternalStore`. */
 const sessionStore = createSessionStore(window.localStorage, () => Date.now())
-
-/** Where the plan currently on screen came from — decides what the Save control shows. */
-type PlanOrigin =
-  | { kind: 'server'; recipeId: string }
-  | { kind: 'import'; payload: RecipePlanResponse; importMeta: ImportMeta }
-  | { kind: 'library'; id: string }
 
 type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
@@ -124,6 +120,61 @@ export default function App() {
     setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
   }, [])
 
+  // CP1b conflict actions. Neither touches `sessionStore` — "Go to" only ever switches
+  // which plan `CookingModeScreen` is mounted against, so its own `session.open()` finds
+  // and opens the *same* stored session rather than creating or replacing one.
+  const canGoToConflict = useCallback(
+    (targetPlanKey: string) => canResolveConflictTarget(targetPlanKey, (id) => library.get(id) != null),
+    [],
+  )
+
+  // Resolves only through paths the app already has: the library store, or `fetchPlan`
+  // (the same call `openRecipe` already makes) — never a new endpoint. `import:` plan
+  // keys are never passed here (`canGoToConflict` hides "Go to" for them); a `library:`
+  // id can still race a deletion between render and click, or a `server:` fetch can
+  // fail — both fall back to this app's existing degraded paths (a no-op, or the
+  // existing `error` view), never an invented destination.
+  const goToConflict = useCallback((targetPlanKey: string) => {
+    const target = resolveConflictTarget(targetPlanKey, (id) => library.get(id) != null)
+
+    if (target.kind === 'library') {
+      const recipe = library.get(target.id)
+      if (!recipe) return
+      const planView: View = {
+        kind: 'plan',
+        plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
+        map: layoutMap(recipe.payload),
+        origin: { kind: 'library', id: target.id },
+        saveState: { status: 'saved' },
+        importMeta: recipe.import_meta ?? null,
+        payload: recipe.payload,
+      }
+      setView({ kind: 'cooking', payload: recipe.payload, planKey: targetPlanKey, returnTo: planView })
+      return
+    }
+
+    if (target.kind === 'server') {
+      setView({ kind: 'loading', recipeId: target.recipeId })
+      fetchPlan(target.recipeId)
+        .then((payload) => {
+          const planView: View = {
+            kind: 'plan',
+            plan: derivePlan(payload),
+            map: layoutMap(payload),
+            origin: { kind: 'server', recipeId: target.recipeId },
+            saveState: { status: 'idle' },
+            importMeta: null,
+            payload,
+          }
+          setView({ kind: 'cooking', payload, planKey: targetPlanKey, returnTo: planView })
+        })
+        .catch((err: unknown) => setView({ kind: 'error', message: messageFor(err) }))
+      return
+    }
+
+    // 'unresolved' — canGoToConflict would have hidden the button; nothing to navigate.
+  }, [])
+
   // No network, no LLM call — `library.save` writes straight to `localStorage`
   // (M2.12 acceptance requirement 2). A functional update avoids a stale `view` closure.
   const saveCurrent = useCallback(() => {
@@ -175,6 +226,8 @@ export default function App() {
           planKey={view.planKey}
           store={sessionStore}
           onExit={exitCooking}
+          onGoTo={goToConflict}
+          canGoTo={canGoToConflict}
         />
       )
     default:
@@ -189,18 +242,12 @@ export default function App() {
   }
 }
 
-/** Uniquely identifies a plan's origin for `PlanScreen`'s `key`, so a library open
- * remounts just like a server open — never conflated with a same-slug/same-id recipe
- * opened a different way. */
+/** `planKeyFor` (`@/cooking-mode/planKey.ts`, CP1c), bound to the real `library`. Kept
+ * as a thin wrapper here — same call shape as before CP1c (`planKey(origin)`) — so every
+ * existing call site (`PlanScreen`'s `key`, `startCooking`) is unchanged; the identity
+ * logic itself now lives in the pure, testable module. */
 function planKey(origin: PlanOrigin): string {
-  switch (origin.kind) {
-    case 'server':
-      return `server:${origin.recipeId}`
-    case 'library':
-      return `library:${origin.id}`
-    case 'import':
-      return `import:${origin.payload.graph.id}`
-  }
+  return planKeyFor(origin, (sourceKey) => library.findBySource(sourceKey))
 }
 
 /** The Save control shown for a given origin (M2.12 design decision 4): nothing for a
