@@ -46,6 +46,20 @@ _IMMEDIACY_MARKERS = (
 )
 """§10.C finding 3: a bare "serve" is not an immediacy marker. Only these phrases are."""
 
+_OPTIONAL_MARKERS = (
+    "if you",
+    "if desired",
+    "optional",
+    "alternatively",
+    "instead",
+    "or you can",
+    "method:",
+)
+"""CP2 decision B: an optional/alternative role is honored only when its grounded
+`role_cue` carries one of these. Same closed-list pattern as `_IMMEDIACY_MARKERS`."""
+
+_ROLE_TIP_PREFIX = {"optional": "Optional: ", "alternative": "Alternative: "}
+
 _SEQUENCE_CONNECTIVES = ("then", "once", "after", "next", "now", "meanwhile")
 
 _PREP_VERBS = (
@@ -248,6 +262,85 @@ def _verify_freshness(
     return "stated_unbounded", cue, None
 
 
+@dataclass(frozen=True)
+class _Roles:
+    """The role pass's result, in original step positions."""
+
+    required: list[int]
+    """Positions of the steps that become nodes, ascending. Never empty."""
+    attach: dict[int, int]
+    """Honored optional/alternative position -> the required position it annotates."""
+
+
+def _role_honored(step: NormalizedStep, corpus: str) -> bool:
+    cue = step.role_cue or ""
+    has_marker = any(marker in cue.lower() for marker in _OPTIONAL_MARKERS)
+    return has_marker and _is_grounded_substring(cue, corpus)
+
+
+def _resolve_roles(
+    steps: list[NormalizedStep], corpus: str, warnings: list[str]
+) -> tuple[_Roles, bool]:
+    """CP2 decision B: which steps are mandatory work, and where the rest attach.
+
+    A non-required role is honored only with a grounded, marker-bearing `role_cue`;
+    otherwise the step stays required (never silently dropped). If nothing would be
+    left required, every step is kept required -- the app must never build an empty
+    graph. Returns the roles and whether a human review is recommended.
+    """
+    review = False
+    honored: set[int] = set()
+    for index, step in enumerate(steps):
+        if step.role == "required":
+            continue
+        if _role_honored(step, corpus):
+            honored.add(index)
+        else:
+            warnings.append(
+                f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
+                f'"{step.role_cue}" is not a grounded optional/alternative phrase; '
+                "kept as a required step."
+            )
+            review = True
+
+    if len(honored) == len(steps):
+        warnings.append(
+            "Every step was marked optional or alternative; kept them all as required steps."
+        )
+        honored = set()
+
+    required = [index for index in range(len(steps)) if index not in honored]
+    required_set = set(required)
+    attach: dict[int, int] = {}
+    for index in sorted(honored):
+        target = steps[index].attach_to_step
+        visited = {index}
+        resolved: int | None = None
+        while target is not None and 0 <= target < len(steps) and target not in visited:
+            if target in required_set:
+                resolved = target
+                break
+            visited.add(target)
+            target = steps[target].attach_to_step
+        if resolved is None:
+            preceding = [r for r in required if r < index]
+            resolved = preceding[-1] if preceding else next(r for r in required if r > index)
+            warnings.append(
+                f'Optional step "{steps[index].text[:60]}..." did not name a valid step '
+                "to attach to; attached to the nearest step instead."
+            )
+        attach[index] = resolved
+    return _Roles(required=required, attach=attach), review
+
+
+def _role_note(step: NormalizedStep) -> str:
+    prefix = _ROLE_TIP_PREFIX.get(step.role, "Optional: ")
+    text = step.text.strip()
+    if text.lower().startswith(prefix.strip().lower()):
+        return text
+    return f"{prefix}{text}"
+
+
 def _infer_kind(text: str, attention: Attention) -> NodeKind:
     lowered = text.lower()
     if attention == "unattended":
@@ -434,7 +527,9 @@ def build_graph(
             `attention="unattended"` — invalid before B2, valid after it
             (`COOKING_GRAPH.md` §5.9 allows `finish` in the unattended set). The
             guarantee holds only because that relaxation exists, not because
-            `force_linear` does anything special for it.
+            `force_linear` does anything special for it. Honored optional/alternative
+            steps (CP2 decision B) are notes, not nodes, here too: the chain runs over
+            required steps only.
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -478,7 +573,7 @@ def build_graph(
             )
         )
 
-    def _ingredient_ids(names: list[str]) -> list[str]:
+    def _ingredient_ids(names: list[str], *, warn: bool = True) -> list[str]:
         ids = []
         for name in names:
             matched = name_to_ids.get(name.lower())
@@ -490,15 +585,23 @@ def build_graph(
                         break
             if matched is not None:
                 ids.extend(matched)
-            else:
+            elif warn:
                 warnings.append(
                     f'Step references ingredient "{name}", not found in the ingredient list.'
                 )
         return list(dict.fromkeys(ids))  # de-dupe, preserve order
 
-    # -- Nodes ----------------------------------------------------------------------
-    steps = recipe.steps
+    # -- Roles (CP2 decision B): optional/alternative steps become notes, not nodes --
+    # Runs first, on every path including force_linear: a degraded graph must not turn
+    # optional work into mandatory work either. From here on `steps` holds only the
+    # required steps, so node ids, positions and the finish sink are all computed over
+    # them; a recipe whose steps are all required builds exactly as before.
+    roles, roles_review = _resolve_roles(recipe.steps, corpus, warnings)
+    review_recommended = review_recommended or roles_review
+    steps = [recipe.steps[index] for index in roles.required]
     total = len(steps)
+
+    # -- Nodes ----------------------------------------------------------------------
     node_ids: list[str] = []
     seen_node_ids: set[str] = set()
     for step in steps:
@@ -587,6 +690,17 @@ def build_graph(
                 freshness=freshness,
                 freshness_cue=freshness_cue,
             )
+        )
+
+    # -- Optional/alternative notes onto the step they modify (CP2 decision B) -------
+    # Verbatim, prefixed, never deleted: the Plan renders `Node.tip`.
+    position_of = {original: position for position, original in enumerate(roles.required)}
+    for original in sorted(roles.attach):
+        target = nodes[position_of[roles.attach[original]]]
+        note = _role_note(recipe.steps[original])
+        target.tip = note if target.tip is None else f"{target.tip} {note}"
+        warnings.append(
+            f'Kept "{recipe.steps[original].text}" as an optional note on "{target.label}".'
         )
 
     # -- Edges: base chain, with fork/join for honored independence (B1) ------------
@@ -710,6 +824,21 @@ def build_graph(
         consumed_ids = {c for node in nodes for c in node.consumes}
         for ingredient in ingredients:
             if ingredient.id not in consumed_ids:
+                ingredient.optional = True
+
+    if roles.attach:
+        # Same drop-never-invent precedent for invariant 5: an ingredient only an
+        # optional/alternative note uses is marked optional, not claimed by a node.
+        consumed_ids = {c for node in nodes for c in node.consumes}
+        note_only_ids = {
+            ing_id
+            for original in roles.attach
+            for ing_id in _ingredient_ids(
+                recipe.steps[original].consumes_ingredients, warn=False
+            )
+        }
+        for ingredient in ingredients:
+            if ingredient.id not in consumed_ids and ingredient.id in note_only_ids:
                 ingredient.optional = True
 
     graph = CookingGraph(

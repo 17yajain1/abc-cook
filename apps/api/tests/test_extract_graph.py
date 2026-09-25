@@ -964,3 +964,245 @@ def test_legacy_independence_still_vetoed_by_a_shared_non_staple() -> None:
     chop, fry = result.graph.nodes
     assert fry.depends_on == [chop.id]
     assert result.node_decisions[1].depends_on_previous_source == "defaulted"
+
+
+# ---------------------------------------------------------------------------
+# CP2-B (B) -- optional/alternative steps become verbatim notes on the step they
+# modify, never mandatory nodes, never deleted. Honored only with a grounded cue that
+# carries a closed-list marker.
+# ---------------------------------------------------------------------------
+
+_TOAST_SOURCE = (
+    "Toast the bread. Spread the butter on the toast. "
+    "If you like, sprinkle the toast with cinnamon. Serve warm."
+)
+
+
+def _toast_recipe(**optional_overrides: object) -> NormalizedRecipe:
+    optional: dict[str, object] = {
+        "text": "If you like, sprinkle the toast with cinnamon.",
+        "role": "optional",
+        "role_cue": "If you like",
+        "attach_to_step": 1,
+        "consumes_ingredients": ["Cinnamon"],
+    }
+    optional.update(optional_overrides)
+    steps = [
+        _step(text="Toast the bread.", consumes_ingredients=["Bread"]),
+        _step(text="Spread the butter on the toast.", consumes_ingredients=["Butter"]),
+        _step(**optional),
+        _step(text="Serve warm."),
+    ]
+    ingredients = [
+        NormalizedIngredient(name=name, qty="1", unit=None, prep_note=None)
+        for name in ("Bread", "Butter", "Cinnamon")
+    ]
+    return _recipe(steps, ingredients=ingredients)
+
+
+def test_grounded_optional_step_becomes_a_note_not_a_node() -> None:
+    result = _build(_toast_recipe(), _TOAST_SOURCE)
+    assert result.graph is not None
+    _toast, spread, serve = result.graph.nodes
+    assert [n.instruction for n in result.graph.nodes] == [
+        "Toast the bread.",
+        "Spread the butter on the toast.",
+        "Serve warm.",
+    ]
+    assert spread.tip == "Optional: If you like, sprinkle the toast with cinnamon."
+    assert serve.depends_on == [spread.id]  # the chain skips the note
+    cinnamon = next(i for i in result.graph.ingredients if i.name == "Cinnamon")
+    assert cinnamon.optional is True  # only the note uses it
+    assert all(not i.optional for i in result.graph.ingredients if i.name != "Cinnamon")
+    assert any(w.startswith('Kept "If you like') for w in result.warnings)
+    assert validate(result.graph) == []
+
+
+def test_optional_step_duration_is_not_counted() -> None:
+    timed = {"duration_min": 5, "duration_typical_min": 5, "duration_max": 5}
+    with_note = _build(_toast_recipe(duration_stated=True, **timed), _TOAST_SOURCE)
+    as_required = _build(_toast_recipe(role="required", role_cue=None, **timed), _TOAST_SOURCE)
+    assert with_note.graph is not None
+    assert as_required.graph is not None
+    serial_with_note = sum(n.duration_typical for n in with_note.graph.nodes)
+    serial_as_required = sum(n.duration_typical for n in as_required.graph.nodes)
+    assert serial_as_required - serial_with_note == 5
+
+
+def test_alternative_step_gets_the_alternative_prefix() -> None:
+    source = "Warm the milk on the stove. Microwave method: heat the milk for 1 minute. Serve."
+    steps = [
+        _step(text="Warm the milk on the stove.", station="burner"),
+        _step(
+            text="Microwave method: heat the milk for 1 minute.",
+            role="alternative",
+            role_cue="Microwave method:",
+            attach_to_step=0,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    warm, _serve = result.graph.nodes
+    assert warm.tip == "Alternative: Microwave method: heat the milk for 1 minute."
+    assert validate(result.graph) == []
+
+
+def test_note_prefix_is_not_doubled() -> None:
+    source = "Mix the batter. Optional: fold in some berries. Bake."
+    steps = [
+        _step(text="Mix the batter."),
+        _step(
+            text="Optional: fold in some berries.",
+            role="optional",
+            role_cue="Optional:",
+            attach_to_step=0,
+        ),
+        _step(text="Bake."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert result.graph.nodes[0].tip == "Optional: fold in some berries."
+
+
+def test_optional_claim_with_ungrounded_cue_stays_required() -> None:
+    result = _build(_toast_recipe(role_cue="If you fancy it"), _TOAST_SOURCE)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert all(n.tip is None for n in result.graph.nodes)
+    assert result.review_recommended is True
+    assert any("kept as a required step" in w for w in result.warnings)
+
+
+def test_optional_claim_with_grounded_cue_but_no_marker_stays_required() -> None:
+    result = _build(_toast_recipe(role_cue="sprinkle the toast"), _TOAST_SOURCE)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert result.review_recommended is True
+
+
+def test_last_step_optional_makes_previous_required_step_the_finish() -> None:
+    source = "Cook the pasta. Drain and serve. If desired, top with parmesan."
+    steps = [
+        _step(text="Cook the pasta.", station="burner"),
+        _step(text="Drain and serve."),
+        _step(
+            text="If desired, top with parmesan.",
+            role="optional",
+            role_cue="If desired",
+            attach_to_step=1,
+        ),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    cook, serve = result.graph.nodes
+    assert serve.kind == "finish"
+    assert serve.stage == "finish"
+    assert cook.stage != "finish"
+    assert serve.tip == "Optional: If desired, top with parmesan."
+    assert validate(result.graph) == []
+
+
+def test_all_steps_optional_keeps_them_all_required() -> None:
+    source = "If you like, add lemon. If desired, add mint."
+    steps = [
+        _step(text="If you like, add lemon.", role="optional", role_cue="If you like"),
+        _step(text="If desired, add mint.", role="optional", role_cue="If desired"),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 2
+    assert result.graph.nodes[-1].kind == "finish"
+    assert all(n.tip is None for n in result.graph.nodes)
+    assert any("kept them all as required" in w for w in result.warnings)
+    assert validate(result.graph) == []
+
+
+_ATTACH_SOURCE = (
+    "Boil the water. Cook the noodles. If you like, add chilli flakes. "
+    "Alternatively, use rice noodles. Serve."
+)
+_BOTH_NOTES = (
+    "Optional: If you like, add chilli flakes. Alternative: Alternatively, use rice noodles."
+)
+
+
+def _attach_recipe(first_attach: int | None, second_attach: int | None) -> NormalizedRecipe:
+    steps = [
+        _step(text="Boil the water.", station="burner"),
+        _step(text="Cook the noodles.", station="burner"),
+        _step(
+            text="If you like, add chilli flakes.",
+            role="optional",
+            role_cue="If you like",
+            attach_to_step=first_attach,
+        ),
+        _step(
+            text="Alternatively, use rice noodles.",
+            role="alternative",
+            role_cue="Alternatively",
+            attach_to_step=second_attach,
+        ),
+        _step(text="Serve."),
+    ]
+    return _recipe(steps, ingredients=[])
+
+
+def _tips(result: GraphBuildResult) -> list[str | None]:
+    assert result.graph is not None
+    return [n.tip for n in result.graph.nodes]
+
+
+@pytest.mark.parametrize(
+    ("first_attach", "second_attach"),
+    [
+        (99, None),  # out of range / missing -> nearest preceding required step
+        (2, 3),  # each points at itself
+        (3, 2),  # a cycle through two optional steps
+    ],
+)
+def test_invalid_attach_falls_back_to_nearest_preceding_required(
+    first_attach: int | None, second_attach: int | None
+) -> None:
+    result = _build(_attach_recipe(first_attach, second_attach), _ATTACH_SOURCE)
+    assert _tips(result) == [None, _BOTH_NOTES, None]
+    assert sum("did not name a valid step" in w for w in result.warnings) == 2
+
+
+def test_attach_follows_a_chain_of_optional_steps_to_a_required_one() -> None:
+    result = _build(_attach_recipe(3, 0), _ATTACH_SOURCE)
+    assert _tips(result) == [_BOTH_NOTES, None, None]
+    assert not any("did not name a valid step" in w for w in result.warnings)
+
+
+def test_leading_optional_with_no_preceding_step_attaches_forward() -> None:
+    source = "If you like, warm the plates. Cook the eggs. Serve."
+    steps = [
+        _step(text="If you like, warm the plates.", role="optional", role_cue="If you like"),
+        _step(text="Cook the eggs.", station="burner"),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert _tips(result) == ["Optional: If you like, warm the plates.", None]
+
+
+def test_legacy_previous_step_skips_an_optional_note() -> None:
+    """On the legacy path, "the previous step" is the previous *required* step."""
+    result = _build(_toast_recipe(), _TOAST_SOURCE)
+    assert result.graph is not None
+    toast, spread, serve = result.graph.nodes
+    assert spread.depends_on == [toast.id]
+    assert serve.depends_on == [spread.id]
+
+
+def test_force_linear_leaves_optional_steps_out_as_notes() -> None:
+    from abc_cook.extract.graph import build_linear_graph
+
+    result = build_linear_graph(_toast_recipe(), _TOAST_SOURCE, graph_id="g_test", source=SOURCE)
+    assert result.graph is not None
+    toast, spread, serve = result.graph.nodes
+    assert spread.depends_on == [toast.id]
+    assert serve.depends_on == [spread.id]
+    assert spread.tip is not None
+    assert spread.tip.startswith("Optional: ")
+    assert validate(result.graph) == []
