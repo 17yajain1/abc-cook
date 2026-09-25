@@ -17,6 +17,12 @@ gets enforced in code:
   passes: no shared ingredient with the immediately preceding step, and neither
   consumes a component the other produces. Otherwise: sequential, no exceptions.
   A shared pantry staple (salt, water, oil) is not a shared ingredient (CP2 E).
+- `depends_on_steps` (CP2 A), when any required step states it: claims are sanitized,
+  extended by producer edges and the descendant closure, verified pairwise against
+  every earlier step they don't reach, guarded against same-heat-station reordering,
+  and any leftover dangling node is joined into the finish. Edges are only added.
+- `role` (CP2 B): an optional/alternative step with a grounded, marker-bearing
+  `role_cue` becomes a verbatim note in the `tip` of the step it modifies.
 
 `graph.py` refuses (returns `outcome.graph is None`) if handed a recipe with no steps,
 even though `normalize.py`'s Tier 0 gate should already have stopped the pipeline
@@ -27,7 +33,7 @@ caller remembering the gate.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
@@ -449,6 +455,190 @@ def _verify_independence(
     return not _consumes_others_product(previous, current)
 
 
+def _verify_independence_explicit(
+    earlier: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
+    """§4.7's test, generalized to any earlier step (CP2 decision A).
+
+    Fails on a shared ingredient that is neither a pantry staple nor exactly a
+    produced-component label (producer->consumer wiring already orders those), or on
+    a produces/consumes link between the two -- which is never exempt.
+    """
+    a_names = {name.lower() for name in earlier.consumes_ingredients}
+    b_names = {name.lower() for name in current.consumes_ingredients}
+    if any(
+        name not in produced_labels and not _is_staple(name, produced_labels)
+        for name in a_names & b_names
+    ):
+        return False
+    return not _consumes_others_product(earlier, current)
+
+
+def _names_component(step: NormalizedStep, label: str) -> bool:
+    """Whether `step` consumes the produced `label` (the producer pass's fuzzy match)."""
+    produced_name = label.lower()
+    return any(
+        produced_name in name or name in produced_name
+        for name in (name.lower() for name in step.consumes_ingredients)
+    )
+
+
+_HEAT_STATIONS = ("burner", "oven")
+
+
+def _explicit_dependencies(
+    all_steps: list[NormalizedStep], roles: _Roles, warnings: list[str]
+) -> tuple[list[list[int]], list[ProvenanceSource], bool]:
+    """CP2 decision A: resolve `depends_on_steps` claims over the required steps.
+
+    Every claim is sanitized, extended by producer edges and the descendant closure
+    (the continuation of work a claimed step started), then verified pairwise against
+    every earlier step it does not reach and guarded against same-heat-station
+    reordering. The builder only ever adds edges; it never removes a claimed one.
+
+    Args:
+        all_steps: Every step, in source order (original positions).
+        roles: The role pass's result; claims are remapped from original positions.
+        warnings: Appended to for every dropped index and every guard edge.
+
+    Returns:
+        Per required position: the dependency positions (claimed first, then added
+        ones in index order), the provenance source, and whether review is advised.
+    """
+    required = roles.required
+    steps = [all_steps[original] for original in required]
+    position_of = {original: position for position, original in enumerate(required)}
+    labels = _produced_labels(steps)
+    count = len(steps)
+    review = False
+
+    def is_boundary(j: int) -> bool:
+        # A branch/product boundary: j makes a named product some later step uses.
+        # The closure neither includes it nor walks past it.
+        label = steps[j].produces_component
+        if not label or not label.strip():
+            return False
+        return any(_names_component(steps[k], label) for k in range(j + 1, count))
+
+    resolved: list[set[int]] = []
+    ordered: list[list[int]] = []
+    sources: list[ProvenanceSource] = []
+
+    def reach_of(deps: set[int]) -> set[int]:
+        reach: set[int] = set()
+        stack = list(deps)
+        while stack:
+            x = stack.pop()
+            if x in reach:
+                continue
+            reach.add(x)
+            stack.extend(resolved[x])
+        return reach
+
+    for i, step in enumerate(steps):
+        original = required[i]
+        claim = step.depends_on_steps
+        source: ProvenanceSource = "extracted"
+        claimed: list[int] = []
+        if claim is None:
+            if i > 0:
+                claimed = [i - 1]
+                source = "defaulted"
+                review = True
+        else:
+            for k in claim:
+                if k < 0 or k >= len(all_steps) or k >= original:
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." named step {k} as a dependency, which '
+                        "is not an earlier step; ignored."
+                    )
+                    continue
+                if k in position_of:
+                    position = position_of[k]
+                else:
+                    attached = roles.attach[k]
+                    if attached >= original:
+                        warnings.append(
+                            f'Step "{step.text[:60]}..." named an optional note attached '
+                            "to a later step as a dependency; ignored."
+                        )
+                        continue
+                    position = position_of[attached]
+                if position not in claimed:
+                    claimed.append(position)
+            if i == 0:
+                claimed = []
+            elif claim and not claimed:
+                claimed = [i - 1]
+                source = "defaulted"
+                review = True
+                warnings.append(
+                    f'Step "{step.text[:60]}..." named no usable earlier step; it now '
+                    "follows the previous step."
+                )
+
+        deps: set[int] = set(claimed)
+
+        def closure(new_deps: list[int], deps: set[int] = deps, i: int = i) -> None:
+            queue = list(new_deps)
+            seen = set(deps)
+            while queue:
+                x = queue.pop()
+                for j in range(x + 1, i):
+                    if j in seen or x not in resolved[j]:
+                        continue
+                    seen.add(j)
+                    if is_boundary(j):
+                        continue
+                    deps.add(j)
+                    queue.append(j)
+
+        # Producer edges: every earlier step whose named product this step consumes.
+        for p in range(i):
+            label = steps[p].produces_component
+            if label and label.strip() and _names_component(step, label):
+                deps.add(p)
+        closure(list(deps))
+
+        guard_added = False
+        while True:
+            reach = reach_of(deps)
+            new: list[int] = []
+            for j in range(i):
+                if j in reach or _verify_independence_explicit(steps[j], step, labels):
+                    continue
+                new.append(j)
+                reach |= reach_of({j})
+                warnings.append(
+                    f'Step "{step.text[:60]}..." shares an ingredient or component with '
+                    f'earlier step "{steps[j].text[:60]}..."; added that dependency.'
+                )
+            if step.station in _HEAT_STATIONS:
+                same_station = [j for j in range(i) if steps[j].station == step.station]
+                if same_station and same_station[-1] not in reach:
+                    h = same_station[-1]
+                    new.append(h)
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." uses the same {step.station} as earlier '
+                        f'step "{steps[h].text[:60]}..."; added that dependency.'
+                    )
+            if not new:
+                break
+            guard_added = True
+            deps.update(new)
+            closure(new)
+
+        if guard_added:
+            review = True
+            if source == "extracted":
+                source = "inferred"
+        resolved.append(deps)
+        ordered.append(claimed + sorted(deps - set(claimed)))
+        sources.append(source)
+
+    return ordered, sources, review
+
+
 def _depends_transitively(node: Node, target_id: str, nodes_by_id: dict[str, Node]) -> bool:
     """Whether `node` depends on `target_id`, directly or through other nodes (B3).
 
@@ -619,15 +809,32 @@ def build_graph(
     depends_on_previous_verified: list[bool] = []
     produced_labels = _produced_labels(steps)
 
+    # -- Path selection (CP2 decision A) -------------------------------------------
+    # Explicit path: at least one required step states `depends_on_steps` (even
+    # `[]`). A `None` claim then means "not provided" and defaults to the previous
+    # required step. Legacy path: every claim is `None`; today's `depends_on_previous`
+    # fork/join runs unchanged. force_linear ignores every claim.
+    explicit = not force_linear and any(step.depends_on_steps is not None for step in steps)
+    explicit_deps: list[list[int]] = []
+    explicit_sources: list[ProvenanceSource] = []
+    if explicit:
+        explicit_deps, explicit_sources, explicit_review = _explicit_dependencies(
+            recipe.steps, roles, warnings
+        )
+        review_recommended = review_recommended or explicit_review
+
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
         kind = "finish" if index == total - 1 else _infer_kind(step.text, attention)
         dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(step, kind, attention)
         freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
 
-        if index == 0:
+        if explicit:
+            sequential = True  # unused: the explicit path wires its own edges below
+            dep_source: ProvenanceSource = explicit_sources[index]
+        elif index == 0:
             sequential = True
-            dep_source: ProvenanceSource = "extracted"
+            dep_source = "extracted"
         elif force_linear or step.depends_on_previous:
             sequential = True
             dep_source = _sequential_source(step.text)
@@ -714,14 +921,18 @@ def build_graph(
     # byte-identical to the old `[nodes[index - 1].id]` chain (each join's open set
     # has exactly one member); edges only ever point to already-built nodes, so no
     # cycle can be introduced.
-    open_deps: list[str] = []
-    for index, node in enumerate(nodes):
-        if depends_on_previous_verified[index]:
-            node.depends_on = list(open_deps)
-            open_deps = [node.id]
-        else:
-            node.depends_on = list(nodes[index - 1].depends_on)
-            open_deps.append(node.id)
+    if explicit:
+        for index, node in enumerate(nodes):
+            node.depends_on = [nodes[position].id for position in explicit_deps[index]]
+    else:
+        open_deps: list[str] = []
+        for index, node in enumerate(nodes):
+            if depends_on_previous_verified[index]:
+                node.depends_on = list(open_deps)
+                open_deps = [node.id]
+            else:
+                node.depends_on = list(nodes[index - 1].depends_on)
+                open_deps.append(node.id)
 
     # -- Edges: produces -> consumer, wherever a LATER step names the same product --
     # Strictly later only: a step can't consume something a step after it produces,
@@ -787,6 +998,28 @@ def build_graph(
             for dep in consumer.depends_on:
                 if dep != fresh_node.id and dep not in fresh_node.depends_on:
                     fresh_node.depends_on.append(dep)
+
+        # -- Edges: dangling-sink join (explicit path only) ---------------------------
+        # The explicit path's equivalent of the legacy fork/join join: a required
+        # node nothing depends on would be a second sink. Join it into the finish
+        # rather than spend a repair call on a structural gap. Runs last, so the
+        # producer pass, B3 and freshness steering have already settled.
+        if explicit and len(nodes) > 1:
+            final = nodes[-1]
+            dependents = {dep for node in nodes for dep in node.depends_on}
+            joined = False
+            for node in nodes[:-1]:
+                if node.id not in dependents:
+                    final.depends_on.append(node.id)
+                    joined = True
+                    warnings.append(
+                        f'Step "{node.instruction[:60]}..." had nothing after it; the '
+                        "final step now waits for it."
+                    )
+            if joined:
+                review_recommended = True
+                if decisions[-1].depends_on_previous_source == "extracted":
+                    decisions[-1] = replace(decisions[-1], depends_on_previous_source="inferred")
 
     # -- Stages ----------------------------------------------------------------------
     used_stage_ids = list(dict.fromkeys(node.stage for node in nodes))

@@ -1206,3 +1206,410 @@ def test_force_linear_leaves_optional_steps_out_as_notes() -> None:
     assert spread.tip is not None
     assert spread.tip.startswith("Optional: ")
     assert validate(result.graph) == []
+
+
+# ---------------------------------------------------------------------------
+# CP2-B (A) -- explicit `depends_on_steps`: sanitize, producer edges, descendant
+# closure, pairwise verification, same-heat-station guard, dangling-sink join. The
+# builder only ever adds edges.
+# ---------------------------------------------------------------------------
+
+
+def _ings(*names: str) -> list[NormalizedIngredient]:
+    return [NormalizedIngredient(name=name, qty="1", unit=None, prep_note=None) for name in names]
+
+
+def _explicit_build(steps: list[NormalizedStep], *ingredients: str) -> GraphBuildResult:
+    source = " ".join(step.text for step in steps)
+    return _build(_recipe(steps, ingredients=_ings(*ingredients)), source)
+
+
+def _deps_by_label(result: GraphBuildResult) -> dict[str, list[str]]:
+    assert result.graph is not None
+    label_of = {node.id: node.instruction for node in result.graph.nodes}
+    return {
+        node.instruction: [label_of[dep] for dep in node.depends_on]
+        for node in result.graph.nodes
+    }
+
+
+def test_explicit_empty_claim_is_a_source_and_list_claim_is_exact() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Grate the cheese.", depends_on_steps=[], consumes_ingredients=["Cheese"]),
+        _step(text="Whisk the eggs.", depends_on_steps=[], consumes_ingredients=["Egg"]),
+        _step(text="Combine the onion and eggs.", depends_on_steps=[0, 2]),
+        _step(text="Serve with the cheese.", depends_on_steps=[1, 3]),
+    ]
+    result = _explicit_build(steps, "Onion", "Cheese", "Egg")
+    deps = _deps_by_label(result)
+    assert deps["Grate the cheese."] == []
+    assert deps["Whisk the eggs."] == []
+    assert deps["Combine the onion and eggs."] == ["Chop the onion.", "Whisk the eggs."]
+    assert deps["Serve with the cheese."] == ["Grate the cheese.", "Combine the onion and eggs."]
+    assert [d.depends_on_previous_source for d in result.node_decisions] == ["extracted"] * 5
+    assert result.review_recommended is False
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+def test_explicit_none_claim_defaults_to_the_previous_step() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Grate the cheese.", depends_on_steps=[], consumes_ingredients=["Cheese"]),
+        _step(text="Serve.", depends_on_steps=None),
+    ]
+    result = _explicit_build(steps, "Onion", "Cheese")
+    deps = _deps_by_label(result)
+    assert deps["Serve."][0] == "Grate the cheese."
+    assert result.node_decisions[2].depends_on_previous_source == "defaulted"
+    assert result.review_recommended is True
+
+
+def test_explicit_invalid_indices_are_dropped_with_a_warning() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Grate the cheese.", depends_on_steps=[], consumes_ingredients=["Cheese"]),
+        _step(text="Stir in the onion.", depends_on_steps=[0, 2, 3]),  # self, future
+        _step(text="Serve.", depends_on_steps=[1, 2]),
+    ]
+    result = _explicit_build(steps, "Onion", "Cheese")
+    deps = _deps_by_label(result)
+    assert deps["Stir in the onion."] == ["Chop the onion."]
+    assert result.node_decisions[2].depends_on_previous_source == "extracted"
+    assert sum("is not an earlier step" in w for w in result.warnings) == 2
+
+
+def test_explicit_claim_that_sanitizes_to_empty_falls_back_to_previous() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Grate the cheese.", depends_on_steps=[], consumes_ingredients=["Cheese"]),
+        _step(text="Stir everything.", depends_on_steps=[2, 7, -1]),
+        _step(text="Serve.", depends_on_steps=[0, 2]),
+    ]
+    result = _explicit_build(steps, "Onion", "Cheese")
+    deps = _deps_by_label(result)
+    assert deps["Stir everything."] == ["Grate the cheese."]
+    assert result.node_decisions[2].depends_on_previous_source == "defaulted"
+    assert result.review_recommended is True
+    assert any("named no usable earlier step" in w for w in result.warnings)
+
+
+def test_explicit_reference_to_an_optional_step_passes_through_to_its_target() -> None:
+    steps = [
+        _step(text="Toast the bread.", depends_on_steps=[], consumes_ingredients=["Bread"]),
+        _step(text="Spread the butter on the toast.", depends_on_steps=[0],
+              consumes_ingredients=["Butter"]),
+        _step(text="If you like, sprinkle the toast with cinnamon.", role="optional",
+              role_cue="If you like", attach_to_step=1, depends_on_steps=[1]),
+        _step(text="Serve warm.", depends_on_steps=[2]),
+    ]
+    result = _explicit_build(steps, "Bread", "Butter")
+    deps = _deps_by_label(result)
+    assert deps["Serve warm."] == ["Spread the butter on the toast."]
+    assert result.node_decisions[2].depends_on_previous_source == "extracted"
+
+
+def test_explicit_reference_to_an_optional_note_on_a_later_step_is_dropped() -> None:
+    steps = [
+        _step(text="Boil the water.", depends_on_steps=[], station="counter"),
+        _step(text="If you like, add a bay leaf.", role="optional", role_cue="If you like",
+              attach_to_step=2),
+        _step(text="Cook the rice.", depends_on_steps=[1], consumes_ingredients=["Rice"]),
+    ]
+    result = _explicit_build(steps, "Rice")
+    deps = _deps_by_label(result)
+    assert deps["Cook the rice."] == ["Boil the water."]  # conservative fallback
+    assert result.node_decisions[1].depends_on_previous_source == "defaulted"
+    assert any("attached to a later step" in w for w in result.warnings)
+
+
+def test_t_depth_descendant_closure_follows_continuation_of_the_claimed_work() -> None:
+    """T-depth: shape claims only [mix]; chill and rest continue mix's work with no
+    named product, so shape must wait for all three."""
+    steps = [
+        _step(text="Mix the dough.", depends_on_steps=[], consumes_ingredients=["Flour"]),
+        _step(text="Chill the dough for 30 minutes.", depends_on_steps=[0],
+              attention="unattended", attention_cue="Chill the dough for 30 minutes",
+              station="fridge"),
+        _step(text="Let the dough rest for 10 minutes.", depends_on_steps=[1],
+              attention="unattended", attention_cue="rest for 10 minutes", station="none"),
+        _step(text="Shape the dough into rounds.", depends_on_steps=[0]),
+    ]
+    result = _explicit_build(steps, "Flour")
+    deps = _deps_by_label(result)
+    assert set(deps["Shape the dough into rounds."]) >= {
+        "Mix the dough.",
+        "Chill the dough for 30 minutes.",
+        "Let the dough rest for 10 minutes.",
+    }
+    # The closure follows the extraction's own claims: no review, still "extracted".
+    assert result.node_decisions[3].depends_on_previous_source == "extracted"
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+def _siblings_steps(*, rub_produces: str | None) -> list[NormalizedStep]:
+    marinate_consumes = ["coated chicken"] if rub_produces else []
+    return [
+        _step(text="Grind the spice paste.", depends_on_steps=[],
+              consumes_ingredients=["Spices"], produces_component="spice paste"),
+        _step(text="Rub the chicken with the spice paste.", depends_on_steps=[0],
+              consumes_ingredients=["Chicken", "spice paste"], produces_component=rub_produces),
+        _step(text="Marinate the chicken for 1 hr.", depends_on_steps=[1],
+              attention="unattended", attention_cue="Marinate the chicken for 1 hr",
+              station="fridge", consumes_ingredients=marinate_consumes),
+        _step(text="Whisk the yogurt with salt.", depends_on_steps=[],
+              consumes_ingredients=["Yogurt", "Salt"]),
+        _step(text="Rinse the rice with salt and water.", depends_on_steps=[],
+              consumes_ingredients=["Rice", "Salt", "Water"]),
+        _step(text="Stir the remaining spice paste into the yogurt.", depends_on_steps=[0, 3],
+              consumes_ingredients=["spice paste", "Yogurt"]),
+        _step(text="Cook the chicken and rice and serve with the yogurt.",
+              depends_on_steps=[2, 4, 5], station="burner"),
+    ]
+
+
+_SIBLING_INGREDIENTS = ("Spices", "Chicken", "Yogurt", "Salt", "Rice", "Water")
+
+
+def test_t_siblings_a_product_boundary_stops_the_closure() -> None:
+    """T-siblings (a): rub produces "coated chicken", which marinate consumes -- a
+    branch boundary. The yogurt step claims [grind, whisk]; it must not inherit the
+    chicken branch. Salt and the shared component "spice paste" don't veto."""
+    result = _explicit_build(_siblings_steps(rub_produces="coated chicken"),
+                             *_SIBLING_INGREDIENTS)
+    deps = _deps_by_label(result)
+    stir = deps["Stir the remaining spice paste into the yogurt."]
+    assert set(stir) == {"Grind the spice paste.", "Whisk the yogurt with salt."}
+    assert "Rub the chicken with the spice paste." not in stir
+    assert "Marinate the chicken for 1 hr." not in stir
+    assert deps["Rinse the rice with salt and water."] == []
+    assert deps["Whisk the yogurt with salt."] == []
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+def test_t_siblings_b_unnamed_product_falls_back_to_conservative_closure() -> None:
+    """T-siblings (b): same recipe, but rub names no product -- so rub and marinate
+    read as continuation of grind, and the yogurt step waits for them. Rice is still
+    independent."""
+    result = _explicit_build(_siblings_steps(rub_produces=None), *_SIBLING_INGREDIENTS)
+    deps = _deps_by_label(result)
+    stir = deps["Stir the remaining spice paste into the yogurt."]
+    assert {"Rub the chicken with the spice paste.", "Marinate the chicken for 1 hr."} <= set(stir)
+    assert deps["Rinse the rice with salt and water."] == []
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+def test_explicit_pairwise_shared_non_staple_forces_an_edge() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Boil the pasta.", depends_on_steps=[],
+              consumes_ingredients=["Pasta", "Water", "Salt"]),
+        _step(text="Fry the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Serve.", depends_on_steps=[1, 2]),
+    ]
+    result = _explicit_build(steps, "Onion", "Pasta", "Water", "Salt")
+    deps = _deps_by_label(result)
+    assert deps["Fry the onion."] == ["Chop the onion."]
+    assert result.node_decisions[2].depends_on_previous_source == "inferred"
+    assert result.review_recommended is True
+
+
+def test_explicit_pairwise_shared_staples_do_not_force_an_edge() -> None:
+    steps = [
+        _step(text="Whisk the eggs.", depends_on_steps=[],
+              consumes_ingredients=["Egg", "Salt", "Oil"]),
+        _step(text="Rinse the rice.", depends_on_steps=[],
+              consumes_ingredients=["Rice", "Salt", "Water", "Oil"]),
+        _step(text="Serve.", depends_on_steps=[0, 1]),
+    ]
+    result = _explicit_build(steps, "Egg", "Rice", "Salt", "Water", "Oil")
+    deps = _deps_by_label(result)
+    assert deps["Rinse the rice."] == []
+    assert result.review_recommended is False
+
+
+def test_explicit_produced_component_named_oil_still_wires() -> None:
+    steps = [
+        _step(text="Infuse the oil with garlic.", depends_on_steps=[],
+              consumes_ingredients=["Garlic"], produces_component="oil"),
+        _step(text="Toast the bread.", depends_on_steps=[], consumes_ingredients=["Bread"]),
+        _step(text="Drizzle the oil over the toast.", depends_on_steps=[1],
+              consumes_ingredients=["oil"]),
+    ]
+    result = _explicit_build(steps, "Garlic", "Bread")
+    assert result.graph is not None
+    infuse, _toast, drizzle = result.graph.nodes
+    assert infuse.id in drizzle.depends_on
+    assert infuse.produces in drizzle.consumes
+    assert validate(result.graph) == []
+
+
+@pytest.mark.parametrize("station", ["burner", "oven"])
+def test_heat_guard_orders_same_heat_station_steps(station: str) -> None:
+    steps = [
+        _step(text="Fry the onion.", depends_on_steps=[], station=station,
+              consumes_ingredients=["Onion"]),
+        _step(text="Add the spices to the pan.", depends_on_steps=[], station=station,
+              consumes_ingredients=["Spices"]),
+    ]
+    result = _explicit_build(steps, "Onion", "Spices")
+    deps = _deps_by_label(result)
+    assert deps["Add the spices to the pan."] == ["Fry the onion."]
+    assert result.node_decisions[1].depends_on_previous_source == "inferred"
+    assert result.review_recommended is True
+    assert any(f"same {station}" in w for w in result.warnings)
+
+
+def test_heat_guard_adds_nothing_when_the_earlier_step_is_already_reached() -> None:
+    steps = [
+        _step(text="Heat the pan.", depends_on_steps=[], station="burner"),
+        _step(text="Chop the garlic.", depends_on_steps=[0], consumes_ingredients=["Garlic"]),
+        _step(text="Fry the garlic.", depends_on_steps=[1], station="burner"),
+    ]
+    result = _explicit_build(steps, "Garlic")
+    deps = _deps_by_label(result)
+    assert deps["Fry the garlic."] == ["Chop the garlic."]
+    assert result.node_decisions[2].depends_on_previous_source == "extracted"
+
+
+def test_heat_guard_does_not_force_counter_then_burner() -> None:
+    steps = [
+        _step(text="Chop the onion.", depends_on_steps=[], consumes_ingredients=["Onion"]),
+        _step(text="Boil the water.", depends_on_steps=[], station="burner"),
+        _step(text="Serve.", depends_on_steps=[0, 1]),
+    ]
+    result = _explicit_build(steps, "Onion")
+    deps = _deps_by_label(result)
+    assert deps["Boil the water."] == []
+
+
+def test_dangling_sink_is_joined_into_the_finish() -> None:
+    steps = [
+        _step(text="Chop the parsley.", depends_on_steps=[], consumes_ingredients=["Parsley"]),
+        _step(text="Cook the pasta.", depends_on_steps=[], station="burner"),
+        _step(text="Serve the pasta.", depends_on_steps=[1]),
+    ]
+    result = _explicit_build(steps, "Parsley")
+    deps = _deps_by_label(result)
+    assert deps["Serve the pasta."] == ["Cook the pasta.", "Chop the parsley."]
+    assert result.node_decisions[2].depends_on_previous_source == "inferred"
+    assert result.review_recommended is True
+    assert any("the final step now waits for it" in w for w in result.warnings)
+    assert result.graph is not None
+    assert validate(result.graph) == []
+
+
+def test_explicit_producer_consumer_wiring_is_present() -> None:
+    steps = [
+        _step(text="Make the tomato sauce.", depends_on_steps=[],
+              consumes_ingredients=["Tomato"], produces_component="tomato sauce"),
+        _step(text="Boil the pasta.", depends_on_steps=[], consumes_ingredients=["Pasta"]),
+        _step(text="Toss the pasta in the tomato sauce.", depends_on_steps=[1],
+              consumes_ingredients=["tomato sauce"]),
+    ]
+    result = _explicit_build(steps, "Tomato", "Pasta")
+    assert result.graph is not None
+    sauce, _boil, toss = result.graph.nodes
+    assert sauce.id in toss.depends_on
+    assert sauce.produces in toss.consumes
+    assert result.node_decisions[2].depends_on_previous_source == "extracted"
+    assert validate(result.graph) == []
+
+
+def test_explicit_producer_consumer_wiring_never_points_backward() -> None:
+    steps = [
+        _step(text="Add the tomatoes to the dal.", depends_on_steps=[],
+              consumes_ingredients=["cooked dal"]),
+        _step(text="Cook the dal mixture for 30 minutes.", depends_on_steps=[0],
+              produces_component="cooked dal mixture"),
+        _step(text="Serve hot.", depends_on_steps=[1]),
+    ]
+    result = _explicit_build(steps)
+    assert result.graph is not None
+    first, second, _serve = result.graph.nodes
+    assert second.id not in first.depends_on
+    assert not any(v.rule == "acyclic" for v in validate(result.graph))
+
+
+def test_explicit_path_end_to_end_prep_fits_in_the_chill_window() -> None:
+    """build_graph -> validate -> the unchanged scheduler: two independent preps land
+    in the chill window, and shaping (claiming only [mix]) waits for the chill."""
+    from abc_cook.schedule import schedule
+
+    def timed(minutes: int) -> dict[str, object]:
+        return {
+            "duration_min": minutes,
+            "duration_typical_min": minutes,
+            "duration_max": minutes,
+            "duration_stated": True,
+        }
+
+    steps = [
+        _step(text="Mix the dough.", depends_on_steps=[],
+              consumes_ingredients=["Flour", "Butter"], **timed(5)),
+        _step(text="Chill the dough in the fridge for 30 minutes.", depends_on_steps=[0],
+              attention="unattended", attention_cue="in the fridge for 30 minutes",
+              station="fridge", **timed(30)),
+        _step(text="Chop the herbs.", depends_on_steps=[], consumes_ingredients=["Herbs"],
+              **timed(5)),
+        _step(text="Grate the cheese.", depends_on_steps=[], consumes_ingredients=["Cheese"],
+              **timed(5)),
+        _step(text="Shape the dough into a round.", depends_on_steps=[0], **timed(5)),
+        _step(text="Top with the herbs and cheese and bake.", depends_on_steps=[2, 3, 4],
+              consumes_ingredients=["Herbs", "Cheese"], station="oven", **timed(20)),
+    ]
+    result = _explicit_build(steps, "Flour", "Butter", "Herbs", "Cheese")
+    assert result.graph is not None
+    assert validate(result.graph) == []
+    plan = schedule(result.graph)
+    assert plan.saved_min > 0
+
+    mix, chill, chop, grate, shape, _bake = result.graph.nodes
+    placed = {s.node_id: s for s in plan.scheduled}
+    chill_windows = [w for w in plan.windows if w.host_node_id == chill.id]
+    assert len(chill_windows) == 1
+    assert {chop.id, grate.id} <= set(chill_windows[0].assigned)
+    assert placed[shape.id].start_min >= placed[chill.id].end_min
+    assert mix.id in shape.depends_on
+
+
+def test_none_versus_empty_claim_regression() -> None:
+    """`None` = not provided -> the conservative previous-step default. `[]` = a claim
+    of no dependencies -> no default edge, only the safety edges the guards add."""
+
+    def build(
+        claim: list[int] | None,
+        *,
+        nuts_produce: str | None = None,
+        station: str = "counter",
+        consumes: tuple[str, ...] = ("Vinegar",),
+    ) -> GraphBuildResult:
+        steps = [
+            _step(text="Toast the nuts.", depends_on_steps=[], station=station,
+                  consumes_ingredients=["Nuts"], produces_component=nuts_produce),
+            _step(text="Whisk the dressing.", depends_on_steps=claim, station=station,
+                  consumes_ingredients=list(consumes)),
+            _step(text="Serve the salad.", depends_on_steps=[0, 1]),
+        ]
+        return _explicit_build(steps, "Nuts", "Vinegar")
+
+    as_none = build(None)
+    assert _deps_by_label(as_none)["Whisk the dressing."] == ["Toast the nuts."]
+    assert as_none.node_decisions[1].depends_on_previous_source == "defaulted"
+
+    as_empty = build([])
+    assert _deps_by_label(as_empty)["Whisk the dressing."] == []
+    assert as_empty.node_decisions[1].depends_on_previous_source == "extracted"
+
+    # `[]` still receives the safety edges -- and only those.
+    with_product = build([], nuts_produce="toasted nuts", consumes=("Vinegar", "toasted nuts"))
+    assert _deps_by_label(with_product)["Whisk the dressing."] == ["Toast the nuts."]
+    assert with_product.node_decisions[1].depends_on_previous_source == "extracted"
+
+    on_one_burner = build([], station="burner")
+    assert _deps_by_label(on_one_burner)["Whisk the dressing."] == ["Toast the nuts."]
+    assert on_one_burner.node_decisions[1].depends_on_previous_source == "inferred"
