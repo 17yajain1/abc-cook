@@ -16,6 +16,7 @@ gets enforced in code:
 - `depends_on_previous=False` is honored only when the §4.7 two-condition safety test
   passes: no shared ingredient with the immediately preceding step, and neither
   consumes a component the other produces. Otherwise: sequential, no exceptions.
+  A shared pantry staple (salt, water, oil) is not a shared ingredient (CP2 E).
 
 `graph.py` refuses (returns `outcome.graph is None`) if handed a recipe with no steps,
 even though `normalize.py`'s Tier 0 gate should already have stopped the pipeline
@@ -292,10 +293,42 @@ def _resolve_duration(
     return dmin_i, dtyp_i, dmax_i, source, clamp_fired
 
 
-def _shares_ingredient(a: NormalizedStep, b: NormalizedStep) -> bool:
+_STAPLES = frozenset({"salt", "water", "oil"})
+"""CP2 decision E: pantry staples two steps can both draw on without one needing the
+other's output. Deliberately closed and narrow. Matched per whole word token, so "Sea
+salt" and "olive oil" count (and, accepted tradeoff, so do "chilli oil" and "water
+chestnut"); "Saltine" does not."""
+
+_STAPLE_TOKEN_RE = re.compile(r"[a-z]+")
+
+
+def _is_staple(name: str, produced_labels: frozenset[str]) -> bool:
+    """Whether a consumed name is a pantry staple for the independence check.
+
+    A name that is exactly some step's `produces_component` label is never a staple,
+    whatever its words: it is that step's output, not a pantry item.
+    """
+    lowered = name.lower()
+    if lowered in produced_labels:
+        return False
+    return any(token in _STAPLES for token in _STAPLE_TOKEN_RE.findall(lowered))
+
+
+def _produced_labels(steps: list[NormalizedStep]) -> frozenset[str]:
+    return frozenset(
+        step.produces_component.lower()
+        for step in steps
+        if step.produces_component and step.produces_component.strip()
+    )
+
+
+def _shares_ingredient(
+    a: NormalizedStep, b: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
+    """Whether `a` and `b` name a common ingredient other than a pantry staple."""
     a_names = {name.lower() for name in a.consumes_ingredients}
     b_names = {name.lower() for name in b.consumes_ingredients}
-    return bool(a_names & b_names)
+    return any(not _is_staple(name, produced_labels) for name in a_names & b_names)
 
 
 def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
@@ -307,14 +340,18 @@ def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
     return bool(a.produces_component and a.produces_component.lower() in b_consumes)
 
 
-def _verify_independence(previous: NormalizedStep, current: NormalizedStep) -> bool:
+def _verify_independence(
+    previous: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
     """LOCKED DECISION 7 / design doc §4.7.
 
     Both conditions must hold to honor a `depends_on_previous=False` claim: no shared
     ingredient, no produces/consumes link between this step and the immediately
-    preceding one.
+    preceding one. A shared pantry staple (`_STAPLES`) is not a shared ingredient for
+    this test (CP2 decision E); a produced component never counts as a staple, and the
+    produces/consumes link is never exempt.
     """
-    if _shares_ingredient(previous, current):
+    if _shares_ingredient(previous, current, produced_labels):
         return False
     return not _consumes_others_product(previous, current)
 
@@ -477,6 +514,7 @@ def build_graph(
     nodes: list[Node] = []
     decisions: list[NodeDecision] = []
     depends_on_previous_verified: list[bool] = []
+    produced_labels = _produced_labels(steps)
 
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
@@ -491,7 +529,7 @@ def build_graph(
             sequential = True
             dep_source = _sequential_source(step.text)
         else:
-            honored = _verify_independence(steps[index - 1], step)
+            honored = _verify_independence(steps[index - 1], step, produced_labels)
             sequential = not honored
             dep_source = "inferred" if honored else "defaulted"
         depends_on_previous_verified.append(sequential)

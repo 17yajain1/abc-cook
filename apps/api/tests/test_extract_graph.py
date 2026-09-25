@@ -18,8 +18,11 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import (
     GraphBuildResult,
     _clean_cue,
+    _is_staple,
     _label,
     _parse_qty,
+    _produced_labels,
+    _verify_independence,
     build_graph,
 )
 from abc_cook.extract.normalize import render_source_text
@@ -862,3 +865,102 @@ def test_characterization_dal_makhni_legacy_edges_unchanged() -> None:
     assert all(step.depends_on_steps is None for step in recipe.steps)  # legacy input
     assert sum(not step.depends_on_previous for step in recipe.steps) == 3
     assert _legacy_edges(recipe, source_text) == _DAL_MAKHNI_EDGES
+
+
+# ---------------------------------------------------------------------------
+# CP2-B (E) -- staple-aware independence. A shared pantry staple (salt, water, oil)
+# is not a dependency; a shared non-staple still vetoes, and a produced component is
+# never staple-exempt, whatever it is called.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Salt", True),
+        ("Sea salt", True),
+        ("olive oil", True),
+        ("chilli oil", True),  # accepted tradeoff of whole-token matching
+        ("Water", True),
+        ("water chestnut", True),  # accepted tradeoff of whole-token matching
+        ("Saltine", False),
+        ("Onion", False),
+    ],
+)
+def test_staple_tokenizer(name: str, expected: bool) -> None:
+    assert _is_staple(name, frozenset()) is expected
+
+
+def test_produced_component_named_like_a_staple_is_never_a_staple() -> None:
+    assert _is_staple("Oil", frozenset({"oil"})) is False
+    assert _is_staple("garlic oil", frozenset({"garlic oil"})) is False
+
+
+@pytest.mark.parametrize("staple", ["Salt", "Oil", "Water"])
+def test_shared_staple_alone_does_not_veto_independence(staple: str) -> None:
+    a = _step(text="Whisk the eggs.", consumes_ingredients=["Egg", staple])
+    b = _step(text="Rinse the rice.", consumes_ingredients=["Rice", staple])
+    assert _verify_independence(a, b, frozenset()) is True
+
+
+def test_shared_non_staple_still_vetoes_independence() -> None:
+    a = _step(text="Whisk the eggs.", consumes_ingredients=["Egg", "Salt", "Onion"])
+    b = _step(text="Rinse the rice.", consumes_ingredients=["Rice", "Salt", "Onion"])
+    assert _verify_independence(a, b, frozenset()) is False
+
+
+def test_produced_component_named_oil_keeps_its_product_link() -> None:
+    """A step that makes "oil" (an infused oil) and a step that uses it are linked,
+    even though "oil" alone would be a staple."""
+    infuse = _step(text="Infuse the oil with garlic.", produces_component="oil")
+    drizzle = _step(text="Drizzle the oil over the bread.", consumes_ingredients=["oil"])
+    labels = _produced_labels([infuse, drizzle])
+    assert _verify_independence(infuse, drizzle, labels) is False
+
+
+def test_legacy_independence_honored_when_only_salt_is_shared() -> None:
+    steps = [
+        _step(text="Whisk the eggs with salt.", consumes_ingredients=["Egg", "Salt"]),
+        _step(
+            text="Rinse the rice with salt.",
+            depends_on_previous=False,
+            consumes_ingredients=["Rice", "Salt"],
+        ),
+        _step(text="Cook everything together.", consumes_ingredients=["Egg", "Rice"]),
+    ]
+    ingredients = [
+        NormalizedIngredient(name=name, qty="1", unit=None, prep_note=None)
+        for name in ("Egg", "Rice", "Salt")
+    ]
+    result = _build(
+        _recipe(steps, ingredients=ingredients),
+        "Whisk the eggs with salt. Rinse the rice with salt. Cook everything together.",
+    )
+    assert result.graph is not None
+    whisk, rinse, cook = result.graph.nodes
+    assert rinse.depends_on == []  # honored: salt is a staple, not a dependency
+    assert result.node_decisions[1].depends_on_previous_source == "inferred"
+    assert set(cook.depends_on) == {whisk.id, rinse.id}
+    assert validate(result.graph) == []
+
+
+def test_legacy_independence_still_vetoed_by_a_shared_non_staple() -> None:
+    steps = [
+        _step(text="Chop the onion with salt.", consumes_ingredients=["Onion", "Salt"]),
+        _step(
+            text="Fry the onion with salt.",
+            depends_on_previous=False,
+            consumes_ingredients=["Onion", "Salt"],
+        ),
+    ]
+    ingredients = [
+        NormalizedIngredient(name=name, qty="1", unit=None, prep_note=None)
+        for name in ("Onion", "Salt")
+    ]
+    result = _build(
+        _recipe(steps, ingredients=ingredients), "Chop the onion with salt. Fry the onion."
+    )
+    assert result.graph is not None
+    chop, fry = result.graph.nodes
+    assert fry.depends_on == [chop.id]
+    assert result.node_decisions[1].depends_on_previous_source == "defaulted"
