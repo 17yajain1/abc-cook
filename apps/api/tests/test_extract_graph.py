@@ -10,9 +10,11 @@ source text independently of whatever the fake "model" claimed.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
+from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import (
     GraphBuildResult,
     _clean_cue,
@@ -20,6 +22,7 @@ from abc_cook.extract.graph import (
     _parse_qty,
     build_graph,
 )
+from abc_cook.extract.normalize import render_source_text
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -769,3 +772,93 @@ def test_label_never_ends_on_bare_number_or_function_word_via_build_graph() -> N
         last_word = node.label.rsplit(" ", 1)[-1].lower()
         assert last_word not in function_words
         assert not last_word.isdigit()
+
+
+# ---------------------------------------------------------------------------
+# CP2-A characterization: the legacy (`depends_on_previous`) build of both captured
+# real-recipe `NormalizedRecipe` replay fixtures, pinned edge for edge. Recorded before
+# any CP2-B builder change. CP2-B adds an explicit-dependency path and a staple rule;
+# neither may alter what a recipe with no `depends_on_steps` builds to. If one of these
+# fails, the legacy path moved -- surface it rather than re-recording the expectation.
+# ---------------------------------------------------------------------------
+
+_IMPORT_FIXTURES = Path(__file__).parent / "fixtures" / "import"
+
+_PIZZA_DOUGH_EDGES: dict[str, list[str]] = {
+    "step_in_a_small_bowl_stir_together": [],
+    "step_measure_3_1_3_cups_flour": ["step_in_a_small_bowl_stir_together"],
+    "step_knead_by_hand_2_minutes_dough": ["step_measure_3_1_3_cups_flour"],
+    "step_cover_the_bowl_with_plastic_wrap": ["step_knead_by_hand_2_minutes_dough"],
+    "step_transfer_dough_to_a_floured_surface": ["step_cover_the_bowl_with_plastic_wrap"],
+    "step_cover_and_refrigerate_overnight_18_hours": ["step_transfer_dough_to_a_floured_surface"],
+    "step_remove_the_dough_1_hour_before": [
+        "step_cover_and_refrigerate_overnight_18_hours",
+        "step_transfer_dough_to_a_floured_surface",
+    ],
+    "step_place_a_pizza_stone_or_inverted": ["step_remove_the_dough_1_hour_before"],
+    "step_lightly_flour_a_pizza_peel_and": ["step_place_a_pizza_stone_or_inverted"],
+    "step_when_dough_is_about_room_temperature": ["step_lightly_flour_a_pizza_peel_and"],
+    "step_lift_the_dough_over_both_knuckles": ["step_when_dough_is_about_room_temperature"],
+    "step_spread_on_desired_pizza_sauce_and": ["step_lift_the_dough_over_both_knuckles"],
+    "step_slide_pizza_onto_the_preheated_pizza": ["step_spread_on_desired_pizza_sauce_and"],
+    "step_transfer_the_pizza_to_a_cutting": ["step_slide_pizza_onto_the_preheated_pizza"],
+}
+
+_DAL_MAKHNI_EDGES: dict[str, list[str]] = {
+    "step_soak_the_dal_and_rajma_together": [],
+    "step_scrub_the_soaked_dal_and_rajma": ["step_soak_the_dal_and_rajma_together"],
+    "step_add_5_cups_water_and_boil": ["step_scrub_the_soaked_dal_and_rajma"],
+    "step_roughly_cut_the_tomatoes_and_puree": ["step_scrub_the_soaked_dal_and_rajma"],
+    "step_in_a_pan_melt_butter_and": ["step_scrub_the_soaked_dal_and_rajma"],
+    "step_add_the_kashmiri_chilli_powder_and": [
+        "step_add_5_cups_water_and_boil",
+        "step_roughly_cut_the_tomatoes_and_puree",
+        "step_in_a_pan_melt_butter_and",
+    ],
+    "step_immediately_add_the_tomato_puree": ["step_add_the_kashmiri_chilli_powder_and"],
+    "step_cook_the_tomatoes_till_they_turn": ["step_immediately_add_the_tomato_puree"],
+    "step_add_the_tomatoes_to_the_dal": [
+        "step_cook_the_tomatoes_till_they_turn",
+        "step_add_5_cups_water_and_boil",
+    ],
+    "step_cook_the_dal_for_30_minutes": ["step_add_the_tomatoes_to_the_dal"],
+    "step_in_a_separate_pan_heat_oil": ["step_add_the_tomatoes_to_the_dal"],
+    "step_brown_the_garlic_and_add_it": [
+        "step_cook_the_dal_for_30_minutes",
+        "step_in_a_separate_pan_heat_oil",
+    ],
+    "step_add_some_more_butter_along_with": ["step_brown_the_garlic_and_add_it"],
+    "step_remove_and_serve_hot": ["step_add_some_more_butter_along_with"],
+}
+
+
+def _legacy_edges(recipe: NormalizedRecipe, source_text: str) -> dict[str, list[str]]:
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+    assert validate(result.graph) == []
+    return {node.id: node.depends_on for node in result.graph.nodes}
+
+
+def test_characterization_pizza_dough_legacy_edges_unchanged() -> None:
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "pizza-dough.normalized.json").read_text(encoding="utf-8")
+    )
+    raw = RawAcquisition.model_validate_json(
+        (_IMPORT_FIXTURES / "pizza-dough.raw.json").read_text(encoding="utf-8")
+    )
+    assert all(step.depends_on_steps is None for step in recipe.steps)  # legacy input
+    assert _legacy_edges(recipe, render_source_text(raw)) == _PIZZA_DOUGH_EDGES
+
+
+def test_characterization_dal_makhni_legacy_edges_unchanged() -> None:
+    """The one real capture that exercises the legacy fork/join path (three
+    `depends_on_previous=False` claims)."""
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+    assert all(step.depends_on_steps is None for step in recipe.steps)  # legacy input
+    assert sum(not step.depends_on_previous for step in recipe.steps) == 3
+    assert _legacy_edges(recipe, source_text) == _DAL_MAKHNI_EDGES

@@ -6,8 +6,9 @@ or a refusal. `NormalizedRecipe` is the real, inspectable value that crosses the
 between the two — never a persisted `CookingGraph` written to directly.
 
 Every field on `NormalizedStep` that the LLM classifies (`attention`, `duration_stated`,
-`freshness`) is a HINT, not a fact. Verification B (design doc §10.C) found the model's
-own self-reported classification cannot be trusted as emitted: in one observed case its
+`freshness`, `depends_on_steps`, `role`) is a HINT, not a fact. Verification B (design
+doc §10.C) found the model's own self-reported classification cannot be trusted as
+emitted: in one observed case its
 free-text reasoning correctly identified a Tier 0 case while the structured field it
 returned said the opposite. `attention_cue` and `freshness_cue` exist so `graph.py` can
 independently confirm a cue is actually present in the source text before trusting a
@@ -117,10 +118,44 @@ class NormalizedStep(BaseModel):
     depends_on_previous: bool = Field(
         default=True,
         description=(
-            "Consecutive stated steps default to sequential (§4.7). False only when "
-            "the model asserts genuine independence; graph.py still applies the "
-            "two-condition test (no shared ingredient/component, no produces/consumes "
-            "link) before honoring False."
+            "LEGACY (prompt v1/v2). Consecutive stated steps default to sequential "
+            "(§4.7). False only when the model asserts genuine independence; graph.py "
+            "still applies the two-condition test (no shared ingredient/component, no "
+            "produces/consumes link) before honoring False. Ignored once "
+            "depends_on_steps is provided."
+        ),
+    )
+    depends_on_steps: list[int] | None = Field(
+        default=None,
+        description=(
+            "0-based positions of the EARLIER steps whose output or pan/vessel state "
+            "this step directly needs. [] means it genuinely needs nothing earlier. "
+            "None means not provided -- graph.py then falls back to "
+            "depends_on_previous. A claim, not a fact: graph.py verifies it."
+        ),
+    )
+    role: Literal["required", "optional", "alternative"] = Field(
+        default="required",
+        description=(
+            "required: part of cooking the dish. optional: conditional or "
+            'nice-to-have ("If you plan to...", "if desired"). alternative: another '
+            'way to do an earlier step ("Microwave method: ..."). Never drop an '
+            "optional/alternative instruction; mark it here instead."
+        ),
+    )
+    role_cue: str | None = Field(
+        default=None,
+        description=(
+            "Verbatim source phrase showing the step is optional/alternative. Null "
+            "when role is required. graph.py must find it in the source text before "
+            "honoring a non-required role."
+        ),
+    )
+    attach_to_step: int | None = Field(
+        default=None,
+        description=(
+            "0-based position of the required step this optional/alternative "
+            "instruction belongs with. Null when role is required."
         ),
     )
     consumes_ingredients: list[str] = Field(
