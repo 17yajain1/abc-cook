@@ -69,11 +69,11 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_still_uses_prompt_v2() -> None:
-    """CP2-A is inert by design. CP2-B's final commit switches this to v3 -- update
-    this test then, deliberately, not before."""
-    assert normalize._PROMPT_PATH.name == "v2.md"
-    assert "extraction prompt (v2)" in normalize.load_prompt()
+def test_production_extraction_uses_prompt_v3() -> None:
+    """CP2-B's final commit switched production extraction to v3, now that
+    `graph.py` honors `depends_on_steps` and step roles."""
+    assert normalize._PROMPT_PATH.name == "v3.md"
+    assert "extraction prompt (v3)" in normalize.load_prompt()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:

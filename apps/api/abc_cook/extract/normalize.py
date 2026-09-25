@@ -69,8 +69,10 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v2.md"
-"""v2 adds the M2.10 "Sources" section (per-field precedence across description/blog/
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v3.md"
+"""v3 (CP2) replaces `depends_on_previous` with explicit `depends_on_steps`, adds
+optional/alternative step roles, and refines attention; `graph.py` verifies all of it.
+v2 added the M2.10 "Sources" section (per-field precedence across description/blog/
 transcript, and the transcript-chatter rule); v1 kicked off M2.9. Kept as separate
 files rather than editing v1 in place so a prior prompt version stays reproducible."""
 
