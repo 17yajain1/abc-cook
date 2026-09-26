@@ -4,12 +4,21 @@ import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { deriveCookingModel } from '@/cooking/model'
 import type { SessionStore } from '@/cooking/store'
+import type { SessionConflict } from '@/cooking/types'
 import { useSession } from '@/cooking/useSession'
 import { headerTiming } from '@/lib/duration'
 
 import { CookingShell } from './CookingShell'
 import { ingredientsById } from './quantity'
-import { buildCookingView, buildEntryView, buildSheetView, type ActionDescriptor, type CookingView } from './viewModel'
+import {
+  buildConflictView,
+  buildCookingView,
+  buildEntryView,
+  buildSheetView,
+  type ActionDescriptor,
+  type ConflictAction,
+  type CookingView,
+} from './viewModel'
 import { WhatsCookingSheet } from './WhatsCookingSheet'
 
 /**
@@ -27,11 +36,21 @@ export function CookingModeScreen({
   planKey,
   store,
   onExit,
+  onGoTo,
+  canGoTo,
 }: {
   payload: RecipePlanResponse
   planKey: string
   store: SessionStore
   onExit: () => void
+  /** CP1b: navigates to a conflicting session's own plan, App-level (`App.tsx`'s
+   * `goToConflict`) — resolving `library:`/`server:` planKeys through the app's existing
+   * library lookup / `fetchPlan`, never a new endpoint. Called with `conflict.planKey`. */
+  onGoTo: (planKey: string) => void
+  /** CP1b: whether `onGoTo` can actually resolve `planKey` right now (a `library:` id
+   * still in the library, or any `server:` id — `fetchPlan` is always tried). Backed by
+   * the real `Library`, unlike `buildConflictView`'s own prefix-only default. */
+  canGoTo: (planKey: string) => boolean
 }) {
   const model = useMemo(() => deriveCookingModel(payload), [payload])
   const ingredients = useMemo(() => ingredientsById(payload.graph.ingredients), [payload])
@@ -65,7 +84,7 @@ export function CookingModeScreen({
   const dispatchAction = (action: ActionDescriptor) => {
     switch (action.kind) {
       case 'start':
-        runEngine(() => session.start(model, planKey))
+        runEngine(() => session.start(model, planKey, payload.graph.title))
         return
       case 'startNode':
         runEngine(() => session.startNode(model, action.nodeId))
@@ -101,7 +120,15 @@ export function CookingModeScreen({
   }
 
   if (openResult.status === 'conflict') {
-    return <ConflictScreen onClose={onExit} />
+    return (
+      <ConflictScreen
+        conflict={openResult.conflict}
+        canGoTo={canGoTo}
+        onGoTo={onGoTo}
+        onEndBlockingSession={() => session.end()}
+        onClose={onExit}
+      />
+    )
   }
 
   const view: CookingView =
@@ -130,32 +157,97 @@ export function CookingModeScreen({
 }
 
 /**
- * `conflict` (M3.4 handoff §1/§7 row 10): the safe path only — a bare way back, never
- * the destructive "end that cook and start this one" branch, which M3.3's `end()`
- * (a no-report bare clear) doesn't yet have the semantics to support from a screen.
+ * `conflict` (M3.4 handoff §1/§7 row 10; CP1a+CP1b of the M3.4.5 session-lockout plan).
+ * Identifies the other cook when `conflict.title` is known (plan decision 1/3 — the
+ * `recipeTitle` snapshot `engine.start()` takes) and classifies it (active/finished/
+ * stale/unknown) via `buildConflictView`, which also decides (via `canGoTo`) whether
+ * "Go to <recipe>" is offered at all.
  *
- * Design/production gap (flagged per the M3.4 checkpoint instructions): the prototype
- * names the *other* cook's own title on this screen, resolved from its own in-memory
- * fixture table. Production has no such registry — a stored session only carries the
- * other plan's `planKey`/`graphId`, not a title — so this renders generically and
- * "Close" returns to the Plan view for the recipe the cook was trying to open, rather
- * than attempting to navigate to the other one.
+ * All three actions are live as of CP1b:
+ * - `goTo` calls `onGoTo(conflict.planKey)` — `App.tsx`'s job to actually navigate
+ *   (library lookup / `fetchPlan`); this component only ever asks for that planKey.
+ * - `endAndStart` calls `session.end()` (via `onEndBlockingSession`) and nothing else.
+ *   The next render's `session.open(model, planKey)` then reports `'none'` for *this*
+ *   plan, so `CookingModeScreen` falls through to `buildEntryView` on its own — the
+ *   entry/start screen for the recipe the cook was trying to open, never auto-started
+ *   (plan CP1b §2: "Do NOT automatically start cooking").
+ * - `close` calls `onClose` (→ `onExit`), unchanged since before CP1a: returns to the
+ *   Plan view for the recipe the cook was trying to open, leaving the blocking session
+ *   untouched (plan CP1b §3).
+ *
+ * Bypasses `CookingShell`/`CookingView` (unlike every other screen in this file) because
+ * this screen needs three action slots, not `CookingShell`'s two — reusing the same
+ * design tokens (`bg-paper`/`text-ink`/`rounded-control`) rather than a new shell.
  */
-function ConflictScreen({ onClose }: { onClose: () => void }) {
-  const view: CookingView = {
-    screenId: 'conflict',
-    shell: 'field',
-    topRecipe: '',
-    showTopRight: false,
-    label: 'Already cooking',
-    title: 'Another cook is already on.',
-    instr: 'One cook at a time. Finish or leave that one before starting this.',
-    qty: null,
-    note: null,
-    whisperText: null,
-    showLink: false,
-    primary: { label: 'Close', solid: true, action: { kind: 'seePlan' } },
-    secondary: null,
+function ConflictScreen({
+  conflict,
+  canGoTo,
+  onGoTo,
+  onEndBlockingSession,
+  onClose,
+}: {
+  conflict: SessionConflict
+  canGoTo: (planKey: string) => boolean
+  onGoTo: (planKey: string) => void
+  onEndBlockingSession: () => void
+  onClose: () => void
+}) {
+  const view = buildConflictView(conflict, canGoTo)
+
+  const onAction = (action: ConflictAction) => {
+    switch (action.kind) {
+      case 'goTo':
+        onGoTo(conflict.planKey)
+        return
+      case 'endAndStart':
+        onEndBlockingSession()
+        return
+      case 'close':
+        onClose()
+        return
+    }
   }
-  return <CookingShell view={view} onPrimary={onClose} onSecondary={() => {}} onLeave={() => {}} onSheet={() => {}} />
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center bg-paper px-6 text-center">
+      <p className="text-[13px] text-ink-3">Already cooking</p>
+      <h1 className="mt-3 text-[26px] font-semibold leading-[1.2] text-ink" style={{ fontStretch: '88%' }}>
+        {view.message}
+      </h1>
+      <p className="mt-3 text-[15px] leading-[1.5] text-ink-2">One cook at a time.</p>
+      <div className="mt-8 flex w-full flex-col gap-3">
+        {view.actions.map((action, i) =>
+          i === 0 ? (
+            <button
+              key={action.kind}
+              type="button"
+              onClick={() => onAction(action)}
+              className="flex h-[56px] w-full items-center justify-center rounded-control border border-ink bg-ink text-[18px] font-semibold text-paper"
+              style={{ fontStretch: '106%' }}
+            >
+              {action.label}
+            </button>
+          ) : action.kind === 'close' ? (
+            <button
+              key={action.kind}
+              type="button"
+              onClick={() => onAction(action)}
+              className="text-[15px] underline underline-offset-[3px] text-ink-3"
+            >
+              {action.label}
+            </button>
+          ) : (
+            <button
+              key={action.kind}
+              type="button"
+              onClick={() => onAction(action)}
+              className="flex min-h-[56px] w-full items-center justify-center rounded-control border border-ink px-3.5 py-2 text-center text-[18px] font-medium leading-[1.3] text-ink"
+            >
+              {action.label}
+            </button>
+          ),
+        )}
+      </div>
+    </div>
+  )
 }

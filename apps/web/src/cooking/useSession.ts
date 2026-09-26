@@ -23,7 +23,7 @@ import type { CookingModel, CookingSession } from './types'
 export interface UseSessionResult {
   session: CookingSession | null
   open(model: CookingModel, planKey: string): OpenResult
-  start(model: CookingModel, planKey: string): DispatchResult
+  start(model: CookingModel, planKey: string, recipeTitle?: string): DispatchResult
   startNode(model: CookingModel, nodeId: string): DispatchResult
   markDone(model: CookingModel, nodeId: string): DispatchResult
   acknowledge(model: CookingModel): DispatchResult
@@ -43,7 +43,8 @@ export function useSession(store: SessionStore): UseSessionResult {
 
   const open = useCallback((model: CookingModel, planKey: string) => store.open(model, planKey, Date.now()), [store])
   const start = useCallback(
-    (model: CookingModel, planKey: string) => dispatch({ type: 'start', model, planKey, now: Date.now() }),
+    (model: CookingModel, planKey: string, recipeTitle?: string) =>
+      dispatch({ type: 'start', model, planKey, now: Date.now(), recipeTitle }),
     [dispatch],
   )
   const startNode = useCallback(

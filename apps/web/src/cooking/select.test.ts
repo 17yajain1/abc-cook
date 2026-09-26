@@ -7,6 +7,7 @@ import {
   awayClass,
   current,
   executable,
+  foreignLifecycle,
   handover,
   holding,
   lifecycle,
@@ -490,6 +491,43 @@ describe('audit gap: skipAllowed() when current is hands-off (§F9)', () => {
     expect(current(model, s)).toBe('boil_spiced_water')
     expect(model.nodes.boil_spiced_water.occupiesCook).toBe(false)
     expect(skipAllowed(model, s)).toBe(false)
+  })
+})
+
+describe('foreignLifecycle — CP1a (M3.4.5 session-lockout plan)', () => {
+  it('active: totalMin present, nothing finished, nothing stale', () => {
+    const model = deriveCookingModel(KADAI)
+    const s: CookingSession = { ...emptySession(model), totalMin: model.totalMin }
+    expect(foreignLifecycle(s, T0)).toBe('active')
+  })
+
+  it('finished: finishedAt set takes precedence, and needs no totalMin', () => {
+    const model = deriveCookingModel(KADAI)
+    const s: CookingSession = { ...emptySession(model), finishedAt: T0 + m(30) }
+    // Reopened absurdly later — still finished, never re-evaluated as stale.
+    expect(foreignLifecycle(s, T0 + m(30) + m(100_000))).toBe('finished')
+  })
+
+  it('stale: a running node long expired and unseen past the totalMin-derived threshold', () => {
+    const model = deriveCookingModel(KADAI)
+    let s: CookingSession = { ...emptySession(model), totalMin: model.totalMin, lastSeenAt: T0 }
+    s = withNodes(s, { cook_tomato_base: runningAt(T0, T0 + m(12)) })
+    const muchLater = T0 + m(2 * model.totalMin * 60) + m(1)
+    expect(foreignLifecycle(s, muchLater)).toBe('stale')
+  })
+
+  it('not yet stale: same running node, reopened well inside the threshold', () => {
+    const model = deriveCookingModel(KADAI)
+    let s: CookingSession = { ...emptySession(model), totalMin: model.totalMin, lastSeenAt: T0 }
+    s = withNodes(s, { cook_tomato_base: runningAt(T0, T0 + m(12)) })
+    expect(foreignLifecycle(s, T0 + m(20))).toBe('active')
+  })
+
+  it('unknown: legacy session with no totalMin snapshot, not finished — never guessed as active or stale', () => {
+    const model = deriveCookingModel(KADAI)
+    const s = emptySession(model) // no totalMin, matches a session persisted before CP1a
+    expect(s.totalMin).toBeUndefined()
+    expect(foreignLifecycle(s, T0 + m(100_000))).toBe('unknown')
   })
 })
 

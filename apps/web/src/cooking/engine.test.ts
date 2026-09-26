@@ -542,7 +542,10 @@ describe('open — conflict / none (row 34)', () => {
     const biryaniModel = deriveCookingModel(BIRYANI)
     const kadaiSession = freshSession(kadaiModel, 'library:kadai', T0)
 
-    expect(engine.open(kadaiSession, biryaniModel, 'library:biryani', T0)).toEqual({ status: 'conflict' })
+    expect(engine.open(kadaiSession, biryaniModel, 'library:biryani', T0)).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: null, state: 'active' },
+    })
     expect(engine.open(null, biryaniModel, 'library:biryani', T0)).toEqual({ status: 'none' })
 
     // start() itself refuses to create a second session while one is stored.
@@ -550,6 +553,97 @@ describe('open — conflict / none (row 34)', () => {
     expect(engine.end()).toBeNull()
     const afterEnd = must(engine.start(engine.end(), biryaniModel, 'library:biryani', T0))
     expect(afterEnd.planKey).toBe('library:biryani')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CP1a (M3.4.5 session-lockout plan) — recipeTitle/totalMin snapshot, conflict
+// title/state, foreign lifecycle classification.
+// ---------------------------------------------------------------------------
+
+describe('start — recipeTitle/totalMin snapshot (CP1a)', () => {
+  it('persists the recipeTitle passed to start()', () => {
+    const model = deriveCookingModel(KADAI)
+    const s = must(engine.start(null, model, 'server:kadai', T0, 'Kadai Paneer'))
+    expect(s.recipeTitle).toBe('Kadai Paneer')
+  })
+
+  it('persists totalMin from the model, independent of whether recipeTitle was passed', () => {
+    const model = deriveCookingModel(KADAI)
+    const s = must(engine.start(null, model, 'server:kadai', T0))
+    expect(s.recipeTitle).toBeUndefined()
+    expect(s.totalMin).toBe(model.totalMin)
+  })
+})
+
+describe('open — conflict reports the other plan\'s title/state (CP1a)', () => {
+  it('an active foreign session reports its title and state active', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const kadaiSession = must(engine.start(null, kadaiModel, 'library:kadai', T0, 'Kadai Paneer'))
+
+    const result = engine.open(kadaiSession, biryaniModel, 'library:biryani', T0)
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: 'Kadai Paneer', state: 'active' },
+    })
+  })
+
+  it('a finished foreign session reports state finished, regardless of staleness', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const finished: CookingSession = {
+      ...must(engine.start(null, kadaiModel, 'library:kadai', T0, 'Kadai Paneer')),
+      finishedAt: T0 + m(30),
+    }
+
+    const result = engine.open(finished, biryaniModel, 'library:biryani', T0 + m(30) + m(1000 * 60))
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: 'Kadai Paneer', state: 'finished' },
+    })
+  })
+
+  it('a foreign session with every timer long expired and unseen reports state stale', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    let s = must(engine.start(null, kadaiModel, 'library:kadai', T0, 'Kadai Paneer'))
+    s = must(engine.markDone(s, kadaiModel, 'chop_onion', T0))
+    s = must(engine.markDone(s, kadaiModel, 'saute_onion', T0))
+    s = must(engine.markDone(s, kadaiModel, 'chop_tomato', T0))
+    s = must(engine.startNode(s, kadaiModel, 'cook_tomato_base', T0))
+
+    const muchLater = T0 + m(2 * kadaiModel.totalMin * 60) + m(1)
+    const result = engine.open(s, biryaniModel, 'library:biryani', muchLater)
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: 'Kadai Paneer', state: 'stale' },
+    })
+  })
+
+  it('a legacy foreign session with no totalMin snapshot reports state unknown, never active or stale', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const legacy: CookingSession = must(engine.start(null, kadaiModel, 'library:kadai', T0, 'Kadai Paneer'))
+    delete (legacy as { totalMin?: number }).totalMin
+
+    const result = engine.open(legacy, biryaniModel, 'library:biryani', T0 + m(1000 * 60))
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: 'Kadai Paneer', state: 'unknown' },
+    })
+  })
+
+  it('a legacy foreign session with no recipeTitle snapshot reports title null, not a placeholder', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const legacy = freshSession(kadaiModel, 'library:kadai', T0) // no recipeTitle, matches pre-CP1a start()
+
+    const result = engine.open(legacy, biryaniModel, 'library:biryani', T0)
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'library:kadai', title: null, state: 'active' },
+    })
   })
 })
 

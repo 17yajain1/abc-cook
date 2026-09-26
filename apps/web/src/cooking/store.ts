@@ -33,7 +33,7 @@ interface StoredShape {
  * or caching one). `touch`/`end` need no model: neither reads plan/graph data.
  */
 export type SessionAction =
-  | { type: 'start'; model: CookingModel; planKey: string; now: number }
+  | { type: 'start'; model: CookingModel; planKey: string; now: number; recipeTitle?: string }
   | { type: 'startNode'; model: CookingModel; nodeId: string; now: number }
   | { type: 'markDone'; model: CookingModel; nodeId: string; now: number }
   | { type: 'acknowledge'; model: CookingModel; now: number }
@@ -106,7 +106,7 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
     dispatch(action: SessionAction): DispatchResult {
       switch (action.type) {
         case 'start':
-          return applying(engine.start(session, action.model, action.planKey, action.now))
+          return applying(engine.start(session, action.model, action.planKey, action.now, action.recipeTitle))
         case 'end':
           return persist(engine.end())
         case 'touch':

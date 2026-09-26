@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
-import { buildCookingView, buildEntryView, buildSheetView } from './viewModel'
+import { buildConflictView, buildCookingView, buildEntryView, buildSheetView } from './viewModel'
 import { ingredientsById } from './quantity'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
@@ -15,7 +15,7 @@ import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-respo
 import { createSessionStore, type StorageLike } from '@/cooking/store'
 import * as engine from '@/cooking/engine'
 import { deriveCookingModel } from '@/cooking/model'
-import type { CookingModel, CookingSession, Rejected } from '@/cooking/types'
+import type { CookingModel, CookingSession, Rejected, SessionConflict } from '@/cooking/types'
 import { headerTiming } from '@/lib/duration'
 
 /**
@@ -564,9 +564,78 @@ describe('conflict (engine/store layer)', () => {
 
     const result = store.open(biryaniModel, 'server:biryani', T0 + 5 * MIN)
 
-    expect(result).toEqual({ status: 'conflict' })
+    expect(result).toEqual({
+      status: 'conflict',
+      conflict: { planKey: 'server:kadai', title: null, state: 'active' },
+    })
     expect(store.getState()).toEqual(before) // no mutation, no replacement, no new session
     expect(store.getState()).not.toBeNull()
     expect(store.getState()?.planKey).toBe('server:kadai') // the original session is still the one stored
+  })
+})
+
+describe('buildConflictView — CP1a (M3.4.5 session-lockout plan)', () => {
+  it('a resolvable, known conflict names the recipe, its state, and offers all three actions', () => {
+    const conflict: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
+    const v = buildConflictView(conflict)
+
+    expect(v.planKey).toBe('library:kadai-id')
+    expect(v.title).toBe('Kadai Paneer')
+    expect(v.state).toBe('active')
+    expect(v.message).toBe('Kadai Paneer is still cooking.')
+    expect(v.actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
+    expect(v.actions[0].label).toBe('Go to Kadai Paneer')
+  })
+
+  it('an import: planKey is never offered as a "Go to" destination — no durable address to return to', () => {
+    const conflict: SessionConflict = { planKey: 'import:abc123', title: 'Kadai Paneer', state: 'active' }
+    const v = buildConflictView(conflict)
+    expect(v.actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
+  })
+
+  it('close and endAndStart are always present regardless of state', () => {
+    const states: SessionConflict['state'][] = ['active', 'finished', 'stale', 'unknown']
+    for (const state of states) {
+      const v = buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state })
+      expect(v.actions.some((a) => a.kind === 'endAndStart')).toBe(true)
+      expect(v.actions.some((a) => a.kind === 'close')).toBe(true)
+    }
+  })
+
+  it('a legacy conflict with no title snapshot falls back to a generic message and label, never inventing a name', () => {
+    const conflict: SessionConflict = { planKey: 'server:kadai', title: null, state: 'active' }
+    const v = buildConflictView(conflict)
+    expect(v.message).toBe('Another cook is already on.')
+    expect(v.actions.find((a) => a.kind === 'goTo')?.label).toBe('Go to that recipe')
+  })
+
+  it('finished and stale states produce distinct messages naming the recipe', () => {
+    expect(buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state: 'finished' }).message).toBe(
+      'You already finished cooking Kadai Paneer.',
+    )
+    expect(buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state: 'stale' }).message).toBe(
+      'Kadai Paneer was left a while ago.',
+    )
+  })
+})
+
+describe('buildConflictView — canGoTo wiring (CP1b)', () => {
+  it('an injected canGoTo overrides the prefix-only default, e.g. a deleted library entry', () => {
+    const conflict: SessionConflict = { planKey: 'library:deleted-id', title: 'Kadai Paneer', state: 'active' }
+
+    // Default (no predicate passed): prefix-only, presumes the library id still exists.
+    expect(buildConflictView(conflict).actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
+
+    // CP1b's real, App-wired predicate: the library id is gone, so "Go to" is hidden.
+    expect(buildConflictView(conflict, () => false).actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
+  })
+
+  it('an injected canGoTo can also allow what the default would hide (never for import:, which stays out of scope for CP1b)', () => {
+    const conflict: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
+    expect(buildConflictView(conflict, () => true).actions.map((a) => a.kind)).toEqual([
+      'goTo',
+      'endAndStart',
+      'close',
+    ])
   })
 })
