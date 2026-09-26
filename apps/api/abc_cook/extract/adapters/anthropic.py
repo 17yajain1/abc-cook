@@ -25,7 +25,13 @@ import time
 import anthropic
 import pydantic
 
-from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
+from abc_cook.extract.adapters.base import (
+    MAX_RETRIES,
+    CallUsage,
+    EffortLevel,
+    ExtractResult,
+    request_timeout_s,
+)
 from abc_cook.extract.adapters.prompting import parse, system_prompt
 
 _STREAMING_REQUIRED_MAX_TOKENS = 21_333
@@ -63,7 +69,9 @@ class AnthropicAdapter:
 
     def __init__(self, api_key: str | None = None) -> None:
         """Construct the adapter, defaulting the API key to `LLM_API_KEY`."""
-        self._client = anthropic.Anthropic(api_key=api_key or os.environ.get("LLM_API_KEY"))
+        self._client = anthropic.Anthropic(
+            api_key=api_key or os.environ.get("LLM_API_KEY"), max_retries=MAX_RETRIES
+        )
 
     def extract[T: pydantic.BaseModel](
         self,
@@ -82,6 +90,7 @@ class AnthropicAdapter:
         system = system_prompt(prompt, output_type)
         messages: list[anthropic.types.MessageParam] = [{"role": "user", "content": source_text}]
 
+        timeout = request_timeout_s(max_tokens)
         start = time.monotonic()
         message: anthropic.types.Message
         try:
@@ -92,6 +101,7 @@ class AnthropicAdapter:
                     system=system,
                     messages=messages,
                     output_config=output_config,
+                    timeout=timeout,
                 ) as stream:
                     message = stream.get_final_message()
             else:
@@ -101,6 +111,7 @@ class AnthropicAdapter:
                     system=system,
                     messages=messages,
                     output_config=output_config,
+                    timeout=timeout,
                 )
         except anthropic.APIError as exc:
             return ExtractResult(recipe=None, error=f"{type(exc).__name__}: {exc}")

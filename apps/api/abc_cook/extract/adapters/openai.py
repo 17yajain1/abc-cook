@@ -35,7 +35,13 @@ from typing import Literal
 import openai
 import pydantic
 
-from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
+from abc_cook.extract.adapters.base import (
+    MAX_RETRIES,
+    CallUsage,
+    EffortLevel,
+    ExtractResult,
+    request_timeout_s,
+)
 from abc_cook.extract.adapters.prompting import parse, system_prompt
 
 _EFFORT_MAP: dict[EffortLevel, Literal["low", "medium", "high"]] = {
@@ -57,7 +63,9 @@ class OpenAIAdapter:
 
     def __init__(self, api_key: str | None = None) -> None:
         """Construct the adapter, defaulting the API key to `OPENAI_API_KEY`."""
-        self._client = openai.OpenAI(api_key=api_key or os.environ.get("OPENAI_API_KEY"))
+        self._client = openai.OpenAI(
+            api_key=api_key or os.environ.get("OPENAI_API_KEY"), max_retries=MAX_RETRIES
+        )
 
     def extract[T: pydantic.BaseModel](
         self,
@@ -84,6 +92,7 @@ class OpenAIAdapter:
                 messages=messages,
                 max_completion_tokens=max_tokens,
                 reasoning_effort=reasoning_effort,
+                timeout=request_timeout_s(max_tokens),
             )
         except openai.APIError as exc:
             return ExtractResult(recipe=None, error=f"{type(exc).__name__}: {exc}")
