@@ -17,7 +17,14 @@ import pytest
 from abc_cook.extract.adapters.base import ExtractResult
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.provenance import compute_provenance
-from abc_cook.extract.repair import RepairProposal, StepRepair, repair_or_degrade
+from abc_cook.extract.repair import (
+    RepairProposal,
+    StepRepair,
+    _merge_repair,
+    load_repair_prompt,
+    render_repair_source,
+    repair_or_degrade,
+)
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -265,6 +272,12 @@ def test_repair_response_schema_has_no_content_fields() -> None:
         "doneness_cue",
         "station",
         "interruptible",
+        # CP2: extracted dependency lists and optional/alternative roles are semantic
+        # decisions made from the source; repair has no field to overwrite them with.
+        "depends_on_steps",
+        "role",
+        "role_cue",
+        "attach_to_step",
     }
     assert forbidden_fields.isdisjoint(StepRepair.model_fields)
     assert set(StepRepair.model_fields) == {
@@ -366,6 +379,181 @@ def test_degraded_provenance_also_covers_every_node() -> None:
     assert outcome.tier == "degraded"
     provenance = compute_provenance(outcome.build_result)
     assert len(provenance.nodes) == len(outcome.build_result.graph.nodes)
+
+
+# ---------------------------------------------------------------------------
+# CP2 decision D: an omitted repair field means "unchanged", and dependency repair is
+# additive only. Before CP2, `StepRepair` defaulted `depends_on_previous=True` and
+# `_merge_repair` wrote it back unconditionally, so a repair response that simply
+# omitted the field reset an extracted independence claim to sequential.
+# ---------------------------------------------------------------------------
+
+
+def _merge(
+    recipe: NormalizedRecipe, proposal: RepairProposal
+) -> tuple[NormalizedRecipe, list[str]]:
+    merged = _merge_repair(recipe, proposal)
+    assert merged is not None
+    return merged
+
+
+def test_omitted_repair_fields_leave_the_step_unchanged() -> None:
+    recipe = _broken_two_branch_recipe()
+    merged, notes = _merge(recipe, RepairProposal(steps=[StepRepair() for _ in recipe.steps]))
+    assert merged.steps == recipe.steps
+    assert notes == []
+
+
+def test_step_repair_fields_all_default_to_unchanged() -> None:
+    assert StepRepair().model_dump() == {
+        "consumes_ingredients": None,
+        "produces_component": None,
+        "depends_on_previous": None,
+    }
+
+
+def test_extracted_independence_survives_a_repair_that_omits_it() -> None:
+    """Evidence #5 regression, end to end: the repair fixes the real violation (the
+    unconsumed "Salt") without mentioning `depends_on_previous` at all. The extracted,
+    verified independence of "Melt the butter" must still be in the repaired graph."""
+    recipe = _broken_two_branch_recipe()
+    assert recipe.steps[1].depends_on_previous is False
+    violations = _build_and_validate(recipe, _source_text())
+
+    proposal = RepairProposal(
+        steps=[
+            StepRepair(produces_component="chopped onion"),
+            StepRepair(produces_component="melted butter"),
+            StepRepair(consumes_ingredients=["chopped onion", "melted butter", "Salt"]),
+        ]
+    )
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=proposal)])
+    outcome = repair_or_degrade(
+        recipe, _source_text(), violations, adapter, graph_id="g", source=SOURCE
+    )
+
+    assert outcome.tier == "repaired"
+    graph = outcome.build_result.graph
+    assert graph is not None
+    assert validate(graph) == []
+    chop, melt = graph.nodes[0], graph.nodes[1]
+    assert chop.id not in melt.depends_on  # still independent: runs alongside the chop
+    assert melt.depends_on == []
+
+
+def test_repair_cannot_remove_an_extracted_dependency() -> None:
+    recipe = _recipe(
+        [
+            _step(text="Chop the onion.", consumes_ingredients=["Onion"]),
+            _step(text="Melt the butter.", consumes_ingredients=["Butter"]),
+        ]
+    )
+    assert recipe.steps[1].depends_on_previous is True
+    merged, notes = _merge(
+        recipe, RepairProposal(steps=[StepRepair(), StepRepair(depends_on_previous=False)])
+    )
+    assert merged.steps[1].depends_on_previous is True
+    assert len(notes) == 1
+    assert "ignored" in notes[0]
+
+
+def test_repair_can_add_a_dependency_and_says_so() -> None:
+    recipe = _broken_two_branch_recipe()
+    assert recipe.steps[1].depends_on_previous is False
+    merged, notes = _merge(
+        recipe,
+        RepairProposal(steps=[StepRepair(), StepRepair(depends_on_previous=True), StepRepair()]),
+    )
+    assert merged.steps[1].depends_on_previous is True
+    assert len(notes) == 1
+    assert "step 1" in notes[0]
+    assert "wait" in notes[0]
+
+
+def test_added_dependency_is_reported_in_the_repaired_graphs_warnings() -> None:
+    recipe = _broken_two_branch_recipe()
+    violations = _build_and_validate(recipe, _source_text())
+    proposal = RepairProposal(
+        steps=[
+            StepRepair(),
+            StepRepair(depends_on_previous=True),
+            StepRepair(consumes_ingredients=["Salt"]),
+        ]
+    )
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=proposal)])
+    outcome = repair_or_degrade(
+        recipe, _source_text(), violations, adapter, graph_id="g", source=SOURCE
+    )
+    assert outcome.tier == "repaired"
+    assert any("wait for the step before it" in w for w in outcome.build_result.warnings)
+
+
+def test_repair_consumes_are_added_never_replacing_extracted_ones() -> None:
+    recipe = _recipe([_step(text="Chop the onion.", consumes_ingredients=["Onion"])])
+    merged, _ = _merge(
+        recipe, RepairProposal(steps=[StepRepair(consumes_ingredients=["onion", "Butter"])])
+    )
+    assert merged.steps[0].consumes_ingredients == ["Onion", "Butter"]
+
+
+def test_repair_produces_replaces_only_when_given() -> None:
+    recipe = _recipe(
+        [
+            _step(text="Chop the onion.", produces_component="chopped onion"),
+            _step(text="Melt the butter.", produces_component="melted butter"),
+        ]
+    )
+    merged, _ = _merge(
+        recipe,
+        RepairProposal(steps=[StepRepair(), StepRepair(produces_component="butter sauce")]),
+    )
+    assert merged.steps[0].produces_component == "chopped onion"
+    assert merged.steps[1].produces_component == "butter sauce"
+
+
+def test_repair_never_touches_extracted_dependency_lists_or_roles() -> None:
+    recipe = _recipe(
+        [
+            _step(text="Chop the onion.", depends_on_steps=[]),
+            _step(
+                text="If you like, melt the butter.",
+                depends_on_steps=[],
+                role="optional",
+                role_cue="If you like",
+                attach_to_step=0,
+            ),
+        ]
+    )
+    merged, _ = _merge(
+        recipe,
+        RepairProposal(
+            steps=[
+                StepRepair(depends_on_previous=True),
+                StepRepair(depends_on_previous=True, consumes_ingredients=["Butter"]),
+            ]
+        ),
+    )
+    for field in ("depends_on_steps", "role", "role_cue", "attach_to_step"):
+        assert [getattr(s, field) for s in merged.steps] == [
+            getattr(s, field) for s in recipe.steps
+        ]
+
+
+def test_render_repair_source_shows_depends_on_steps_only_when_present() -> None:
+    legacy = _broken_two_branch_recipe()
+    assert "depends_on_steps" not in render_repair_source(legacy, [], _source_text())
+    explicit = _recipe(
+        [_step(text="Chop.", depends_on_steps=[]), _step(text="Fry.", depends_on_steps=[0])]
+    )
+    rendered = render_repair_source(explicit, [], "Chop. Fry.")
+    assert "depends_on_steps=[]" in rendered
+    assert "depends_on_steps=[0]" in rendered
+
+
+def test_repair_prompt_v2_is_in_use_and_states_omitted_means_unchanged() -> None:
+    prompt = load_repair_prompt()
+    assert "graph repair prompt (v2)" in prompt
+    assert "leave that step's current value exactly" in prompt
 
 
 # ---------------------------------------------------------------------------

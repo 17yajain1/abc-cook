@@ -16,6 +16,13 @@ gets enforced in code:
 - `depends_on_previous=False` is honored only when the §4.7 two-condition safety test
   passes: no shared ingredient with the immediately preceding step, and neither
   consumes a component the other produces. Otherwise: sequential, no exceptions.
+  A shared pantry staple (salt, water, oil) is not a shared ingredient (CP2 E).
+- `depends_on_steps` (CP2 A), when any required step states it: claims are sanitized,
+  extended by producer edges and the descendant closure, verified pairwise against
+  every earlier step they don't reach, guarded against same-heat-station reordering,
+  and any leftover dangling node is joined into the finish. Edges are only added.
+- `role` (CP2 B): an optional/alternative step with a grounded, marker-bearing
+  `role_cue` becomes a verbatim note in the `tip` of the step it modifies.
 
 `graph.py` refuses (returns `outcome.graph is None`) if handed a recipe with no steps,
 even though `normalize.py`'s Tier 0 gate should already have stopped the pipeline
@@ -26,7 +33,7 @@ caller remembering the gate.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
@@ -44,6 +51,20 @@ _IMMEDIACY_MARKERS = (
     "last-minute",
 )
 """§10.C finding 3: a bare "serve" is not an immediacy marker. Only these phrases are."""
+
+_OPTIONAL_MARKERS = (
+    "if you",
+    "if desired",
+    "optional",
+    "alternatively",
+    "instead",
+    "or you can",
+    "method:",
+)
+"""CP2 decision B: an optional/alternative role is honored only when its grounded
+`role_cue` carries one of these. Same closed-list pattern as `_IMMEDIACY_MARKERS`."""
+
+_ROLE_TIP_PREFIX = {"optional": "Optional: ", "alternative": "Alternative: "}
 
 _SEQUENCE_CONNECTIVES = ("then", "once", "after", "next", "now", "meanwhile")
 
@@ -247,6 +268,85 @@ def _verify_freshness(
     return "stated_unbounded", cue, None
 
 
+@dataclass(frozen=True)
+class _Roles:
+    """The role pass's result, in original step positions."""
+
+    required: list[int]
+    """Positions of the steps that become nodes, ascending. Never empty."""
+    attach: dict[int, int]
+    """Honored optional/alternative position -> the required position it annotates."""
+
+
+def _role_honored(step: NormalizedStep, corpus: str) -> bool:
+    cue = step.role_cue or ""
+    has_marker = any(marker in cue.lower() for marker in _OPTIONAL_MARKERS)
+    return has_marker and _is_grounded_substring(cue, corpus)
+
+
+def _resolve_roles(
+    steps: list[NormalizedStep], corpus: str, warnings: list[str]
+) -> tuple[_Roles, bool]:
+    """CP2 decision B: which steps are mandatory work, and where the rest attach.
+
+    A non-required role is honored only with a grounded, marker-bearing `role_cue`;
+    otherwise the step stays required (never silently dropped). If nothing would be
+    left required, every step is kept required -- the app must never build an empty
+    graph. Returns the roles and whether a human review is recommended.
+    """
+    review = False
+    honored: set[int] = set()
+    for index, step in enumerate(steps):
+        if step.role == "required":
+            continue
+        if _role_honored(step, corpus):
+            honored.add(index)
+        else:
+            warnings.append(
+                f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
+                f'"{step.role_cue}" is not a grounded optional/alternative phrase; '
+                "kept as a required step."
+            )
+            review = True
+
+    if len(honored) == len(steps):
+        warnings.append(
+            "Every step was marked optional or alternative; kept them all as required steps."
+        )
+        honored = set()
+
+    required = [index for index in range(len(steps)) if index not in honored]
+    required_set = set(required)
+    attach: dict[int, int] = {}
+    for index in sorted(honored):
+        target = steps[index].attach_to_step
+        visited = {index}
+        resolved: int | None = None
+        while target is not None and 0 <= target < len(steps) and target not in visited:
+            if target in required_set:
+                resolved = target
+                break
+            visited.add(target)
+            target = steps[target].attach_to_step
+        if resolved is None:
+            preceding = [r for r in required if r < index]
+            resolved = preceding[-1] if preceding else next(r for r in required if r > index)
+            warnings.append(
+                f'Optional step "{steps[index].text[:60]}..." did not name a valid step '
+                "to attach to; attached to the nearest step instead."
+            )
+        attach[index] = resolved
+    return _Roles(required=required, attach=attach), review
+
+
+def _role_note(step: NormalizedStep) -> str:
+    prefix = _ROLE_TIP_PREFIX.get(step.role, "Optional: ")
+    text = step.text.strip()
+    if text.lower().startswith(prefix.strip().lower()):
+        return text
+    return f"{prefix}{text}"
+
+
 def _infer_kind(text: str, attention: Attention) -> NodeKind:
     lowered = text.lower()
     if attention == "unattended":
@@ -292,10 +392,42 @@ def _resolve_duration(
     return dmin_i, dtyp_i, dmax_i, source, clamp_fired
 
 
-def _shares_ingredient(a: NormalizedStep, b: NormalizedStep) -> bool:
+_STAPLES = frozenset({"salt", "water", "oil"})
+"""CP2 decision E: pantry staples two steps can both draw on without one needing the
+other's output. Deliberately closed and narrow. Matched per whole word token, so "Sea
+salt" and "olive oil" count (and, accepted tradeoff, so do "chilli oil" and "water
+chestnut"); "Saltine" does not."""
+
+_STAPLE_TOKEN_RE = re.compile(r"[a-z]+")
+
+
+def _is_staple(name: str, produced_labels: frozenset[str]) -> bool:
+    """Whether a consumed name is a pantry staple for the independence check.
+
+    A name that is exactly some step's `produces_component` label is never a staple,
+    whatever its words: it is that step's output, not a pantry item.
+    """
+    lowered = name.lower()
+    if lowered in produced_labels:
+        return False
+    return any(token in _STAPLES for token in _STAPLE_TOKEN_RE.findall(lowered))
+
+
+def _produced_labels(steps: list[NormalizedStep]) -> frozenset[str]:
+    return frozenset(
+        step.produces_component.lower()
+        for step in steps
+        if step.produces_component and step.produces_component.strip()
+    )
+
+
+def _shares_ingredient(
+    a: NormalizedStep, b: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
+    """Whether `a` and `b` name a common ingredient other than a pantry staple."""
     a_names = {name.lower() for name in a.consumes_ingredients}
     b_names = {name.lower() for name in b.consumes_ingredients}
-    return bool(a_names & b_names)
+    return any(not _is_staple(name, produced_labels) for name in a_names & b_names)
 
 
 def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
@@ -307,16 +439,204 @@ def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
     return bool(a.produces_component and a.produces_component.lower() in b_consumes)
 
 
-def _verify_independence(previous: NormalizedStep, current: NormalizedStep) -> bool:
+def _verify_independence(
+    previous: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
     """LOCKED DECISION 7 / design doc §4.7.
 
     Both conditions must hold to honor a `depends_on_previous=False` claim: no shared
     ingredient, no produces/consumes link between this step and the immediately
-    preceding one.
+    preceding one. A shared pantry staple (`_STAPLES`) is not a shared ingredient for
+    this test (CP2 decision E); a produced component never counts as a staple, and the
+    produces/consumes link is never exempt.
     """
-    if _shares_ingredient(previous, current):
+    if _shares_ingredient(previous, current, produced_labels):
         return False
     return not _consumes_others_product(previous, current)
+
+
+def _verify_independence_explicit(
+    earlier: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+) -> bool:
+    """§4.7's test, generalized to any earlier step (CP2 decision A).
+
+    Fails on a shared ingredient that is neither a pantry staple nor exactly a
+    produced-component label (producer->consumer wiring already orders those), or on
+    a produces/consumes link between the two -- which is never exempt.
+    """
+    a_names = {name.lower() for name in earlier.consumes_ingredients}
+    b_names = {name.lower() for name in current.consumes_ingredients}
+    if any(
+        name not in produced_labels and not _is_staple(name, produced_labels)
+        for name in a_names & b_names
+    ):
+        return False
+    return not _consumes_others_product(earlier, current)
+
+
+def _names_component(step: NormalizedStep, label: str) -> bool:
+    """Whether `step` consumes the produced `label` (the producer pass's fuzzy match)."""
+    produced_name = label.lower()
+    return any(
+        produced_name in name or name in produced_name
+        for name in (name.lower() for name in step.consumes_ingredients)
+    )
+
+
+_HEAT_STATIONS = ("burner", "oven")
+
+
+def _explicit_dependencies(
+    all_steps: list[NormalizedStep], roles: _Roles, warnings: list[str]
+) -> tuple[list[list[int]], list[ProvenanceSource], bool]:
+    """CP2 decision A: resolve `depends_on_steps` claims over the required steps.
+
+    Every claim is sanitized, extended by producer edges and the descendant closure
+    (the continuation of work a claimed step started), then verified pairwise against
+    every earlier step it does not reach and guarded against same-heat-station
+    reordering. The builder only ever adds edges; it never removes a claimed one.
+
+    Args:
+        all_steps: Every step, in source order (original positions).
+        roles: The role pass's result; claims are remapped from original positions.
+        warnings: Appended to for every dropped index and every guard edge.
+
+    Returns:
+        Per required position: the dependency positions (claimed first, then added
+        ones in index order), the provenance source, and whether review is advised.
+    """
+    required = roles.required
+    steps = [all_steps[original] for original in required]
+    position_of = {original: position for position, original in enumerate(required)}
+    labels = _produced_labels(steps)
+    count = len(steps)
+    review = False
+
+    def is_boundary(j: int) -> bool:
+        # A branch/product boundary: j makes a named product some later step uses.
+        # The closure neither includes it nor walks past it.
+        label = steps[j].produces_component
+        if not label or not label.strip():
+            return False
+        return any(_names_component(steps[k], label) for k in range(j + 1, count))
+
+    resolved: list[set[int]] = []
+    ordered: list[list[int]] = []
+    sources: list[ProvenanceSource] = []
+
+    def reach_of(deps: set[int]) -> set[int]:
+        reach: set[int] = set()
+        stack = list(deps)
+        while stack:
+            x = stack.pop()
+            if x in reach:
+                continue
+            reach.add(x)
+            stack.extend(resolved[x])
+        return reach
+
+    for i, step in enumerate(steps):
+        original = required[i]
+        claim = step.depends_on_steps
+        source: ProvenanceSource = "extracted"
+        claimed: list[int] = []
+        if claim is None:
+            if i > 0:
+                claimed = [i - 1]
+                source = "defaulted"
+                review = True
+        else:
+            for k in claim:
+                if k < 0 or k >= len(all_steps) or k >= original:
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." named step {k} as a dependency, which '
+                        "is not an earlier step; ignored."
+                    )
+                    continue
+                if k in position_of:
+                    position = position_of[k]
+                else:
+                    attached = roles.attach[k]
+                    if attached >= original:
+                        warnings.append(
+                            f'Step "{step.text[:60]}..." named an optional note attached '
+                            "to a later step as a dependency; ignored."
+                        )
+                        continue
+                    position = position_of[attached]
+                if position not in claimed:
+                    claimed.append(position)
+            if i == 0:
+                claimed = []
+            elif claim and not claimed:
+                claimed = [i - 1]
+                source = "defaulted"
+                review = True
+                warnings.append(
+                    f'Step "{step.text[:60]}..." named no usable earlier step; it now '
+                    "follows the previous step."
+                )
+
+        deps: set[int] = set(claimed)
+
+        def closure(new_deps: list[int], deps: set[int] = deps, i: int = i) -> None:
+            queue = list(new_deps)
+            seen = set(deps)
+            while queue:
+                x = queue.pop()
+                for j in range(x + 1, i):
+                    if j in seen or x not in resolved[j]:
+                        continue
+                    seen.add(j)
+                    if is_boundary(j):
+                        continue
+                    deps.add(j)
+                    queue.append(j)
+
+        # Producer edges: every earlier step whose named product this step consumes.
+        for p in range(i):
+            label = steps[p].produces_component
+            if label and label.strip() and _names_component(step, label):
+                deps.add(p)
+        closure(list(deps))
+
+        guard_added = False
+        while True:
+            reach = reach_of(deps)
+            new: list[int] = []
+            for j in range(i):
+                if j in reach or _verify_independence_explicit(steps[j], step, labels):
+                    continue
+                new.append(j)
+                reach |= reach_of({j})
+                warnings.append(
+                    f'Step "{step.text[:60]}..." shares an ingredient or component with '
+                    f'earlier step "{steps[j].text[:60]}..."; added that dependency.'
+                )
+            if step.station in _HEAT_STATIONS:
+                same_station = [j for j in range(i) if steps[j].station == step.station]
+                if same_station and same_station[-1] not in reach:
+                    h = same_station[-1]
+                    new.append(h)
+                    warnings.append(
+                        f'Step "{step.text[:60]}..." uses the same {step.station} as earlier '
+                        f'step "{steps[h].text[:60]}..."; added that dependency.'
+                    )
+            if not new:
+                break
+            guard_added = True
+            deps.update(new)
+            closure(new)
+
+        if guard_added:
+            review = True
+            if source == "extracted":
+                source = "inferred"
+        resolved.append(deps)
+        ordered.append(claimed + sorted(deps - set(claimed)))
+        sources.append(source)
+
+    return ordered, sources, review
 
 
 def _depends_transitively(node: Node, target_id: str, nodes_by_id: dict[str, Node]) -> bool:
@@ -397,7 +717,9 @@ def build_graph(
             `attention="unattended"` — invalid before B2, valid after it
             (`COOKING_GRAPH.md` §5.9 allows `finish` in the unattended set). The
             guarantee holds only because that relaxation exists, not because
-            `force_linear` does anything special for it.
+            `force_linear` does anything special for it. Honored optional/alternative
+            steps (CP2 decision B) are notes, not nodes, here too: the chain runs over
+            required steps only.
 
     Returns:
         A `GraphBuildResult`. `.graph` is None only when `recipe.steps` is empty —
@@ -441,7 +763,7 @@ def build_graph(
             )
         )
 
-    def _ingredient_ids(names: list[str]) -> list[str]:
+    def _ingredient_ids(names: list[str], *, warn: bool = True) -> list[str]:
         ids = []
         for name in names:
             matched = name_to_ids.get(name.lower())
@@ -453,15 +775,23 @@ def build_graph(
                         break
             if matched is not None:
                 ids.extend(matched)
-            else:
+            elif warn:
                 warnings.append(
                     f'Step references ingredient "{name}", not found in the ingredient list.'
                 )
         return list(dict.fromkeys(ids))  # de-dupe, preserve order
 
-    # -- Nodes ----------------------------------------------------------------------
-    steps = recipe.steps
+    # -- Roles (CP2 decision B): optional/alternative steps become notes, not nodes --
+    # Runs first, on every path including force_linear: a degraded graph must not turn
+    # optional work into mandatory work either. From here on `steps` holds only the
+    # required steps, so node ids, positions and the finish sink are all computed over
+    # them; a recipe whose steps are all required builds exactly as before.
+    roles, roles_review = _resolve_roles(recipe.steps, corpus, warnings)
+    review_recommended = review_recommended or roles_review
+    steps = [recipe.steps[index] for index in roles.required]
     total = len(steps)
+
+    # -- Nodes ----------------------------------------------------------------------
     node_ids: list[str] = []
     seen_node_ids: set[str] = set()
     for step in steps:
@@ -477,6 +807,21 @@ def build_graph(
     nodes: list[Node] = []
     decisions: list[NodeDecision] = []
     depends_on_previous_verified: list[bool] = []
+    produced_labels = _produced_labels(steps)
+
+    # -- Path selection (CP2 decision A) -------------------------------------------
+    # Explicit path: at least one required step states `depends_on_steps` (even
+    # `[]`). A `None` claim then means "not provided" and defaults to the previous
+    # required step. Legacy path: every claim is `None`; today's `depends_on_previous`
+    # fork/join runs unchanged. force_linear ignores every claim.
+    explicit = not force_linear and any(step.depends_on_steps is not None for step in steps)
+    explicit_deps: list[list[int]] = []
+    explicit_sources: list[ProvenanceSource] = []
+    if explicit:
+        explicit_deps, explicit_sources, explicit_review = _explicit_dependencies(
+            recipe.steps, roles, warnings
+        )
+        review_recommended = review_recommended or explicit_review
 
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
@@ -484,14 +829,17 @@ def build_graph(
         dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(step, kind, attention)
         freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
 
-        if index == 0:
+        if explicit:
+            sequential = True  # unused: the explicit path wires its own edges below
+            dep_source: ProvenanceSource = explicit_sources[index]
+        elif index == 0:
             sequential = True
-            dep_source: ProvenanceSource = "extracted"
+            dep_source = "extracted"
         elif force_linear or step.depends_on_previous:
             sequential = True
             dep_source = _sequential_source(step.text)
         else:
-            honored = _verify_independence(steps[index - 1], step)
+            honored = _verify_independence(steps[index - 1], step, produced_labels)
             sequential = not honored
             dep_source = "inferred" if honored else "defaulted"
         depends_on_previous_verified.append(sequential)
@@ -551,6 +899,17 @@ def build_graph(
             )
         )
 
+    # -- Optional/alternative notes onto the step they modify (CP2 decision B) -------
+    # Verbatim, prefixed, never deleted: the Plan renders `Node.tip`.
+    position_of = {original: position for position, original in enumerate(roles.required)}
+    for original in sorted(roles.attach):
+        target = nodes[position_of[roles.attach[original]]]
+        note = _role_note(recipe.steps[original])
+        target.tip = note if target.tip is None else f"{target.tip} {note}"
+        warnings.append(
+            f'Kept "{recipe.steps[original].text}" as an optional note on "{target.label}".'
+        )
+
     # -- Edges: base chain, with fork/join for honored independence (B1) ------------
     # `open_deps` is the set of node ids a NEW sequential step must join on -- every
     # node that forked off since the last sequential join point and has not yet been
@@ -562,14 +921,18 @@ def build_graph(
     # byte-identical to the old `[nodes[index - 1].id]` chain (each join's open set
     # has exactly one member); edges only ever point to already-built nodes, so no
     # cycle can be introduced.
-    open_deps: list[str] = []
-    for index, node in enumerate(nodes):
-        if depends_on_previous_verified[index]:
-            node.depends_on = list(open_deps)
-            open_deps = [node.id]
-        else:
-            node.depends_on = list(nodes[index - 1].depends_on)
-            open_deps.append(node.id)
+    if explicit:
+        for index, node in enumerate(nodes):
+            node.depends_on = [nodes[position].id for position in explicit_deps[index]]
+    else:
+        open_deps: list[str] = []
+        for index, node in enumerate(nodes):
+            if depends_on_previous_verified[index]:
+                node.depends_on = list(open_deps)
+                open_deps = [node.id]
+            else:
+                node.depends_on = list(nodes[index - 1].depends_on)
+                open_deps.append(node.id)
 
     # -- Edges: produces -> consumer, wherever a LATER step names the same product --
     # Strictly later only: a step can't consume something a step after it produces,
@@ -636,6 +999,28 @@ def build_graph(
                 if dep != fresh_node.id and dep not in fresh_node.depends_on:
                     fresh_node.depends_on.append(dep)
 
+        # -- Edges: dangling-sink join (explicit path only) ---------------------------
+        # The explicit path's equivalent of the legacy fork/join join: a required
+        # node nothing depends on would be a second sink. Join it into the finish
+        # rather than spend a repair call on a structural gap. Runs last, so the
+        # producer pass, B3 and freshness steering have already settled.
+        if explicit and len(nodes) > 1:
+            final = nodes[-1]
+            dependents = {dep for node in nodes for dep in node.depends_on}
+            joined = False
+            for node in nodes[:-1]:
+                if node.id not in dependents:
+                    final.depends_on.append(node.id)
+                    joined = True
+                    warnings.append(
+                        f'Step "{node.instruction[:60]}..." had nothing after it; the '
+                        "final step now waits for it."
+                    )
+            if joined:
+                review_recommended = True
+                if decisions[-1].depends_on_previous_source == "extracted":
+                    decisions[-1] = replace(decisions[-1], depends_on_previous_source="inferred")
+
     # -- Stages ----------------------------------------------------------------------
     used_stage_ids = list(dict.fromkeys(node.stage for node in nodes))
     stages = [
@@ -672,6 +1057,21 @@ def build_graph(
         consumed_ids = {c for node in nodes for c in node.consumes}
         for ingredient in ingredients:
             if ingredient.id not in consumed_ids:
+                ingredient.optional = True
+
+    if roles.attach:
+        # Same drop-never-invent precedent for invariant 5: an ingredient only an
+        # optional/alternative note uses is marked optional, not claimed by a node.
+        consumed_ids = {c for node in nodes for c in node.consumes}
+        note_only_ids = {
+            ing_id
+            for original in roles.attach
+            for ing_id in _ingredient_ids(
+                recipe.steps[original].consumes_ingredients, warn=False
+            )
+        }
+        for ingredient in ingredients:
+            if ingredient.id not in consumed_ids and ingredient.id in note_only_ids:
                 ingredient.optional = True
 
     graph = CookingGraph(

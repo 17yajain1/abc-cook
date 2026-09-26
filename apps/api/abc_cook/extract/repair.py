@@ -9,6 +9,8 @@ The repair call is narrowly scoped by construction, not just by prompt instructi
 the response schema (`RepairProposal`) physically CANNOT carry step text, attention,
 duration, or freshness — it is a list of `{consumes_ingredients, produces_component,
 depends_on_previous}`, one per step, matched back to the original steps by position.
+Each field is optional: omitted means "leave the extracted value unchanged", and
+dependency changes are additive only (CP2 decision D, see `_merge_repair`).
 There is no field for the model to invent a step, an ingredient, or rewrite grounded
 content into, regardless of what it tries. (An earlier version asked for the whole
 recipe echoed back so a merge step could discard everything but these three fields;
@@ -46,7 +48,7 @@ REPAIR_MODEL = "claude-sonnet-5"
 
 MAX_TOKENS = 8000
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "repair_v1.md"
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "repair_v2.md"
 
 Tier = Literal["repaired", "degraded"]
 
@@ -73,11 +75,30 @@ guaranteed-wasted spend, not a bounded bet -- see `repair_or_degrade`."""
 
 
 class StepRepair(BaseModel):
-    """The only three fields a repair pass may ever set, for one step."""
+    """The only three fields a repair pass may ever set, for one step.
 
-    consumes_ingredients: list[str] = Field(default_factory=list)
-    produces_component: str | None = Field(default=None)
-    depends_on_previous: bool = Field(default=True)
+    Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
+    decision D). A default of True/[] used to *overwrite* extraction: a response that
+    simply omitted `depends_on_previous` reset an extracted, verified independence
+    claim to sequential. See `_merge_repair` for how each field is applied -- repair
+    fixes structure additively; it never resets a semantic decision to a default.
+    """
+
+    consumes_ingredients: list[str] | None = Field(
+        default=None,
+        description="Names to ADD to this step's consumes. Omit to leave unchanged.",
+    )
+    produces_component: str | None = Field(
+        default=None,
+        description="Set only to name a component a later step uses. Omit to leave unchanged.",
+    )
+    depends_on_previous: bool | None = Field(
+        default=None,
+        description=(
+            "true to make this step wait for the previous one. Omit to leave unchanged. "
+            "Repair can add a dependency; it can never remove one."
+        ),
+    )
 
 
 class RepairProposal(BaseModel):
@@ -113,7 +134,7 @@ class RepairOutcome:
 
 
 def load_repair_prompt() -> str:
-    """The repair system prompt (`extract/prompts/repair_v1.md`), read fresh each call."""
+    """The repair system prompt (`extract/prompts/repair_v2.md`), read fresh each call."""
     return _PROMPT_PATH.read_text(encoding="utf-8")
 
 
@@ -131,7 +152,13 @@ def render_repair_source(
         f"{i}. {step.text} "
         f"[currently: consumes_ingredients={step.consumes_ingredients!r}, "
         f"produces_component={step.produces_component!r}, "
-        f"depends_on_previous={step.depends_on_previous!r}]"
+        f"depends_on_previous={step.depends_on_previous!r}"
+        + (
+            f", depends_on_steps={step.depends_on_steps!r}"
+            if step.depends_on_steps is not None
+            else ""
+        )
+        + "]"
         for i, step in enumerate(recipe.steps)
     ]
     parts = [
@@ -150,7 +177,9 @@ def render_repair_source(
     return "\n".join(parts)
 
 
-def _merge_repair(original: NormalizedRecipe, proposal: RepairProposal) -> NormalizedRecipe | None:
+def _merge_repair(
+    original: NormalizedRecipe, proposal: RepairProposal
+) -> tuple[NormalizedRecipe, list[str]] | None:
     """Apply `proposal` onto `original`'s steps, position for position.
 
     Returns None if the proposal doesn't have exactly one entry per original step —
@@ -158,21 +187,47 @@ def _merge_repair(original: NormalizedRecipe, proposal: RepairProposal) -> Norma
     None here is treated identically to a failed repair call: straight to Tier 1
     degrade. There is nothing else to reject: `RepairProposal` has no field capable of
     carrying step text, an ingredient, or a duration/attention/freshness value.
+
+    Otherwise returns the merged recipe plus warnings naming every dependency the
+    repair changed, so no change to sequencing is silent. Per field (CP2 decision D):
+
+    - None (omitted) -> the extracted value is kept.
+    - `consumes_ingredients` -> added to the extracted list, never replacing it.
+    - `produces_component` -> replaces the extracted label.
+    - `depends_on_previous` -> may only go False -> True (adds a dependency). A
+      True -> False proposal is ignored: an extracted dependency is never removed.
+    - `depends_on_steps`, `role` and the other extracted fields are untouched --
+      `StepRepair` has no field for them.
     """
     if len(proposal.steps) != len(original.steps):
         return None
 
-    merged_steps = [
-        orig_step.model_copy(
-            update={
-                "consumes_ingredients": rep.consumes_ingredients,
-                "produces_component": rep.produces_component,
-                "depends_on_previous": rep.depends_on_previous,
-            }
-        )
-        for orig_step, rep in zip(original.steps, proposal.steps, strict=True)
-    ]
-    return original.model_copy(update={"steps": merged_steps})
+    merged_steps = []
+    notes: list[str] = []
+    for index, (orig_step, rep) in enumerate(zip(original.steps, proposal.steps, strict=True)):
+        update: dict[str, object] = {}
+        if rep.consumes_ingredients is not None:
+            known = {name.lower() for name in orig_step.consumes_ingredients}
+            added = [name for name in rep.consumes_ingredients if name.lower() not in known]
+            update["consumes_ingredients"] = [
+                *orig_step.consumes_ingredients,
+                *dict.fromkeys(added),
+            ]
+        if rep.produces_component is not None:
+            update["produces_component"] = rep.produces_component
+        if rep.depends_on_previous is True and not orig_step.depends_on_previous:
+            update["depends_on_previous"] = True
+            notes.append(
+                f'Repair made step {index} ("{orig_step.text[:60]}") wait for the '
+                "step before it; extraction had marked it independent."
+            )
+        elif rep.depends_on_previous is False and orig_step.depends_on_previous:
+            notes.append(
+                f'Repair tried to make step {index} ("{orig_step.text[:60]}") '
+                "independent; ignored -- repair can add a dependency, never remove one."
+            )
+        merged_steps.append(orig_step.model_copy(update=update) if update else orig_step)
+    return original.model_copy(update={"steps": merged_steps}), notes
 
 
 def _attempt_llm_repair(
@@ -184,14 +239,15 @@ def _attempt_llm_repair(
     model: str,
     max_tokens: int,
     effort: EffortLevel | None,
-) -> tuple[NormalizedRecipe | None, list[CallUsage]]:
+) -> tuple[tuple[NormalizedRecipe, list[str]] | None, list[CallUsage]]:
     """One repair call, then merge.
 
     Retried once on a truncated/unparseable response (same truncation-vs-invariant-
     failure distinction `normalize.py` makes -- unchanged here per M2.10 s18's scope:
     repair calls stay bounded the way they already were, not redesigned), then merged
-    against `recipe` so only the in-scope fields can differ. Returns the merged
-    recipe (or None) alongside every real call's usage telemetry (F5), in order.
+    against `recipe` so only the in-scope fields can differ. Returns `_merge_repair`'s
+    result (the merged recipe and its dependency-change notes, or None) alongside
+    every real call's usage telemetry (F5), in order.
     """
     prompt = load_repair_prompt()
     source_text = render_repair_source(recipe, violations, raw_source_text)
@@ -298,7 +354,7 @@ def repair_or_degrade(
             skip_reason=skip_reason,
         )
 
-    repaired_recipe, calls = _attempt_llm_repair(
+    merged, calls = _attempt_llm_repair(
         recipe,
         raw_source_text,
         violations,
@@ -308,13 +364,18 @@ def repair_or_degrade(
         effort=effort,
     )
 
-    if repaired_recipe is not None:
+    if merged is not None:
+        repaired_recipe, merge_notes = merged
         candidate = build_graph(repaired_recipe, raw_source_text, graph_id=graph_id, source=source)
         if candidate.graph is not None and not validate(candidate.graph):
             repaired_result = GraphBuildResult(
                 graph=candidate.graph,
                 node_decisions=candidate.node_decisions,
-                warnings=[*candidate.warnings, "Graph repaired after one LLM repair pass."],
+                warnings=[
+                    *candidate.warnings,
+                    *merge_notes,
+                    "Graph repaired after one LLM repair pass.",
+                ],
                 review_recommended=True,
             )
             return RepairOutcome(build_result=repaired_result, tier="repaired", calls=calls)
