@@ -1347,6 +1347,197 @@ def test_force_linear_leaves_optional_steps_out_as_notes() -> None:
 
 
 # ---------------------------------------------------------------------------
+# §6 item 2b (owner addendum) -- borrowed-cue grounding. An unrelated optional
+# cue elsewhere in the recipe must not be able to demote a required step: a
+# `role_cue` not found in the step's OWN text is "borrowed", and is honored only
+# when it chains, via `attach_to_step`, to the specific already-honored parent
+# whose own text actually contains it.
+# ---------------------------------------------------------------------------
+
+_BORROWED_CUE_SOURCE = (
+    "Cook the pancake on the griddle. If you plan to keep pancakes warm, preheat "
+    "the oven. Alternatively, use a warming drawer instead. As you finish cooking, "
+    "keep them warm for up to 45 minutes. Serve."
+)
+_OVEN_CUE = "If you plan to keep pancakes warm"
+
+
+def test_borrowed_cue_chained_to_its_honored_parent_becomes_a_note() -> None:
+    """Positive case (§7): the follow-on's cue is borrowed from the earlier optional
+    step's own text, and attaches to THAT step -- the existing chain-following then
+    carries it to the same required target. No node, no 45 min hold."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,  # borrowed -- not in this step's own text
+            attach_to_step=1,  # chains to the already-honored parent above
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    cook, serve = result.graph.nodes
+    assert serve.instruction == "Serve."
+    assert cook.tip == (
+        "Optional: If you plan to keep pancakes warm, preheat the oven. "
+        "Optional: As you finish cooking, keep them warm for up to 45 minutes."
+    )
+    assert not any("kept as a required step" in w for w in result.warnings)
+
+
+def test_borrowed_cue_attached_to_a_required_step_stays_required() -> None:
+    """Negative case (§7): same borrowed cue, but attach_to_step points at the
+    REQUIRED step instead of the optional parent it belongs to -- must not honor."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,  # the required step, not the optional parent (index 1)
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert [n.instruction for n in result.graph.nodes] == [
+        "Cook the pancake on the griddle.",
+        "As you finish cooking, keep them warm for up to 45 minutes.",
+        "Serve.",
+    ]
+    assert result.review_recommended is True
+    assert any(
+        "borrowed" in w and "does not chain" in w for w in result.warnings
+    )
+
+
+def test_borrowed_cue_attached_to_the_wrong_optional_step_stays_required() -> None:
+    """Negative case (§7): attach_to_step names a DIFFERENT already-honored optional
+    step, but that step's own text doesn't contain the borrowed cue."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="Alternatively, use a warming drawer instead.",
+            role="alternative",
+            role_cue="Alternatively",  # own cue -- honored independently
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,  # belongs to step 1, not step 2
+            attach_to_step=2,  # the wrong optional parent
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+    assert result.review_recommended is True
+
+
+@pytest.mark.parametrize("bad_attach", [5, 99, None])
+def test_borrowed_cue_out_of_range_or_missing_attach_stays_required(bad_attach: int | None) -> None:
+    """Negative case (§7): attach_to_step out of range, later than the step (there is
+    no later index in this 4-step recipe to test directly, so out-of-range/missing
+    stand in for "not a valid earlier index"), or absent."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=bad_attach,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+
+
+def test_borrowed_cue_pointing_later_than_itself_stays_required() -> None:
+    """Negative case (§7): attach_to_step names a LATER index -- never a valid
+    parent, whatever else is true about it."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=2,  # the optional step below -- later, not earlier
+        ),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+
+
+def test_own_text_cue_is_honored_regardless_of_attach_validity() -> None:
+    """Positive control (§7): a cue grounded in the step's OWN text is honored
+    exactly as today, whatever `attach_to_step` says -- the borrowed-cue gate never
+    applies to it."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you like, add extra syrup.",
+            role="optional",
+            role_cue="If you like",  # in this step's own text
+            attach_to_step=99,  # invalid -- irrelevant to the honoring decision
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(
+        _recipe(steps, ingredients=[]),
+        "Cook the pancake on the griddle. If you like, add extra syrup. Serve.",
+    )
+    assert result.graph is not None
+    cook, serve = result.graph.nodes
+    assert serve.instruction == "Serve."
+    assert cook.tip == "Optional: If you like, add extra syrup."
+    assert any("did not name a valid step" in w for w in result.warnings)
+
+
+# ---------------------------------------------------------------------------
 # CP2-B (A) -- explicit `depends_on_steps`: sanitize, producer edges, descendant
 # closure, pairwise verification, same-heat-station guard, dangling-sink join. The
 # builder only ever adds edges.
@@ -1834,13 +2025,14 @@ def _pancakes_recipe(**overrides: object) -> NormalizedRecipe:
     return _recipe(_pancakes_steps(**overrides), ingredients=[])
 
 
-def test_today_borrowed_cue_is_honored_corpus_wide_even_off_its_own_attach_chain() -> None:
-    """Finding §1.2 / §3 row 2: `_role_honored` checks the WHOLE corpus, not the
-    step's own text plus a validated attach chain. Here "keep warm"'s role_cue is
+def test_step5_borrowed_cue_off_its_own_attach_chain_now_stays_required() -> None:
+    """§10 CHECKPOINT 5 FLIP: was `test_today_borrowed_cue_is_honored_corpus_wide_
+    even_off_its_own_attach_chain`. Finding §1.2 / §3 row 2: "keep warm"'s role_cue is
     borrowed from the oven step's text (not its own) and attached directly to the
-    required frying step -- skipping the oven step entirely -- yet is honored today
-    with no warning. §6 item 2b's borrowed-cue constraint must close this: the same
-    inputs should then either attach through the oven step or stay required."""
+    required frying step -- skipping the oven step entirely. The §6 item 2b
+    borrowed-cue constraint now refuses to honor it: it stays a required node
+    (correctly -- the model attached the follow-on to the wrong step -- but safely,
+    per the plan's accepted risk in §9), with a warning and review flagged."""
     result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
     assert result.graph is not None
     labels = [n.instruction for n in result.graph.nodes]
@@ -1849,12 +2041,17 @@ def test_today_borrowed_cue_is_honored_corpus_wide_even_off_its_own_attach_chain
         "Heat a griddle over medium heat.",
         "Pour batter onto the griddle and cook in batches, about 3 minutes "
         "per side, until bubbles form and edges look dry.",
+        "As you finish cooking the batches, transfer them to a baking sheet "
+        "and keep them in a warm 200 degree F oven, loosely covered with "
+        "foil, for up to 45 minutes.",
         "Serve warm with syrup.",
     ]
     fry = result.graph.nodes[2]
-    assert fry.tip is not None
-    assert fry.tip.startswith("Optional: As you finish cooking the batches")
-    assert not any("borrowed" in w.lower() for w in result.warnings)
+    assert fry.tip is None
+    assert result.review_recommended is True
+    assert any(
+        "borrowed" in w and "does not chain" in w for w in result.warnings
+    )
 
 
 def test_step4_batched_per_side_duration_is_now_floored() -> None:

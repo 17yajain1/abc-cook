@@ -284,28 +284,77 @@ def _role_honored(step: NormalizedStep, corpus: str) -> bool:
     return has_marker and _is_grounded_substring(cue, corpus)
 
 
+def _cue_is_own(step: NormalizedStep) -> bool:
+    """Whether `step.role_cue` is grounded in `step`'s own text.
+
+    Not just somewhere in the corpus (§6 item 2b, the owner's borrowed-cue
+    addendum).
+    """
+    return _is_grounded_substring(step.role_cue, step.text.lower())
+
+
+def _borrowed_cue_honored(
+    step: NormalizedStep, index: int, steps: list[NormalizedStep], honored: set[int]
+) -> bool:
+    """§6 item 2b: whether a `role_cue` borrowed from elsewhere is still honored.
+
+    A cue not found in the step's own text may only demote THIS step if it is
+    chained to the specific optional/alternative parent that cue actually belongs
+    to -- never any other unrelated optional wording in the source. All three
+    must hold:
+
+    - `attach_to_step` is a valid, EARLIER index (steps are resolved in index
+      order, so the parent must already be decided);
+    - that target was already honored (so it is itself non-required); and
+    - the cue is grounded in the TARGET's own text, not just the corpus.
+
+    `_role_honored`'s marker-and-corpus check is unchanged and still runs first;
+    this is a narrower, additional condition for the specific case where the cue
+    doesn't come from the step's own words.
+    """
+    target = step.attach_to_step
+    if target is None or not (0 <= target < index):
+        return False
+    if target not in honored:
+        return False
+    return _is_grounded_substring(step.role_cue, steps[target].text.lower())
+
+
 def _resolve_roles(
     steps: list[NormalizedStep], corpus: str, warnings: list[str]
 ) -> tuple[_Roles, bool]:
     """CP2 decision B: which steps are mandatory work, and where the rest attach.
 
     A non-required role is honored only with a grounded, marker-bearing `role_cue`;
-    otherwise the step stays required (never silently dropped). If nothing would be
-    left required, every step is kept required -- the app must never build an empty
-    graph. Returns the roles and whether a human review is recommended.
+    otherwise the step stays required (never silently dropped). When that cue isn't
+    in the step's own text, it is "borrowed" from elsewhere in the recipe, and is
+    honored only when it chains to the specific already-honored parent it belongs to
+    (§6 item 2b) -- an unrelated optional cue elsewhere must never demote a step on
+    its own. If nothing would be left required, every step is kept required -- the
+    app must never build an empty graph. Returns the roles and whether a human
+    review is recommended.
     """
     review = False
     honored: set[int] = set()
     for index, step in enumerate(steps):
         if step.role == "required":
             continue
-        if _role_honored(step, corpus):
-            honored.add(index)
-        else:
+        if not _role_honored(step, corpus):
             warnings.append(
                 f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
                 f'"{step.role_cue}" is not a grounded optional/alternative phrase; '
                 "kept as a required step."
+            )
+            review = True
+            continue
+        if _cue_is_own(step) or _borrowed_cue_honored(step, index, steps, honored):
+            honored.add(index)
+        else:
+            warnings.append(
+                f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
+                f'"{step.role_cue}" is borrowed from elsewhere in the recipe and does '
+                "not chain to that instruction via attach_to_step; kept as a "
+                "required step."
             )
             review = True
 
