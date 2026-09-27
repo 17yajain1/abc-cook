@@ -320,6 +320,19 @@ def _borrowed_cue_honored(
     return _is_grounded_substring(step.role_cue, steps[target].text.lower())
 
 
+_BACKSTOP_MARKER_RE = re.compile(
+    r"^(?:if you\b|optional\b|alternatively\b|(?:\w+\s+){1,3}method:)",
+    re.IGNORECASE,
+)
+"""§6 item 2: the same marker families as `_OPTIONAL_MARKERS`, but matched only at
+the very START of a step's text -- a much narrower, purely textual check used to
+flag (never demote) a required step that reads as optional/conditional/alternative."""
+
+
+def _opens_with_optional_wording(text: str) -> bool:
+    return bool(_BACKSTOP_MARKER_RE.match(text.strip()))
+
+
 def _resolve_roles(
     steps: list[NormalizedStep], corpus: str, warnings: list[str]
 ) -> tuple[_Roles, bool]:
@@ -331,13 +344,28 @@ def _resolve_roles(
     honored only when it chains to the specific already-honored parent it belongs to
     (§6 item 2b) -- an unrelated optional cue elsewhere must never demote a step on
     its own. If nothing would be left required, every step is kept required -- the
-    app must never build an empty graph. Returns the roles and whether a human
-    review is recommended.
+    app must never build an empty graph.
+
+    §6 item 2 backstop: a step the model marked `required` outright is never
+    demoted based on its wording -- but if its text itself opens with an optional
+    marker ("If you", "Optional", "Alternatively", "<word(s)> method:"), that's
+    flagged for human review anyway. A required conditional-doneness instruction
+    ("If you see bubbles, flip") still stays required and still gets the warning --
+    the warning is a review nudge, never a demotion signal.
+
+    Returns the roles and whether a human review is recommended.
     """
     review = False
     honored: set[int] = set()
     for index, step in enumerate(steps):
         if step.role == "required":
+            if _opens_with_optional_wording(step.text):
+                warnings.append(
+                    f'Step "{step.text[:60]}..." is marked required, but its wording '
+                    "opens like an optional or alternative instruction; kept required "
+                    "-- flagged for review, never demoted automatically."
+                )
+                review = True
             continue
         if not _role_honored(step, corpus):
             warnings.append(

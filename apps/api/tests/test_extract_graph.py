@@ -1256,6 +1256,84 @@ def test_all_steps_optional_keeps_them_all_required() -> None:
     assert validate(result.graph) == []
 
 
+# ---------------------------------------------------------------------------
+# §6 item 2 -- the backstop warning. A step the model marks `required` outright
+# is NEVER demoted based on its wording; if its text opens with an optional
+# marker anyway, that's flagged for a human, and nothing else changes.
+# ---------------------------------------------------------------------------
+
+
+def test_backstop_flags_a_required_conditional_doneness_step_but_never_demotes_it() -> None:
+    """§7's explicit trap: "If you see bubbles, flip" must stay required -- and,
+    per the plan's test list, still gets the backstop warning."""
+    source = "Heat the pan. If you see bubbles, flip the pancake. Serve."
+    steps = [
+        _step(text="Heat the pan.", station="burner"),
+        _step(text="If you see bubbles, flip the pancake."),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 3  # never demoted to a note
+    assert result.review_recommended is True
+    assert any(
+        w.lower().startswith('step "if you see bubbles') and "flagged for review" in w
+        for w in result.warnings
+    )
+
+
+def test_backstop_is_silent_on_a_plain_required_step() -> None:
+    steps = [_step(text="Heat the pan."), _step(text="Cook the eggs.")]
+    result = _build(_recipe(steps, ingredients=[]), "Heat the pan. Cook the eggs.")
+    assert result.graph is not None
+    assert result.review_recommended is False
+    assert not any("flagged for review" in w for w in result.warnings)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "If you want a softer crust, brush with butter.",
+        "Optional garnish: add fresh herbs before serving.",
+        "Alternatively, finish under the broiler for 2 minutes.",
+        "Air fryer method: cook at 400F for 10 minutes.",
+    ],
+)
+def test_backstop_warns_on_each_leading_marker_family(text: str) -> None:
+    steps = [_step(text="Cook the base."), _step(text=text)]
+    result = _build(_recipe(steps, ingredients=[]), f"Cook the base. {text}")
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 2  # never demoted
+    assert result.review_recommended is True
+    assert any("flagged for review" in w for w in result.warnings)
+
+
+def test_backstop_does_not_fire_mid_sentence_or_on_a_non_required_role() -> None:
+    """The marker must open the text -- and the backstop only applies to steps the
+    model marked `required`; a non-required step's wording is judged by
+    `_role_honored`/the borrowed-cue gate instead, not this check."""
+    steps = [
+        _step(text="Cook the base."),
+        _step(text="Stir well, and if you like, add chilli flakes at the end."),
+        _step(
+            text="If you like, add extra syrup.",
+            role="optional",
+            role_cue="If you like",
+        ),
+    ]
+    result = _build(
+        _recipe(steps, ingredients=[]),
+        "Cook the base. Stir well, and if you like, add chilli flakes at the end. "
+        "If you like, add extra syrup.",
+    )
+    assert result.graph is not None
+    assert not any(
+        w.lower().startswith('step "stir well')
+        or w.lower().startswith('step "if you like, add extra')
+        for w in result.warnings
+    )
+
+
 _ATTACH_SOURCE = (
     "Boil the water. Cook the noodles. If you like, add chilli flakes. "
     "Alternatively, use rice noodles. Serve."
@@ -2065,13 +2143,15 @@ def test_step4_batched_per_side_duration_is_now_floored() -> None:
     assert (fry.duration_min, fry.duration_typical, fry.duration_max) == (2, 6, 6)
 
 
-def test_today_required_step_with_optional_wording_gets_no_warning() -> None:
-    """Finding §1.1 / §3 row 1: when the model mislabels an optional-looking step as
-    required, `_resolve_roles` never even looks at its text -- no warning, no review
-    flag tied to the wording. Both waits become mandatory nodes, inflating the plan
-    exactly as the real Pancakes header did (55-70 min instead of the correct total).
-    §6 item 2 (the backstop warning) must add a warning here without demoting either
-    step."""
+def test_step6_required_step_with_optional_wording_now_gets_the_backstop_warning() -> None:
+    """§10 CHECKPOINT 6 FLIP: was `test_today_required_step_with_optional_wording_
+    gets_no_warning`. Finding §1.1 / §3 row 1: the oven step's text opens with "If
+    you plan to keep...", so the new backstop (§6 item 2) now flags it for review --
+    but §9/the owner's decision holds: it is NEVER demoted, still a mandatory node.
+    The keep-warm step's text ("As you finish cooking...") carries no marker of its
+    OWN -- it is conditional only through the earlier sentence -- so the backstop
+    correctly does NOT fire for it; that gap is what the attach-chain mechanism
+    (step 5) and prompt v4 rule (a) (step 7) address instead, not this one."""
     result = _build(
         _pancakes_recipe(
             oven_role="required",
@@ -2082,9 +2162,12 @@ def test_today_required_step_with_optional_wording_gets_no_warning() -> None:
         _PANCAKES_SOURCE,
     )
     assert result.graph is not None
-    assert len(result.graph.nodes) == 6  # both waits are now mandatory nodes
-    assert not any("if you" in w.lower() for w in result.warnings)
+    assert len(result.graph.nodes) == 6  # both waits are STILL mandatory nodes
     assert all(n.tip is None for n in result.graph.nodes)
+    assert result.review_recommended is True
+    backstop_warnings = [w for w in result.warnings if "opens like an optional" in w]
+    assert len(backstop_warnings) == 1
+    assert backstop_warnings[0].lower().startswith('step "if you')
 
 
 _OATMEAL_SOURCE = (
@@ -2145,13 +2228,18 @@ def test_step4_oatmeal_simmer_duration_is_now_corrected_against_the_text() -> No
     assert result.node_decisions[1].duration_source == "extracted"
 
 
-def test_today_required_microwave_method_gets_no_warning_either() -> None:
-    """Real-world observed failure (evaluation, no stored fixture): the model marks
-    "Microwave method: ..." required, and it becomes a mandatory 4th step in the
-    plan with no warning -- the same backstop gap as the Pancakes case, for the
-    other marker family ("method:")."""
+def test_step6_required_microwave_method_now_gets_the_backstop_warning() -> None:
+    """§10 CHECKPOINT 6 FLIP: was `test_today_required_microwave_method_gets_no_
+    warning_either`. Real-world observed failure (evaluation, no stored fixture): the
+    model marks "Microwave method: ..." required. The backstop now flags it for
+    review -- the "<word> method:" marker family -- while it still becomes (and
+    stays) a mandatory 4th step, never demoted."""
     result = _build(_oatmeal_recipe(microwave_role="required"), _OATMEAL_SOURCE)
     assert result.graph is not None
     assert len(result.graph.nodes) == 4
-    assert not any("method:" in w.lower() for w in result.warnings)
+    assert result.review_recommended is True
+    assert any(
+        w.lower().startswith('step "microwave method') and "flagged for review" in w
+        for w in result.warnings
+    )
     assert all(n.tip is None for n in result.graph.nodes)
