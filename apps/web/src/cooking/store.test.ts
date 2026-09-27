@@ -334,3 +334,187 @@ describe('CP1b — "Close": the blocking session remains intact (unchanged from 
     expect(store.getState()).toEqual(before)
   })
 })
+
+// ---------------------------------------------------------------------------
+// CP-A (notes/pr19-atomic-replace-plan.md §9/§11) — `replace`: one write that ends the
+// blocking session (A) and starts the requested one (B) atomically, guarded by
+// `expectedPlanKey` so a stale second tap can never silently clobber a session that
+// changed underneath it. `CookingModeScreen`'s staging of the two-tap UX (CP-B) is not
+// part of this file — these tests exercise `store.replace` exactly as CP-B will call it.
+// ---------------------------------------------------------------------------
+
+describe('createSessionStore — replace (CP-A)', () => {
+  it('replace success: one write, getState().planKey becomes the new plan, raw storage holds only the new session', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0, recipeTitle: 'Chicken Biryani' })
+
+    let writes = 0
+    const originalSetItem = storage.setItem.bind(storage)
+    storage.setItem = (key, value) => {
+      writes++
+      originalSetItem(key, value)
+    }
+
+    const result = store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0 + m(5),
+      recipeTitle: 'Kadai Paneer',
+    })
+
+    expect(writes).toBe(1)
+    expect(result.ok).toBe(true)
+    expect(store.getState()?.planKey).toBe('library:kadai-id')
+    expect(store.getState()?.graphId).toBe(kadaiModel.graphId)
+
+    const raw = JSON.parse(storage.raw('abc-cook:session:v1')!) as { session: { planKey: string } | null }
+    expect(raw.session?.planKey).toBe('library:kadai-id')
+  })
+
+  it('replace persistence failure: storage_write_failed, and the old session (A) survives fully intact', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0, recipeTitle: 'Chicken Biryani' })
+    store.dispatch({ type: 'markDone', model: biryaniModel, nodeId: biryaniModel.order[0], now: T0 })
+    const before = store.getState()
+    const rawBefore = storage.raw('abc-cook:session:v1')
+
+    const originalSetItem = storage.setItem.bind(storage)
+    storage.setItem = () => {
+      throw new Error('QuotaExceededError')
+    }
+
+    const result = store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0 + m(5),
+      recipeTitle: 'Kadai Paneer',
+    })
+
+    expect(result).toEqual({ ok: false, reason: 'storage_write_failed' })
+    // In-memory state: byte-identical to before the attempted replace — A was never
+    // reassigned (persist() only reassigns `session` after a successful write).
+    expect(store.getState()).toEqual(before)
+    expect(store.getState()).toBe(before)
+
+    storage.setItem = originalSetItem
+    // Raw storage: never touched — the throwing setItem call is the only one made.
+    expect(storage.raw('abc-cook:session:v1')).toBe(rawBefore)
+    expect(store.open(biryaniModel, 'library:biryani-id', T0 + m(5)).status).toBe('ok')
+  })
+
+  it('expected-session mismatch rejects with conflict_changed and writes nothing', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0, recipeTitle: 'Chicken Biryani' })
+    const before = store.getState()
+
+    let writes = 0
+    const originalSetItem = storage.setItem.bind(storage)
+    storage.setItem = (key, value) => {
+      writes++
+      originalSetItem(key, value)
+    }
+
+    const result = store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:some-other-id', // stale/wrong — A's real planKey is biryani-id
+      now: T0 + m(5),
+      recipeTitle: 'Kadai Paneer',
+    })
+
+    expect(result).toEqual({ ok: false, reason: 'conflict_changed' })
+    expect(writes).toBe(0)
+    expect(store.getState()).toEqual(before)
+  })
+
+  it('expected-session mismatch also rejects when nothing is stored at all', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const store = createSessionStore(new MemoryStorage(), clock(T0))
+
+    const result = store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0,
+      recipeTitle: 'Kadai Paneer',
+    })
+
+    expect(result).toEqual({ ok: false, reason: 'conflict_changed' })
+    expect(store.getState()).toBeNull()
+  })
+
+  it('double-tap after success: the second replace (stale expectedPlanKey) is rejected, first result untouched', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0, recipeTitle: 'Chicken Biryani' })
+
+    const first = store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0 + m(5),
+      recipeTitle: 'Kadai Paneer',
+    })
+    expect(first.ok).toBe(true)
+    const afterFirst = store.getState()
+
+    // A second tap replaying the same (now-stale) expectedPlanKey — the guard, not a
+    // UI debounce, is what stops it from clobbering the session `replace` just created.
+    const second = store.dispatch({
+      type: 'replace',
+      model: biryaniModel,
+      planKey: 'library:biryani-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0 + m(6),
+      recipeTitle: 'Chicken Biryani',
+    })
+
+    expect(second).toEqual({ ok: false, reason: 'conflict_changed' })
+    expect(store.getState()).toEqual(afterFirst)
+  })
+
+  it('single-session invariant: exactly one session is ever stored, and start still rejects session_exists while one is live', () => {
+    const kadaiModel = deriveCookingModel(KADAI)
+    const biryaniModel = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0, recipeTitle: 'Chicken Biryani' })
+
+    store.dispatch({
+      type: 'replace',
+      model: kadaiModel,
+      planKey: 'library:kadai-id',
+      expectedPlanKey: 'library:biryani-id',
+      now: T0 + m(5),
+      recipeTitle: 'Kadai Paneer',
+    })
+
+    // A fresh store reading the same storage sees exactly one session — the new one.
+    const reopened = createSessionStore(storage, clock(T0 + m(10)))
+    expect(reopened.getState()?.planKey).toBe('library:kadai-id')
+    expect(reopened.getState()).toEqual(store.getState())
+
+    // The single-session invariant still holds via the ordinary `start` guard too.
+    expect(
+      store.dispatch({ type: 'start', model: biryaniModel, planKey: 'library:biryani-id', now: T0 + m(11) }),
+    ).toEqual({ ok: false, reason: 'session_exists' })
+  })
+})

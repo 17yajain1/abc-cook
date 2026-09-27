@@ -61,6 +61,19 @@ export function CookingModeScreen({
   const [leaving, setLeaving] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
 
+  // CP-B (notes/pr19-atomic-replace-plan.md §3/§6): staged, in-memory-only replacement
+  // intent — none of these three are ever persisted or dispatched to the store by
+  // themselves. `pendingReplace` holds the *other* session's planKey (`conflict.planKey`)
+  // once "End it and start this" is tapped; the blocking session survives fully intact
+  // in storage until "Start cooking" is actually tapped on the staged entry screen this
+  // produces (§3). `replaceError` surfaces a retryable `storage_write_failed` from that
+  // second tap. `replaceNotice` surfaces the approved `conflict_changed` handling (§6/
+  // §10): cleared `pendingReplace`, re-evaluated current session state, and an explicit
+  // persistent notice, regardless of which screen the re-evaluation lands on.
+  const [pendingReplace, setPendingReplace] = useState<string | null>(null)
+  const [replaceError, setReplaceError] = useState(false)
+  const [replaceNotice, setReplaceNotice] = useState(false)
+
   // Recomputed, never counted down — a completed timer is read off `endsAt` the next
   // time this fires, whether that's the next tick or the tab regaining visibility.
   useEffect(() => {
@@ -84,7 +97,33 @@ export function CookingModeScreen({
   const dispatchAction = (action: ActionDescriptor) => {
     switch (action.kind) {
       case 'start':
-        runEngine(() => session.start(model, planKey, payload.graph.title))
+        runEngine(() => {
+          if (pendingReplace == null) {
+            session.start(model, planKey, payload.graph.title)
+            return
+          }
+          // The second tap: the one persisted write that both ends the blocking
+          // session (A) and starts this one (B) — `store.replace` (CP-A). No
+          // separate `session.end()` call anywhere in this path (§3 "Central design
+          // finding").
+          const result = session.replace(model, planKey, pendingReplace, payload.graph.title)
+          if (result.ok) {
+            setPendingReplace(null)
+            setReplaceError(false)
+          } else if (result.reason === 'conflict_changed') {
+            // §6/§10: not a silent re-derive — clear the stale staging, surface an
+            // explicit notice, and let the normal render path below re-evaluate
+            // `openResult` from scratch.
+            setPendingReplace(null)
+            setReplaceError(false)
+            setReplaceNotice(true)
+          } else {
+            // storage_write_failed (or any other rejection `replace` might report):
+            // retryable — keep `pendingReplace` so "Start cooking" can be tapped
+            // again without redoing the conflict flow.
+            setReplaceError(true)
+          }
+        })
         return
       case 'startNode':
         runEngine(() => session.startNode(model, action.nodeId))
@@ -119,15 +158,46 @@ export function CookingModeScreen({
     }
   }
 
+  // Staged replacement (CP-B, plan §3): "End it and start this" was tapped — A is
+  // still fully intact in storage (nothing has been dispatched yet); this renders B's
+  // ordinary entry screen in its place, purely a local view swap. `session.replace`
+  // only fires when this screen's own "Start cooking" is tapped (the `dispatchAction`
+  // `'start'` case above).
+  if (openResult.status === 'conflict' && pendingReplace === openResult.conflict.planKey) {
+    const view = buildEntryView(model, payload.graph.title, timing)
+    if (replaceError) view.note = 'Couldn’t save on this device — storage may be full.'
+    return (
+      <div className="relative h-full overflow-hidden">
+        {replaceNotice && <ReplaceNotice onDismiss={() => setReplaceNotice(false)} />}
+        <CookingShell
+          view={view}
+          onPrimary={() => view.primary && dispatchAction(view.primary.action)}
+          onSecondary={() => view.secondary && dispatchAction(view.secondary.action)}
+          onLeave={() => setLeaving(true)}
+          onSheet={() => setSheetOpen(true)}
+        />
+      </div>
+    )
+  }
+
   if (openResult.status === 'conflict') {
     return (
-      <ConflictScreen
-        conflict={openResult.conflict}
-        canGoTo={canGoTo}
-        onGoTo={onGoTo}
-        onEndBlockingSession={() => session.end()}
-        onClose={onExit}
-      />
+      <div className="relative h-full overflow-hidden">
+        {replaceNotice && <ReplaceNotice onDismiss={() => setReplaceNotice(false)} />}
+        <ConflictScreen
+          conflict={openResult.conflict}
+          canGoTo={canGoTo}
+          onGoTo={onGoTo}
+          onEndBlockingSession={() => {
+            // Local UI transition only — no dispatch, no store touch. A survives
+            // untouched until the staged entry screen's "Start cooking" is tapped.
+            setPendingReplace(openResult.conflict.planKey)
+            setReplaceError(false)
+            setReplaceNotice(false)
+          }}
+          onClose={onExit}
+        />
+      </div>
     )
   }
 
@@ -144,6 +214,7 @@ export function CookingModeScreen({
 
   return (
     <div className="relative h-full overflow-hidden">
+      {replaceNotice && <ReplaceNotice onDismiss={() => setReplaceNotice(false)} />}
       <CookingShell
         view={view}
         onPrimary={() => view.primary && dispatchAction(view.primary.action)}
@@ -157,20 +228,42 @@ export function CookingModeScreen({
 }
 
 /**
+ * CP-B (plan §6/§10): the persistent notice for `replace`'s `conflict_changed`
+ * rejection — "That cooking session changed — showing the current state." Rendered as
+ * an overlay above whichever screen `openResult` re-derives to (entry, a freshly
+ * derived conflict, or an ordinary cooking view), since that screen is not known ahead
+ * of time. Dismissible rather than timed — nothing here re-triggers it, so it would
+ * otherwise sit forever.
+ */
+function ReplaceNotice({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-[13px] text-paper">
+      <p>That cooking session changed — showing the current state.</p>
+      <button type="button" onClick={onDismiss} className="shrink-0 underline underline-offset-[3px]">
+        Dismiss
+      </button>
+    </div>
+  )
+}
+
+/**
  * `conflict` (M3.4 handoff §1/§7 row 10; CP1a+CP1b of the M3.4.5 session-lockout plan).
  * Identifies the other cook when `conflict.title` is known (plan decision 1/3 — the
  * `recipeTitle` snapshot `engine.start()` takes) and classifies it (active/finished/
  * stale/unknown) via `buildConflictView`, which also decides (via `canGoTo`) whether
  * "Go to <recipe>" is offered at all.
  *
- * All three actions are live as of CP1b:
+ * All three actions are live as of CP1b (`endAndStart` revised by CP-B — see below):
  * - `goTo` calls `onGoTo(conflict.planKey)` — `App.tsx`'s job to actually navigate
  *   (library lookup / `fetchPlan`); this component only ever asks for that planKey.
- * - `endAndStart` calls `session.end()` (via `onEndBlockingSession`) and nothing else.
- *   The next render's `session.open(model, planKey)` then reports `'none'` for *this*
- *   plan, so `CookingModeScreen` falls through to `buildEntryView` on its own — the
- *   entry/start screen for the recipe the cook was trying to open, never auto-started
- *   (plan CP1b §2: "Do NOT automatically start cooking").
+ * - `endAndStart` (CP-B, notes/pr19-atomic-replace-plan.md §3) stages the replacement
+ *   locally via `onEndBlockingSession` — no dispatch, no store touch. The blocking
+ *   session (A) stays fully intact in storage; `CookingModeScreen` swaps to A's
+ *   still-`'conflict'` `openResult` rendering B's ordinary entry screen instead of this
+ *   one. The actual atomic write (`session.replace`, ending A and starting B in one
+ *   persisted call) only happens when that entry screen's own "Start cooking" is
+ *   tapped — never auto-started (plan CP1b §2 still holds: "Do NOT automatically start
+ *   cooking").
  * - `close` calls `onClose` (→ `onExit`), unchanged since before CP1a: returns to the
  *   Plan view for the recipe the cook was trying to open, leaving the blocking session
  *   untouched (plan CP1b §3).

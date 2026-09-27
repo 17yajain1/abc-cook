@@ -34,6 +34,14 @@ interface StoredShape {
  */
 export type SessionAction =
   | { type: 'start'; model: CookingModel; planKey: string; now: number; recipeTitle?: string }
+  | {
+      type: 'replace'
+      model: CookingModel
+      planKey: string
+      expectedPlanKey: string
+      now: number
+      recipeTitle?: string
+    }
   | { type: 'startNode'; model: CookingModel; nodeId: string; now: number }
   | { type: 'markDone'; model: CookingModel; nodeId: string; now: number }
   | { type: 'acknowledge'; model: CookingModel; now: number }
@@ -107,6 +115,16 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
       switch (action.type) {
         case 'start':
           return applying(engine.start(session, action.model, action.planKey, action.now, action.recipeTitle))
+        case 'replace': {
+          // Guard: rejects if `session` no longer matches `expectedPlanKey`.
+          // NOTE: this store never re-reads storage outside its own writes and has
+          // no storage-event listener, so a change from another tab is invisible
+          // here — cross-tab conflict_changed cannot currently be triggered.
+          // Pre-existing architectural limitation (verified via manual two-tab
+          // test, CP-D), not something this guard is meant to solve.
+          if (session?.planKey !== action.expectedPlanKey) return reject('conflict_changed')
+          return applying(engine.start(engine.end(), action.model, action.planKey, action.now, action.recipeTitle))
+        }
         case 'end':
           return persist(engine.end())
         case 'touch':
