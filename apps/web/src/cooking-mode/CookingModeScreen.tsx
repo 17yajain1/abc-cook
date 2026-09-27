@@ -10,6 +10,7 @@ import { headerTiming } from '@/lib/duration'
 
 import { CookingShell } from './CookingShell'
 import { ingredientsById } from './quantity'
+import { useWakeLock } from './useWakeLock'
 import {
   buildConflictView,
   buildCookingView,
@@ -18,7 +19,9 @@ import {
   type ActionDescriptor,
   type ConflictAction,
   type CookingView,
+  type ScreenId,
 } from './viewModel'
+import { shouldHoldWakeLock } from './wakeLock'
 import { WhatsCookingSheet } from './WhatsCookingSheet'
 
 /**
@@ -87,6 +90,24 @@ export function CookingModeScreen({
   }, [])
 
   const openResult = session.open(model, planKey)
+
+  // CP2's Rules-of-Hooks fix (M3.4 CP2 investigation, corrected against current `main`):
+  // the CP2 plan called `useWakeLock` "after `view` is resolved", but `view` is now
+  // computed after two early returns below (staged-replace, conflict) — a hook there
+  // would violate the Rules of Hooks. `wakeScreenId` resolves the same screen identity
+  // those branches would render, unconditionally, so the hook can be called before them.
+  const wakeScreenId: ScreenId =
+    openResult.status === 'conflict' && pendingReplace === openResult.conflict.planKey
+      ? 'entry'
+      : openResult.status === 'conflict'
+        ? 'conflict'
+        : openResult.status === 'none'
+          ? 'entry'
+          : buildCookingView(model, openResult.session, now, ingredients, {
+              recipeTitle: payload.graph.title,
+              leaving,
+            }).screenId
+  useWakeLock(shouldHoldWakeLock(wakeScreenId))
 
   const runEngine = (fn: () => void) => {
     fn()
