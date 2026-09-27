@@ -284,28 +284,105 @@ def _role_honored(step: NormalizedStep, corpus: str) -> bool:
     return has_marker and _is_grounded_substring(cue, corpus)
 
 
+def _cue_is_own(step: NormalizedStep) -> bool:
+    """Whether `step.role_cue` is grounded in `step`'s own text.
+
+    Not just somewhere in the corpus (§6 item 2b, the owner's borrowed-cue
+    addendum).
+    """
+    return _is_grounded_substring(step.role_cue, step.text.lower())
+
+
+def _borrowed_cue_honored(
+    step: NormalizedStep, index: int, steps: list[NormalizedStep], honored: set[int]
+) -> bool:
+    """§6 item 2b: whether a `role_cue` borrowed from elsewhere is still honored.
+
+    A cue not found in the step's own text may only demote THIS step if it is
+    chained to the specific optional/alternative parent that cue actually belongs
+    to -- never any other unrelated optional wording in the source. All three
+    must hold:
+
+    - `attach_to_step` is a valid, EARLIER index (steps are resolved in index
+      order, so the parent must already be decided);
+    - that target was already honored (so it is itself non-required); and
+    - the cue is grounded in the TARGET's own text, not just the corpus.
+
+    `_role_honored`'s marker-and-corpus check is unchanged and still runs first;
+    this is a narrower, additional condition for the specific case where the cue
+    doesn't come from the step's own words.
+    """
+    target = step.attach_to_step
+    if target is None or not (0 <= target < index):
+        return False
+    if target not in honored:
+        return False
+    return _is_grounded_substring(step.role_cue, steps[target].text.lower())
+
+
+_BACKSTOP_MARKER_RE = re.compile(
+    r"^(?:if you\b|optional\b|alternatively\b|(?:\w+\s+){1,3}method:)",
+    re.IGNORECASE,
+)
+"""§6 item 2: the same marker families as `_OPTIONAL_MARKERS`, but matched only at
+the very START of a step's text -- a much narrower, purely textual check used to
+flag (never demote) a required step that reads as optional/conditional/alternative."""
+
+
+def _opens_with_optional_wording(text: str) -> bool:
+    return bool(_BACKSTOP_MARKER_RE.match(text.strip()))
+
+
 def _resolve_roles(
     steps: list[NormalizedStep], corpus: str, warnings: list[str]
 ) -> tuple[_Roles, bool]:
     """CP2 decision B: which steps are mandatory work, and where the rest attach.
 
     A non-required role is honored only with a grounded, marker-bearing `role_cue`;
-    otherwise the step stays required (never silently dropped). If nothing would be
-    left required, every step is kept required -- the app must never build an empty
-    graph. Returns the roles and whether a human review is recommended.
+    otherwise the step stays required (never silently dropped). When that cue isn't
+    in the step's own text, it is "borrowed" from elsewhere in the recipe, and is
+    honored only when it chains to the specific already-honored parent it belongs to
+    (§6 item 2b) -- an unrelated optional cue elsewhere must never demote a step on
+    its own. If nothing would be left required, every step is kept required -- the
+    app must never build an empty graph.
+
+    §6 item 2 backstop: a step the model marked `required` outright is never
+    demoted based on its wording -- but if its text itself opens with an optional
+    marker ("If you", "Optional", "Alternatively", "<word(s)> method:"), that's
+    flagged for human review anyway. A required conditional-doneness instruction
+    ("If you see bubbles, flip") still stays required and still gets the warning --
+    the warning is a review nudge, never a demotion signal.
+
+    Returns the roles and whether a human review is recommended.
     """
     review = False
     honored: set[int] = set()
     for index, step in enumerate(steps):
         if step.role == "required":
+            if _opens_with_optional_wording(step.text):
+                warnings.append(
+                    f'Step "{step.text[:60]}..." is marked required, but its wording '
+                    "opens like an optional or alternative instruction; kept required "
+                    "-- flagged for review, never demoted automatically."
+                )
+                review = True
             continue
-        if _role_honored(step, corpus):
-            honored.add(index)
-        else:
+        if not _role_honored(step, corpus):
             warnings.append(
                 f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
                 f'"{step.role_cue}" is not a grounded optional/alternative phrase; '
                 "kept as a required step."
+            )
+            review = True
+            continue
+        if _cue_is_own(step) or _borrowed_cue_honored(step, index, steps, honored):
+            honored.add(index)
+        else:
+            warnings.append(
+                f'Step "{step.text[:60]}..." was marked {step.role}, but its cue '
+                f'"{step.role_cue}" is borrowed from elsewhere in the recipe and does '
+                "not chain to that instruction via attach_to_step; kept as a "
+                "required step."
             )
             review = True
 
@@ -358,6 +435,221 @@ def _infer_kind(text: str, attention: Attention) -> NodeKind:
     if any(verb in lowered for verb in _COMBINE_VERBS):
         return "combine"
     return "active"
+
+
+_NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+"""Transcripts say "five minutes" as often as "5 minutes" (§4)."""
+
+_VULGAR_FRACTION_MINUTES = {"¼": 0.25, "½": 0.5, "¾": 0.75}
+
+_DURATION_UNIT_SECONDS = ("sec", "secs", "second", "seconds")
+_DURATION_UNIT_MINUTES = ("min", "mins", "minute", "minutes")
+_DURATION_UNIT_HOURS = ("hr", "hrs", "hour", "hours")
+
+_CEILING_PHRASES = ("up to", "at most", "no more than")
+"""§4: a ceiling on how long something may sit, never a step's own duration."""
+
+_PER_SIDE_MARKERS = ("per side", "each side", "a side")
+_PER_UNIT_MARKERS = ("per batch", "each batch", "per piece", "in batches")
+"""§4: per-unit qualifiers. A per-*side* number is doubled (both sides); the other
+per-unit phrasings only floor the estimate at the single-unit number -- there's no
+batch/piece count to multiply by, so prompt v4 rule (b) is what actually fixes the
+number. This is a safety net, not the correction."""
+
+_DURATION_NUMBER_RE = r"(?:\d+(?:\.\d+)?|[¼½¾]|" + "|".join(_NUMBER_WORDS) + ")"
+_DURATION_UNIT_RE = "|".join(
+    _DURATION_UNIT_SECONDS + _DURATION_UNIT_MINUTES + _DURATION_UNIT_HOURS
+)
+_DURATION_CEILING_RE = "|".join(_CEILING_PHRASES)
+_DURATION_EXPR_RE = re.compile(
+    rf"(?:(?P<ceiling>{_DURATION_CEILING_RE})\s+)?"
+    rf"(?P<a>{_DURATION_NUMBER_RE})"
+    rf"(?:\s*(?:-|[{_RANGE_DASHES}]|to)\s*(?P<b>{_DURATION_NUMBER_RE}))?"
+    rf"\s*(?P<unit>{_DURATION_UNIT_RE})\b",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class _DurationExpr:
+    """One duration-shaped phrase found in a step's own text (§4), in minutes."""
+
+    low_min: float
+    high_min: float
+    ceiling: bool
+    """"Up to N" / "at most N" / "no more than N": a holding limit, never a typical
+    duration and never grounds a stated claim on its own."""
+
+
+def _duration_number(token: str) -> float:
+    if token in _VULGAR_FRACTION_MINUTES:
+        return _VULGAR_FRACTION_MINUTES[token]
+    lowered = token.lower()
+    if lowered in _NUMBER_WORDS:
+        return float(_NUMBER_WORDS[lowered])
+    return float(token)
+
+
+def _duration_unit_factor(unit: str) -> float:
+    lowered = unit.lower()
+    if lowered in _DURATION_UNIT_SECONDS:
+        return 1 / 60
+    if lowered in _DURATION_UNIT_HOURS:
+        return 60.0
+    return 1.0
+
+
+def _duration_expressions(text: str) -> list[_DurationExpr]:
+    """Parse duration-shaped phrases out of `text` (§4).
+
+    Pure and ungrounded -- callers cross-check each match's own substring against
+    the corpus, the same independent-verification pattern as every other cue in
+    this module.
+    """
+    exprs: list[_DurationExpr] = []
+    for match in _DURATION_EXPR_RE.finditer(text):
+        factor = _duration_unit_factor(match.group("unit"))
+        a = _duration_number(match.group("a")) * factor
+        b_token = match.group("b")
+        b = _duration_number(b_token) * factor if b_token else a
+        low, high = (a, b) if a <= b else (b, a)
+        ceiling = bool(match.group("ceiling"))
+        exprs.append(_DurationExpr(low_min=low, high_min=high, ceiling=ceiling))
+    return exprs
+
+
+def _grounded_duration_expressions(text: str, corpus: str) -> list[_DurationExpr]:
+    """`_duration_expressions`, keeping only candidates grounded in the raw corpus.
+
+    Grounded by PARSED VALUE, not literal substring: the corpus is parsed with the
+    same function, so an equivalent spelling ("30mins" vs "30 minutes") already
+    parses identically and needs no separate normalization. A candidate is
+    grounded when the corpus contains a duration-shaped phrase whose interval
+    CONTAINS the candidate's -- a single value grounds against a containing
+    corpus range ("cook for 9 minutes" against "cook for 8-10 minutes"), and a
+    range only grounds against an at-least-as-wide one. Ceiling-ness must match
+    on both sides: a plain claim is never grounded by a corpus "up to N" (a
+    holding limit, never a stated duration -- see the ceiling rule below), and a
+    ceiling claim is never grounded by a corpus plain value/range.
+    """
+    candidates = _duration_expressions(text)
+    corpus_exprs = _duration_expressions(corpus)
+    return [
+        candidate
+        for candidate in candidates
+        if any(
+            corpus_expr.ceiling == candidate.ceiling
+            and corpus_expr.low_min <= candidate.low_min
+            and candidate.high_min <= corpus_expr.high_min
+            for corpus_expr in corpus_exprs
+        )
+    ]
+
+
+def _format_duration(expr: _DurationExpr) -> str:
+    if expr.low_min == expr.high_min:
+        return f"{expr.low_min:g} min"
+    return f"{expr.low_min:g}-{expr.high_min:g} min"
+
+
+def _per_unit_floor_multiplier(text: str) -> float | None:
+    lowered = text.lower()
+    if any(marker in lowered for marker in _PER_SIDE_MARKERS):
+        return 2.0
+    if any(marker in lowered for marker in _PER_UNIT_MARKERS):
+        return 1.0
+    return None
+
+
+def _verify_duration(
+    step: NormalizedStep, corpus: str
+) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
+    """§4: independently verify a step's duration claim against its own text.
+
+    Returns `(min, typical, max, stated, warnings, review)`. `stated` is the
+    VERIFIED stated-ness that `_resolve_duration`'s window-host clamp must act on
+    next -- not necessarily what the model claimed. A `None` number means "no
+    opinion"; the caller (feeding this into `_resolve_duration`) falls back to the
+    model's own number, or the deterministic default when none exists at all.
+    """
+    warnings: list[str] = []
+    review = False
+    text = step.text
+
+    grounded = _grounded_duration_expressions(text, corpus)
+    plain = [expr for expr in grounded if not expr.ceiling]
+    ceilings = [expr for expr in grounded if expr.ceiling]
+
+    dmin, dtyp, dmax, stated = (
+        step.duration_min,
+        step.duration_typical_min,
+        step.duration_max,
+        step.duration_stated,
+    )
+
+    if len(plain) == 1:
+        expr = plain[0]
+        new_typical = (
+            min(max(dtyp, expr.low_min), expr.high_min) if dtyp is not None else expr.low_min
+        )
+        if new_typical != dtyp:
+            warnings.append(
+                f'Step "{text[:60]}..." states {_format_duration(expr)}; typical '
+                f"duration corrected to {new_typical:g} min to match the text."
+            )
+        dtyp = new_typical
+        dmin = min(dmin, expr.low_min) if dmin is not None else expr.low_min
+        dmax = max(dmax, expr.high_min) if dmax is not None else expr.high_min
+        stated = True
+    elif not plain and stated and not ceilings:
+        warnings.append(
+            f'Step "{text[:60]}..." claims a stated duration, but no duration phrase '
+            "was found in its own text; treated as an estimate, not a stated fact."
+        )
+        stated = False
+    elif not plain and stated and ceilings:
+        # A ceiling phrase alone can't ground a "stated" claim either (§4): it's a
+        # holding limit, not how long the step itself takes.
+        warnings.append(
+            f'Step "{text[:60]}..." claims a stated duration, but its text only '
+            'gives a holding limit ("up to"), not a duration; treated as an estimate.'
+        )
+        stated = False
+    elif len(plain) > 1 and dtyp is not None and not any(
+        expr.low_min <= dtyp <= expr.high_min for expr in plain
+    ):
+        warnings.append(
+            f'Step "{text[:60]}..." names more than one duration; the typical '
+            "duration matches none of them, so it was left unchanged."
+        )
+
+    for ceiling in ceilings:
+        if dmax is not None and dmax > ceiling.high_min:
+            dmax = ceiling.high_min
+            if dtyp is not None and dtyp > dmax:
+                dtyp = dmax
+            review = True
+
+    multiplier = _per_unit_floor_multiplier(text)
+    if multiplier is not None and plain:
+        base = min(expr.low_min for expr in plain)
+        floor = base * multiplier
+        if dtyp is None or dtyp < floor:
+            dtyp = floor
+        if dmax is None or dmax < dtyp:
+            dmax = dtyp
+        stated = False
+        review = True
+        warnings.append(
+            f'Step "{text[:60]}..." gives a per-unit time ({base:g} min); the whole '
+            f"step must take at least {floor:g} min across every unit, so the "
+            "estimate was raised and flagged for review."
+        )
+
+    return dmin, dtyp, dmax, stated, warnings, review
 
 
 def _resolve_duration(
@@ -826,7 +1118,26 @@ def build_graph(
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
         kind = "finish" if index == total - 1 else _infer_kind(step.text, attention)
-        dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(step, kind, attention)
+
+        # §4/§6 item 1: verify the duration claim against the step's own text
+        # BEFORE the window-host clamp, so the clamp acts on the verified
+        # stated-ness rather than the model's raw self-report.
+        vmin, vtyp, vmax, vstated, duration_warnings, duration_review = _verify_duration(
+            step, corpus
+        )
+        warnings.extend(duration_warnings)
+        review_recommended = review_recommended or duration_review
+        verified_step = step.model_copy(
+            update={
+                "duration_min": vmin if vmin is not None else step.duration_min,
+                "duration_typical_min": vtyp if vtyp is not None else step.duration_typical_min,
+                "duration_max": vmax if vmax is not None else step.duration_max,
+                "duration_stated": vstated,
+            }
+        )
+        dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(
+            verified_step, kind, attention
+        )
         freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
 
         if explicit:

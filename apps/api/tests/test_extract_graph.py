@@ -18,10 +18,12 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import (
     GraphBuildResult,
     _clean_cue,
+    _duration_expressions,
     _is_staple,
     _label,
     _parse_qty,
     _produced_labels,
+    _verify_duration,
     _verify_independence,
     build_graph,
 )
@@ -259,6 +261,205 @@ def test_missing_duration_falls_back_to_deterministic_default() -> None:
     node = result.graph.nodes[0]
     assert node.duration_min <= node.duration_typical <= node.duration_max
     assert result.node_decisions[0].duration_source == "defaulted"
+
+
+# ---------------------------------------------------------------------------
+# P0 #0 §4/§6 item 1 -- duration verification against the step's own text.
+# `_duration_expressions` and `_verify_duration` are pure and, per §10 step 3,
+# NOT YET WIRED into `build_graph` -- these test the functions directly.
+# ---------------------------------------------------------------------------
+
+def _expr(text: str) -> tuple[float, float, bool]:
+    (expr,) = _duration_expressions(text)
+    return expr.low_min, expr.high_min, expr.ceiling
+
+
+def test_duration_expressions_parses_a_plain_value() -> None:
+    assert _expr("Simmer for 5 minutes.") == (5, 5, False)
+
+
+def test_duration_expressions_parses_a_range() -> None:
+    assert _expr("Bake for 8-10 minutes.") == (8, 10, False)
+
+
+def test_duration_expressions_parses_an_en_dash_range() -> None:
+    assert _expr(f"Marinate for 4{chr(0x2013)}5 hours.") == (240, 300, False)
+
+
+def test_duration_expressions_parses_number_words() -> None:
+    assert _expr("Cook for five minutes.") == (5, 5, False)
+
+
+def test_duration_expressions_converts_seconds_and_hours() -> None:
+    assert _expr("Rest for 30 seconds.") == (0.5, 0.5, False)
+    assert _expr("Prove for 1 hour.") == (60, 60, False)
+
+
+def test_duration_expressions_flags_a_ceiling() -> None:
+    assert _expr("Keeps for up to 45 minutes.") == (45, 45, True)
+
+
+def test_duration_expressions_does_not_match_a_temperature() -> None:
+    assert _duration_expressions("Preheat the oven to 200 degrees F.") == []
+
+
+def _verify(
+    text: str, corpus: str | None = None, **duration_kwargs: object
+) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
+    step = _step(text=text, **duration_kwargs)  # type: ignore[arg-type]
+    return _verify_duration(step, (corpus if corpus is not None else text).lower())
+
+
+def test_verify_duration_corrects_a_mismatch_against_the_text() -> None:
+    """F15: the model says 4; the text says 5."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Simmer for 5 minutes, stirring occasionally.",
+        duration_min=4, duration_typical_min=4, duration_max=4, duration_stated=True,
+    )
+    assert dtyp == 5
+    assert stated is True
+    assert any("corrected" in w for w in warnings)
+
+
+def test_verify_duration_clamps_typical_into_a_stated_range() -> None:
+    _dmin, dtyp, _dmax, _stated, warnings, _review = _verify(
+        "Bake for 8-10 minutes.",
+        duration_min=8, duration_typical_min=12, duration_max=15, duration_stated=True,
+    )
+    assert dtyp == 10
+    assert any("corrected" in w for w in warnings)
+
+
+def test_verify_duration_leaves_a_typical_already_inside_a_range_unchanged() -> None:
+    dmin, dtyp, dmax, _stated, warnings, _review = _verify(
+        "Marinate the chicken for 4-5 hours.",
+        duration_min=240, duration_typical_min=270, duration_max=300, duration_stated=True,
+    )
+    assert (dmin, dtyp, dmax) == (240, 270, 300)
+    assert not warnings
+
+
+def test_verify_duration_ceiling_downgrades_a_stated_claim_and_caps_max() -> None:
+    _dmin, _dtyp, dmax, stated, warnings, _review = _verify(
+        "Simmer for up to 10 minutes.",
+        duration_min=10, duration_typical_min=10, duration_max=12, duration_stated=True,
+    )
+    assert stated is False
+    assert dmax is not None
+    assert dmax <= 10
+    assert any("holding limit" in w for w in warnings)
+
+
+def test_verify_duration_ungrounded_stated_claim_becomes_an_estimate() -> None:
+    _dmin, _dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook until the sauce thickens.",
+        duration_min=10, duration_typical_min=10, duration_max=20, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_per_side_floors_a_batched_undercount() -> None:
+    """The Pancakes case: "about 3 minutes per side ... in batches" given 2/3/5."""
+    _dmin, dtyp, dmax, stated, _warnings, review = _verify(
+        "Pour batter and cook in batches, about 3 minutes per side, until golden.",
+        duration_min=2, duration_typical_min=3, duration_max=5, duration_stated=True,
+    )
+    assert dtyp is not None
+    assert dtyp >= 6
+    assert dmax is not None
+    assert dmax >= dtyp
+    assert stated is False
+    assert review is True
+
+
+def test_verify_duration_per_side_leaves_a_sufficient_model_estimate_unchanged() -> None:
+    """The donut golden fixture's convention: "about a minute a side" -> 10/14/20 is
+    already the whole-step total and must not be shrunk."""
+    _dmin, dtyp, dmax, _stated, _warnings, _review = _verify(
+        "Fry in batches, about a minute a side.",
+        duration_min=10, duration_typical_min=14, duration_max=20, duration_stated=False,
+    )
+    assert (dtyp, dmax) == (14, 20)
+
+
+def test_verify_duration_multiple_plain_durations_left_unchanged_unless_no_match() -> None:
+    matching = _verify(
+        "Fry for 2 minutes, then simmer for 10 minutes.",
+        duration_min=2, duration_typical_min=2, duration_max=2, duration_stated=True,
+    )
+    assert matching[1] == 2
+    assert not matching[4]
+
+    no_match = _verify(
+        "Fry for 2 minutes, then simmer for 10 minutes.",
+        duration_min=99, duration_typical_min=99, duration_max=99, duration_stated=True,
+    )
+    assert no_match[1] == 99  # left unchanged
+    assert any("left unchanged" in w for w in no_match[4])
+
+
+# ---------------------------------------------------------------------------
+# Duration-grounding root-cause fix (dal-makhni finding, investigated and
+# approved 2026-09-27): `_grounded_duration_expressions` grounds by PARSED
+# VALUE against the corpus (parsed by the same `_duration_expressions`), not by
+# literal substring -- so an equivalent spelling, or a single value inside a
+# stated range, is grounded without any new normalization table or fuzzy match.
+# ---------------------------------------------------------------------------
+
+
+def test_verify_duration_grounds_across_an_equivalent_spelling() -> None:
+    """The dal-makhni root cause: step.text says "30 minutes"; the real source
+    only ever spells it "30mins" (no space). The parsed value must still ground
+    it -- `_duration_expressions` already parses both to the same value; only
+    the grounding comparison needed to stop requiring a literal substring."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook the dal for 30 minutes.",
+        corpus="cook the dal for 30mins. serve hot.",
+        duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
+    )
+    assert dtyp == 30
+    assert stated is True
+    assert not warnings
+
+
+def test_verify_duration_single_value_grounds_against_a_containing_corpus_range() -> None:
+    """A single value in the step must ground against a CONTAINING range in the
+    corpus, not require identical boundaries on both sides."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook for 9 minutes.",
+        corpus="cook for 8-10 minutes, stirring occasionally.",
+        duration_min=8, duration_typical_min=9, duration_max=10, duration_stated=True,
+    )
+    assert dtyp == 9
+    assert stated is True
+    assert not warnings
+
+
+def test_verify_duration_stays_ungrounded_when_the_value_is_genuinely_absent() -> None:
+    """Negative control: a value that never appears in the corpus -- under any
+    spelling, and not contained in any stated range -- still gets downgraded,
+    even though the corpus contains OTHER, unrelated duration phrases."""
+    _dmin, _dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook the dal for 30 minutes.",
+        corpus="cook the rice for 20 minutes. serve hot.",
+        duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_plain_claim_not_grounded_by_a_corpus_ceiling_of_the_same_value() -> None:
+    """A corpus "up to N" is a holding limit, never a stated duration (§4) -- it
+    must not ground an unrelated PLAIN claim of the same N, even though the
+    value matches. Ceiling-ness must agree on both sides of the grounding check,
+    not just the number."""
+    _dmin, _dtyp, _dmax, stated, _warnings, _review = _verify(
+        "Keep warm for 45 minutes.",
+        corpus="keep warm for up to 45 minutes.",
+        duration_min=40, duration_typical_min=45, duration_max=50, duration_stated=True,
+    )
+    assert stated is False
 
 
 # ---------------------------------------------------------------------------
@@ -867,6 +1068,27 @@ def test_characterization_dal_makhni_legacy_edges_unchanged() -> None:
     assert _legacy_edges(recipe, source_text) == _DAL_MAKHNI_EDGES
 
 
+def test_dal_makhni_cook_step_duration_is_grounded_despite_the_spelling_mismatch() -> None:
+    """Regression for the duration-grounding root cause found while validating P0 #0
+    against real captured data: "Cook the dal for 30 minutes." (step.text) is only
+    ever spelled "30mins" (no space) in the actual source. Before the grounding fix,
+    this was wrongly downgraded to inferred/clamped; it must come back to the
+    pre-P0-duration-verification numbers (28/30/32, extracted, no spurious warnings)."""
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+    node = next(n for n in result.graph.nodes if n.id == "step_cook_the_dal_for_30_minutes")
+    decision = next(d for d in result.node_decisions if d.node_id == node.id)
+    assert (node.duration_min, node.duration_typical, node.duration_max) == (28, 30, 32)
+    assert decision.duration_source == "extracted"
+    assert not any("Cook the dal for 30" in w for w in result.warnings)
+
+
 # ---------------------------------------------------------------------------
 # CP2-B (E) -- staple-aware independence. A shared pantry staple (salt, water, oil)
 # is not a dependency; a shared non-staple still vetoes, and a produced component is
@@ -1118,6 +1340,84 @@ def test_all_steps_optional_keeps_them_all_required() -> None:
     assert validate(result.graph) == []
 
 
+# ---------------------------------------------------------------------------
+# §6 item 2 -- the backstop warning. A step the model marks `required` outright
+# is NEVER demoted based on its wording; if its text opens with an optional
+# marker anyway, that's flagged for a human, and nothing else changes.
+# ---------------------------------------------------------------------------
+
+
+def test_backstop_flags_a_required_conditional_doneness_step_but_never_demotes_it() -> None:
+    """§7's explicit trap: "If you see bubbles, flip" must stay required -- and,
+    per the plan's test list, still gets the backstop warning."""
+    source = "Heat the pan. If you see bubbles, flip the pancake. Serve."
+    steps = [
+        _step(text="Heat the pan.", station="burner"),
+        _step(text="If you see bubbles, flip the pancake."),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 3  # never demoted to a note
+    assert result.review_recommended is True
+    assert any(
+        w.lower().startswith('step "if you see bubbles') and "flagged for review" in w
+        for w in result.warnings
+    )
+
+
+def test_backstop_is_silent_on_a_plain_required_step() -> None:
+    steps = [_step(text="Heat the pan."), _step(text="Cook the eggs.")]
+    result = _build(_recipe(steps, ingredients=[]), "Heat the pan. Cook the eggs.")
+    assert result.graph is not None
+    assert result.review_recommended is False
+    assert not any("flagged for review" in w for w in result.warnings)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "If you want a softer crust, brush with butter.",
+        "Optional garnish: add fresh herbs before serving.",
+        "Alternatively, finish under the broiler for 2 minutes.",
+        "Air fryer method: cook at 400F for 10 minutes.",
+    ],
+)
+def test_backstop_warns_on_each_leading_marker_family(text: str) -> None:
+    steps = [_step(text="Cook the base."), _step(text=text)]
+    result = _build(_recipe(steps, ingredients=[]), f"Cook the base. {text}")
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 2  # never demoted
+    assert result.review_recommended is True
+    assert any("flagged for review" in w for w in result.warnings)
+
+
+def test_backstop_does_not_fire_mid_sentence_or_on_a_non_required_role() -> None:
+    """The marker must open the text -- and the backstop only applies to steps the
+    model marked `required`; a non-required step's wording is judged by
+    `_role_honored`/the borrowed-cue gate instead, not this check."""
+    steps = [
+        _step(text="Cook the base."),
+        _step(text="Stir well, and if you like, add chilli flakes at the end."),
+        _step(
+            text="If you like, add extra syrup.",
+            role="optional",
+            role_cue="If you like",
+        ),
+    ]
+    result = _build(
+        _recipe(steps, ingredients=[]),
+        "Cook the base. Stir well, and if you like, add chilli flakes at the end. "
+        "If you like, add extra syrup.",
+    )
+    assert result.graph is not None
+    assert not any(
+        w.lower().startswith('step "stir well')
+        or w.lower().startswith('step "if you like, add extra')
+        for w in result.warnings
+    )
+
+
 _ATTACH_SOURCE = (
     "Boil the water. Cook the noodles. If you like, add chilli flakes. "
     "Alternatively, use rice noodles. Serve."
@@ -1206,6 +1506,197 @@ def test_force_linear_leaves_optional_steps_out_as_notes() -> None:
     assert spread.tip is not None
     assert spread.tip.startswith("Optional: ")
     assert validate(result.graph) == []
+
+
+# ---------------------------------------------------------------------------
+# §6 item 2b (owner addendum) -- borrowed-cue grounding. An unrelated optional
+# cue elsewhere in the recipe must not be able to demote a required step: a
+# `role_cue` not found in the step's OWN text is "borrowed", and is honored only
+# when it chains, via `attach_to_step`, to the specific already-honored parent
+# whose own text actually contains it.
+# ---------------------------------------------------------------------------
+
+_BORROWED_CUE_SOURCE = (
+    "Cook the pancake on the griddle. If you plan to keep pancakes warm, preheat "
+    "the oven. Alternatively, use a warming drawer instead. As you finish cooking, "
+    "keep them warm for up to 45 minutes. Serve."
+)
+_OVEN_CUE = "If you plan to keep pancakes warm"
+
+
+def test_borrowed_cue_chained_to_its_honored_parent_becomes_a_note() -> None:
+    """Positive case (§7): the follow-on's cue is borrowed from the earlier optional
+    step's own text, and attaches to THAT step -- the existing chain-following then
+    carries it to the same required target. No node, no 45 min hold."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,  # borrowed -- not in this step's own text
+            attach_to_step=1,  # chains to the already-honored parent above
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    cook, serve = result.graph.nodes
+    assert serve.instruction == "Serve."
+    assert cook.tip == (
+        "Optional: If you plan to keep pancakes warm, preheat the oven. "
+        "Optional: As you finish cooking, keep them warm for up to 45 minutes."
+    )
+    assert not any("kept as a required step" in w for w in result.warnings)
+
+
+def test_borrowed_cue_attached_to_a_required_step_stays_required() -> None:
+    """Negative case (§7): same borrowed cue, but attach_to_step points at the
+    REQUIRED step instead of the optional parent it belongs to -- must not honor."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,  # the required step, not the optional parent (index 1)
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert [n.instruction for n in result.graph.nodes] == [
+        "Cook the pancake on the griddle.",
+        "As you finish cooking, keep them warm for up to 45 minutes.",
+        "Serve.",
+    ]
+    assert result.review_recommended is True
+    assert any(
+        "borrowed" in w and "does not chain" in w for w in result.warnings
+    )
+
+
+def test_borrowed_cue_attached_to_the_wrong_optional_step_stays_required() -> None:
+    """Negative case (§7): attach_to_step names a DIFFERENT already-honored optional
+    step, but that step's own text doesn't contain the borrowed cue."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="Alternatively, use a warming drawer instead.",
+            role="alternative",
+            role_cue="Alternatively",  # own cue -- honored independently
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,  # belongs to step 1, not step 2
+            attach_to_step=2,  # the wrong optional parent
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+    assert result.review_recommended is True
+
+
+@pytest.mark.parametrize("bad_attach", [5, 99, None])
+def test_borrowed_cue_out_of_range_or_missing_attach_stays_required(bad_attach: int | None) -> None:
+    """Negative case (§7): attach_to_step out of range, later than the step (there is
+    no later index in this 4-step recipe to test directly, so out-of-range/missing
+    stand in for "not a valid earlier index"), or absent."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=bad_attach,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+
+
+def test_borrowed_cue_pointing_later_than_itself_stays_required() -> None:
+    """Negative case (§7): attach_to_step names a LATER index -- never a valid
+    parent, whatever else is true about it."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="As you finish cooking, keep them warm for up to 45 minutes.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=2,  # the optional step below -- later, not earlier
+        ),
+        _step(
+            text="If you plan to keep pancakes warm, preheat the oven.",
+            role="optional",
+            role_cue=_OVEN_CUE,
+            attach_to_step=0,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), _BORROWED_CUE_SOURCE)
+    assert result.graph is not None
+    assert "As you finish cooking, keep them warm for up to 45 minutes." in [
+        n.instruction for n in result.graph.nodes
+    ]
+
+
+def test_own_text_cue_is_honored_regardless_of_attach_validity() -> None:
+    """Positive control (§7): a cue grounded in the step's OWN text is honored
+    exactly as today, whatever `attach_to_step` says -- the borrowed-cue gate never
+    applies to it."""
+    steps = [
+        _step(text="Cook the pancake on the griddle."),
+        _step(
+            text="If you like, add extra syrup.",
+            role="optional",
+            role_cue="If you like",  # in this step's own text
+            attach_to_step=99,  # invalid -- irrelevant to the honoring decision
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(
+        _recipe(steps, ingredients=[]),
+        "Cook the pancake on the griddle. If you like, add extra syrup. Serve.",
+    )
+    assert result.graph is not None
+    cook, serve = result.graph.nodes
+    assert serve.instruction == "Serve."
+    assert cook.tip == "Optional: If you like, add extra syrup."
+    assert any("did not name a valid step" in w for w in result.warnings)
 
 
 # ---------------------------------------------------------------------------
@@ -1613,3 +2104,226 @@ def test_none_versus_empty_claim_regression() -> None:
     on_one_burner = build([], station="burner")
     assert _deps_by_label(on_one_burner)["Whisk the dressing."] == ["Toast the nuts."]
     assert on_one_burner.node_decisions[1].depends_on_previous_source == "inferred"
+
+
+# ---------------------------------------------------------------------------
+# P0 #0 characterization (notes/cooking-app-evaluation-2026-09-25.md, row #2;
+# plan doc "P0 #0: optional / conditional / alternative instructions, and
+# durations checked against the recipe text", §7 "characterization tests").
+#
+# These lock in TODAY's behaviour on Pancakes-shaped and Oatmeal-shaped
+# recipes -- including the parts that are WRONG -- so the diff is visible at
+# the §10 checkpoints once duration verification (step 4) and the borrowed-cue
+# grounding constraint (step 5) land. Do not "fix" an assertion here quietly:
+# a flip is expected, and must be reported at the checkpoint that causes it.
+# ---------------------------------------------------------------------------
+
+_PANCAKES_SOURCE = (
+    "Whisk the batter until just combined. Heat a griddle over medium heat. "
+    "If you plan to keep cooked pancakes warm, preheat the oven to 200 degrees F. "
+    "Pour batter onto the griddle and cook in batches, about 3 minutes per side, "
+    "until bubbles form and edges look dry. "
+    "As you finish cooking the batches, transfer them to a baking sheet and keep "
+    "them in a warm 200 degree F oven, loosely covered with foil, for up to 45 "
+    "minutes. Serve warm with syrup."
+)
+
+
+def _pancakes_steps(
+    *,
+    oven_role: str = "optional",
+    keep_warm_role: str = "optional",
+    keep_warm_cue: str | None = "If you plan to keep",
+    keep_warm_attach: int | None = 3,
+) -> list[NormalizedStep]:
+    return [
+        _step(text="Whisk the batter until just combined."),
+        _step(text="Heat a griddle over medium heat.", station="burner"),
+        _step(
+            text="If you plan to keep cooked pancakes warm, preheat the oven to 200 degrees F.",
+            role=oven_role,
+            role_cue="If you plan to keep" if oven_role != "required" else None,
+            attention="unattended",
+            attention_cue="preheat the oven",
+            duration_min=10,
+            duration_typical_min=10,
+            duration_max=20,
+            duration_stated=False,
+            station="oven",
+        ),
+        _step(
+            text=(
+                "Pour batter onto the griddle and cook in batches, about 3 minutes "
+                "per side, until bubbles form and edges look dry."
+            ),
+            duration_min=2,
+            duration_typical_min=3,
+            duration_max=5,
+            duration_stated=True,
+            station="burner",
+        ),
+        _step(
+            text=(
+                "As you finish cooking the batches, transfer them to a baking sheet "
+                "and keep them in a warm 200 degree F oven, loosely covered with "
+                "foil, for up to 45 minutes."
+            ),
+            role=keep_warm_role,
+            role_cue=keep_warm_cue,
+            attach_to_step=keep_warm_attach,
+            attention="unattended",
+            attention_cue="warm",
+            duration_min=10,
+            duration_typical_min=15,
+            duration_max=20,
+            duration_stated=False,
+            station="oven",
+        ),
+        _step(text="Serve warm with syrup."),
+    ]
+
+
+def _pancakes_recipe(**overrides: object) -> NormalizedRecipe:
+    return _recipe(_pancakes_steps(**overrides), ingredients=[])
+
+
+def test_step5_borrowed_cue_off_its_own_attach_chain_now_stays_required() -> None:
+    """§10 CHECKPOINT 5 FLIP: was `test_today_borrowed_cue_is_honored_corpus_wide_
+    even_off_its_own_attach_chain`. Finding §1.2 / §3 row 2: "keep warm"'s role_cue is
+    borrowed from the oven step's text (not its own) and attached directly to the
+    required frying step -- skipping the oven step entirely. The §6 item 2b
+    borrowed-cue constraint now refuses to honor it: it stays a required node
+    (correctly -- the model attached the follow-on to the wrong step -- but safely,
+    per the plan's accepted risk in §9), with a warning and review flagged."""
+    result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
+    assert result.graph is not None
+    labels = [n.instruction for n in result.graph.nodes]
+    assert labels == [
+        "Whisk the batter until just combined.",
+        "Heat a griddle over medium heat.",
+        "Pour batter onto the griddle and cook in batches, about 3 minutes "
+        "per side, until bubbles form and edges look dry.",
+        "As you finish cooking the batches, transfer them to a baking sheet "
+        "and keep them in a warm 200 degree F oven, loosely covered with "
+        "foil, for up to 45 minutes.",
+        "Serve warm with syrup.",
+    ]
+    fry = result.graph.nodes[2]
+    assert fry.tip is None
+    assert result.review_recommended is True
+    assert any(
+        "borrowed" in w and "does not chain" in w for w in result.warnings
+    )
+
+
+def test_step4_batched_per_side_duration_is_now_floored() -> None:
+    """§10 CHECKPOINT 4 FLIP: was `test_today_batched_per_side_duration_is_copied_
+    uncorrected`, asserting the uncorrected (2, 3, 5). Wiring `_verify_duration` into
+    `build_graph` (§6 item 1) now floors the per-side undercount: 3 min/side * 2 sides
+    = 6. Finding §1.4 / §3 row 4."""
+    result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
+    assert result.graph is not None
+    fry = result.graph.nodes[2]
+    assert (fry.duration_min, fry.duration_typical, fry.duration_max) == (2, 6, 6)
+
+
+def test_step6_required_step_with_optional_wording_now_gets_the_backstop_warning() -> None:
+    """§10 CHECKPOINT 6 FLIP: was `test_today_required_step_with_optional_wording_
+    gets_no_warning`. Finding §1.1 / §3 row 1: the oven step's text opens with "If
+    you plan to keep...", so the new backstop (§6 item 2) now flags it for review --
+    but §9/the owner's decision holds: it is NEVER demoted, still a mandatory node.
+    The keep-warm step's text ("As you finish cooking...") carries no marker of its
+    OWN -- it is conditional only through the earlier sentence -- so the backstop
+    correctly does NOT fire for it; that gap is what the attach-chain mechanism
+    (step 5) and prompt v4 rule (a) (step 7) address instead, not this one."""
+    result = _build(
+        _pancakes_recipe(
+            oven_role="required",
+            keep_warm_role="required",
+            keep_warm_cue=None,
+            keep_warm_attach=None,
+        ),
+        _PANCAKES_SOURCE,
+    )
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 6  # both waits are STILL mandatory nodes
+    assert all(n.tip is None for n in result.graph.nodes)
+    assert result.review_recommended is True
+    backstop_warnings = [w for w in result.warnings if "opens like an optional" in w]
+    assert len(backstop_warnings) == 1
+    assert backstop_warnings[0].lower().startswith('step "if you')
+
+
+_OATMEAL_SOURCE = (
+    "Combine oats and water in a saucepan. Bring to a boil, then reduce heat and "
+    "simmer for 5 minutes, stirring occasionally, until thickened. "
+    "Microwave method: combine oats and water in a microwave-safe bowl and "
+    "microwave on high for 2 minutes, stirring halfway through. Serve hot."
+)
+
+
+def _oatmeal_steps(*, microwave_role: str = "alternative") -> list[NormalizedStep]:
+    return [
+        _step(text="Combine oats and water in a saucepan."),
+        _step(
+            text=(
+                "Bring to a boil, then reduce heat and simmer for 5 minutes, "
+                "stirring occasionally, until thickened."
+            ),
+            attention="periodic",
+            attention_cue="stirring occasionally",
+            duration_min=4,
+            duration_typical_min=4,
+            duration_max=4,
+            duration_stated=True,
+            station="burner",
+        ),
+        _step(
+            text=(
+                "Microwave method: combine oats and water in a microwave-safe bowl "
+                "and microwave on high for 2 minutes, stirring halfway through."
+            ),
+            role=microwave_role,
+            role_cue="Microwave method:" if microwave_role != "required" else None,
+            attach_to_step=1 if microwave_role != "required" else None,
+            duration_min=2,
+            duration_typical_min=2,
+            duration_max=2,
+            duration_stated=True,
+            station="counter",
+        ),
+        _step(text="Serve hot."),
+    ]
+
+
+def _oatmeal_recipe(**overrides: object) -> NormalizedRecipe:
+    return _recipe(_oatmeal_steps(**overrides), ingredients=[])
+
+
+def test_step4_oatmeal_simmer_duration_is_now_corrected_against_the_text() -> None:
+    """§10 CHECKPOINT 4 FLIP: was `test_today_oatmeal_simmer_duration_is_never_
+    checked_against_the_text`, asserting the uncorrected 4 min. Wiring
+    `_verify_duration` in now catches the model-vs-text mismatch (F15): the text
+    says "5 minutes", so typical (and max, widened to contain it) become 5."""
+    result = _build(_oatmeal_recipe(), _OATMEAL_SOURCE)
+    assert result.graph is not None
+    simmer = result.graph.nodes[1]
+    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (4, 5, 5)
+    assert result.node_decisions[1].duration_source == "extracted"
+
+
+def test_step6_required_microwave_method_now_gets_the_backstop_warning() -> None:
+    """§10 CHECKPOINT 6 FLIP: was `test_today_required_microwave_method_gets_no_
+    warning_either`. Real-world observed failure (evaluation, no stored fixture): the
+    model marks "Microwave method: ..." required. The backstop now flags it for
+    review -- the "<word> method:" marker family -- while it still becomes (and
+    stays) a mandatory 4th step, never demoted."""
+    result = _build(_oatmeal_recipe(microwave_role="required"), _OATMEAL_SOURCE)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert result.review_recommended is True
+    assert any(
+        w.lower().startswith('step "microwave method') and "flagged for review" in w
+        for w in result.warnings
+    )
+    assert all(n.tip is None for n in result.graph.nodes)

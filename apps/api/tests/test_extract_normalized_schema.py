@@ -69,11 +69,14 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v3() -> None:
-    """CP2-B's final commit switched production extraction to v3, now that
-    `graph.py` honors `depends_on_steps` and step roles."""
-    assert normalize._PROMPT_PATH.name == "v3.md"
-    assert "extraction prompt (v3)" in normalize.load_prompt()
+def test_production_extraction_uses_prompt_v4() -> None:
+    """P0 #0 (§10 step 7) switched production extraction to v4, which adds the
+    borrowed-optional-follow-on, per-unit-duration, and holding-limit rules that
+    `graph.py`'s verification alone can't teach the model. v3 is kept on disk (a
+    prior prompt version stays reproducible), just no longer the production path."""
+    assert normalize._PROMPT_PATH.name == "v4.md"
+    assert "extraction prompt (v4)" in normalize.load_prompt()
+    assert (PROMPTS_DIR / "v3.md").exists()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:
@@ -100,3 +103,43 @@ def test_prompt_v3_examples_use_none_of_the_evaluated_recipes() -> None:
     v3 = (PROMPTS_DIR / "v3.md").read_text(encoding="utf-8").lower()
     for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
         assert word not in v3
+
+
+def test_prompt_v4_schema_carries_the_cp2_fields() -> None:
+    v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v4, NormalizedRecipe)
+    for field in ("depends_on_steps", "role", "role_cue", "attach_to_step"):
+        assert f'"{field}"' in rendered
+
+
+def test_prompt_v4_instructs_the_cp2_semantics() -> None:
+    v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v4)" in v4
+    assert "## `depends_on_steps`" in v4
+    assert "## Optional, conditional and alternative instructions" in v4
+    assert "Never drop one" in v4
+    assert "whether the **cook** has to be present" in v4
+    assert "## `depends_on_previous`" not in v4
+
+
+def test_prompt_v4_instructs_the_p0_rules() -> None:
+    """§10 step 7: prompt v4 adds exactly the three rules §6 item 3 specifies --
+    the borrowed-optional-follow-on attach rule, the per-unit duration rule, and
+    the holding-limit rule -- on top of v3's unchanged content."""
+    v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8")
+    assert "only matters" in v4
+    assert "earlier instruction was optional" in v4
+    assert "attach_to_step` to **that earlier" in v4
+    assert "optional instruction's position**" in v4
+    assert "per side, per batch, or per piece" in v4
+    assert "whole step's total time" in v4
+    assert "duration_stated=false" in v4
+    assert "holding limit" in v4
+
+
+def test_prompt_v4_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3 (§6: "no Pancakes/Oatmeal/skillet words") -- the new
+    rules' own examples must not be tuned on the owner's evaluated evidence either."""
+    v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v4
