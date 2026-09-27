@@ -360,6 +360,207 @@ def _infer_kind(text: str, attention: Attention) -> NodeKind:
     return "active"
 
 
+_NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+"""Transcripts say "five minutes" as often as "5 minutes" (§4)."""
+
+_VULGAR_FRACTION_MINUTES = {"¼": 0.25, "½": 0.5, "¾": 0.75}
+
+_DURATION_UNIT_SECONDS = ("sec", "secs", "second", "seconds")
+_DURATION_UNIT_MINUTES = ("min", "mins", "minute", "minutes")
+_DURATION_UNIT_HOURS = ("hr", "hrs", "hour", "hours")
+
+_CEILING_PHRASES = ("up to", "at most", "no more than")
+"""§4: a ceiling on how long something may sit, never a step's own duration."""
+
+_PER_SIDE_MARKERS = ("per side", "each side", "a side")
+_PER_UNIT_MARKERS = ("per batch", "each batch", "per piece", "in batches")
+"""§4: per-unit qualifiers. A per-*side* number is doubled (both sides); the other
+per-unit phrasings only floor the estimate at the single-unit number -- there's no
+batch/piece count to multiply by, so prompt v4 rule (b) is what actually fixes the
+number. This is a safety net, not the correction."""
+
+_DURATION_NUMBER_RE = r"(?:\d+(?:\.\d+)?|[¼½¾]|" + "|".join(_NUMBER_WORDS) + ")"
+_DURATION_UNIT_RE = "|".join(
+    _DURATION_UNIT_SECONDS + _DURATION_UNIT_MINUTES + _DURATION_UNIT_HOURS
+)
+_DURATION_CEILING_RE = "|".join(_CEILING_PHRASES)
+_DURATION_EXPR_RE = re.compile(
+    rf"(?:(?P<ceiling>{_DURATION_CEILING_RE})\s+)?"
+    rf"(?P<a>{_DURATION_NUMBER_RE})"
+    rf"(?:\s*(?:-|[{_RANGE_DASHES}]|to)\s*(?P<b>{_DURATION_NUMBER_RE}))?"
+    rf"\s*(?P<unit>{_DURATION_UNIT_RE})\b",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class _DurationExpr:
+    """One duration-shaped phrase found in a step's own text (§4), in minutes."""
+
+    low_min: float
+    high_min: float
+    ceiling: bool
+    """"Up to N" / "at most N" / "no more than N": a holding limit, never a typical
+    duration and never grounds a stated claim on its own."""
+
+
+def _duration_number(token: str) -> float:
+    if token in _VULGAR_FRACTION_MINUTES:
+        return _VULGAR_FRACTION_MINUTES[token]
+    lowered = token.lower()
+    if lowered in _NUMBER_WORDS:
+        return float(_NUMBER_WORDS[lowered])
+    return float(token)
+
+
+def _duration_unit_factor(unit: str) -> float:
+    lowered = unit.lower()
+    if lowered in _DURATION_UNIT_SECONDS:
+        return 1 / 60
+    if lowered in _DURATION_UNIT_HOURS:
+        return 60.0
+    return 1.0
+
+
+def _duration_expressions(text: str) -> list[_DurationExpr]:
+    """Parse duration-shaped phrases out of `text` (§4).
+
+    Pure and ungrounded -- callers cross-check each match's own substring against
+    the corpus, the same independent-verification pattern as every other cue in
+    this module.
+    """
+    exprs: list[_DurationExpr] = []
+    for match in _DURATION_EXPR_RE.finditer(text):
+        factor = _duration_unit_factor(match.group("unit"))
+        a = _duration_number(match.group("a")) * factor
+        b_token = match.group("b")
+        b = _duration_number(b_token) * factor if b_token else a
+        low, high = (a, b) if a <= b else (b, a)
+        ceiling = bool(match.group("ceiling"))
+        exprs.append(_DurationExpr(low_min=low, high_min=high, ceiling=ceiling))
+    return exprs
+
+
+def _grounded_duration_expressions(text: str, corpus: str) -> list[_DurationExpr]:
+    """`_duration_expressions`, keeping only matches grounded in the raw corpus."""
+    matches = list(_DURATION_EXPR_RE.finditer(text))
+    exprs = _duration_expressions(text)
+    return [
+        expr
+        for match, expr in zip(matches, exprs, strict=True)
+        if match.group(0).strip().lower() in corpus
+    ]
+
+
+def _format_duration(expr: _DurationExpr) -> str:
+    if expr.low_min == expr.high_min:
+        return f"{expr.low_min:g} min"
+    return f"{expr.low_min:g}-{expr.high_min:g} min"
+
+
+def _per_unit_floor_multiplier(text: str) -> float | None:
+    lowered = text.lower()
+    if any(marker in lowered for marker in _PER_SIDE_MARKERS):
+        return 2.0
+    if any(marker in lowered for marker in _PER_UNIT_MARKERS):
+        return 1.0
+    return None
+
+
+def _verify_duration(
+    step: NormalizedStep, corpus: str
+) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
+    """§4: independently verify a step's duration claim against its own text.
+
+    Returns `(min, typical, max, stated, warnings, review)`. `stated` is the
+    VERIFIED stated-ness that `_resolve_duration`'s window-host clamp must act on
+    next -- not necessarily what the model claimed. A `None` number means "no
+    opinion"; the caller (feeding this into `_resolve_duration`) falls back to the
+    model's own number, or the deterministic default when none exists at all.
+
+    Not yet wired into `build_graph` (§10 step 3) -- pure and independently
+    tested first, per the approved plan.
+    """
+    warnings: list[str] = []
+    review = False
+    text = step.text
+
+    grounded = _grounded_duration_expressions(text, corpus)
+    plain = [expr for expr in grounded if not expr.ceiling]
+    ceilings = [expr for expr in grounded if expr.ceiling]
+
+    dmin, dtyp, dmax, stated = (
+        step.duration_min,
+        step.duration_typical_min,
+        step.duration_max,
+        step.duration_stated,
+    )
+
+    if len(plain) == 1:
+        expr = plain[0]
+        new_typical = (
+            min(max(dtyp, expr.low_min), expr.high_min) if dtyp is not None else expr.low_min
+        )
+        if new_typical != dtyp:
+            warnings.append(
+                f'Step "{text[:60]}..." states {_format_duration(expr)}; typical '
+                f"duration corrected to {new_typical:g} min to match the text."
+            )
+        dtyp = new_typical
+        dmin = min(dmin, expr.low_min) if dmin is not None else expr.low_min
+        dmax = max(dmax, expr.high_min) if dmax is not None else expr.high_min
+        stated = True
+    elif not plain and stated and not ceilings:
+        warnings.append(
+            f'Step "{text[:60]}..." claims a stated duration, but no duration phrase '
+            "was found in its own text; treated as an estimate, not a stated fact."
+        )
+        stated = False
+    elif not plain and stated and ceilings:
+        # A ceiling phrase alone can't ground a "stated" claim either (§4): it's a
+        # holding limit, not how long the step itself takes.
+        warnings.append(
+            f'Step "{text[:60]}..." claims a stated duration, but its text only '
+            'gives a holding limit ("up to"), not a duration; treated as an estimate.'
+        )
+        stated = False
+    elif len(plain) > 1 and dtyp is not None and not any(
+        expr.low_min <= dtyp <= expr.high_min for expr in plain
+    ):
+        warnings.append(
+            f'Step "{text[:60]}..." names more than one duration; the typical '
+            "duration matches none of them, so it was left unchanged."
+        )
+
+    for ceiling in ceilings:
+        if dmax is not None and dmax > ceiling.high_min:
+            dmax = ceiling.high_min
+            if dtyp is not None and dtyp > dmax:
+                dtyp = dmax
+            review = True
+
+    multiplier = _per_unit_floor_multiplier(text)
+    if multiplier is not None and plain:
+        base = min(expr.low_min for expr in plain)
+        floor = base * multiplier
+        if dtyp is None or dtyp < floor:
+            dtyp = floor
+        if dmax is None or dmax < dtyp:
+            dmax = dtyp
+        stated = False
+        review = True
+        warnings.append(
+            f'Step "{text[:60]}..." gives a per-unit time ({base:g} min); the whole '
+            f"step must take at least {floor:g} min across every unit, so the "
+            "estimate was raised and flagged for review."
+        )
+
+    return dmin, dtyp, dmax, stated, warnings, review
+
+
 def _resolve_duration(
     step: NormalizedStep, kind: NodeKind, attention: Attention
 ) -> tuple[int, int, int, ProvenanceSource, bool]:

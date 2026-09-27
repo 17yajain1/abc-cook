@@ -18,10 +18,12 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import (
     GraphBuildResult,
     _clean_cue,
+    _duration_expressions,
     _is_staple,
     _label,
     _parse_qty,
     _produced_labels,
+    _verify_duration,
     _verify_independence,
     build_graph,
 )
@@ -259,6 +261,142 @@ def test_missing_duration_falls_back_to_deterministic_default() -> None:
     node = result.graph.nodes[0]
     assert node.duration_min <= node.duration_typical <= node.duration_max
     assert result.node_decisions[0].duration_source == "defaulted"
+
+
+# ---------------------------------------------------------------------------
+# P0 #0 §4/§6 item 1 -- duration verification against the step's own text.
+# `_duration_expressions` and `_verify_duration` are pure and, per §10 step 3,
+# NOT YET WIRED into `build_graph` -- these test the functions directly.
+# ---------------------------------------------------------------------------
+
+def _expr(text: str) -> tuple[float, float, bool]:
+    (expr,) = _duration_expressions(text)
+    return expr.low_min, expr.high_min, expr.ceiling
+
+
+def test_duration_expressions_parses_a_plain_value() -> None:
+    assert _expr("Simmer for 5 minutes.") == (5, 5, False)
+
+
+def test_duration_expressions_parses_a_range() -> None:
+    assert _expr("Bake for 8-10 minutes.") == (8, 10, False)
+
+
+def test_duration_expressions_parses_an_en_dash_range() -> None:
+    assert _expr(f"Marinate for 4{chr(0x2013)}5 hours.") == (240, 300, False)
+
+
+def test_duration_expressions_parses_number_words() -> None:
+    assert _expr("Cook for five minutes.") == (5, 5, False)
+
+
+def test_duration_expressions_converts_seconds_and_hours() -> None:
+    assert _expr("Rest for 30 seconds.") == (0.5, 0.5, False)
+    assert _expr("Prove for 1 hour.") == (60, 60, False)
+
+
+def test_duration_expressions_flags_a_ceiling() -> None:
+    assert _expr("Keeps for up to 45 minutes.") == (45, 45, True)
+
+
+def test_duration_expressions_does_not_match_a_temperature() -> None:
+    assert _duration_expressions("Preheat the oven to 200 degrees F.") == []
+
+
+def _verify(
+    text: str, corpus: str | None = None, **duration_kwargs: object
+) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
+    step = _step(text=text, **duration_kwargs)  # type: ignore[arg-type]
+    return _verify_duration(step, (corpus if corpus is not None else text).lower())
+
+
+def test_verify_duration_corrects_a_mismatch_against_the_text() -> None:
+    """F15: the model says 4; the text says 5."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Simmer for 5 minutes, stirring occasionally.",
+        duration_min=4, duration_typical_min=4, duration_max=4, duration_stated=True,
+    )
+    assert dtyp == 5
+    assert stated is True
+    assert any("corrected" in w for w in warnings)
+
+
+def test_verify_duration_clamps_typical_into_a_stated_range() -> None:
+    _dmin, dtyp, _dmax, _stated, warnings, _review = _verify(
+        "Bake for 8-10 minutes.",
+        duration_min=8, duration_typical_min=12, duration_max=15, duration_stated=True,
+    )
+    assert dtyp == 10
+    assert any("corrected" in w for w in warnings)
+
+
+def test_verify_duration_leaves_a_typical_already_inside_a_range_unchanged() -> None:
+    dmin, dtyp, dmax, _stated, warnings, _review = _verify(
+        "Marinate the chicken for 4-5 hours.",
+        duration_min=240, duration_typical_min=270, duration_max=300, duration_stated=True,
+    )
+    assert (dmin, dtyp, dmax) == (240, 270, 300)
+    assert not warnings
+
+
+def test_verify_duration_ceiling_downgrades_a_stated_claim_and_caps_max() -> None:
+    _dmin, _dtyp, dmax, stated, warnings, _review = _verify(
+        "Simmer for up to 10 minutes.",
+        duration_min=10, duration_typical_min=10, duration_max=12, duration_stated=True,
+    )
+    assert stated is False
+    assert dmax is not None
+    assert dmax <= 10
+    assert any("holding limit" in w for w in warnings)
+
+
+def test_verify_duration_ungrounded_stated_claim_becomes_an_estimate() -> None:
+    _dmin, _dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook until the sauce thickens.",
+        duration_min=10, duration_typical_min=10, duration_max=20, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_per_side_floors_a_batched_undercount() -> None:
+    """The Pancakes case: "about 3 minutes per side ... in batches" given 2/3/5."""
+    _dmin, dtyp, dmax, stated, _warnings, review = _verify(
+        "Pour batter and cook in batches, about 3 minutes per side, until golden.",
+        duration_min=2, duration_typical_min=3, duration_max=5, duration_stated=True,
+    )
+    assert dtyp is not None
+    assert dtyp >= 6
+    assert dmax is not None
+    assert dmax >= dtyp
+    assert stated is False
+    assert review is True
+
+
+def test_verify_duration_per_side_leaves_a_sufficient_model_estimate_unchanged() -> None:
+    """The donut golden fixture's convention: "about a minute a side" -> 10/14/20 is
+    already the whole-step total and must not be shrunk."""
+    _dmin, dtyp, dmax, _stated, _warnings, _review = _verify(
+        "Fry in batches, about a minute a side.",
+        duration_min=10, duration_typical_min=14, duration_max=20, duration_stated=False,
+    )
+    assert (dtyp, dmax) == (14, 20)
+
+
+def test_verify_duration_multiple_plain_durations_left_unchanged_unless_no_match() -> None:
+    matching = _verify(
+        "Fry for 2 minutes, then simmer for 10 minutes.",
+        duration_min=2, duration_typical_min=2, duration_max=2, duration_stated=True,
+    )
+    assert matching[1] == 2
+    assert not matching[4]
+
+    no_match = _verify(
+        "Fry for 2 minutes, then simmer for 10 minutes.",
+        duration_min=99, duration_typical_min=99, duration_max=99, duration_stated=True,
+    )
+    assert no_match[1] == 99  # left unchanged
+    assert any("left unchanged" in w for w in no_match[4])
 
 
 # ---------------------------------------------------------------------------
