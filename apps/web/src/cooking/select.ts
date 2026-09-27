@@ -418,6 +418,28 @@ export interface StepContext {
   stageLabel: string
 }
 
+export interface StepPosition {
+  /** Live count of steps that have left `pending`/`deferred` (i.e. `running` or
+   * `done`), plus 1 — never a cumulative history counter (P1 #6 orientation/recovery
+   * plan §C1, owner 2026-09-27). Rises when a step is started (hands-on `markDone` or
+   * `startNode`); completing an already-running timer (`markDone` on a running node, or
+   * `acknowledge`) leaves it unchanged, since those nodes were already counted at
+   * `running`. Undo restores exactly the previous count. */
+  n: number
+  total: number
+}
+
+/** `stepPosition(model, session)` (P1 #6 plan §C1/E2): the live "Step n of N" the
+ * `task`/`handsoff_pending` screens show. Deliberately not `stepContext`'s order index
+ * (below) — that goes backwards on a skip, which the owner rejected. */
+export function stepPosition(model: CookingModel, session: CookingSession): StepPosition {
+  const started = model.order.filter((id) => {
+    const s = session.nodes[id].state
+    return s === 'running' || s === 'done'
+  }).length
+  return { n: started + 1, total: model.order.length }
+}
+
 /** `i of N` plus the stage label M3.4 shows for `nodeId` in step mode (plan §F11). */
 export function stepContext(model: CookingModel, nodeId: string): StepContext {
   const info = model.nodes[nodeId]

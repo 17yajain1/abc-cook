@@ -210,8 +210,9 @@ Split into:
   a hands-off node needs before its timer exists — auto-starting one would hide a real
   instruction like "rinse and soak"), the handover screen, the what's-cooking sheet, the
   whisper, wake lock, and `useNow`. `Start Cooking` becomes functional.
-- **M3.5 — Session polish.** The undo affordance (M3.3 ships the engine capability;
-  M3.5 gives it a control), `Continue cooking` on the Plan view, and (only if a real
+- **M3.5 — Session polish.** The undo affordance (M3.3 shipped the engine capability;
+  **the control shipped in P1 #6** — the "Back to ‹step›" link, `docs/DESIGN_SYSTEM.md`
+  § *Resolved in P1 #6*), `Continue cooking` on the Plan view, and (only if a real
   dinner asks for it) `StageCard` active/complete marks.
 
 **M3.2b** (source-section stages, in-stage waits) is deferred and unscoped independently
