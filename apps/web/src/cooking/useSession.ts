@@ -24,6 +24,7 @@ export interface UseSessionResult {
   session: CookingSession | null
   open(model: CookingModel, planKey: string): OpenResult
   start(model: CookingModel, planKey: string, recipeTitle?: string): DispatchResult
+  replace(model: CookingModel, planKey: string, expectedPlanKey: string, recipeTitle?: string): DispatchResult
   startNode(model: CookingModel, nodeId: string): DispatchResult
   markDone(model: CookingModel, nodeId: string): DispatchResult
   acknowledge(model: CookingModel): DispatchResult
@@ -45,6 +46,11 @@ export function useSession(store: SessionStore): UseSessionResult {
   const start = useCallback(
     (model: CookingModel, planKey: string, recipeTitle?: string) =>
       dispatch({ type: 'start', model, planKey, now: Date.now(), recipeTitle }),
+    [dispatch],
+  )
+  const replace = useCallback(
+    (model: CookingModel, planKey: string, expectedPlanKey: string, recipeTitle?: string) =>
+      dispatch({ type: 'replace', model, planKey, expectedPlanKey, now: Date.now(), recipeTitle }),
     [dispatch],
   )
   const startNode = useCallback(
@@ -73,5 +79,5 @@ export function useSession(store: SessionStore): UseSessionResult {
   const touch = useCallback(() => dispatch({ type: 'touch', now: Date.now() }), [dispatch])
   const end = useCallback(() => dispatch({ type: 'end', now: Date.now() }), [dispatch])
 
-  return { session, open, start, startNode, markDone, acknowledge, skip, extend, undo, leave, resume, touch, end }
+  return { session, open, start, replace, startNode, markDone, acknowledge, skip, extend, undo, leave, resume, touch, end }
 }

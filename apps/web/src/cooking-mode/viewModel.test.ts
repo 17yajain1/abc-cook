@@ -639,3 +639,47 @@ describe('buildConflictView — canGoTo wiring (CP1b)', () => {
     ])
   })
 })
+
+describe('buildConflictView — action priority by lifecycle state (CP-C)', () => {
+  const ALL_STATES: SessionConflict['state'][] = ['active', 'finished', 'stale', 'unknown']
+  const view = (state: SessionConflict['state'], canGoTo: (planKey: string) => boolean = () => true) =>
+    buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state }, canGoTo)
+
+  it('active: "Go to" leads, "End it and start this" is secondary', () => {
+    expect(view('active').actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
+  })
+
+  it('unknown: treated like active — "Go to" still leads (missing metadata is not evidence of stale/finished)', () => {
+    expect(view('unknown').actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
+  })
+
+  it('stale: "End it and start this" leads, "Go to" is secondary', () => {
+    expect(view('stale').actions.map((a) => a.kind)).toEqual(['endAndStart', 'goTo', 'close'])
+  })
+
+  it('finished: "End it and start this" leads, "Go to" is secondary', () => {
+    expect(view('finished').actions.map((a) => a.kind)).toEqual(['endAndStart', 'goTo', 'close'])
+  })
+
+  it('canGoTo=false collapses to endAndStart-only regardless of state (regression guard, restated from CP1b)', () => {
+    for (const state of ALL_STATES) {
+      expect(view(state, () => false).actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
+    }
+  })
+
+  it('canGoTo=true: priority reorders goTo/endAndStart but never drops either — all three actions present for every state', () => {
+    for (const state of ALL_STATES) {
+      const kinds = view(state).actions.map((a) => a.kind)
+      expect(kinds).toHaveLength(3)
+      expect(kinds).toEqual(expect.arrayContaining(['goTo', 'endAndStart', 'close']))
+    }
+  })
+
+  it('canGoTo=false: priority never introduces goTo for any state — only endAndStart/close are ever present', () => {
+    for (const state of ALL_STATES) {
+      const kinds = view(state, () => false).actions.map((a) => a.kind)
+      expect(kinds).not.toContain('goTo')
+      expect(kinds).toEqual(['endAndStart', 'close'])
+    }
+  })
+})

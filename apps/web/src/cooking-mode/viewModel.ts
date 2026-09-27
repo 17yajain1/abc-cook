@@ -423,12 +423,18 @@ export interface ConflictViewModel {
    * other recipe when possible"). */
   message: string
   /**
-   * Ordered `goTo?, endAndStart, close` (plan decision 1: "allow 'Go to <recipe>' when
-   * that recipe can be resolved... allow 'End it and start this'... retain 'Close'").
-   * `goTo` is present only when `canGoTo(planKey)` says so; `endAndStart`/`close` are
-   * unconditional. `CookingModeScreen` (CP1b) wires each `kind` to real behavior —
-   * `goTo` to `App.tsx`'s navigation, `endAndStart` to `session.end()`, `close` to
-   * `onExit` — this module only decides which actions apply and how they read.
+   * `close` is always last; `goTo` is present only when `canGoTo(planKey)` says so;
+   * `endAndStart`/`close` are unconditional (plan decision 2: never silently drop the
+   * conflict). The first two entries' *order* (i.e. which one is primary —
+   * `CookingModeScreen`'s `ConflictScreen` renders index 0 as the solid primary button)
+   * is CP-C priority, keyed on `conflict.state`: `active`/`unknown` put `goTo` first
+   * (nothing contradicts staying with the still-live session); `stale`/`finished` put
+   * `endAndStart` first (there is nothing live to go back to, so replacing is the more
+   * useful default action) — see `endAndStartLeads` below. Never changes *which*
+   * actions are present, only their order. `CookingModeScreen` (CP1b/CP-B) wires each
+   * `kind` to real behavior — `goTo` to `App.tsx`'s navigation, `endAndStart` to the
+   * staged-replace flow (CP-B), `close` to `onExit` — this module only decides which
+   * actions apply and in what order.
    */
   actions: ConflictAction[]
 }
@@ -456,22 +462,38 @@ const CONFLICT_MESSAGE: Record<SessionConflict['state'], (title: string) => stri
 }
 
 /**
- * `buildConflictView` (CP1a, `canGoTo` added CP1b): the conflict screen's copy and
- * action list, from the `SessionConflict` `engine.open()` reports. Never silently drops
- * the conflict (plan decision 2) — `endAndStart`/`close` are always present regardless
- * of `state`. `canGoTo` defaults to the prefix-only rule (every CP1a call site, and
- * every test that doesn't care about library existence, keeps working unchanged); the
- * real caller (`CookingModeScreen`) passes one backed by the actual `Library`.
+ * CP-C priority: which of `goTo`/`endAndStart` leads, by `conflict.state`. `active` and
+ * `unknown` are treated alike — missing metadata is not evidence of stale/finished, so
+ * `unknown` gets the same "go back to it" default as a confirmed-live session, never
+ * the "replace it" default `stale`/`finished` get.
+ */
+function endAndStartLeads(state: SessionConflict['state']): boolean {
+  return state === 'stale' || state === 'finished'
+}
+
+/**
+ * `buildConflictView` (CP1a, `canGoTo` added CP1b, priority ordering added CP-C): the
+ * conflict screen's copy and action list, from the `SessionConflict` `engine.open()`
+ * reports. Never silently drops the conflict (plan decision 2) — `endAndStart`/`close`
+ * are always present regardless of `state`; `canGoTo=false` never adds `goTo`, only
+ * ever changes whether `goTo` is offered at all, never `endAndStart`/`close`'s
+ * presence. `canGoTo` defaults to the prefix-only rule (every CP1a call site, and every
+ * test that doesn't care about library existence, keeps working unchanged); the real
+ * caller (`CookingModeScreen`) passes one backed by the actual `Library`.
  */
 export function buildConflictView(conflict: SessionConflict, canGoTo: (planKey: string) => boolean = defaultCanGoTo): ConflictViewModel {
   const message =
     conflict.title != null ? CONFLICT_MESSAGE[conflict.state](conflict.title) : 'Another cook is already on.'
 
+  const goTo: ConflictAction = { kind: 'goTo', label: `Go to ${conflict.title ?? 'that recipe'}` }
+  const endAndStart: ConflictAction = { kind: 'endAndStart', label: 'End it and start this' }
+
   const actions: ConflictAction[] = []
   if (canGoTo(conflict.planKey)) {
-    actions.push({ kind: 'goTo', label: `Go to ${conflict.title ?? 'that recipe'}` })
+    actions.push(...(endAndStartLeads(conflict.state) ? [endAndStart, goTo] : [goTo, endAndStart]))
+  } else {
+    actions.push(endAndStart)
   }
-  actions.push({ kind: 'endAndStart', label: 'End it and start this' })
   actions.push({ kind: 'close', label: 'Close' })
 
   return { planKey: conflict.planKey, title: conflict.title, state: conflict.state, message, actions }
