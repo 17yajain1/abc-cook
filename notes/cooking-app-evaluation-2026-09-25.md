@@ -41,6 +41,20 @@ re-import through the real pipeline. See the priorities table (row 2, marked
 done) and the PR #22 closeout note at the end of this file for full detail,
 including the non-blocking observations from the live run.
 
+**Added 2026-09-27: P0 #4 ("cooking-mode reliability: wait screens + wake
+lock," row 4 of "If we can only do 6 things next") implemented, opened as
+PR #23** (branch `feat/p0-4-wait-screens-wake-lock`, commits `82fb297`/
+`0d00d57`, **not yet merged**). Every wait screen now shows a rounded
+time-left line and a wall-clock end time computed from the engine's existing
+`endsAt`; "It's done" no longer requires a doneness cue; "Started" reads
+"I've started it"; the phone's screen now stays on through
+`task`/`handsoff_pending`/`wait`/`handover` (M3.4 CP2 Item 1) and sleeps
+normally elsewhere. Done ahead of #3 by explicit owner choice. See the
+priorities table (row 4, marked PR open) and the PR #23 closeout note at the
+end of this file for full detail, including live device verification of all
+three wait-screen shapes (with cue, without cue, multi-pan) and the
+wake-lock allow-list.
+
 ---
 
 ## Executive Summary
@@ -342,7 +356,7 @@ Ordered by what to do first. Each item has its priority. **No P2 or P3 item made
 | 1 | **P0 — Done** (PR #19 + PR #21, `37d30f3`) | **Removed the "Another cook is already on" dead end.** Names the other recipe, offers "Go to it" and "End it and start this" (the first tap only stages the replacement locally; the second, "Start cooking" tap performs one atomic, guarded write), preserves the existing session if that write fails, and orders the two actions by the blocking session's lifecycle state (`active`/`unknown` → "Go to it" first; `stale`/`finished` → "End it and start this" first) rather than a fixed order or silent expiry. | It completely blocked cooking mode, and every tester who walked away mid-cook would hit it. It was small and contained (engine `open()` + `ConflictScreen`), as predicted. | Verified live in a browser: two-tap staging with zero writes on the first tap, survival of a tab reload before the second tap, a genuine (not mocked) storage-write failure with a successful retry, and all four lifecycle states plus `canGoTo=false`. Automated: 499/499, typecheck/lint clean. See the PR #21 closeout note below. |
 | 2 | **P0 — Done** (PR #22, `d7e304d`) | **Stopped extraction from turning optional, conditional or alternative instructions into required steps**, and duration is now checked against the recipe text. "If you plan…", "keep warm up to…", "Microwave method:" become notes on a step, not steps, including a follow-on with no marker of its own that only applies because an earlier instruction was optional. Frying repeated in batches ("about 3 minutes per side… in batches") is now treated as a whole-step estimate, not one unit. | It broke 2 of 3 recipes and created the wrong headline time (pancakes 55–70 min). Cooking mode then *enforces* the mistake. Every later fix sits on top of it. | Verified offline (514 tests; pizza and dal-makhni replays byte-identical to `main`) and live: one real Pancakes re-import through the production pipeline confirmed both optional instructions became notes (not nodes), the frying duration was floored correctly, no oven-wait nodes appeared, and the header inflation is gone (14–24 min vs. the previous 55–70). See the PR #22 closeout note below. |
 | 3 | **P0** | **Diagnose and fix the missing parallelism**, pancakes first. Capture the graph JSON and check preheat's `attention` and its incoming edges. Then do the burger's batter and breadcrumbs vs the 26-minute chill. Report the cause before changing any expected plan. **Still open as of the 2026-09-26 CP2-B closeout** — that validation confirmed the tested extraction/graph change is *safe*, not that any recipe's graph captures the *most* parallelism its source supports. Different question; not answered by it. | The USP has appeared zero times in three recipes. Pancakes are the smallest possible test (one pan, one batter). If they can't show "heat the pan while you mix", nothing will. | Pancakes, then burger |
-| 4 | **P0** | **Cooking-mode reliability: wait screens + wake lock.** Every wait shows time left and an end clock, "It's done" is always available, "Started" becomes something like "I've started it", and the screen stays on (the existing M3.4 CP2 plan). | These are the worst failures during an actual cook. The data (`endsAt`) already exists and CP2 is already scoped, so this is mostly UI. | Oatmeal (short waits), burger (fridge chill), real phone |
+| 4 | **P0 — PR open** (PR #23, not yet merged) | **Cooking-mode reliability: wait screens + wake lock.** Every wait shows time left and an end clock, "It's done" is always available, "Started" becomes "I've started it", and the screen stays on (M3.4 CP2 Item 1). | These are the worst failures during an actual cook. The data (`endsAt`) already existed and CP2 was already scoped, so this was mostly UI. | Verified live on an Android phone over a secure origin (`adb reverse`): Kadai Paneer (with-cue wait), Chicken Biryani (no-cue wait), the synthetic two-pan "Bowl" recipe (multi-pan wait), and wake-lock hold/release across screen types. Automated: 517/517, lint clean. Oatmeal/burger not re-verified this round — see the PR #23 closeout note. |
 | 5 | **P1** | **Readable plan:** Plan order = cooking order, complete step labels (no "If you plan", "Add the soaked mashed"), clean titles ("Buttermilk pancakes", not the YouTube title), servings vs yield. | Every screen before cooking starts depends on these. ReciMe shows that clean titles and plain labels are the minimum users expect. | All three recipes |
 | 6 | **P1** | **Orientation and recovery in cooking mode:** "step n of N" plus a next-step preview, undo after "Done", finishing goes to the library (not back to the start screen), one start screen. | This lets the user trust they won't miss a step, and recover when they tap the wrong thing with wet hands. | Real cook on a phone, one parallel recipe |
 
@@ -515,17 +529,62 @@ later):**
   repair-then-degrade path; the final graph still validated and correctly
   kept both notes as notes.
 
+## PR #23 (open) — P0 #4 Implemented (2026-09-27)
+
+P0 #4 ("If we can only do 6 things next," row 4) — cooking-mode reliability:
+wait screens show no time and can't be ended early without a doneness cue
+(F1, F2), and the screen sleeps mid-cook (F16) — is implemented and opened as
+**PR #23** (branch `feat/p0-4-wait-screens-wake-lock`, commits `82fb297`
+wait screens + `0d00d57` wake lock). **Not yet merged.** Done ahead of #3 by
+explicit owner choice (P0 #3, missing parallelism, stays open — see below).
+
+**What changed:**
+- Wait screens (`wait`/`long_wait`) show a rounded time-left line ("About N
+  min left" / "Less than a minute left" under a minute — `Math.ceil`, so the
+  number never ticks up as time passes) and a wall-clock "Ready around ..."
+  end time, both computed from the engine's existing `endsAt`/`now` — no
+  scheduler or engine change, per `CLAUDE.md`'s renderer rule.
+- "It's done" is unconditional on a single-subject wait (F2) — it no longer
+  requires a doneness cue; the engine already allowed `markDone` on any
+  running hands-off node at any time, only the view was hiding the button.
+  The multi-pan wait (no single subject) lists each pan's own end clock
+  instead of a single aggregate time, and still has no primary action.
+- "Started" is renamed "I've started it" (F9).
+- M3.4 CP2 Item 1 (wake lock, F16): holds `navigator.wakeLock` while Cooking
+  Mode shows `task`, `handsoff_pending`, `wait` or `handover`; releases
+  everywhere else, including `long_wait` and `sitting_break` (owner decision:
+  those states mean the cook has walked away). The CP2 plan's hook-placement
+  instruction was corrected against current `main`, which now has two early
+  returns before the resolved view that didn't exist when that plan was
+  written.
+
+**Verification:**
+- Automated: 517/517 tests passing, typecheck/lint clean.
+- Live, on an Android phone over a secure origin (`adb reverse` to
+  `localhost:5173` — a LAN-IP origin has no `navigator.wakeLock`): the
+  with-cue wait (Kadai Paneer's "Cook tomato base"), the no-cue wait
+  (Chicken Biryani's "Soak rice"), and the multi-pan wait (the synthetic
+  two-pan "Spiced Lentil and Rice Bowl" recipe) all showed the correct
+  time-left/end-clock/primary behavior. Wake lock held through `task`/`wait`
+  and slept normally on `entry`/`sitting_break`/`done`.
+- **Oatmeal and Burger — the two recipes this evaluation's own F1/F2/F16
+  findings were based on — were not re-verified this round.** They exist
+  only in the owner's browser localStorage, not as repo fixtures, and
+  weren't reachable from the secure-origin device used for this PR (a
+  different phone/Chrome profile than wherever they were originally saved).
+  Worth a follow-up pass once merged.
+
 ## Current Priority (2026-09-27)
 
-With P0 #1 and P0 #0 (#2) done (above), the next open item in the "If we can
+With P0 #1, P0 #0 (#2) done, and P0 #4 (cooking-mode reliability) implemented
+and awaiting merge as PR #23 (above), the next open item in the "If we can
 only do 6 things next" table is **#3 — the missing parallelism** (pancakes
-first). Nothing in the P0 #0 work touched the scheduler or added/changed
-parallelism — it is confined to extraction verification (`graph.py`) and the
-extraction prompt — so #3 remains exactly where the CP2-B closeout
-(2026-09-26) left it: that validation confirmed the tested extraction/graph
-change is safe, not that any recipe's graph captures the most parallelism
-its source actually supports, so it stays open. #4 (wait screens + wake
-lock) is unstarted.
+first), deferred by explicit owner choice while #4 went first. Nothing in
+P0 #4's work touched the scheduler or added/changed parallelism — it is
+confined to `cooking-mode/` (the view layer and the new wake-lock module) —
+so #3 remains exactly where the CP2-B closeout (2026-09-26) left it: that
+validation confirmed the tested extraction/graph change is safe, not that any
+recipe's graph captures the most parallelism its source actually supports.
 
-Recommended order, per the existing table with #1 and #2 now done: **#3 →
-#4**, then the P1 items (#5 readable plan, #6 orientation/recovery).
+Recommended order from here: **#3**, then the P1 items (#5 readable plan, #6
+orientation/recovery).
