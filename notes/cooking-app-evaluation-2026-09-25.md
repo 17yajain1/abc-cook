@@ -589,13 +589,15 @@ recipe's graph captures the most parallelism its source actually supports.
 Recommended order from here: **#3**, then the P1 items (#5 readable plan, #6
 orientation/recovery).
 
-## P1 #6 Implemented (2026-09-28)
+## P1 #6 Resolved and merged (2026-09-28)
 
 P1 #6 ("Orientation and recovery in cooking mode," row 6 of the agreed top six,
 F10/F11/F12) — no sense of position in the cook, no recovery from a mis-tap,
-finishing loops back to the start, two start screens — is implemented on
-branch `feat/p1-6-orientation-recovery` (not yet opened as a PR), per
-`notes/p1-6-orientation-recovery-plan.md`. The render checkpoint (§E) was
+finishing loops back to the start, two start screens — is resolved and merged
+to `main`. Merged as **PR #24** (branch `feat/p1-6-orientation-recovery`,
+commit `38dd46d`, merge commit `9b78dc7`), per
+`notes/p1-6-orientation-recovery-plan.md`. Builds on the already-merged
+**PR #23** (P0 #4, cooking-mode reliability). The render checkpoint (§E) was
 shown and approved before steps 6–8 (App.tsx wiring, docs) proceeded.
 
 **What changed:**
