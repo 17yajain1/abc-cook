@@ -522,13 +522,30 @@ def _duration_expressions(text: str) -> list[_DurationExpr]:
 
 
 def _grounded_duration_expressions(text: str, corpus: str) -> list[_DurationExpr]:
-    """`_duration_expressions`, keeping only matches grounded in the raw corpus."""
-    matches = list(_DURATION_EXPR_RE.finditer(text))
-    exprs = _duration_expressions(text)
+    """`_duration_expressions`, keeping only candidates grounded in the raw corpus.
+
+    Grounded by PARSED VALUE, not literal substring: the corpus is parsed with the
+    same function, so an equivalent spelling ("30mins" vs "30 minutes") already
+    parses identically and needs no separate normalization. A candidate is
+    grounded when the corpus contains a duration-shaped phrase whose interval
+    CONTAINS the candidate's -- a single value grounds against a containing
+    corpus range ("cook for 9 minutes" against "cook for 8-10 minutes"), and a
+    range only grounds against an at-least-as-wide one. Ceiling-ness must match
+    on both sides: a plain claim is never grounded by a corpus "up to N" (a
+    holding limit, never a stated duration -- see the ceiling rule below), and a
+    ceiling claim is never grounded by a corpus plain value/range.
+    """
+    candidates = _duration_expressions(text)
+    corpus_exprs = _duration_expressions(corpus)
     return [
-        expr
-        for match, expr in zip(matches, exprs, strict=True)
-        if match.group(0).strip().lower() in corpus
+        candidate
+        for candidate in candidates
+        if any(
+            corpus_expr.ceiling == candidate.ceiling
+            and corpus_expr.low_min <= candidate.low_min
+            and candidate.high_min <= corpus_expr.high_min
+            for corpus_expr in corpus_exprs
+        )
     ]
 
 

@@ -400,6 +400,69 @@ def test_verify_duration_multiple_plain_durations_left_unchanged_unless_no_match
 
 
 # ---------------------------------------------------------------------------
+# Duration-grounding root-cause fix (dal-makhni finding, investigated and
+# approved 2026-09-27): `_grounded_duration_expressions` grounds by PARSED
+# VALUE against the corpus (parsed by the same `_duration_expressions`), not by
+# literal substring -- so an equivalent spelling, or a single value inside a
+# stated range, is grounded without any new normalization table or fuzzy match.
+# ---------------------------------------------------------------------------
+
+
+def test_verify_duration_grounds_across_an_equivalent_spelling() -> None:
+    """The dal-makhni root cause: step.text says "30 minutes"; the real source
+    only ever spells it "30mins" (no space). The parsed value must still ground
+    it -- `_duration_expressions` already parses both to the same value; only
+    the grounding comparison needed to stop requiring a literal substring."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook the dal for 30 minutes.",
+        corpus="cook the dal for 30mins. serve hot.",
+        duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
+    )
+    assert dtyp == 30
+    assert stated is True
+    assert not warnings
+
+
+def test_verify_duration_single_value_grounds_against_a_containing_corpus_range() -> None:
+    """A single value in the step must ground against a CONTAINING range in the
+    corpus, not require identical boundaries on both sides."""
+    _dmin, dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook for 9 minutes.",
+        corpus="cook for 8-10 minutes, stirring occasionally.",
+        duration_min=8, duration_typical_min=9, duration_max=10, duration_stated=True,
+    )
+    assert dtyp == 9
+    assert stated is True
+    assert not warnings
+
+
+def test_verify_duration_stays_ungrounded_when_the_value_is_genuinely_absent() -> None:
+    """Negative control: a value that never appears in the corpus -- under any
+    spelling, and not contained in any stated range -- still gets downgraded,
+    even though the corpus contains OTHER, unrelated duration phrases."""
+    _dmin, _dtyp, _dmax, stated, warnings, _review = _verify(
+        "Cook the dal for 30 minutes.",
+        corpus="cook the rice for 20 minutes. serve hot.",
+        duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_plain_claim_not_grounded_by_a_corpus_ceiling_of_the_same_value() -> None:
+    """A corpus "up to N" is a holding limit, never a stated duration (§4) -- it
+    must not ground an unrelated PLAIN claim of the same N, even though the
+    value matches. Ceiling-ness must agree on both sides of the grounding check,
+    not just the number."""
+    _dmin, _dtyp, _dmax, stated, _warnings, _review = _verify(
+        "Keep warm for 45 minutes.",
+        corpus="keep warm for up to 45 minutes.",
+        duration_min=40, duration_typical_min=45, duration_max=50, duration_stated=True,
+    )
+    assert stated is False
+
+
+# ---------------------------------------------------------------------------
 # LOCKED DECISION 7 -- independence / parallelism safety test.
 # ---------------------------------------------------------------------------
 
@@ -1003,6 +1066,27 @@ def test_characterization_dal_makhni_legacy_edges_unchanged() -> None:
     assert all(step.depends_on_steps is None for step in recipe.steps)  # legacy input
     assert sum(not step.depends_on_previous for step in recipe.steps) == 3
     assert _legacy_edges(recipe, source_text) == _DAL_MAKHNI_EDGES
+
+
+def test_dal_makhni_cook_step_duration_is_grounded_despite_the_spelling_mismatch() -> None:
+    """Regression for the duration-grounding root cause found while validating P0 #0
+    against real captured data: "Cook the dal for 30 minutes." (step.text) is only
+    ever spelled "30mins" (no space) in the actual source. Before the grounding fix,
+    this was wrongly downgraded to inferred/clamped; it must come back to the
+    pre-P0-duration-verification numbers (28/30/32, extracted, no spurious warnings)."""
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+    node = next(n for n in result.graph.nodes if n.id == "step_cook_the_dal_for_30_minutes")
+    decision = next(d for d in result.node_decisions if d.node_id == node.id)
+    assert (node.duration_min, node.duration_typical, node.duration_max) == (28, 30, 32)
+    assert decision.duration_source == "extracted"
+    assert not any("Cook the dal for 30" in w for w in result.warnings)
 
 
 # ---------------------------------------------------------------------------
