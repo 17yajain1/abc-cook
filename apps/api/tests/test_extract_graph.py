@@ -1613,3 +1613,206 @@ def test_none_versus_empty_claim_regression() -> None:
     on_one_burner = build([], station="burner")
     assert _deps_by_label(on_one_burner)["Whisk the dressing."] == ["Toast the nuts."]
     assert on_one_burner.node_decisions[1].depends_on_previous_source == "inferred"
+
+
+# ---------------------------------------------------------------------------
+# P0 #0 characterization (notes/cooking-app-evaluation-2026-09-25.md, row #2;
+# plan doc "P0 #0: optional / conditional / alternative instructions, and
+# durations checked against the recipe text", §7 "characterization tests").
+#
+# These lock in TODAY's behaviour on Pancakes-shaped and Oatmeal-shaped
+# recipes -- including the parts that are WRONG -- so the diff is visible at
+# the §10 checkpoints once duration verification (step 4) and the borrowed-cue
+# grounding constraint (step 5) land. Do not "fix" an assertion here quietly:
+# a flip is expected, and must be reported at the checkpoint that causes it.
+# ---------------------------------------------------------------------------
+
+_PANCAKES_SOURCE = (
+    "Whisk the batter until just combined. Heat a griddle over medium heat. "
+    "If you plan to keep cooked pancakes warm, preheat the oven to 200 degrees F. "
+    "Pour batter onto the griddle and cook in batches, about 3 minutes per side, "
+    "until bubbles form and edges look dry. "
+    "As you finish cooking the batches, transfer them to a baking sheet and keep "
+    "them in a warm 200 degree F oven, loosely covered with foil, for up to 45 "
+    "minutes. Serve warm with syrup."
+)
+
+
+def _pancakes_steps(
+    *,
+    oven_role: str = "optional",
+    keep_warm_role: str = "optional",
+    keep_warm_cue: str | None = "If you plan to keep",
+    keep_warm_attach: int | None = 3,
+) -> list[NormalizedStep]:
+    return [
+        _step(text="Whisk the batter until just combined."),
+        _step(text="Heat a griddle over medium heat.", station="burner"),
+        _step(
+            text="If you plan to keep cooked pancakes warm, preheat the oven to 200 degrees F.",
+            role=oven_role,
+            role_cue="If you plan to keep" if oven_role != "required" else None,
+            attention="unattended",
+            attention_cue="preheat the oven",
+            duration_min=10,
+            duration_typical_min=10,
+            duration_max=20,
+            duration_stated=False,
+            station="oven",
+        ),
+        _step(
+            text=(
+                "Pour batter onto the griddle and cook in batches, about 3 minutes "
+                "per side, until bubbles form and edges look dry."
+            ),
+            duration_min=2,
+            duration_typical_min=3,
+            duration_max=5,
+            duration_stated=True,
+            station="burner",
+        ),
+        _step(
+            text=(
+                "As you finish cooking the batches, transfer them to a baking sheet "
+                "and keep them in a warm 200 degree F oven, loosely covered with "
+                "foil, for up to 45 minutes."
+            ),
+            role=keep_warm_role,
+            role_cue=keep_warm_cue,
+            attach_to_step=keep_warm_attach,
+            attention="unattended",
+            attention_cue="warm",
+            duration_min=10,
+            duration_typical_min=15,
+            duration_max=20,
+            duration_stated=False,
+            station="oven",
+        ),
+        _step(text="Serve warm with syrup."),
+    ]
+
+
+def _pancakes_recipe(**overrides: object) -> NormalizedRecipe:
+    return _recipe(_pancakes_steps(**overrides), ingredients=[])
+
+
+def test_today_borrowed_cue_is_honored_corpus_wide_even_off_its_own_attach_chain() -> None:
+    """Finding §1.2 / §3 row 2: `_role_honored` checks the WHOLE corpus, not the
+    step's own text plus a validated attach chain. Here "keep warm"'s role_cue is
+    borrowed from the oven step's text (not its own) and attached directly to the
+    required frying step -- skipping the oven step entirely -- yet is honored today
+    with no warning. §6 item 2b's borrowed-cue constraint must close this: the same
+    inputs should then either attach through the oven step or stay required."""
+    result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
+    assert result.graph is not None
+    labels = [n.instruction for n in result.graph.nodes]
+    assert labels == [
+        "Whisk the batter until just combined.",
+        "Heat a griddle over medium heat.",
+        "Pour batter onto the griddle and cook in batches, about 3 minutes "
+        "per side, until bubbles form and edges look dry.",
+        "Serve warm with syrup.",
+    ]
+    fry = result.graph.nodes[2]
+    assert fry.tip is not None
+    assert fry.tip.startswith("Optional: As you finish cooking the batches")
+    assert not any("borrowed" in w.lower() for w in result.warnings)
+
+
+def test_today_batched_per_side_duration_is_copied_uncorrected() -> None:
+    """Finding §1.4 / §3 row 4: "about 3 minutes per side ... in batches" is copied
+    as-is (2/3/5). Nothing multiplies a per-unit number by the batch/side count."""
+    result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
+    assert result.graph is not None
+    fry = result.graph.nodes[2]
+    assert (fry.duration_min, fry.duration_typical, fry.duration_max) == (2, 3, 5)
+
+
+def test_today_required_step_with_optional_wording_gets_no_warning() -> None:
+    """Finding §1.1 / §3 row 1: when the model mislabels an optional-looking step as
+    required, `_resolve_roles` never even looks at its text -- no warning, no review
+    flag tied to the wording. Both waits become mandatory nodes, inflating the plan
+    exactly as the real Pancakes header did (55-70 min instead of the correct total).
+    §6 item 2 (the backstop warning) must add a warning here without demoting either
+    step."""
+    result = _build(
+        _pancakes_recipe(
+            oven_role="required",
+            keep_warm_role="required",
+            keep_warm_cue=None,
+            keep_warm_attach=None,
+        ),
+        _PANCAKES_SOURCE,
+    )
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 6  # both waits are now mandatory nodes
+    assert not any("if you" in w.lower() for w in result.warnings)
+    assert all(n.tip is None for n in result.graph.nodes)
+
+
+_OATMEAL_SOURCE = (
+    "Combine oats and water in a saucepan. Bring to a boil, then reduce heat and "
+    "simmer for 5 minutes, stirring occasionally, until thickened. "
+    "Microwave method: combine oats and water in a microwave-safe bowl and "
+    "microwave on high for 2 minutes, stirring halfway through. Serve hot."
+)
+
+
+def _oatmeal_steps(*, microwave_role: str = "alternative") -> list[NormalizedStep]:
+    return [
+        _step(text="Combine oats and water in a saucepan."),
+        _step(
+            text=(
+                "Bring to a boil, then reduce heat and simmer for 5 minutes, "
+                "stirring occasionally, until thickened."
+            ),
+            attention="periodic",
+            attention_cue="stirring occasionally",
+            duration_min=4,
+            duration_typical_min=4,
+            duration_max=4,
+            duration_stated=True,
+            station="burner",
+        ),
+        _step(
+            text=(
+                "Microwave method: combine oats and water in a microwave-safe bowl "
+                "and microwave on high for 2 minutes, stirring halfway through."
+            ),
+            role=microwave_role,
+            role_cue="Microwave method:" if microwave_role != "required" else None,
+            attach_to_step=1 if microwave_role != "required" else None,
+            duration_min=2,
+            duration_typical_min=2,
+            duration_max=2,
+            duration_stated=True,
+            station="counter",
+        ),
+        _step(text="Serve hot."),
+    ]
+
+
+def _oatmeal_recipe(**overrides: object) -> NormalizedRecipe:
+    return _recipe(_oatmeal_steps(**overrides), ingredients=[])
+
+
+def test_today_oatmeal_simmer_duration_is_never_checked_against_the_text() -> None:
+    """F15 / §3 row 5: the model says 4 min; the text says "5 minutes". Nothing in
+    graph.py parses `step.text` to catch the mismatch."""
+    result = _build(_oatmeal_recipe(), _OATMEAL_SOURCE)
+    assert result.graph is not None
+    simmer = result.graph.nodes[1]
+    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (4, 4, 4)
+    assert result.node_decisions[1].duration_source == "extracted"
+
+
+def test_today_required_microwave_method_gets_no_warning_either() -> None:
+    """Real-world observed failure (evaluation, no stored fixture): the model marks
+    "Microwave method: ..." required, and it becomes a mandatory 4th step in the
+    plan with no warning -- the same backstop gap as the Pancakes case, for the
+    other marker family ("method:")."""
+    result = _build(_oatmeal_recipe(microwave_role="required"), _OATMEAL_SOURCE)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert not any("method:" in w.lower() for w in result.warnings)
+    assert all(n.tip is None for n in result.graph.nodes)
