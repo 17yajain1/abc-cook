@@ -15,6 +15,7 @@ import {
   role,
   sittingIndex,
   skipAllowed,
+  stepPosition,
   waitSubject,
 } from './select'
 import type { CookingModel, CookingSession, NodeState } from './types'
@@ -528,6 +529,92 @@ describe('foreignLifecycle — CP1a (M3.4.5 session-lockout plan)', () => {
     const s = emptySession(model) // no totalMin, matches a session persisted before CP1a
     expect(s.totalMin).toBeUndefined()
     expect(foreignLifecycle(s, T0 + m(100_000))).toBe('unknown')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// P1 #6 (orientation/recovery plan §C1) — stepPosition
+// ---------------------------------------------------------------------------
+
+describe('stepPosition — P1 #6 §C1', () => {
+  it('kadai: n rises on hands-on Done and startNode, never on a skip, and running->done leaves it unchanged', () => {
+    const model = deriveCookingModel(KADAI)
+    // model.order: chop_onion, saute_onion, chop_tomato, cook_tomato_base,
+    // chop_capsicum, cube_paneer, make_kadai_masala, add_veggies, add_paneer, finish.
+    let s = emptySession(model)
+    expect(stepPosition(model, s)).toEqual({ n: 1, total: 10 })
+
+    s = withNodes(s, { chop_onion: doneAt(T0) })
+    expect(stepPosition(model, s)).toEqual({ n: 2, total: 10 })
+
+    s = withNodes(s, { saute_onion: doneAt(T0 + m(5)) })
+    expect(stepPosition(model, s)).toEqual({ n: 3, total: 10 })
+
+    s = withNodes(s, { chop_tomato: doneAt(T0 + m(8)) })
+    expect(stepPosition(model, s)).toEqual({ n: 4, total: 10 })
+
+    // startNode: cook_tomato_base leaves pending for running.
+    s = withNodes(s, { cook_tomato_base: runningAt(T0 + m(10), T0 + m(22)) })
+    expect(stepPosition(model, s)).toEqual({ n: 5, total: 10 })
+
+    // Skip for now: chop_capsicum goes pending -> deferred. Never counted, n stays.
+    s = withNodes(s, { chop_capsicum: { state: 'deferred', at: T0 + m(12) } })
+    expect(stepPosition(model, s)).toEqual({ n: 5, total: 10 })
+
+    s = withNodes(s, { cube_paneer: doneAt(T0 + m(14)) })
+    expect(stepPosition(model, s)).toEqual({ n: 6, total: 10 })
+
+    s = withNodes(s, { make_kadai_masala: doneAt(T0 + m(16)) })
+    expect(stepPosition(model, s)).toEqual({ n: 7, total: 10 })
+
+    // Finishing an already-running timer (running -> done) leaves n unchanged — it was
+    // already counted the moment it started running.
+    s = withNodes(s, { cook_tomato_base: doneAt(T0 + m(22), T0 + m(22)) })
+    expect(stepPosition(model, s)).toEqual({ n: 7, total: 10 })
+
+    // The deferred capsicum is eventually done — n resumes climbing from where it was,
+    // never having gone backward.
+    s = withNodes(s, { chop_capsicum: doneAt(T0 + m(24)) })
+    expect(stepPosition(model, s)).toEqual({ n: 8, total: 10 })
+
+    s = withNodes(s, { add_veggies: doneAt(T0 + m(27)) })
+    expect(stepPosition(model, s)).toEqual({ n: 9, total: 10 })
+
+    s = withNodes(s, { add_paneer: doneAt(T0 + m(32)) })
+    // finish is still pending (current) — this is the "Step 10 of 10" screen, read
+    // before Done is tapped on the last step.
+    expect(stepPosition(model, s)).toEqual({ n: 10, total: 10 })
+
+    // A hands-on undo (done -> pending) lowers n by one; redoing it restores it.
+    const undone = withNodes(s, { add_paneer: { state: 'pending' } })
+    expect(stepPosition(model, undone)).toEqual({ n: 9, total: 10 })
+    const redone = withNodes(undone, { add_paneer: doneAt(T0 + m(32)) })
+    expect(stepPosition(model, redone)).toEqual({ n: 10, total: 10 })
+  })
+
+  it('biryani t=20: a single acknowledge (running->done for both producers) leaves n unchanged; startNode raises it by one', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = emptySession(model)
+    s = withNodes(s, {
+      boil_spiced_water: runningAt(T0, T0 + m(6)),
+      soak_rice: runningAt(T0, T0 + m(20)),
+    })
+    const before = stepPosition(model, s)
+    expect(before).toEqual({ n: 3, total: model.order.length })
+
+    // Simulate the multi-producer acknowledge: both producers running -> done.
+    const acknowledged = withNodes(s, {
+      boil_spiced_water: doneAt(T0 + m(20), T0 + m(6)),
+      soak_rice: doneAt(T0 + m(20), T0 + m(20)),
+    })
+    expect(stepPosition(model, acknowledged)).toEqual(before)
+
+    // Undoing that acknowledge (done -> running, back to `s`) also leaves n unchanged.
+    expect(stepPosition(model, s)).toEqual(before)
+
+    // Contrast: starting a third hands-off node (pending -> running) does raise n.
+    const plusOne = withNodes(s, { fry_birista: runningAt(T0 + m(4), T0 + m(14)) })
+    expect(stepPosition(model, plusOne).n).toBe(before.n + 1)
   })
 })
 

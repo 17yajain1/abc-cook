@@ -41,6 +41,7 @@ export function CookingModeScreen({
   onExit,
   onGoTo,
   canGoTo,
+  onFinish,
 }: {
   payload: RecipePlanResponse
   planKey: string
@@ -54,6 +55,9 @@ export function CookingModeScreen({
    * still in the library, or any `server:` id — `fetchPlan` is always tried). Backed by
    * the real `Library`, unlike `buildConflictView`'s own prefix-only default. */
   canGoTo: (planKey: string) => boolean
+  /** P1 #6 §C4: called after the done screen's "Finished cooking" ends the session —
+   * navigates to the Library (`App.tsx` passes `backToPicker`). */
+  onFinish: () => void
 }) {
   const model = useMemo(() => deriveCookingModel(payload), [payload])
   const ingredients = useMemo(() => ingredientsById(payload.graph.ingredients), [payload])
@@ -169,6 +173,17 @@ export function CookingModeScreen({
         return
       case 'end':
         runEngine(() => session.end())
+        return
+      case 'undo':
+        runEngine(() => session.undo(model))
+        return
+      case 'finish':
+        runEngine(() => session.end())
+        onFinish()
+        return
+      case 'endAndExit':
+        runEngine(() => session.end())
+        onExit()
         return
       case 'stay':
         setLeaving(false)

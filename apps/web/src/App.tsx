@@ -3,10 +3,12 @@ import { useCallback, useState } from 'react'
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan } from './api/client'
+import { deriveCookingModel } from './cooking/model'
 import { createSessionStore } from './cooking/store'
 import { canResolveConflictTarget, resolveConflictTarget } from './cooking-mode/conflictResolve'
 import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
+import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
 import { LibraryScreen } from './library/LibraryScreen'
 import { canonicalSourceKey } from './library/sourceKey'
@@ -109,12 +111,19 @@ export default function App() {
     [],
   )
 
+  // P1 #6 §C5: the side effect (starting a session if none is open) happens here, in
+  // the click handler — never inside the `setView` updater, and never a mount effect.
+  // `main.tsx` renders in `StrictMode`, which double-invokes both of those; an event
+  // handler runs exactly once per click regardless. Reading `view` from the closure
+  // (not a functional update) is what lets `startIfNone` see the same payload/origin
+  // `setView` is about to commit.
   const startCooking = useCallback(() => {
-    setView((prev) => {
-      if (prev.kind !== 'plan') return prev
-      return { kind: 'cooking', payload: prev.payload, planKey: planKey(prev.origin), returnTo: prev }
-    })
-  }, [])
+    if (view.kind !== 'plan') return
+    const model = deriveCookingModel(view.payload)
+    const key = planKey(view.origin)
+    startIfNone(sessionStore, model, key, Date.now(), view.payload.graph.title)
+    setView({ kind: 'cooking', payload: view.payload, planKey: key, returnTo: view })
+  }, [view])
 
   const exitCooking = useCallback(() => {
     setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
@@ -228,6 +237,7 @@ export default function App() {
           onExit={exitCooking}
           onGoTo={goToConflict}
           canGoTo={canGoToConflict}
+          onFinish={backToPicker}
         />
       )
     default:

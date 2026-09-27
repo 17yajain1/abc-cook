@@ -588,3 +588,52 @@ recipe's graph captures the most parallelism its source actually supports.
 
 Recommended order from here: **#3**, then the P1 items (#5 readable plan, #6
 orientation/recovery).
+
+## P1 #6 Implemented (2026-09-28)
+
+P1 #6 ("Orientation and recovery in cooking mode," row 6 of the agreed top six,
+F10/F11/F12) — no sense of position in the cook, no recovery from a mis-tap,
+finishing loops back to the start, two start screens — is implemented on
+branch `feat/p1-6-orientation-recovery` (not yet opened as a PR), per
+`notes/p1-6-orientation-recovery-plan.md`. The render checkpoint (§E) was
+shown and approved before steps 6–8 (App.tsx wiring, docs) proceeded.
+
+**What changed:**
+- `task`/`handsoff_pending` show "Step n of N" (`cooking/select.ts`'s
+  `stepPosition` — the live running/done count, never a cumulative history
+  counter or `stepContext`'s order index, which regresses on a skip) and
+  "Next: ‹label›" (the screen's own primary action run through the real
+  engine on a copy of the session, then `current()`).
+- A 10 s "Back to ‹step›" undo link (`UNDO_WINDOW_MS`, `cooking/constants.ts`)
+  on `task`, `handsoff_pending`, `wait`, `long_wait`, `sitting_break` and
+  `done` — timed from the persisted `lastTransition.at`, so it survives
+  backgrounding. Never on `handover` or the away/stale/entry screens.
+- "Finished cooking" now navigates to the Library (F11); "End the cook and
+  clear the timers" (leaving/returning) navigates to that recipe's Plan
+  instead — two distinct exits where one `end` action previously conflated
+  them. Stale's "Start again" is unchanged (the restart is itself the
+  confirmation).
+- The Plan's "Start Cooking" now starts the session itself when none is open,
+  landing directly on step 1 (F12) — the black entry screen is no longer a
+  second confirmation on the canonical path. It remains the resume/stale/
+  staged-replace/storage-failure screen.
+- `docs/DESIGN_SYSTEM.md` § *Resolved in P1 #6* records the calm-screen
+  step-counter/preview exclusion reversal and the four decisions above;
+  `docs/ROADMAP.md`'s M3.5 row marks the undo control shipped.
+
+**Verification:**
+- Automated: 532/532 tests passing (`stepPosition`, the multi-producer
+  acknowledge case, the undo-link window, and `startCooking.ts`'s "one start
+  path" all newly covered), typecheck/lint clean.
+- Live, in a desktop browser at the 390×844 mobile column: drove Kadai Paneer
+  through its parallel-prep window (Step n of N and Next: ‹label› both
+  correct at every step, including the last-in-window preview naming the
+  step blocked behind the wait) and confirmed the undo link via a DOM read
+  immediately after tapping Done (screenshot capture in this environment
+  reliably takes >10 s, past the window, so the link's *disappearance* was
+  what showed up in screenshots — its presence was confirmed by reading the
+  page immediately instead). Drove 2-Minute Maggi end to end: one start
+  screen, "Finished cooking" → Library, reopening started a fresh cook with
+  no stale conflict. Confirmed "End the cook and clear the timers" from
+  Strawberry Shortcake returns to that recipe's Plan, not the Library or a
+  stale entry screen.

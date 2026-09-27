@@ -1214,12 +1214,34 @@ shape as § *Resolved in M3.2*, one open item and its answer per row.
 | Wake lock / notifications | Neither in M3.3 — both need a mounted screen (M3.4). The engine exposes `nextRequiredAt` so a later screen can *state* a moment to remember; the app never promises a call it can't schedule (no service worker/manifest today). |
 | Sitting-break resume moment | The engine's own `nextRequiredAt` (derived from live `endsAt`s), never `PlanSummary.sessions[k].start_min` — the latter is the next *hands-on* minute at typical pace and can be well after the cook is actually needed (a fridge rest that must come out of the fridge before the next sitting's first chop). |
 | Skip ("window has closed") | Translated to the engine's actual vocabulary: hands-on only, and only when another non-`deferred` executable node exists. A skipped node is `deferred`, never `done` — it never satisfies a consumer until it is actually completed. |
-| Done / undo | `markDone` requires the node be current (hands-on) or running (hands-off, any time — the cue governs). The engine keeps one reversible `lastTransition` (`undo` until the next `startNode`); the tap affordance itself is M3.5. |
+| Done / undo | `markDone` requires the node be current (hands-on) or running (hands-off, any time — the cue governs). The engine keeps one reversible `lastTransition` (`undo` until the next `startNode`); the tap affordance shipped in P1 #6 — see § *Resolved in P1 #6*, below. |
 | Session lifecycle vs `Role` | A third concept, above `Role`: `finished \| stale \| active`. `finished` takes precedence and is never stale-checked; `stale` is its own screen (Continue / Start again), never an ordinary role; only `active` proceeds to `role`/`current`/`handover`/away-class. `returning` is neither a lifecycle value nor a `Role` member — it overlays whatever role is computed, read directly off `session.leftAt != null`. |
 | Stale threshold | `max(6h, 2 × plan.total_min)` since the last running node's `endsAt` or `lastSeenAt`, whichever is later. Reported, never auto-resumed or auto-cleared. |
 | `interruptible` reuse | **Rejected.** It means "can the cook set *this* task down mid-way", is read only for a hands-on task being placed in a `periodic` window, and is `kind`-derived (not really authored) on three of four import kinds — a different claim from "can the finished result be left once its timer is up." |
 | Vocabulary | Internal state ids (`sitting_break`, `sitting_resume`) are allowed; the product never says "sitting" in copy, per `CLAUDE.md`'s vocabulary table. |
 | One session at a time | Opening a plan while a session for a *different* plan is stored reports `conflict`; the engine never ends one session to start another on its own. |
+
+## Resolved in P1 #6 (orientation/recovery)
+
+The M3.4 UX handoff's calm-screen rule excluded step counters, next-step previews and
+"lists of other tasks" from the `task`/`handsoff_pending` screens — the concern being a
+counter or preview would clutter the one-thing-at-a-time calm the screen is built
+around. The evaluation's top-six (`notes/cooking-app-evaluation-2026-09-25.md`,
+F10/F11/F12) surfaced that a real cook on a real phone still needs to know *where they
+are* and *recover from a mis-tap*, so the owner (2026-09-27) knowingly reversed that
+exclusion for exactly two additions plus one recovery affordance, all rendered as quiet
+meta-text lines — same type scale and ink tones as the existing label/note rows, no new
+component, no new colour. The render checkpoint (`notes/p1-6-orientation-recovery-plan.md`
+§E) confirmed the density holds at 390×844 before this shipped.
+
+| Item | Resolution |
+|---|---|
+| Step counter reversal | **Reversed, deliberately.** `task`/`handsoff_pending` now show "Step n of N" as a meta line above the label. Not `stepContext`'s order index (which goes backward on a skip) — a live count, defined below. |
+| "Step n of N" definition | `n` = the live count of nodes in `running` or `done`, plus 1 (`cooking/select.ts`'s `stepPosition`). Rises on a hands-on Done or a hands-off `startNode`; unaffected by a skip (deferred is never counted) and unaffected by finishing an already-running timer (`markDone`/`acknowledge` on a `running` node — it was already counted the moment it started running). `N` = `model.order.length`, the same figure the entry screen already quotes as "N things to do". Undo restores exactly the count it reverses. |
+| Next-step preview | `task`/`handsoff_pending` also show "Next: ‹label›" — the screen's own primary action run through the real engine (`markDone`/`startNode`) on a copy of the session, then `current()` on the result, falling back to the first `pending`/`deferred` node in order. Reuses the engine's own scheduling semantics; invents no new ordering rule. `null` on the finish step (nothing follows) and everywhere without a current step (wait, handover, sitting, away, done). |
+| Undo tap affordance | Ships as a secondary-slot override: "Back to ‹label›" for 10 s after a `done`/`skip`/`acknowledge` transition, timed from the persisted `lastTransition.at` (survives backgrounding, needs no timer of its own). Offered on `task`, `handsoff_pending`, `wait`, `long_wait`, `sitting_break` and `done`; never on `handover` (the full-screen interruption keeps its own exit) or the away/stale/entry screens. Replaces Skip/Give it longer for that window, then reverts. |
+| One start screen | The Plan's "Start Cooking" now starts the session itself (if none is open) before mounting Cooking Mode, landing directly on step 1 — the black entry screen is no longer a second confirmation on the canonical path. It remains the resume/stale-restart/staged-replace/storage-failure screen, all of which are intentional confirmations, not the duplication this closed. |
+| Finishing → Library, ending early → that recipe's Plan | Two distinct exits from Cooking Mode, previously conflated under one `end` action: "Finished cooking" (the `done` screen) now navigates to the Library after ending the session; "End the cook and clear the timers" (leaving/returning) navigates back to that recipe's Plan instead. Stale's "Start again" is a third, deliberately-kept case — it stays on the entry screen because restarting is itself the confirmation. |
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 

@@ -46,6 +46,7 @@ export function CookingShell({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-[124px]">
+        {view.step && <div className={`mb-1 text-[13px] ${g.meta}`}>{view.step}</div>}
         {view.label && <div className={`mb-3 text-[13px] ${g.meta}`}>{view.label}</div>}
         <h1
           className={`text-[30px] font-semibold leading-[1.15] ${g.ink}`}
@@ -62,6 +63,7 @@ export function CookingShell({
         )}
         {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.qty}</p>}
         {view.note && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.note}</p>}
+        {view.next && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.next}</p>}
       </div>
 
       <div className="flex-shrink-0 px-6 pb-[34px]">

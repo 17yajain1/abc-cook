@@ -8,6 +8,12 @@
  * `duration_max - duration_typical` headroom — the owner may revisit this (§K5 table). */
 export const EXTEND_MS = 60_000
 
+/** P1 #6 (orientation/recovery plan §C3, M3 design handoff open item 3, impl handoff
+ * §8.8): the undo link ("Back to ‹step›") shows for this long after a `done`/`skip`/
+ * `acknowledge` transition, timed from the persisted `lastTransition.at` — never a
+ * timer of its own, so it survives the phone sleeping. */
+export const UNDO_WINDOW_MS = 10_000
+
 /** §C7/§F7: a gap at least this long is a sitting break. Mirrors `summary.py`'s
  * `SESSION_BREAK_MIN = 120` (minutes), converted to ms for a `now`-based comparison. */
 export const SESSION_BREAK_MS = 120 * 60_000
