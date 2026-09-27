@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { aboutMinutes, cap, clockStr, dayClock, splitCopy, wordFor } from './copy'
+import { aboutMinutes, cap, clockStr, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 
 const MIN = 60_000
 
@@ -44,6 +44,40 @@ describe('aboutMinutes', () => {
   it('floors non-positive remainders to "no time"', () => {
     expect(aboutMinutes(0)).toBe('no time')
     expect(aboutMinutes(-5000)).toBe('no time')
+  })
+})
+
+describe('minutesLeft', () => {
+  it('boundary tests at 59/60/89/90/119/120 seconds', () => {
+    expect(minutesLeft(59_000)).toBe('Less than a minute left')
+    expect(minutesLeft(60_000)).toBe('About 1 min left')
+    expect(minutesLeft(89_000)).toBe('About 2 min left')
+    expect(minutesLeft(90_000)).toBe('About 2 min left')
+    expect(minutesLeft(119_000)).toBe('About 2 min left')
+    expect(minutesLeft(120_000)).toBe('About 2 min left')
+  })
+
+  it('reads zero and longer durations without ever floor-ing to "no time"', () => {
+    expect(minutesLeft(0)).toBe('Less than a minute left')
+    expect(minutesLeft(4 * MIN)).toBe('About 4 min left')
+    expect(minutesLeft(50 * MIN)).toBe('About 50 min left')
+  })
+
+  it('never increases as time passes — Math.ceil, not Math.round', () => {
+    let last = Number.POSITIVE_INFINITY
+    for (let ms = 130_000; ms >= 0; ms -= 1000) {
+      const s = minutesLeft(ms)
+      const n = s === 'Less than a minute left' ? 0 : Number(s.match(/\d+/)![0])
+      expect(n).toBeLessThanOrEqual(last)
+      last = n
+    }
+  })
+
+  it('never renders "no time" or m:ss', () => {
+    for (const ms of [0, 20_000, 59_000, 60_000, 4 * MIN, 50 * MIN]) {
+      expect(minutesLeft(ms)).not.toBe('no time')
+      expect(minutesLeft(ms)).not.toMatch(/^\d+:\d{2}$/)
+    }
   })
 })
 

@@ -54,6 +54,12 @@ export function CookingShell({
           {view.title}
         </h1>
         {view.instr && <p className={`mt-5 text-[18px] leading-[1.55] ${g.ink}`}>{view.instr}</p>}
+        {view.waitTime && (
+          <div className="mt-4">
+            <p className={`text-[18px] leading-[1.55] ${g.ink}`}>{view.waitTime.left}</p>
+            <p className={`text-[15px] leading-[1.5] ${g.meta}`}>{view.waitTime.readyAt}</p>
+          </div>
+        )}
         {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.qty}</p>}
         {view.note && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.note}</p>}
       </div>

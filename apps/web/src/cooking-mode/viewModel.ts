@@ -18,7 +18,7 @@ import {
 import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/types'
 import type { HeaderTiming } from '@/lib/duration'
 
-import { aboutMinutes, cap, dayClock, splitCopy, wordFor } from './copy'
+import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
 import { quantityLine } from './quantity'
 
@@ -88,6 +88,12 @@ export interface CookingView {
   instr: string | null
   qty: string | null
   note: string | null
+  /** Time-left + end-clock line for a single-subject `wait`/`long_wait` screen (P0 #4,
+   * owner decision 2026-09-27). A separate slot from `note` so `note`'s existing meaning
+   * (and its existing assertions) are untouched — the `long_wait` `note` this replaces
+   * is folded into `readyAt`. `null` everywhere else, including the multi-pan wait,
+   * which has no single subject to time. */
+  waitTime: { left: string; readyAt: string } | null
   whisperText: string | null
   showLink: boolean
   primary: ActionButton | null
@@ -111,6 +117,12 @@ export interface SheetView {
 function endsAtOf(session: CookingSession, nodeId: string): number {
   const s = session.nodes[nodeId]
   return s.state === 'running' ? s.endsAt : Number.POSITIVE_INFINITY
+}
+
+/** "Label, around H:MM pm" for one running node — shared by the away shell's
+ * leaving/returning notes and the multi-pan wait's per-pan note (P0 #4). */
+function withEnd(model: CookingModel, session: CookingSession, now: number, id: string): string {
+  return `${model.nodes[id].label}, around ${dayClock(now, endsAtOf(session, id))}`
 }
 
 function sheetTime(model: CookingModel, session: CookingSession, now: number, id: string): string {
@@ -213,6 +225,7 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     instr: timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`,
     qty: null,
     note: `${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
+    waitTime: null,
     whisperText: null,
     showLink: false,
     primary: { label: 'Start cooking', solid: true, action: { kind: 'start' } },
@@ -243,6 +256,7 @@ export function buildCookingView(
     instr: null,
     qty: null,
     note: null,
+    waitTime: null,
     whisperText: null,
     showLink: false,
     primary: null,
@@ -266,7 +280,7 @@ export function buildCookingView(
         v.secondary = { label: 'Skip for now', solid: false, action: { kind: 'skip', nodeId: cur } }
       }
     } else {
-      v.primary = { label: 'Started', solid: false, action: { kind: 'startNode', nodeId: cur } }
+      v.primary = { label: "I've started it", solid: false, action: { kind: 'startNode', nodeId: cur } }
     }
     return v
   }
@@ -278,10 +292,12 @@ export function buildCookingView(
       // No running node's own expiry would need the cook — every consumer is still
       // waiting on a sibling. Nothing to judge, so state the fact and offer nothing
       // (M3.4 session summary's "owner's eye wanted" call). Never fall back to naming
-      // a node the selector did not choose.
+      // a node the selector did not choose. Multi-pan wait (owner decision 3,
+      // 2026-09-27): per-pan end clocks only — no aggregate time-left, no primary.
       v.label = 'Nothing needs you'
       v.title = run.length > 1 ? `${cap(wordFor(run.length))} pans are running.` : 'One pan is running.'
       v.instr = run.length > 1 ? 'Nothing needs you until they are all done.' : 'Nothing needs you for it yet.'
+      v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
       v.showLink = run.length > 0
       return v
     }
@@ -291,13 +307,17 @@ export function buildCookingView(
       const c = splitCopy(`${cap(n.donenessCue)}.`)
       v.title = c.title
       v.instr = c.body
-      v.primary = { label: "It's done", solid: false, action: { kind: 'markDone', nodeId: n.id } }
     } else {
       const c = splitCopy(n.instruction)
       v.title = c.title
       v.instr = c.body
     }
-    if (scr.id === 'long_wait') v.note = `Ready around ${dayClock(now, endsAtOf(session, n.id))}.`
+    // Primary is unconditional (owner decision 2026-09-27): "It's done" advances the
+    // flow whether or not there's a cue to judge it by — the engine already allows
+    // `markDone` on any running hands-off node at any time.
+    v.primary = { label: "It's done", solid: false, action: { kind: 'markDone', nodeId: n.id } }
+    const endsAt = endsAtOf(session, n.id)
+    v.waitTime = { left: minutesLeft(endsAt - now), readyAt: `Ready around ${dayClock(now, endsAt)}.` }
     v.secondary = { label: 'Give it longer', solid: false, action: { kind: 'extend', nodeId: n.id } }
     v.whisperText = whisperFor(model, session, now, n.id)
     v.showLink = run.length > 1
@@ -338,7 +358,6 @@ export function buildCookingView(
   v.shell = 'field'
   v.showTopRight = false
   const run = running(model, session)
-  const withEnd = (id: string) => `${model.nodes[id].label}, around ${dayClock(now, endsAtOf(session, id))}`
 
   if (scr.id === 'leaving') {
     v.label = 'Leaving'
@@ -349,14 +368,14 @@ export function buildCookingView(
           ? 'One thing is still on.'
           : `${cap(wordFor(run.length))} things are still on.`
     v.instr = 'Timers keep their own time whether the app is open or not.'
-    v.note = run.length > 0 ? `${run.map(withEnd).join(' · ')}.` : null
+    v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
     v.primary = { label: 'Back to cooking', solid: true, action: { kind: 'stay' } }
     v.secondary = { label: 'End the cook and clear the timers', solid: false, action: { kind: 'end' } }
   } else if (scr.id === 'returning') {
     v.label = 'Away'
     v.title = `You left about ${aboutMinutes(now - (session.leftAt ?? now))} ago.`
     v.instr = handover(model, session, now) != null ? 'Something is ready and waiting for you.' : 'Everything kept its own time.'
-    v.note = run.length > 0 ? `${run.map(withEnd).join(' · ')}.` : null
+    v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
     v.primary = { label: 'Back to cooking', solid: true, action: { kind: 'resume' } }
     v.secondary = { label: 'End the cook and clear the timers', solid: false, action: { kind: 'end' } }
   } else if (scr.id === 'sitting_resume') {

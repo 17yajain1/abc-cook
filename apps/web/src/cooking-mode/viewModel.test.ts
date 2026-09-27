@@ -83,7 +83,7 @@ describe('kadai-paneer', () => {
     expect(v.screenId).toBe('handsoff_pending')
     expect(v.label).toBe('Cook tomato base')
     expect(v.primary).toEqual({
-      label: 'Started',
+      label: "I've started it",
       solid: false,
       action: { kind: 'startNode', nodeId: 'cook_tomato_base' },
     })
@@ -129,6 +129,29 @@ describe('kadai-paneer', () => {
       solid: false,
       action: { kind: 'extend', nodeId: 'cook_tomato_base' },
     })
+    // cook_tomato_base ends at +22; viewed at +16 leaves exactly 6 min.
+    expect(v.waitTime).not.toBeNull()
+    expect(v.waitTime!.left).toBe('About 6 min left')
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+  })
+
+  it('wait: "Give it longer" before expiry moves the end clock by one minute', () => {
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
+    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
+    se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
+    se = must(engine.markDone(se, model, 'make_kadai_masala', T0 + 16 * MIN))
+
+    const before = view(se, T0 + 16 * MIN).waitTime!.readyAt
+    se = must(engine.extend(se, model, 'cook_tomato_base', T0 + 16 * MIN))
+    const after = view(se, T0 + 16 * MIN).waitTime!.readyAt
+
+    const beforeMinute = Number(before.match(/:(\d{2})/)![1])
+    const afterMinute = Number(after.match(/:(\d{2})/)![1])
+    expect((afterMinute - beforeMinute + 60) % 60).toBe(1)
   })
 
   it('handover_late: shows the elapsed/overrun wording once the host node has expired', () => {
@@ -242,6 +265,19 @@ describe('maggi-2min', () => {
     expect(v.showLink).toBe(false)
     expect(v.note).toBeNull()
     expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'markDone', nodeId: 'boil_water' } })
+    // Boil ends at +3; viewed at +1 leaves exactly 2 min.
+    expect(v.waitTime).not.toBeNull()
+    expect(v.waitTime!.left).toBe('About 2 min left')
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+  })
+
+  it('wait: under a minute left reads "Less than a minute left", never m:ss or "no time"', () => {
+    let se = must(engine.start(null, model, 'server:maggi', T0))
+    se = must(engine.startNode(se, model, 'boil_water', T0))
+
+    const v = view(se, T0 + 3 * MIN - 20_000) // 20s left of the 3-min boil
+    expect(v.screenId).toBe('wait')
+    expect(v.waitTime!.left).toBe('Less than a minute left')
   })
 
   it('sheet_short: a short timer renders as m:ss, not a tilde estimate', () => {
@@ -309,7 +345,9 @@ describe('homemade-donuts', () => {
     const v = view(se, T0 + 28 * MIN) // 10 min into the rise, 50 min left -> long_wait, not sitting_break
     expect(v.screenId).toBe('long_wait')
     expect(v.label).toBe('First rise')
-    expect(v.note).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.note).toBeNull() // the long_wait-only note is replaced by waitTime
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.waitTime!.left).toBe('About 50 min left')
     expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'markDone', nodeId: 'first_rise' } })
   })
 
@@ -397,6 +435,12 @@ describe('synthetic-two-windows (bowl)', () => {
     expect(v.primary).toBeNull()
     expect(v.whisperText).toBeNull()
     expect(v.showLink).toBe(true) // the sheet still lists both — just no single subject to judge
+    // Multi-pan wait (owner decision 3): per-pan end clocks only, soonest-ending first —
+    // no aggregate time-left, no primary.
+    expect(v.waitTime).toBeNull()
+    expect(v.note).toMatch(
+      /^Soak dried beans, around \d{1,2}:\d{2} (am|pm) · Simmer stew, around \d{1,2}:\d{2} (am|pm)\.$/,
+    )
   })
 })
 
@@ -500,6 +544,28 @@ describe('pizza-dough', () => {
   const T0 = 1_700_000_000_000
   const model: CookingModel = deriveCookingModel(PIZZA)
   const ingredients = ingredientsById(PIZZA.graph.ingredients)
+
+  it('wait: a hands-off node with no doneness cue still gets a time-left, end clock and "It\'s done" primary', () => {
+    const se = must(engine.start(null, model, 'server:pizza', T0))
+    const withNode = must(engine.startNode(se, model, 'step_in_a_small_bowl_stir_together', T0))
+
+    // 5-min typical, no dependents ready to run in the meantime -> nothing else is
+    // executable, so this is the wait subject despite having no cue to judge it by.
+    const v = buildCookingView(model, withNode, T0 + 1 * MIN, ingredients, {
+      recipeTitle: PIZZA.graph.title,
+      leaving: false,
+    })
+    expect(v.screenId).toBe('wait')
+    expect(v.title).toBe('In a small bowl')
+    expect(v.primary).toEqual({
+      label: "It's done",
+      solid: false,
+      action: { kind: 'markDone', nodeId: 'step_in_a_small_bowl_stir_together' },
+    })
+    expect(v.waitTime).not.toBeNull()
+    expect(v.waitTime!.left).toBe('About 4 min left') // ends at +5, viewed at +1
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+  })
 
   it('sitting_break: a 270-min room-temperature rise reads the same as rajma’s overnight soak, with its own copy', () => {
     let se = must(engine.start(null, model, 'server:pizza', T0))

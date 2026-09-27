@@ -34,6 +34,16 @@ export function aboutMinutes(ms: number): string {
   return `${wordFor(h)} ${h === 1 ? 'hour' : 'hours'}`
 }
 
+/** "About N min left" phrasing for a wait screen's time-left line (P0 #4, owner
+ * decision 2026-09-27) — rounded, human-readable, and never m:ss. `Math.ceil`, not
+ * `Math.round`: as time passes the displayed number must never go up (89s -> 1 min,
+ * 90s -> 2 min would be a jump under `round`). Under a minute reads as its own phrase
+ * rather than "0 min left". */
+export function minutesLeft(ms: number): string {
+  if (ms < 60_000) return 'Less than a minute left'
+  return `About ${Math.ceil(ms / 60_000)} min left`
+}
+
 export function clockStr(ms: number): string {
   const d = new Date(ms)
   const h = d.getHours() % 12 || 12
