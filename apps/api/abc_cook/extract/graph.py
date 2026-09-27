@@ -480,9 +480,6 @@ def _verify_duration(
     next -- not necessarily what the model claimed. A `None` number means "no
     opinion"; the caller (feeding this into `_resolve_duration`) falls back to the
     model's own number, or the deterministic default when none exists at all.
-
-    Not yet wired into `build_graph` (§10 step 3) -- pure and independently
-    tested first, per the approved plan.
     """
     warnings: list[str] = []
     review = False
@@ -1027,7 +1024,26 @@ def build_graph(
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
         kind = "finish" if index == total - 1 else _infer_kind(step.text, attention)
-        dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(step, kind, attention)
+
+        # §4/§6 item 1: verify the duration claim against the step's own text
+        # BEFORE the window-host clamp, so the clamp acts on the verified
+        # stated-ness rather than the model's raw self-report.
+        vmin, vtyp, vmax, vstated, duration_warnings, duration_review = _verify_duration(
+            step, corpus
+        )
+        warnings.extend(duration_warnings)
+        review_recommended = review_recommended or duration_review
+        verified_step = step.model_copy(
+            update={
+                "duration_min": vmin if vmin is not None else step.duration_min,
+                "duration_typical_min": vtyp if vtyp is not None else step.duration_typical_min,
+                "duration_max": vmax if vmax is not None else step.duration_max,
+                "duration_stated": vstated,
+            }
+        )
+        dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(
+            verified_step, kind, attention
+        )
         freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
 
         if explicit:

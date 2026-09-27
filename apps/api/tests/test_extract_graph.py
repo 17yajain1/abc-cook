@@ -1857,13 +1857,15 @@ def test_today_borrowed_cue_is_honored_corpus_wide_even_off_its_own_attach_chain
     assert not any("borrowed" in w.lower() for w in result.warnings)
 
 
-def test_today_batched_per_side_duration_is_copied_uncorrected() -> None:
-    """Finding §1.4 / §3 row 4: "about 3 minutes per side ... in batches" is copied
-    as-is (2/3/5). Nothing multiplies a per-unit number by the batch/side count."""
+def test_step4_batched_per_side_duration_is_now_floored() -> None:
+    """§10 CHECKPOINT 4 FLIP: was `test_today_batched_per_side_duration_is_copied_
+    uncorrected`, asserting the uncorrected (2, 3, 5). Wiring `_verify_duration` into
+    `build_graph` (§6 item 1) now floors the per-side undercount: 3 min/side * 2 sides
+    = 6. Finding §1.4 / §3 row 4."""
     result = _build(_pancakes_recipe(), _PANCAKES_SOURCE)
     assert result.graph is not None
     fry = result.graph.nodes[2]
-    assert (fry.duration_min, fry.duration_typical, fry.duration_max) == (2, 3, 5)
+    assert (fry.duration_min, fry.duration_typical, fry.duration_max) == (2, 6, 6)
 
 
 def test_today_required_step_with_optional_wording_gets_no_warning() -> None:
@@ -1934,13 +1936,15 @@ def _oatmeal_recipe(**overrides: object) -> NormalizedRecipe:
     return _recipe(_oatmeal_steps(**overrides), ingredients=[])
 
 
-def test_today_oatmeal_simmer_duration_is_never_checked_against_the_text() -> None:
-    """F15 / §3 row 5: the model says 4 min; the text says "5 minutes". Nothing in
-    graph.py parses `step.text` to catch the mismatch."""
+def test_step4_oatmeal_simmer_duration_is_now_corrected_against_the_text() -> None:
+    """§10 CHECKPOINT 4 FLIP: was `test_today_oatmeal_simmer_duration_is_never_
+    checked_against_the_text`, asserting the uncorrected 4 min. Wiring
+    `_verify_duration` in now catches the model-vs-text mismatch (F15): the text
+    says "5 minutes", so typical (and max, widened to contain it) become 5."""
     result = _build(_oatmeal_recipe(), _OATMEAL_SOURCE)
     assert result.graph is not None
     simmer = result.graph.nodes[1]
-    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (4, 4, 4)
+    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (4, 5, 5)
     assert result.node_decisions[1].duration_source == "extracted"
 
 
