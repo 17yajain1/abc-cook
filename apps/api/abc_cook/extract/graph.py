@@ -134,6 +134,15 @@ _LABEL_BARE_NUMBER_RE = re.compile(r"^\d+$")
 duration/quantity fragment truncated by max_words (e.g. "...2" of "2 minutes"), not a
 meaningful label ending -- drop it (A1.1)."""
 
+_LABEL_TRAILING_TRIM_WORDS = _LABEL_FUNCTION_WORDS | {
+    "from", "while", "into", "at", "by", "as", "if", "when", "before", "after", "till",
+}
+"""P1 #5 §R4: the fallback's trailing trim is widened beyond `_LABEL_FUNCTION_WORDS` --
+a truncated 4-word cut lands on one of these often enough to matter ("Remove the pan
+from", "Add melted butter while...", dal's "Cook the tomatoes till") -- but the
+LEADING skip stays on the narrower set; a label legitimately starting mid-clause on
+"while"/"if"/etc. is not the same failure as ending on one."""
+
 
 def _label(text: str, *, max_words: int = 4) -> str:
     body = _LABEL_PREFIX_RE.sub("", text)
@@ -145,11 +154,43 @@ def _label(text: str, *, max_words: int = 4) -> str:
 
     tokens = all_tokens[start : start + max_words]
     while tokens and (
-        tokens[-1].lower() in _LABEL_FUNCTION_WORDS or _LABEL_BARE_NUMBER_RE.fullmatch(tokens[-1])
+        tokens[-1].lower() in _LABEL_TRAILING_TRIM_WORDS
+        or _LABEL_BARE_NUMBER_RE.fullmatch(tokens[-1])
     ):
         tokens.pop()
     label = " ".join(tokens)
     return (label[:1].upper() + label[1:]) if label else text[:40]
+
+
+_LABEL_OPENING_MARKERS = {"if", "when", "as", "optional", "alternatively"}
+"""A model-written label opening on one of these reads as a condition or an aside, not
+a task name (§R2) -- distinct from `_LABEL_FUNCTION_WORDS`, which guards the fallback
+trimmer's own leading/trailing cuts, not the model's free-form label."""
+
+
+def _accept_label(label: str | None, text: str) -> str:
+    """P1 #5 §R2: shape-only acceptance of the model's own `NormalizedStep.label`.
+
+    Accepted when it has 1-4 word tokens, doesn't open on a conditional/optional
+    marker, and doesn't end on a (widened) function word. Deliberately never checked
+    against the step's own text for topical match -- that would reject as many good
+    summaries ("Whisk the eggs..." -> "Mix marinade", "Cover and leave..." -> "First
+    rise") as it would catch a fluent-but-wrong one (§R2 calibration: any overlap
+    threshold throws away 14-57% of human-quality labels). Falls back to `_label(text)`
+    otherwise -- including when the model gave no label at all (every pre-P1-5 replay
+    fixture takes this path, since their captured `NormalizedStep`s have no `label`).
+    """
+    if label is None:
+        return _label(text)
+    stripped = label.strip()
+    tokens = _LABEL_TOKEN_RE.findall(stripped)
+    if not (1 <= len(tokens) <= 4):
+        return _label(text)
+    if tokens[0].lower() in _LABEL_OPENING_MARKERS:
+        return _label(text)
+    if tokens[-1].lower() in _LABEL_TRAILING_TRIM_WORDS:
+        return _label(text)
+    return stripped[:1].upper() + stripped[1:]
 
 
 _UNTIL_PREFIX_RE = re.compile(r"^(?:until|till)\s+", re.IGNORECASE)
@@ -1218,7 +1259,7 @@ def build_graph(
             Node(
                 id=node_ids[index],
                 stage=stages_for_steps[index],
-                label=_label(step.text),
+                label=_accept_label(step.label, step.text),
                 instruction=step.text,
                 kind=kind,
                 attention=attention,

@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.graph import build_graph
+from abc_cook.extract.graph import _label, build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.validate import validate
@@ -44,6 +44,20 @@ def test_pizza_dough_replay_makes_no_independence_claim() -> None:
     recipe, _ = _load_fixture()
     assert len(recipe.steps) == 14
     assert all(step.depends_on_previous for step in recipe.steps)
+
+
+def test_pizza_dough_replay_has_no_captured_label_so_every_node_falls_back() -> None:
+    """P1 #5 §R4: this fixture predates `NormalizedStep.label` (v5), so every step's
+    `label` is `None` and `build_graph` must fall back to `_label(step.text)` for
+    every node -- never silently invent one."""
+    recipe, source_text = _load_fixture()
+    assert all(step.label is None for step in recipe.steps)
+
+    result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
+    assert result.graph is not None
+    steps_by_text = {step.text: step for step in recipe.steps}
+    for node in result.graph.nodes:
+        assert node.label == _label(steps_by_text[node.instruction].text)
 
 
 def test_pizza_dough_replay_is_structurally_valid_and_makes_no_false_independence() -> None:

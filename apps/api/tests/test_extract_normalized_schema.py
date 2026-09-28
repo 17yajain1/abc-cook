@@ -69,14 +69,13 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v4() -> None:
-    """P0 #0 (§10 step 7) switched production extraction to v4, which adds the
-    borrowed-optional-follow-on, per-unit-duration, and holding-limit rules that
-    `graph.py`'s verification alone can't teach the model. v3 is kept on disk (a
-    prior prompt version stays reproducible), just no longer the production path."""
-    assert normalize._PROMPT_PATH.name == "v4.md"
-    assert "extraction prompt (v4)" in normalize.load_prompt()
-    assert (PROMPTS_DIR / "v3.md").exists()
+def test_production_extraction_uses_prompt_v5() -> None:
+    """P1 #5 Commit 2 switched production extraction to v5, which adds the
+    model-written `label` field and its shape rules. v4 is kept on disk (a prior
+    prompt version stays reproducible), just no longer the production path."""
+    assert normalize._PROMPT_PATH.name == "v5.md"
+    assert "extraction prompt (v5)" in normalize.load_prompt()
+    assert (PROMPTS_DIR / "v4.md").exists()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:
@@ -143,3 +142,34 @@ def test_prompt_v4_examples_use_none_of_the_evaluated_recipes() -> None:
     v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8").lower()
     for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
         assert word not in v4
+
+
+def test_prompt_v5_schema_carries_the_label_field() -> None:
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v5, NormalizedRecipe)
+    assert '"label"' in rendered
+
+
+def test_prompt_v5_instructs_label_semantics() -> None:
+    """P1 #5 Commit 2: v5 adds exactly the `label` section on top of v4's unchanged
+    content -- a summary, not a truncation, with the same shape rules `_accept_label`
+    verifies (word count, no leading conditional marker, no trailing preposition)."""
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v5)" in v5
+    assert "## Step labels" in v5
+    assert "a summary" in v5
+    assert "not a truncation" in v5
+    assert '"If", "When", "As", "Optional", or "Alternatively"' in v5
+    assert "do not end it on a preposition, conjunction, or article" in v5
+    # v4's content is carried forward unchanged, not replaced.
+    assert "## `depends_on_steps`" in v5
+    assert "## Optional, conditional and alternative instructions" in v5
+    assert "per side, per batch, or per piece" in v5
+
+
+def test_prompt_v5_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4 -- the label section's own examples must not be
+    tuned on the owner's evaluated evidence either."""
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v5

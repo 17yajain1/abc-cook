@@ -69,16 +69,21 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v4.md"
-"""v4 (P0 #0) adds three rules `graph.py`'s new verification alone can't teach the
-model: attach a marker-less follow-on to the earlier OPTIONAL instruction it depends
-on (not the step it will modify), give a per-side/batch/piece estimate as the whole
-step's total, and treat "up to N" as a holding limit rather than the step's own
-duration. v3 (CP2) replaces `depends_on_previous` with explicit `depends_on_steps`,
-adds optional/alternative step roles, and refines attention; `graph.py` verifies all
-of it. v2 added the M2.10 "Sources" section (per-field precedence across description/
-blog/transcript, and the transcript-chatter rule); v1 kicked off M2.9. Kept as
-separate files rather than editing in place so a prior prompt version stays
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v5.md"
+"""v5 (P1 #5 Commit 2) adds `label` -- a model-written, 1-4 word step heading -- with
+the shape rules `graph.py`'s `_accept_label` verifies (word count, no leading
+conditional marker, no trailing preposition/conjunction). Accepted or not, `label` is
+never checked against `text` for topical accuracy; a rejected label falls back to
+`_label(text)`'s own trim, same as when the model gives none at all. v4 (P0 #0) adds
+three rules `graph.py`'s new verification alone can't teach the model: attach a
+marker-less follow-on to the earlier OPTIONAL instruction it depends on (not the step
+it will modify), give a per-side/batch/piece estimate as the whole step's total, and
+treat "up to N" as a holding limit rather than the step's own duration. v3 (CP2)
+replaces `depends_on_previous` with explicit `depends_on_steps`, adds optional/
+alternative step roles, and refines attention; `graph.py` verifies all of it. v2 added
+the M2.10 "Sources" section (per-field precedence across description/blog/transcript,
+and the transcript-chatter rule); v1 kicked off M2.9. Kept as separate files rather
+than editing in place so a prior prompt version stays
 reproducible."""
 
 

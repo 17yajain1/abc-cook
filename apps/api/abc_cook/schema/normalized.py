@@ -86,6 +86,17 @@ class NormalizedStep(BaseModel):
     """
 
     text: str = Field(description="The step, lightly normalized. Never invented.")
+    label: str | None = Field(
+        default=None,
+        description=(
+            "A short (1-4 word) UI heading for this step -- a summary in your own "
+            "words (e.g. \"Mix marinade\", \"First rise\"), not a truncation of text. "
+            "Null if you have none. graph.py accepts it only by shape (word count, no "
+            "leading conditional marker, no trailing preposition/conjunction) and "
+            "falls back to its own trim of `text` otherwise -- it is never checked "
+            "against `text` for topical match, so accuracy is still your job."
+        ),
+    )
 
     attention: Attention = Field(
         description=(
