@@ -3,6 +3,8 @@
     "id": "chicken-biryani",
     "title": "Chicken Biryani",
     "servings": 4,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "Hyderabadi",
     "source": {
       "kind": "text",

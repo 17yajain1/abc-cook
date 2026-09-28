@@ -46,6 +46,21 @@ def test_lists_every_fixture(client: TestClient) -> None:
     assert [r.title for r in listing.recipes] == sorted(r.title for r in listing.recipes)
 
 
+def test_list_copies_servings_stated_and_yield_text_from_the_graph(
+    client: TestClient, slug: str
+) -> None:
+    """P1 #5 Commit 4: `RecipeSummary` must carry both new fields through, not just
+    `servings` -- every golden fixture states its servings explicitly (§R5), so
+    this also pins that the recipe list never shows a silently-defaulted 4."""
+    listing = RecipeListResponse.model_validate(client.get("/recipes").json())
+    summary = next(r for r in listing.recipes if r.id == slug)
+    plan = RecipePlanResponse.model_validate(client.get(f"/recipes/{slug}/plan").json())
+
+    assert summary.servings_stated == plan.graph.servings_stated
+    assert summary.yield_text == plan.graph.yield_text
+    assert summary.servings_stated is True  # every golden fixture states its servings
+
+
 def test_plan_is_served_and_valid(client: TestClient, slug: str) -> None:
     response = client.get(f"/recipes/{slug}/plan")
     assert response.status_code == 200

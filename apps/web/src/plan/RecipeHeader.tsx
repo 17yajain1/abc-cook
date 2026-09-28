@@ -1,4 +1,7 @@
+import type { ImportMeta } from '@abc-cook/schema'
+
 import { formatMinutes, headerTiming } from '@/lib/duration'
+import { servingsLine } from '@/lib/servings'
 
 import type { RenderPlan } from './derive'
 
@@ -23,8 +26,19 @@ export interface SaveControl {
  * follows the same rule: ink, bordered, never the signal colour reserved for "Start
  * Cooking" (M2.12 design decision 4).
  */
-export function RecipeHeader({ plan, save }: { plan: RenderPlan; save?: SaveControl }) {
+export function RecipeHeader({
+  plan,
+  save,
+  importMeta,
+}: {
+  plan: RenderPlan
+  save?: SaveControl
+  /** For the legacy-defaulted-servings gap only (`lib/servings.ts`) — absent for a
+   * fixture recipe (never went through `/import`), same as `PlanScreen`'s own prop. */
+  importMeta?: ImportMeta | null
+}) {
   const timing = headerTiming(plan.summary, plan.totalMin)
+  const servings = servingsLine(plan.servingsSource, importMeta)
 
   return (
     <header className="flex-shrink-0 px-5 pb-4 pt-7">
@@ -37,9 +51,7 @@ export function RecipeHeader({ plan, save }: { plan: RenderPlan; save?: SaveCont
       {plan.cuisine && <p className="mt-1 text-[15px] text-ink-2">{plan.cuisine}</p>}
 
       <div className="tabular mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px] font-medium text-ink-3">
-        <span>
-          {plan.servings} {plan.servings === 1 ? 'serving' : 'servings'}
-        </span>
+        {servings && <span>{servings}</span>}
         <span>{timing.primary}</span>
       </div>
       {timing.secondary && <p className="mt-0.5 text-[13px] text-ink-3">{timing.secondary}</p>}

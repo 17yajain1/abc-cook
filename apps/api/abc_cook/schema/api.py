@@ -17,6 +17,8 @@ class RecipeSummary(BaseModel):
     id: str = Field(description="Slug used in the plan URL.")
     title: str = Field(description='Recipe title, e.g. "Kadai Paneer".')
     servings: int = Field(description="Servings the quantities are stated for.")
+    servings_stated: bool = Field(default=True, description="See CookingGraph.servings_stated.")
+    yield_text: str | None = Field(default=None, description="See CookingGraph.yield_text.")
 
 
 class RecipeListResponse(BaseModel):

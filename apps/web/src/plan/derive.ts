@@ -11,6 +11,7 @@ import type {
 } from '@abc-cook/schema'
 
 import { executionOrder } from '@/cooking/model'
+import type { ServingsSource } from '@/lib/servings'
 
 /** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
 export type ProvenanceSource = NonNullable<NodeProvenance['fields']>[string]
@@ -149,6 +150,21 @@ export interface RenderPlan {
   recipeId: string
   title: string
   servings: number
+  /** False when `servings` is a default — not stated, or discarded by the PC5
+   * guard (a yield count the model mistook for a people count). `true` when the
+   * field is absent (a plan saved before it existed — every such recipe was
+   * hand-authored and genuinely stated; CLAUDE.md backward-compatibility). Read
+   * this before `servings` for display — see `lib/servings.ts`. */
+  servingsStated: boolean
+  /** The source's own stated yield, e.g. "14 rasgulla". `null` when not stated or
+   * not grounded by a number in the source text. */
+  yieldText: string | null
+  /** `{ servings, servingsStated, yieldText }` above, pre-shaped for `servingsLine`
+   * (`lib/servings.ts`) — the one place a presentation component is allowed to
+   * touch `.servings`/`.servings_stated`/`.yield_text` is inside that function
+   * itself; everywhere else reads this object (or the loose fields above) and
+   * calls `servingsLine`, never the raw graph. A grep-style Vitest enforces this. */
+  servingsSource: ServingsSource
   cuisine: string | null
   totalMin: number
   serialMin: number
@@ -392,6 +408,13 @@ export function derivePlan(
     recipeId: graph.id,
     title: graph.title,
     servings: graph.servings,
+    servingsStated: graph.servings_stated ?? true,
+    yieldText: graph.yield_text ?? null,
+    servingsSource: {
+      servings: graph.servings,
+      servings_stated: graph.servings_stated ?? true,
+      yield_text: graph.yield_text ?? null,
+    },
     cuisine: graph.cuisine ?? null,
     totalMin: plan.total_min,
     serialMin: plan.serial_min,

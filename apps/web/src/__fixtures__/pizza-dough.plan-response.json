@@ -3,6 +3,8 @@
     "id": "g_pizza_dough_replay",
     "title": "Best Homemade Pizza Dough Recipe | How To Make Pizza Crust",
     "servings": 8,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "American, Italian",
     "source": {
       "kind": "url",

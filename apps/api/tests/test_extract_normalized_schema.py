@@ -69,13 +69,13 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v6() -> None:
-    """P1 #5 Commit 3 switched production extraction to v6, which adds `title`
-    guidance (a clean, grounded dish name). v5 is kept on disk (a prior prompt
-    version stays reproducible), just no longer the production path."""
-    assert normalize._PROMPT_PATH.name == "v6.md"
-    assert "extraction prompt (v6)" in normalize.load_prompt()
-    assert (PROMPTS_DIR / "v5.md").exists()
+def test_production_extraction_uses_prompt_v7() -> None:
+    """P1 #5 Commit 4 switched production extraction to v7, which adds `yield_text`
+    guidance and tightens `servings` to mean people only. v6 is kept on disk (a
+    prior prompt version stays reproducible), just no longer the production path."""
+    assert normalize._PROMPT_PATH.name == "v7.md"
+    assert "extraction prompt (v7)" in normalize.load_prompt()
+    assert (PROMPTS_DIR / "v6.md").exists()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:
@@ -205,3 +205,39 @@ def test_prompt_v6_examples_use_none_of_the_evaluated_recipes() -> None:
     v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8").lower()
     for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
         assert word not in v6
+
+
+def test_prompt_v7_schema_still_carries_servings_fields() -> None:
+    """`yield_text` and `servings` are not new fields on the rendered schema itself
+    (`yield_text` was added to the Pydantic model in this same commit, so it's
+    already in the schema regardless of prompt version) -- this only confirms both
+    are still part of what v7 renders."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v7, NormalizedRecipe)
+    assert '"servings"' in rendered
+    assert '"yield_text"' in rendered
+
+
+def test_prompt_v7_instructs_servings_and_yield_semantics() -> None:
+    """P1 #5 Commit 4: v7 adds exactly the servings/yield tightening on top of v6's
+    unchanged content -- `servings` means people only, `yield_text` carries whatever
+    the source actually says it makes, and a piece count must never be copied into
+    `servings` just because it's the only number around."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v7)" in v7
+    assert "## Servings, yield, cuisine, total time" in v7
+    assert "how many PEOPLE this feeds" in v7
+    assert "`servings` is never a yield count" in v7
+    assert "leave `servings` null and put the count in `yield_text` instead" in v7
+    # v6's content is carried forward unchanged, not replaced.
+    assert "## Title — `title`" in v7
+    assert "## Step labels" in v7
+    assert "## `depends_on_steps`" in v7
+
+
+def test_prompt_v7_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4/v5/v6 -- the servings/yield section's own examples
+    must not be tuned on the owner's evaluated evidence either."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v7

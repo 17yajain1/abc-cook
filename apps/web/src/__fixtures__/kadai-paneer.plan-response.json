@@ -3,6 +3,8 @@
     "id": "kadai-paneer",
     "title": "Kadai Paneer",
     "servings": 3,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "North Indian",
     "source": {
       "kind": "text",

@@ -3,6 +3,8 @@
     "id": "homemade-donuts",
     "title": "Homemade Glazed Donuts",
     "servings": 12,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "American",
     "source": {
       "kind": "text",

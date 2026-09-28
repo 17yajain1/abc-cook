@@ -55,6 +55,21 @@ class CookingGraph(BaseModel):
     id: str = Field(description="Stable graph id.")
     title: str = Field(description='Recipe title, e.g. "Kadai Paneer".')
     servings: int = Field(description="Servings the quantities are stated for.")
+    servings_stated: bool = Field(
+        default=True,
+        description=(
+            "False when `servings` is a default (not stated, or discarded by the "
+            "PC5 guard — a yield count the model mistook for a people count). "
+            "Defaults True so every pre-P1-5 saved recipe (all hand-authored, all "
+            "genuinely stated) reads as stated without a migration — see "
+            "COOKING_GRAPH.md."
+        ),
+    )
+    yield_text: str | None = Field(
+        default=None,
+        description='The source\'s own stated yield, e.g. "14 rasgulla". Null when '
+        "not stated or not grounded by a number in the source text.",
+    )
     cuisine: str | None = Field(description="Cuisine, when the source states or implies one.")
     source: SourceRef = Field(description="Where this recipe came from.")
     ingredients: list[Ingredient] = Field(description="Every ingredient the recipe lists.")

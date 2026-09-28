@@ -69,8 +69,14 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v6.md"
-"""v6 (P1 #5 Commit 3) adds `title` guidance: a clean dish name grounded in the raw
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v7.md"
+"""v7 (P1 #5 Commit 4) adds `yield_text` and tightens `servings` to mean people only,
+never a yield's item count. `graph.py` still verifies both independently: `yield_text`
+is kept only if a number in it also appears in the source text, and the PC5 guard
+discards a "stated" `servings` claim that turns out to be the same number as
+`yield_text`'s own with no people word attached (a model that copied a piece count
+into `servings`, exactly the failure this field split exists to catch). v6 (P1 #5
+Commit 3) adds `title` guidance: a clean dish name grounded in the raw
 title or the linked blog's own name, not the raw title verbatim. `title.py`'s
 `resolve_title` verifies the grounding claim (case-folded, light suffix stemming) and
 replaces it with a deterministic cleanup of the raw title otherwise -- same

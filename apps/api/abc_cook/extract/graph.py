@@ -309,6 +309,142 @@ def _verify_freshness(
     return "stated_unbounded", cue, None
 
 
+SERVINGS_DEFAULTED_WARNING = "Servings not stated in the source; defaulted to 4."
+"""P1 #5 §R4 hardening: one exported constant, pinned by a pytest here and asserted
+against verbatim by a Vitest on `lib/servings.ts`'s own copy — a saved recipe's
+`import_meta.warnings` is the only way a legacy (pre-`servings_stated`) import's
+default is detectable without a migration (§R5), so this exact string is load-bearing
+on both sides and must never drift silently."""
+
+_YIELD_NUMBER_RE = re.compile(r"\d+")
+_YIELD_PEOPLE_WORDS = ("serves", "servings", "people", "persons", "portions")
+"""§R4 PC5 guard: naming one of these is what makes a yield count a people count."""
+
+
+def _yield_first_number(yield_text: str) -> str | None:
+    match = _YIELD_NUMBER_RE.search(yield_text)
+    return match.group() if match else None
+
+
+def _verify_yield(yield_text: str | None, corpus: str) -> str | None:
+    """§R4: keep `yield_text` only if a number in it also appears in the source text.
+
+    Never invents a number-free description either — a yield with no digit at all
+    ("Makes a dozen") is dropped, not guessed at (documented limitation,
+    COOKING_GRAPH.md).
+    """
+    if not yield_text or not yield_text.strip():
+        return None
+    number = _yield_first_number(yield_text)
+    if number is None or number not in corpus:
+        return None
+    return yield_text.strip()
+
+
+def _yield_names_people(yield_text: str) -> bool:
+    lowered = yield_text.lower()
+    return any(word in lowered for word in _YIELD_PEOPLE_WORDS)
+
+
+_TRANSCRIPT_MARKER_RE = re.compile(r"transcript \([^)]*\):", re.IGNORECASE)
+
+_HINDI_NUMBER_WORDS = {
+    1: ("एक", "ek"),
+    2: ("दो", "do"),
+    3: ("तीन", "teen", "tin"),
+    4: ("चार", "chaar", "char"),
+    5: ("पांच", "पाँच", "paanch", "panch"),
+    6: ("छह", "छः", "chhah", "chhe"),
+    7: ("सात", "saat", "sat"),
+    8: ("आठ", "aath", "ath"),
+    9: ("नौ", "nau"),
+    10: ("दस", "das"),
+    11: ("ग्यारह", "gyarah"),
+    12: ("बारह", "barah"),
+}
+"""1-12, Devanagari plus the most common romanized spelling(s) -- for `_verify_servings`
+only, same narrow purpose as `_NUMBER_WORDS`, not a general transliteration table.
+Checkpoint fix: replaces a blanket "the source looks non-English, so accept anything"
+bypass, which accepted an unstated OR contradicted claim just as readily as a genuinely
+grounded one. Deliberately small and un-fuzzy -- exactly the forms actually observed
+in this codebase's fixtures, not every possible spelling. Known limitation: a short
+romanized form ("char", "do", "das") is matched as a plain substring, same as the
+English words above, so it can accidentally match inside an unrelated English word
+("character", "dosa", "date") -- a false accept, not a false reject, and one this
+narrow table doesn't try to solve without adding word-boundary/fuzzy machinery."""
+
+
+def _non_transcript_corpus(corpus: str) -> str:
+    """The corpus up to (not including) the transcript section, if any.
+
+    `normalize.render_source_text` always precedes a transcript with a literal
+    "Transcript (kind, lang):" label, so this reliably isolates the structured
+    metadata (title, channel, blog JSON-LD, description) from a spoken/captioned
+    transcript, which is not reliable digit-grounding text (its own digit, if any,
+    could coincidentally match a stated duration or an ingredient count instead of
+    the servings claim).
+    """
+    match = _TRANSCRIPT_MARKER_RE.search(corpus)
+    return corpus[: match.start()] if match else corpus
+
+
+def _verify_servings(claimed_servings: int, corpus: str) -> bool:
+    """Independent grounding for a bare `servings` claim (checkpoint fix).
+
+    `servings` previously had no grounding of its own at all — trusted verbatim,
+    the one field in this file without the never-trust-the-claim discipline
+    `attention_cue`/`freshness_cue`/`role_cue` all get elsewhere. Grounded when:
+
+    - the digit appears in the source excluding the transcript
+      (`_non_transcript_corpus`), or
+    - an English or Hindi number word for it ("four", "चार", "chaar") appears
+      anywhere, transcript included.
+
+    A claim backed by none of these is not grounded — including a source that's
+    silent on servings entirely, AND a source that only ever states a *different*
+    number: neither ever contains evidence for the claimed number specifically, so
+    both come out the same way here (not stated) without this function ever
+    comparing the claim against a second, contradicting number as such. Pizza,
+    rasgulla and "Makes a dozen" (§R4/PC5) are unaffected: none of those servings
+    claims are ever silent like this.
+    """
+    if str(claimed_servings) in _non_transcript_corpus(corpus):
+        return True
+    words = (
+        _NUMBER_WORDS_REVERSE.get(claimed_servings),
+        *_HINDI_NUMBER_WORDS.get(claimed_servings, ()),
+    )
+    return any(word is not None and word in corpus for word in words)
+
+
+def _resolve_servings(
+    claimed_servings: int | None, verified_yield_text: str | None, corpus: str
+) -> tuple[int, bool]:
+    """A claimed `servings` becomes stated only if independently grounded, then §R4's PC5 guard.
+
+    `_verify_servings` first: an ungrounded claim (nothing backing it anywhere in
+    the source) is treated as not stated at all. Then PC5: discard a "stated"
+    servings claim that's really just an echoed yield count — the same number as
+    `yield_text`'s own, with `yield_text` naming no people word. Returns
+    `(servings, servings_stated)`; `servings` defaults to 4 whenever
+    `servings_stated` comes back False, exactly like the pre-P1-5 default (never
+    invented — 4 is the existing fallback, not a new guess).
+    """
+    stated = claimed_servings is not None and _verify_servings(claimed_servings, corpus)
+    if stated and verified_yield_text is not None:
+        yield_number = _yield_first_number(verified_yield_text)
+        if (
+            yield_number is not None
+            and claimed_servings is not None
+            and str(claimed_servings) == yield_number
+            and not _yield_names_people(verified_yield_text)
+        ):
+            stated = False
+    if not stated or claimed_servings is None:
+        return 4, False
+    return claimed_servings, True
+
+
 @dataclass(frozen=True)
 class _Roles:
     """The role pass's result, in original step positions."""
@@ -483,6 +619,11 @@ _NUMBER_WORDS = {
     "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
 }
 """Transcripts say "five minutes" as often as "5 minutes" (§4)."""
+
+_NUMBER_WORDS_REVERSE = {v: k for k, v in _NUMBER_WORDS.items()}
+"""int -> the English word a transcript might spell it as ("four" for 4) -- for
+`_verify_servings`'s grounding check, reusing this word list rather than a second
+one."""
 
 _VULGAR_FRACTION_MINUTES = {"¼": 0.25, "½": 0.5, "¾": 0.75}
 
@@ -1420,9 +1561,10 @@ def build_graph(
         for sid in used_stage_ids
     ]
 
-    servings = recipe.servings if recipe.servings is not None else 4
-    if recipe.servings is None:
-        warnings.append("Servings not stated in the source; defaulted to 4.")
+    yield_text = _verify_yield(recipe.yield_text, corpus)
+    servings, servings_stated = _resolve_servings(recipe.servings, yield_text, corpus)
+    if not servings_stated:
+        warnings.append(SERVINGS_DEFAULTED_WARNING)
 
     stated_total_min = recipe.stated_total_min
     if stated_total_min is not None:
@@ -1470,6 +1612,8 @@ def build_graph(
         id=graph_id,
         title=recipe.title,
         servings=servings,
+        servings_stated=servings_stated,
+        yield_text=yield_text,
         cuisine=recipe.cuisine,
         source=source,
         ingredients=ingredients,

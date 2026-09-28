@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { RecipeSummary, SavedRecipe } from '@abc-cook/schema'
 
 import { ApiError, fetchRecipes } from '@/api/client'
+import { servingsLine } from '@/lib/servings'
 
 import { thumbnailUrlFor } from './sourceKey'
 
@@ -62,18 +63,7 @@ export function LibraryScreen({
 
         <ul className="mt-2 border-t border-rule">
           {recipes?.map((recipe) => (
-            <li key={recipe.id}>
-              <button
-                type="button"
-                onClick={() => onPick(recipe.id)}
-                className="flex w-full items-baseline justify-between gap-3 border-b border-rule py-3.5 text-left active:bg-paper-sunk"
-              >
-                <span className="text-[15px] font-medium text-ink">{recipe.title}</span>
-                <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
-                  {recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'}
-                </span>
-              </button>
-            </li>
+            <SampleRow key={recipe.id} recipe={recipe} onPick={() => onPick(recipe.id)} />
           ))}
           {!recipes && !error && <li className="py-3.5 text-[15px] text-ink-3">Loading…</li>}
         </ul>
@@ -90,9 +80,38 @@ export function LibraryScreen({
   )
 }
 
+function SampleRow({ recipe, onPick }: { recipe: RecipeSummary; onPick: () => void }) {
+  const servings = servingsLine(recipe)
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onPick}
+        className="flex w-full items-baseline justify-between gap-3 border-b border-rule py-3.5 text-left active:bg-paper-sunk"
+      >
+        {/* min-w-0: without it, a flex child with nowrap text (`truncate`) never
+         * shrinks below its own full content width — the classic flexbox
+         * truncation gotcha. A long combined "N servings · <yield>" string
+         * (checkpoint finding, P1 #5 Commit 4) pushed the whole row wider than
+         * 390px and hid the title entirely until this was added to both sides. */}
+        <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
+          {recipe.title}
+        </span>
+        {servings && (
+          <span className="tabular max-w-[45%] flex-shrink-0 truncate text-[13px] font-medium text-ink-3">
+            {servings}
+          </span>
+        )}
+      </button>
+    </li>
+  )
+}
+
 function SavedRow({ recipe, onOpen }: { recipe: SavedRecipe; onOpen: () => void }) {
   const thumbnail = thumbnailUrlFor(recipe.source_key)
-  const { title, servings } = recipe.payload.graph
+  const { title } = recipe.payload.graph
+  const servings = servingsLine(recipe.payload.graph, recipe.import_meta)
 
   return (
     <li>
@@ -114,10 +133,16 @@ function SavedRow({ recipe, onOpen }: { recipe: SavedRecipe; onOpen: () => void 
           />
         )}
         <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
-          <span className="truncate text-[15px] font-medium text-ink">{title}</span>
-          <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
-            {servings} {servings === 1 ? 'serving' : 'servings'}
+          {/* min-w-0 on both children, not just this container — see SampleRow's
+           * comment on the same fix. */}
+          <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
+            {title}
           </span>
+          {servings && (
+            <span className="tabular max-w-[45%] flex-shrink-0 truncate text-[13px] font-medium text-ink-3">
+              {servings}
+            </span>
+          )}
         </span>
       </button>
     </li>

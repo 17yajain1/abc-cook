@@ -132,6 +132,40 @@ describe('derivePlan — Kadai Paneer', () => {
   })
 })
 
+describe('derivePlan — servingsStated / yieldText / servingsSource (P1 #5 Commit 4)', () => {
+  it('copies servings_stated and yield_text straight from the graph, and bundles them into servingsSource', () => {
+    const plan = derivePlan(KADAI)
+    expect(plan.servingsStated).toBe(KADAI.graph.servings_stated)
+    expect(plan.yieldText).toBe(KADAI.graph.yield_text ?? null)
+    expect(plan.servingsSource).toEqual({
+      servings: plan.servings,
+      servings_stated: plan.servingsStated,
+      yield_text: plan.yieldText,
+    })
+  })
+
+  it('defaults servingsStated to true and yieldText to null on a plan saved before these fields existed', () => {
+    const legacy: RecipePlanResponse = {
+      ...KADAI,
+      graph: { ...KADAI.graph, servings_stated: undefined, yield_text: undefined },
+    }
+    const plan = derivePlan(legacy)
+    expect(plan.servingsStated).toBe(true)
+    expect(plan.yieldText).toBeNull()
+  })
+
+  it('carries a stated yield_text through unchanged when the graph has one', () => {
+    const yielded: RecipePlanResponse = {
+      ...KADAI,
+      graph: { ...KADAI.graph, servings_stated: false, yield_text: '14 rasgulla' },
+    }
+    const plan = derivePlan(yielded)
+    expect(plan.servingsStated).toBe(false)
+    expect(plan.yieldText).toBe('14 rasgulla')
+    expect(plan.servingsSource.yield_text).toBe('14 rasgulla')
+  })
+})
+
 describe('derivePlan — hasUnattendedWork (A7)', () => {
   it('is true when the graph has an unattended or periodic node', () => {
     expect(derivePlan(KADAI).hasUnattendedWork).toBe(true) // kadai-paneer has a periodic node

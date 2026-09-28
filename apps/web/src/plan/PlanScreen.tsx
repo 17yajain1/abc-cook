@@ -124,7 +124,7 @@ export function PlanScreen({
   // against a sub-390px viewport.
   return (
     <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
-      <RecipeHeader plan={plan} save={save} />
+      <RecipeHeader plan={plan} save={save} importMeta={importMeta} />
       {statusLine && <p className="px-5 pb-2 text-[13px] text-ink-3">{statusLine}</p>}
 
       <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">

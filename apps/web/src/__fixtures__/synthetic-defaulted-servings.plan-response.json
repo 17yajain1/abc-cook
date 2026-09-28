@@ -1,0 +1,116 @@
+{
+  "graph": {
+    "id": "g_synthetic_defaulted_servings",
+    "title": "Synthetic Defaulted Servings",
+    "servings": 4,
+    "servings_stated": false,
+    "yield_text": null,
+    "cuisine": null,
+    "source": {
+      "kind": "text",
+      "value": "Synthetic Defaulted Servings. Boil the water and serve.",
+      "imported_at": "2026-01-01T00:00:00Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_water",
+        "name": "Water",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "step_boil_the_water_and_serve",
+        "stage": "finish",
+        "label": "Boil the water",
+        "instruction": "Boil the water and serve.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "burner",
+        "depends_on": [],
+        "consumes": [
+          "ing_water"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "finish",
+        "label": "Finish",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": null
+  },
+  "plan": {
+    "graph_id": "g_synthetic_defaulted_servings",
+    "scheduled": [
+      {
+        "node_id": "step_boil_the_water_and_serve",
+        "start_min": 0.0,
+        "end_min": 2.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [],
+    "total_min": 2.0,
+    "serial_min": 2.0,
+    "saved_min": 0.0,
+    "critical_path": [
+      "step_boil_the_water_and_serve"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "finish",
+      "start_min": 0.0,
+      "end_min": 2.0,
+      "elapsed_min": 2.0,
+      "work_min": 2.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 2.0,
+      "hands_on_min": 2.0,
+      "unattended_min": 0.0,
+      "node_ids": [
+        "step_boil_the_water_and_serve"
+      ]
+    }
+  ],
+  "summary": {
+    "active_min": 2.0,
+    "attended_min": 2.0,
+    "elapsed_min": 2.0,
+    "elapsed_high_min": 3.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 2.0,
+        "active_min": 2.0,
+        "node_ids": [
+          "step_boil_the_water_and_serve"
+        ],
+        "preceded_by_wait_min": null,
+        "elapsed_min": 2.0,
+        "elapsed_high_min": 3.0,
+        "preceded_by_host_node_ids": []
+      }
+    ],
+    "long_waits": []
+  }
+}

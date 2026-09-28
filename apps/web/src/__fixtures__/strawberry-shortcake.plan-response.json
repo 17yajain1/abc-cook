@@ -3,6 +3,8 @@
     "id": "strawberry-shortcake",
     "title": "Strawberry Shortcake",
     "servings": 6,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "American",
     "source": {
       "kind": "text",

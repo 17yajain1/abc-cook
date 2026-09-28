@@ -3,6 +3,8 @@
     "id": "synthetic-two-sittings",
     "title": "Rajma (Kidney Bean Curry)",
     "servings": 4,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "North Indian",
     "source": {
       "kind": "text",

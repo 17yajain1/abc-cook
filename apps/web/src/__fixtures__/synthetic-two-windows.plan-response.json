@@ -3,6 +3,8 @@
     "id": "synthetic-two-windows",
     "title": "Spiced Lentil and Rice Bowl",
     "servings": 4,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": null,
     "source": {
       "kind": "text",
