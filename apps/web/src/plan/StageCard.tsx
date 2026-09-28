@@ -38,6 +38,11 @@ export function StageCard({
   const windowByHost = new Map(stage.windows.map((w) => [w.hostNodeId, w]))
   const chain = stage.inlineTasks.map((t) => t.label).join(' → ')
   const meanwhile = meanwhileLabels(stage)
+  // A card whose whole-stage figure wouldn't match what's visibly inside it — either
+  // because it absorbed a foreign row (`hasForeignRows`) or because one of its own
+  // rows was absorbed into a different card (`rowsAbsorbedElsewhere`) — omits the
+  // figure, same reasoning as the pre-existing `repeated` case (§R1).
+  const showsStageDuration = !stage.repeated && !stage.hasForeignRows && !stage.rowsAbsorbedElsewhere
 
   return (
     <div className="mb-6 flex gap-3">
@@ -74,13 +79,18 @@ export function StageCard({
           </span>
           {/* Duration + toggle travel together as one flex-shrink-0 unit so a long
            * duration string (e.g. the expanded hands-on/waiting split) wraps whole onto
-           * its own line under the label. */}
+           * its own line under the label. Omitted when `showsStageDuration` is false —
+           * it's a whole-stage rollup, and a repeated, foreign-row-absorbing, or
+           * rows-absorbed-elsewhere card would either double-count it or make it wrong
+           * for what's actually shown here (see `showsStageDuration` above). */}
           <span className="flex flex-shrink-0 items-baseline gap-3">
-            <span className="tabular text-[13px] font-medium text-ink-2">
-              {expanded
-                ? expandedStageDurationText(stage.span)
-                : collapsedStageDurationText(stage.span)}
-            </span>
+            {showsStageDuration && (
+              <span className="tabular text-[13px] font-medium text-ink-2">
+                {expanded
+                  ? expandedStageDurationText(stage.span)
+                  : collapsedStageDurationText(stage.span)}
+              </span>
+            )}
             <span aria-hidden className="text-[15px] font-medium leading-none text-ink-2">
               {expanded ? '−' : '+'}
             </span>
@@ -111,9 +121,10 @@ export function StageCard({
             )}
             {stage.inlineTasks.map((task) => {
               const win = windowByHost.get(task.nodeId)
+              const foreign = task.homeStageIndex !== stage.index
               return (
                 <Fragment key={task.nodeId}>
-                  <TaskRow task={task} />
+                  <TaskRow task={task} foreign={foreign} />
                   {win && <WaitWindowBlock window={win} hostStageIndex={stage.index} />}
                 </Fragment>
               )
@@ -203,10 +214,27 @@ export function taskDurationText(task: RenderTask): string {
   return formatted
 }
 
-function TaskRow({ task }: { task: RenderTask }) {
+/**
+ * `foreign`: true when this row's `homeStageIndex` isn't the card's own — a short
+ * interleave absorbed in place (`groupIntoRuns`, plan §D checkpoint) rather than given
+ * its own card. Reuses `WaitWindowBlock`'s home-stage tint bar (a plain 3px left edge
+ * in the row's own stage colour — no panel, no "Meanwhile" heading, no background
+ * change), so it reads as "this one row belongs to another stage" rather than as the
+ * window grammar's "do this while the row above cooks" relationship, which this isn't.
+ */
+function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
   const note = attentionNote(task.attention)
   return (
-    <div className="flex items-baseline gap-3 border-b border-rule py-3 last:border-b-0">
+    <div
+      className={`relative flex items-baseline gap-3 border-b border-rule py-3 last:border-b-0 ${foreign ? 'pl-3' : ''}`}
+    >
+      {foreign && (
+        <span
+          aria-hidden
+          className="absolute bottom-0 left-0 top-0 w-[3px]"
+          style={{ background: stageColor(task.homeStageIndex) }}
+        />
+      )}
       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
         <span className="block text-[15px] font-medium text-ink">{task.label}</span>
         {task.instruction && (

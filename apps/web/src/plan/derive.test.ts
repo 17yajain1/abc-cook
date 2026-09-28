@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { GraphProvenance, RecipePlanResponse } from '@abc-cook/schema'
 
-import { derivePlan } from './derive'
+import { executionOrder } from '@/cooking/model'
+
+import { derivePlan, groupIntoRuns } from './derive'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
@@ -47,9 +49,25 @@ describe('derivePlan — Kadai Paneer', () => {
     const prep = plan.stages.find((s) => s.stageId === 'prep')!
     const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
 
-    // Prep keeps only the two tasks that must finish before the base starts.
-    expect(prep.inlineTasks.map((t) => t.nodeId)).toEqual(['chop_onion', 'chop_tomato'])
+    // Prep keeps the two tasks that must finish before the base starts, plus
+    // `saute_onion` — a genuine one-task Cook Base interleave the scheduler places
+    // between them (P1 #5 checkpoint finding), absorbed here rather than splitting
+    // Prep into two cards (`groupIntoRuns`, plan §D). It keeps its own true home
+    // stage for the foreign-row tint cue.
+    expect(prep.inlineTasks.map((t) => t.nodeId)).toEqual([
+      'chop_onion',
+      'saute_onion',
+      'chop_tomato',
+    ])
+    const sauteOnion = prep.inlineTasks.find((t) => t.nodeId === 'saute_onion')!
+    expect(sauteOnion.homeStageIndex).toBe(cookBase.index)
+    expect(prep.hasForeignRows).toBe(true)
     expect(prep.windows).toHaveLength(0)
+
+    // Cook Base's own card is missing `saute_onion` (it's shown above, inside Prep),
+    // so its whole-stage duration figure would undercount what's visible there.
+    expect(cookBase.inlineTasks.map((t) => t.nodeId)).toEqual(['cook_tomato_base'])
+    expect(cookBase.rowsAbsorbedElsewhere).toBe(true)
 
     // The relocation — the entire pitch of the product — lands on Cook Base's window.
     expect(cookBase.windows).toHaveLength(1)
@@ -57,6 +75,23 @@ describe('derivePlan — Kadai Paneer', () => {
       'chop_capsicum',
       'cube_paneer',
       'make_kadai_masala',
+    ])
+  })
+
+  it("flattening Kadai's own cards reproduces executionOrder filtered to inline tasks — checked on this fixture alone, independent of the all-fixtures loop below, because it's the one where the short-interleave rule actually fires", () => {
+    const scheduledByNode = new Map(KADAI.plan.scheduled.map((s) => [s.node_id, s]))
+    const expected = executionOrder(KADAI.plan.scheduled).filter(
+      (id) => scheduledByNode.get(id)?.window_id == null,
+    )
+    expect(plan.stages.flatMap((s) => s.inlineTasks.map((t) => t.nodeId))).toEqual(expected)
+    expect(expected).toEqual([
+      'chop_onion',
+      'saute_onion',
+      'chop_tomato',
+      'cook_tomato_base',
+      'add_veggies',
+      'add_paneer',
+      'finish',
     ])
   })
 
@@ -464,5 +499,74 @@ describe('derivePlan — waitRows (M3.2)', () => {
     expect(plan.waitRows).toHaveLength(1)
     const prepIndex = plan.stages.findIndex((s) => s.stageId === 'prep')
     expect(plan.waitRows[0].afterStageIndex).toBe(prepIndex)
+  })
+})
+
+// P1 #5 checkpoint (approved 2026-09-28): a naive "split on every stage change" card
+// rule produced repeating 1/2/1/2 badges on Kadai — an ordinary recipe with no
+// announced parallelism issue — because the scheduler already interleaves a genuine
+// Cook Base task between two Prep tasks. `groupIntoRuns` absorbs a short (≤2 task)
+// foreign interleave into the surrounding card, in place, instead of splitting it.
+describe('groupIntoRuns — short-interleave rule (cap = 2)', () => {
+  const stageOf = (stages: Record<string, string>) => (id: string) => stages[id]
+
+  it('adversarial: a 3-task foreign excursion is too long to absorb, even though the dominant stage resumes right after it', () => {
+    // Rejected during the checkpoint review: an unbounded "resumes anywhere later"
+    // rule would swallow this into one card badged "A" that's mostly B — see the
+    // checkpoint report for the full comparison against that alternative.
+    const stages = { A1: 'A', B1: 'B', B2: 'B', B3: 'B', A2: 'A', C1: 'C' }
+    const runs = groupIntoRuns(['A1', 'B1', 'B2', 'B3', 'A2', 'C1'], stageOf(stages))
+    expect(runs.map((r) => [r.stageId, r.nodeIds])).toEqual([
+      ['A', ['A1']],
+      ['B', ['B1', 'B2', 'B3']],
+      ['A', ['A2']],
+      ['C', ['C1']],
+    ])
+    expect(runs.every((r) => r.foreignNodeIds.size === 0)).toBe(true)
+  })
+
+  it('alternating single-task interleaves each independently qualify and all collapse into one card', () => {
+    const stages = { A1: 'A', B1: 'B', A2: 'A', B2: 'B', A3: 'A' }
+    const runs = groupIntoRuns(['A1', 'B1', 'A2', 'B2', 'A3'], stageOf(stages))
+    expect(runs).toHaveLength(1)
+    expect(runs[0].stageId).toBe('A')
+    expect(runs[0].nodeIds).toEqual(['A1', 'B1', 'A2', 'B2', 'A3'])
+    expect(runs[0].foreignNodeIds).toEqual(new Set(['B1', 'B2']))
+  })
+
+  it('never reorders — flattening every run reproduces the input exactly', () => {
+    const stages = { A1: 'A', B1: 'B', B2: 'B', B3: 'B', A2: 'A', C1: 'C' }
+    const order = ['A1', 'B1', 'B2', 'B3', 'A2', 'C1']
+    const runs = groupIntoRuns(order, stageOf(stages))
+    expect(runs.flatMap((r) => r.nodeIds)).toEqual(order)
+  })
+})
+
+describe('derivePlan — cooking-order invariants (P1 #5 checkpoint)', () => {
+  it("flattening every card's inline rows reproduces executionOrder filtered to inline tasks, for every fixture", () => {
+    for (const payload of ALL_FIXTURES) {
+      const plan = derivePlan(payload)
+      const scheduledByNode = new Map(payload.plan.scheduled.map((s) => [s.node_id, s]))
+      const expected = executionOrder(payload.plan.scheduled).filter(
+        (id) => scheduledByNode.get(id)?.window_id == null,
+      )
+      const actual = plan.stages.flatMap((s) => s.inlineTasks.map((t) => t.nodeId))
+      expect(actual).toEqual(expected)
+    }
+  })
+
+  it("every window stays under the one card whose inline rows contain its host, for every fixture", () => {
+    for (const payload of ALL_FIXTURES) {
+      const plan = derivePlan(payload)
+      for (const stage of plan.stages) {
+        for (const window of stage.windows) {
+          expect(stage.inlineTasks.map((t) => t.nodeId)).toContain(window.hostNodeId)
+        }
+      }
+      // Every window in the payload is attached to exactly one card — none dropped,
+      // none duplicated.
+      const attachedWindowIds = plan.stages.flatMap((s) => s.windows.map((w) => w.id)).sort()
+      expect(attachedWindowIds).toEqual(payload.plan.windows.map((w) => w.id).sort())
+    }
   })
 })

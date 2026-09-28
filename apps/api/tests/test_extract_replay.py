@@ -124,7 +124,16 @@ def test_pizza_dough_replay_full_pipeline_validates_schedules_and_spans_cleanly(
 def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> None:
     """C1/C2 gate: this is the exact §2.2 case (`Cook ~304 min` showing 289 min of
     unattended waits as undifferentiated work). The split must separate the two, and
-    the preheat host's inferred duration must still be marked inferred."""
+    the preheat host's inferred duration must still be marked inferred.
+
+    P1 #5 §R3: these per-stage numbers changed from the pre-monotonic-stages values.
+    Five steps that used to fall in Prep by the old kind-only rule (the overnight
+    fridge rest, pulling the dough an hour ahead, flouring the peel, shaping over the
+    knuckles, and topping the pizza) are cook-adjacent -- each sits after the first
+    cook anchor (the bulk rise) -- and now land in Cook instead, per the design doc's
+    pizza replay table. Prep keeps only the three genuine up-front steps (stir, measure,
+    knead); Cook absorbs the rest, including the long unattended waits that were
+    previously split across Prep and Cook."""
     recipe, source_text = _load_fixture()
     result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
     assert result.graph is not None
@@ -133,8 +142,8 @@ def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> Non
     spans = {span.stage_id: span for span in stage_spans(result.graph, plan)}
 
     prep, cook, finish = spans["prep"], spans["cook"], spans["finish"]
-    assert (prep.hands_on_min, prep.unattended_min, prep.inline_work_min) == (20.0, 1145.0, 1165.0)
-    assert (cook.hands_on_min, cook.unattended_min, cook.inline_work_min) == (15.0, 289.0, 304.0)
+    assert (prep.hands_on_min, prep.unattended_min, prep.inline_work_min) == (5.0, 5.0, 10.0)
+    assert (cook.hands_on_min, cook.unattended_min, cook.inline_work_min) == (30.0, 1429.0, 1459.0)
     assert (finish.hands_on_min, finish.unattended_min, finish.inline_work_min) == (0.0, 1.0, 1.0)
 
     provenance = compute_provenance(result)

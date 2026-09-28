@@ -958,12 +958,38 @@ def _sequential_source(step_text: str) -> ProvenanceSource:
     return "extracted" if first_word in _SEQUENCE_CONNECTIVES else "inferred"
 
 
-def _stage_for(index: int, total: int, kind: NodeKind) -> str:
-    if index == total - 1:
-        return "finish"
-    if kind == "prep":
-        return "prep"
-    return "cook"
+def _stages_for(kinds: list[NodeKind]) -> list[str]:
+    """P1 #5 §R3: monotonic stages, with a narrow trailing-finish rule for late garnish.
+
+    `kinds[i]` is the existing per-step derivation (`"finish"` for the last step,
+    otherwise `_infer_kind`) — this function only decides which of `prep`/`cook`/`finish`
+    each step's `Node.stage` is, never `Node.kind` itself.
+
+    A "cook-anchor" step is a non-last step whose kind isn't `prep` — exactly the steps
+    the old `_stage_for` sent to `cook`. Between the first and last anchor, EVERY step
+    (prep-kind or not) is `cook`: a prep step that reads as a discrete task but sits
+    between two anchors (dal's "scrub the soaked dal" after "soak", the tadka's "add
+    chopped garlic" between two pan steps) is cook-adjacent, not a separate prep phase.
+    A prep-kind step after the last anchor is a trailing garnish/plating step and is
+    `finish`, not `cook` — the one case monotonic-by-anchor alone would misfile.
+    """
+    total = len(kinds)
+    last = total - 1
+    anchors = [i for i in range(last) if kinds[i] != "prep"]
+
+    stages: list[str] = []
+    for i in range(total):
+        if i == last:
+            stages.append("finish")
+        elif kinds[i] != "prep":
+            stages.append("cook")
+        elif not anchors or i < anchors[0]:
+            stages.append("prep")
+        elif i > anchors[-1]:
+            stages.append("finish")
+        else:
+            stages.append("cook")
+    return stages
 
 
 _STAGE_LABELS = {"prep": "Prep", "cook": "Cook", "finish": "Finish"}
@@ -1115,9 +1141,23 @@ def build_graph(
         )
         review_recommended = review_recommended or explicit_review
 
+    # -- Attention, kind and stage (§R3) -- computed for every step up front, before
+    # the main per-node loop below, because the stage rule needs to see every step's
+    # kind at once (it looks for the first/last cook-anchor across the whole recipe,
+    # not just what came before the current step).
+    attentions: list[Attention] = []
+    attention_sources: list[ProvenanceSource] = []
+    kinds: list[NodeKind] = []
     for index, step in enumerate(steps):
         attention, attention_source = _verify_attention(step, corpus)
-        kind = "finish" if index == total - 1 else _infer_kind(step.text, attention)
+        attentions.append(attention)
+        attention_sources.append(attention_source)
+        kinds.append("finish" if index == total - 1 else _infer_kind(step.text, attention))
+    stages_for_steps = _stages_for(kinds)
+
+    for index, step in enumerate(steps):
+        attention, attention_source = attentions[index], attention_sources[index]
+        kind = kinds[index]
 
         # §4/§6 item 1: verify the duration claim against the step's own text
         # BEFORE the window-host clamp, so the clamp acts on the verified
@@ -1177,7 +1217,7 @@ def build_graph(
         nodes.append(
             Node(
                 id=node_ids[index],
-                stage=_stage_for(index, total, kind),
+                stage=stages_for_steps[index],
                 label=_label(step.text),
                 instruction=step.text,
                 kind=kind,

@@ -23,6 +23,7 @@ from abc_cook.extract.graph import (
     _label,
     _parse_qty,
     _produced_labels,
+    _stages_for,
     _verify_duration,
     _verify_independence,
     build_graph,
@@ -2326,4 +2327,80 @@ def test_step6_required_microwave_method_now_gets_the_backstop_warning() -> None
         w.lower().startswith('step "microwave method') and "flagged for review" in w
         for w in result.warnings
     )
+
+
+# ---------------------------------------------------------------------------
+# P1 #5 §R3 -- monotonic stages, with a narrow trailing-finish rule for late garnish.
+# `_stages_for` operates purely on `kind`, never on text, so most cases below build
+# `kind` sequences directly; the last two lock in the real text -> kind -> stage
+# pipeline for the design doc's two literal examples, including the "chop" substring
+# quirk (inside "chopped") the trailing-finish rule exists to catch.
+# ---------------------------------------------------------------------------
+
+
+def test_stages_for_all_prep_recipe_stays_prep_plus_finish() -> None:
+    """"Chop onions. Dice tomatoes. Whisk dressing. Toss and serve." -- an all-prep
+    recipe must never collapse into Finish; only the last step is Finish."""
+    assert _stages_for(["prep", "prep", "prep", "finish"]) == ["prep", "prep", "prep", "finish"]
+
+
+def test_stages_for_trailing_garnish_is_finish_not_cook() -> None:
+    """A prep-kind step after the last cook-anchor is a genuine late garnish/plating
+    step, not cook-adjacent prep -- it gets `finish`, not `cook`."""
+    assert _stages_for(["prep", "active", "prep", "finish"]) == ["prep", "cook", "finish", "finish"]
+
+
+def test_stages_for_leading_soak_pulls_the_following_prep_step_into_cook() -> None:
+    """Dal's shape: a passive step 0 (the soak), then a prep-kind step (scrubbing the
+    soaked dal) that reads as prep but is cook-adjacent because it sits between two
+    cook anchors -- it must land in `cook`, not `prep`, or the whole recipe collapses
+    to Cook + Finish with no Prep at all once step 0 anchors it."""
+    kinds = ["passive", "prep", "active", "finish"]
+    assert _stages_for(kinds) == ["cook", "cook", "cook", "finish"]
+
+
+def test_stages_for_mid_recipe_prep_between_anchors_is_cook() -> None:
+    """The F5 keyword-bug shape (dal step 10, "add chopped garlic" between two pan
+    steps): `_infer_kind` still calls it `prep` (the "chop" substring inside
+    "chopped"), but §R3 places it in `cook` because it sits strictly between two
+    anchors -- which is the correct stage regardless of the keyword quirk."""
+    assert _stages_for(["active", "prep", "active", "finish"]) == ["cook", "cook", "cook", "finish"]
+
+
+def test_stages_for_single_step_recipe_is_just_finish() -> None:
+    assert _stages_for(["finish"]) == ["finish"]
+
+
+def test_stages_for_two_step_all_prep_chain_never_crashes() -> None:
+    assert _stages_for(["prep", "finish"]) == ["prep", "finish"]
+
+
+def test_all_prep_recipe_stages_through_the_full_pipeline() -> None:
+    """The literal §R3 example, through `build_graph` end to end."""
+    source = "Chop onions. Dice tomatoes. Whisk dressing. Toss and serve."
+    steps = [
+        _step(text="Chop onions."),
+        _step(text="Dice tomatoes."),
+        _step(text="Whisk dressing."),
+        _step(text="Toss and serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert [n.stage for n in result.graph.nodes] == ["prep", "prep", "prep", "finish"]
+
+
+def test_trailing_garnish_stages_through_the_full_pipeline() -> None:
+    """The literal §R3 example, through `build_graph` end to end -- including the
+    "chop" substring inside "chopped" that makes `_infer_kind` call the garnish step
+    `prep`; §R3's trailing-finish rule still routes it to Finish, not Cook."""
+    source = "Chop onion. Simmer the curry 10 min. Garnish with chopped coriander. Serve."
+    steps = [
+        _step(text="Chop onion."),
+        _step(text="Simmer the curry 10 min."),
+        _step(text="Garnish with chopped coriander."),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert [n.stage for n in result.graph.nodes] == ["prep", "cook", "finish", "finish"]
     assert all(n.tip is None for n in result.graph.nodes)
