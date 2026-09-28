@@ -69,13 +69,13 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v5() -> None:
-    """P1 #5 Commit 2 switched production extraction to v5, which adds the
-    model-written `label` field and its shape rules. v4 is kept on disk (a prior
-    prompt version stays reproducible), just no longer the production path."""
-    assert normalize._PROMPT_PATH.name == "v5.md"
-    assert "extraction prompt (v5)" in normalize.load_prompt()
-    assert (PROMPTS_DIR / "v4.md").exists()
+def test_production_extraction_uses_prompt_v6() -> None:
+    """P1 #5 Commit 3 switched production extraction to v6, which adds `title`
+    guidance (a clean, grounded dish name). v5 is kept on disk (a prior prompt
+    version stays reproducible), just no longer the production path."""
+    assert normalize._PROMPT_PATH.name == "v6.md"
+    assert "extraction prompt (v6)" in normalize.load_prompt()
+    assert (PROMPTS_DIR / "v5.md").exists()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:
@@ -173,3 +173,35 @@ def test_prompt_v5_examples_use_none_of_the_evaluated_recipes() -> None:
     v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8").lower()
     for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
         assert word not in v5
+
+
+def test_prompt_v6_schema_still_carries_title() -> None:
+    """`title` is not a new field (unlike `label`) -- just new guidance -- so this
+    only confirms it's still part of the rendered schema, not that it appeared."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v6, NormalizedRecipe)
+    assert '"title"' in rendered
+
+
+def test_prompt_v6_instructs_title_semantics() -> None:
+    """P1 #5 Commit 3: v6 adds exactly the `title` section on top of v5's unchanged
+    content -- a clean dish name grounded in the raw title or blog name, never an
+    invented descriptive word."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v6)" in v6
+    assert "## Title — `title`" in v6
+    assert "clean dish name" in v6
+    assert "not the raw video/page title" in v6
+    assert "Every word you use must come from the source" in v6
+    # v5's content is carried forward unchanged, not replaced.
+    assert "## Step labels" in v6
+    assert "## `depends_on_steps`" in v6
+    assert "## Optional, conditional and alternative instructions" in v6
+
+
+def test_prompt_v6_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4/v5 -- the title section's own examples must not be
+    tuned on the owner's evaluated evidence either."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v6

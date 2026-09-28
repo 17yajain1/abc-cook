@@ -31,6 +31,7 @@ from abc_cook.extract.graph import (
     build_graph,
 )
 from abc_cook.extract.normalize import render_source_text
+from abc_cook.extract.title import clean_title, resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -1202,6 +1203,42 @@ def test_dal_makhni_replay_has_no_captured_label_so_every_node_falls_back() -> N
 
     tomato = next(n for n in result.graph.nodes if n.id == "step_cook_the_tomatoes_till_they_turn")
     assert tomato.label == "Cook the tomatoes"
+
+
+def test_dal_makhni_replay_graph_title_vs_source_title() -> None:
+    """P1 #5 Commit 3, replacing a live check (§R4), on the other captured replay.
+
+    This fixture has no `.raw.json` (only `.normalized.json` + `.source_text.txt`),
+    so there is no genuine `RawAcquisition.title` to compare against. The captured
+    `recipe.title` itself stands in for it: this fixture predates v6's "clean dish
+    name" guidance, so like pizza, it is a verbatim echo of what the raw title
+    actually was. Same checkpoint fix as the pizza replay (see that test's
+    docstring): the echo is grounded but not a fixed point of `clean_title`, so
+    `resolve_title` now correctly rejects it and cleans up instead.
+    """
+    stand_in_raw_title = (
+        "Restaurant Style Dal Makhni Recipe in Hindi | Winter Special दाल मखनी रेस्टौरंट जैसी"
+    )
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    assert recipe.title == stand_in_raw_title  # the legacy-echo premise this test documents
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+
+    resolved_title = resolve_title(recipe.title, stand_in_raw_title, None)
+    recipe = recipe.model_copy(update={"title": resolved_title})
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+
+    print("\n=== dal-makhni replay: graph.title vs stand-in source_title ===")
+    print("source_title (stand-in):", stand_in_raw_title)
+    print("graph.title:            ", result.graph.title)
+
+    assert result.graph.title == "Restaurant Style Dal Makhni"
+    assert result.graph.title == clean_title(stand_in_raw_title)
+    assert result.graph.title != stand_in_raw_title
 
 
 # ---------------------------------------------------------------------------

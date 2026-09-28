@@ -69,8 +69,16 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v5.md"
-"""v5 (P1 #5 Commit 2) adds `label` -- a model-written, 1-4 word step heading -- with
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v6.md"
+"""v6 (P1 #5 Commit 3) adds `title` guidance: a clean dish name grounded in the raw
+title or the linked blog's own name, not the raw title verbatim. `title.py`'s
+`resolve_title` verifies the grounding claim (case-folded, light suffix stemming) and
+replaces it with a deterministic cleanup of the raw title otherwise -- same
+never-trust-the-claim-as-is discipline as `label` below, applied to the one field
+already on `NormalizedRecipe` before this commit. `ImportResult.source_title` is
+never read from this field, resolved or not -- it is always `raw.title` verbatim
+(`import_pipeline.py`), so the raw and cleaned titles stay independently available.
+v5 (P1 #5 Commit 2) adds `label` -- a model-written, 1-4 word step heading -- with
 the shape rules `graph.py`'s `_accept_label` verifies (word count, no leading
 conditional marker, no trailing preposition/conjunction). Accepted or not, `label` is
 never checked against `text` for topical accuracy; a rejected label falls back to
@@ -161,10 +169,16 @@ def render_source_text(raw: RawAcquisition) -> str:
 def _tier0_result(
     raw: RawAcquisition, recipe: NormalizedRecipe | None, warnings: list[str]
 ) -> ImportResult:
-    """Build the Tier 0 `ImportResult` — ingredients preserved, no graph."""
+    """Build the Tier 0 `ImportResult` — ingredients preserved, no graph.
+
+    P1 #5 Commit 3: `source_title` is always `raw.title` verbatim, never
+    `recipe.title` — even when a recipe came back (steps empty, so still Tier 0),
+    its `title` claim is a dish-name guess, not the source's own title, and the two
+    are deliberately decoupled (`title.py`).
+    """
     return ImportResult(
         status="method_not_grounded",
-        source_title=recipe.title if recipe is not None else raw.title,
+        source_title=raw.title,
         ingredients=recipe.ingredients if recipe is not None else [],
         warnings=warnings,
     )

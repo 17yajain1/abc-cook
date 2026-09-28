@@ -220,7 +220,18 @@ class NormalizedRecipe(BaseModel):
     before any caller acts on it.
     """
 
-    title: str = Field(description="Source title, e.g. the video title.")
+    title: str = Field(
+        description=(
+            "A clean dish name (e.g. \"Buttermilk Pancakes\"), NOT the raw source "
+            "title verbatim -- the source's own title is preserved separately as "
+            "ImportResult.source_title regardless of what you put here. Never invent "
+            "a name unrelated to the source: title.py only accepts this claim when "
+            "every word in it is grounded in the raw title or a linked blog's own "
+            "name (case-folded, light stemming), and replaces it with a deterministic "
+            "cleanup of the raw title otherwise -- so an invented word is simply "
+            "discarded, not shown to the cook."
+        ),
+    )
     channel: str | None = Field(default=None, description="Source channel/site name.")
 
     method_grounded: bool = Field(

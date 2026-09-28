@@ -17,6 +17,7 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import _label, build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.extract.provenance import compute_provenance
+from abc_cook.extract.title import clean_title, resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema.graph import SourceRef
@@ -165,3 +166,38 @@ def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> Non
     assert preheat.fields["duration"] == "inferred"
     host = next(n for n in result.graph.nodes if n.id == "step_place_a_pizza_stone_or_inverted")
     assert host.attention == "unattended"
+
+
+def test_pizza_dough_replay_graph_title_vs_source_title() -> None:
+    """P1 #5 Commit 3, replacing a live check (§R4): offline, on the captured
+    fixture -- `source_title` (`raw.title`, verbatim) vs `graph.title` (resolved by
+    `title.py`, exactly as `import_pipeline.py` would apply it before `build_graph`).
+
+    This fixture's captured `recipe.title` predates v6's "clean dish name" guidance
+    and is a verbatim echo of `raw.title`. An identical echo is always grounded
+    (every word of a string is trivially present in itself), but `resolve_title`
+    ALSO requires the claim to be a fixed point of `clean_title` -- checkpoint fix,
+    added specifically because this fixture's echo is grounded but not clean, and
+    was wrongly accepted verbatim before that second check existed. `graph.title`
+    now correctly comes out cleaned, decoupled from `source_title`.
+    """
+    recipe, source_text = _load_fixture()
+    raw = RawAcquisition.model_validate_json(
+        (FIXTURES_DIR / "pizza-dough.raw.json").read_text(encoding="utf-8")
+    )
+    assert recipe.title == raw.title  # the legacy-echo premise this test documents
+
+    resolved_title = resolve_title(recipe.title, raw.title, None)
+    recipe = recipe.model_copy(update={"title": resolved_title})
+    result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
+    assert result.graph is not None
+
+    source_title = raw.title  # import_pipeline.py never reads this from recipe.title
+    print("\n=== pizza-dough replay: graph.title vs source_title ===")
+    print("source_title:", source_title)
+    print("graph.title: ", result.graph.title)
+
+    assert source_title == "Best Homemade Pizza Dough Recipe | How To Make Pizza Crust"
+    assert result.graph.title == "Best Homemade Pizza Dough"
+    assert result.graph.title == clean_title(raw.title)
+    assert result.graph.title != source_title

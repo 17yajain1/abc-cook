@@ -143,6 +143,36 @@ describe('createLibrary — duplicate policy', () => {
     expect(library2.list()).toHaveLength(1)
   })
 
+  it('"Update saved copy" (a second save of the same source) replaces the title, not just import_meta', () => {
+    // P1 #5 Commit 3: title resolution can change `graph.title` on a re-import
+    // (a different grounded claim, or a different fallback cleanup) without the
+    // source itself changing — `save()` must carry that new title through, not
+    // keep showing the one from the first import.
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+
+    const first = library.save(KADAI)
+    expect(first.ok).toBe(true)
+    if (!first.ok) return
+    expect(first.recipe.payload.graph.title).toBe(KADAI.graph.title)
+
+    const reimported: RecipePlanResponse = {
+      ...KADAI,
+      graph: { ...KADAI.graph, title: 'Restaurant-Style Kadai Paneer' },
+    }
+    expect(canonicalSourceKey(reimported.graph.source)).toBe(canonicalSourceKey(KADAI.graph.source))
+
+    const second = library.save(reimported)
+    expect(second.ok).toBe(true)
+    if (!second.ok) return
+
+    expect(second.replaced).toBe(true)
+    expect(second.recipe.id).toBe(first.recipe.id) // same saved entry, updated in place
+    expect(second.recipe.payload.graph.title).toBe('Restaurant-Style Kadai Paneer')
+    expect(library.list()).toHaveLength(1)
+    expect(library.get(first.recipe.id)?.payload.graph.title).toBe('Restaurant-Style Kadai Paneer')
+  })
+
   it('two different sources create two entries, findable by source key', () => {
     const storage = new MemoryStorage()
     const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
