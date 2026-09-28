@@ -687,8 +687,13 @@ refrigerate · Sat 6:10 PM take dough out · Sat 7:10 PM preheat". Pure function
 scheduler (`schedule/wallclock.py`, takes the plan and a target datetime, no clock reads)
 so every number still originates server-side.
 
-**C. Model-written labels [proposal].** `NormalizedStep.label` (≤ 4 words) with
-`_label` as fallback; ~5 output tokens per step.
+**C. Model-written labels [done, P1 #5 Commit 2].** Shipped as proposed:
+`NormalizedStep.label` (≤ 4 words, prompt v5+), with `graph.py`'s `_accept_label`
+doing a shape-only check (word count, no leading conditional/optional marker, no
+trailing function word) — never a topical match against the step's own instruction,
+since a good label often changes the verb or names the moment rather than the action.
+`_label(instruction)`'s deterministic trim remains the fallback for a rejected or
+absent label. See `COOKING_GRAPH.md`'s "`label` source (P1 #5)" note.
 
 **G4. Deterministic preheat independence [owner decision / future experiment].**
 `COOKING_GRAPH.md` §6 already states "preheating the oven is an unattended node with no
@@ -697,12 +702,22 @@ dependencies". A construction rule (verified `unattended`, grounded cue containi
 without trusting the model, but it asserts a parallelism the source did not literally
 state. Not implemented; requires B1 first; to be trialled on the eval sample.
 
-**Stage interleave for imports [recorded, no change].** `_stage_for` assigns stage by
-kind, so imported Prep/Cook stages interleave on the Plan tab (screenshot: "Cover bowl
-with plastic · 270 min" listed before "Measure flour"). `StageSpan` intentionally supports
-overlap; the chronology is correct on the Map and will be correct in Cooking Mode
-(driven by `plan.scheduled`). Phase C item 3 makes blog-backed imports contiguous as a
-side effect. Any further change is a product decision.
+**Stage interleave for imports [done, P1 #5 Commits 1 — supersedes the "no change"
+verdict below].** Two independent fixes, one on each side of the boundary this item
+originally described. On the data side, `_stage_for` (kind-only) was replaced by
+`_stages_for` (§R3): stage assignment is now monotonic by cook anchor, so a `prep`-kind
+step sitting between two cook anchors (e.g. dal's "scrub the soaked dal") is correctly
+`cook`, not a stray interleaved `prep` card. On the presentation side, the Plan tab reads
+in `executionOrder` and groups via `groupIntoRuns` — a short (≤2-task) foreign-stage
+run that resumes the dominant stage immediately is absorbed as a tinted inline row in
+the current card (Rule A) rather than fragmenting into a new card, which is what
+actually eliminated the "Cover bowl with plastic · 270 min listed before Measure flour"
+symptom in the screenshot this item was written against. `StageSpan` still intentionally
+supports overlap; the chronology was always correct on the Map and in Cooking Mode
+(driven by `plan.scheduled`) — this item was about Plan-tab readability specifically.
+Phase C item 3 (real, section-based stage naming) is unaffected and still open. See
+`COOKING_GRAPH.md`'s "`stage` assignment (P1 #5 §R3)" note and
+`DESIGN_SYSTEM.md`'s "Resolved in P1 #5" section.
 
 ---
 

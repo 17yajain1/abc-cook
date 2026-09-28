@@ -1243,6 +1243,27 @@ component, no new colour. The render checkpoint (`notes/p1-6-orientation-recover
 | One start screen | The Plan's "Start Cooking" now starts the session itself (if none is open) before mounting Cooking Mode, landing directly on step 1 — the black entry screen is no longer a second confirmation on the canonical path. It remains the resume/stale-restart/staged-replace/storage-failure screen, all of which are intentional confirmations, not the duplication this closed. |
 | Finishing → Library, ending early → that recipe's Plan | Two distinct exits from Cooking Mode, previously conflated under one `end` action: "Finished cooking" (the `done` screen) now navigates to the Library after ending the session; "End the cook and clear the timers" (leaving/returning) navigates back to that recipe's Plan instead. Stale's "Start again" is a third, deliberately-kept case — it stays on the entry screen because restarting is itself the confirmation. |
 
+## Resolved in P1 #5 (readable plan)
+
+The Plan tab's card order was the stage's graph index, not cooking order — an imported
+recipe with a mid-recipe rest could show "Cover bowl with plastic · 270 min" ahead of
+"Measure flour". `notes/p1-5-readable-plan.md` (§R3, rev 3, approved 2026-09-28)
+resolved this with a reading-order change plus one new presentation rule, both scoped
+to `StageCard`/`PlanScreen`; no new component, no new colour.
+
+| Item | Resolution |
+|---|---|
+| Reading order | The Plan tab now walks `executionOrder(scheduled)` (`cooking/model.ts`) rather than stage graph index, so cards appear in the order the cook actually hits them. |
+| Short-interleave absorption ("Rule A") | A foreign-stage run of at most 2 tasks that resumes the card's dominant stage immediately is absorbed into the current card as a tinted inline row (`groupIntoRuns`, `plan/derive.ts`, `FOREIGN_ABSORPTION_CAP = 2`), instead of fragmenting into its own one-off card. Chosen over an unbounded "resumes anywhere later" rule after comparing both against Kadai, the pizza-dough fixture, a synthetic adversarial case, and a synthetic alternating case — the unbounded rule kept absorbing runs a cook would already perceive as a real detour. The cap is a tuned safety bound, not a structural constant. |
+| Foreign-row tint cue | An absorbed row reuses `WaitWindowBlock`'s 3px home-stage tint bar (`TaskRow`'s `foreign` prop, `StageCard.tsx`) rather than inventing a second marking convention for "this task belongs to a different stage than the card it's sitting in." |
+| Omitted duration figure | A card's `~N min` collapsed figure is a rollup of *that stage's own* inline work (`StageSpan.inline_work_min`) and stops being a trustworthy single number the moment a card repeats (a stage's tasks now span more than one card) or carries foreign rows (the card's rollup does not equal its own stage's total) or has had rows absorbed elsewhere. `StageCard` omits the figure in all three cases (`showsStageDuration = !stage.repeated && !stage.hasForeignRows && !stage.rowsAbsorbedElsewhere`) rather than show a number that would read as more precise than it is. |
+| Stage-rail badge on a repeated card | A card whose stage has already appeared earlier in the plan (`stage.repeated`) still carries its stage's ordinal badge and tint — the same stage, revisited, not a new one — so the rail keeps answering "where am I in the recipe?" (§ *StageCard*, above) even when a stage's tasks aren't contiguous. |
+
+This is a Plan-tab presentation fix, not a data fix — the companion data-side change
+(`graph.py`'s `_stages_for`, §R3's monotonic-by-cook-anchor stage rule) is documented in
+`COOKING_GRAPH.md`, not here. See `docs/cooking-plan-investigation.md` §8, "Stage
+interleave for imports", for the before/after this replaced.
+
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
 | # | Item | Class | Note |
