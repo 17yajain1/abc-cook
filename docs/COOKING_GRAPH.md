@@ -82,6 +82,33 @@ class Node(BaseModel):
   No unattended nodes → no parallelism → the product has nothing to offer for that
   recipe, and that is fine. Say so honestly rather than inventing filler tasks.
 
+**`label` source (P1 #5).** The model writes it directly (`NormalizedStep.label`,
+prompt v5+, ≤ 4 words). `graph.py`'s `_accept_label` accepts it **by shape only** — word
+count, no leading conditional/optional marker ("if", "when", "optional",
+"alternatively"), no trailing preposition/conjunction from a widened function-word
+list — and deliberately never checks it against the step's own `instruction` for
+topical accuracy: a good label often changes the verb entirely ("Whisk the eggs,
+sugar and vanilla…" → "Mix marinade") or names the moment rather than the action
+("Cover and leave in a warm spot…" → "First rise"), so any lexical-overlap threshold
+would reject as many good human-quality labels as it catches bad ones. A label that
+fails the shape check, or that the model didn't write at all (every pre-P1-5 saved
+recipe), falls back to `_label(instruction)` — a deterministic trim of the step text
+that also drops a bare trailing number or function word. The full `instruction`
+always renders under the label on every screen that shows both; cooking mode's own
+title comes from `instruction`, never from `label` — a label that's fluent but wrong
+for its step is a bounded, visible mistake, not a silent one.
+
+**`stage` assignment (P1 #5 §R3).** `graph.py`'s `_stages_for` is monotonic by **cook
+anchor** — a non-last step whose `kind` isn't `prep` — not by `kind` alone. Every step
+from the first anchor to the last is `cook`, even a `prep`-kind one sitting between two
+anchors (dal's "scrub the soaked dal" between the soak and the tadka); a `prep`-kind
+step *before* the first anchor is `prep`; a `prep`-kind step *after* the last anchor is
+`finish` — a genuine trailing garnish/plating step, the one case a plain kind-based rule
+misfiled. **Accepted tradeoff:** a recipe that opens with a soak or a boil (its very
+first step is already an anchor) collapses to Cook + Finish with no Prep stage at all —
+Phase C item 3 (§8, `cooking-plan-investigation.md`) still owns real, section-based stage
+naming; this rule only fixes monotonicity, not naming.
+
 ### Edge
 
 Dependencies are stored on `Node.depends_on`. A denormalised edge list is derived for
@@ -101,6 +128,8 @@ class CookingGraph(BaseModel):
     id: str
     title: str                       # "Kadai Paneer"
     servings: int
+    servings_stated: bool = True     # False when `servings` is a default, not a claim (P1 #5)
+    yield_text: str | None = None    # "14 rasgulla" — the recipe's own yield phrase, if any
     cuisine: str | None
     source: SourceRef                # url / image / pasted text + imported_at
     ingredients: list[Ingredient]
@@ -108,6 +137,41 @@ class CookingGraph(BaseModel):
     stages: list[Stage]              # ordered; id, label, color_key
     stated_total_min: int | None     # what the original recipe claimed, for validation
 ```
+
+**`servings` / `servings_stated` / `yield_text` (P1 #5 §R4–R5).** `servings` is never
+absent — it defaults to `4` — so a bare `graph.servings` read can't distinguish "the
+recipe said 4" from "we didn't know and picked 4." `servings_stated` carries that
+distinction: `graph.py`'s `_verify_servings` requires positive evidence in the source
+corpus — an ASCII digit, an English number word, or (a small fixed table, no language
+detection) a Hindi number word in Devanagari or romanized form — for the model's
+claimed count before `servings_stated` is set `True`; absent or ungrounded evidence
+defaults `servings` to `4` and `servings_stated` to `False`. `yield_text` is a
+separate, independently-grounded claim (`_verify_yield`, digit-grounded against the
+corpus) — a recipe can state a yield ("14 rasgulla", "2, 10-inch loaves") without ever
+stating servings, or vice versa. A yield phrase with no digit at all ("Makes a
+dozen") fails `_verify_yield` and is dropped rather than guessed at — `yield_text` is
+`None` in that case, not a re-derived number. The **PC5 guard** additionally discards
+a "stated" servings claim that turns out to be the yield count echoed back with no
+people-word nearby (e.g. a recipe that only ever says "makes 12" and the model claims
+"servings: 12") — that's yield masquerading as servings, not a real independent
+serving count. `apps/web/src/lib/servings.ts`'s `servingsLine` is the single consumer
+that turns these three fields (plus a legacy-recipe warning-string check, §R5) into
+the one user-facing line; no other display code reads `.servings` directly (enforced
+by a grep-style test in `servings.test.ts`).
+
+**`title` / `source_title` (P1 #5 §R4).** Same pattern as `label` above: the model
+writes a cleaned title claim, but it's never trusted on its own. `extract/title.py`'s
+`resolve_title` accepts the model's claim only if it's both grounded in the raw title
+(or blog name) **and** a fixed point of the deterministic `clean_title()` function —
+i.e. running `clean_title` on the model's own claim gives back exactly that claim,
+so an unclean model echo can't slip through just because it happens to be grounded.
+Anything else falls back to `clean_title(raw_title)`, a five-step deterministic
+cleanup (split on separators, keep the Recipe-bearing segment, strip bracketed
+asides, cut at a trailing "Recipe", strip hashtags). `graph.title` is this resolved
+title; `source_title` (on the saved-recipe / import-history side) is always
+`raw.title` unconditionally, at every site that sets it — the two are deliberately
+decoupled so the raw title stays available even when `graph.title` was cleaned or
+fell back.
 
 ### CookingPlan — the scheduler's output
 
@@ -510,8 +574,9 @@ user still gets a usable recipe. They never see a stack trace.
 
 ## 6. The extraction prompt
 
-Lives in `abc_cook/extract/prompts/`, versioned (`v1.md`, `v2.md`). Never inline a prompt
-in Python.
+Lives in `abc_cook/extract/prompts/`, versioned (`v1.md`, `v2.md`, … currently `v7.md`).
+Never edit a shipped version in place — copy to `vN+1.md` and repoint `_PROMPT_PATH`, so
+a prior prompt version stays reproducible. Never inline a prompt in Python.
 
 Non-obvious things it must be told, all learned from how recipes are actually written:
 

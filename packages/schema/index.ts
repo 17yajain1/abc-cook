@@ -35,6 +35,10 @@ export interface CookingGraph {
    * Servings the quantities are stated for.
    */
   servings: number;
+  /**
+   * False when `servings` is a default (not stated, or discarded by the PC5 guard — a yield count the model mistook for a people count). Defaults True so every pre-P1-5 saved recipe (all hand-authored, all genuinely stated) reads as stated without a migration — see COOKING_GRAPH.md.
+   */
+  servings_stated?: boolean;
   source: SourceRef;
   /**
    * Ordered stages; every node's `stage` must appear here.
@@ -48,6 +52,10 @@ export interface CookingGraph {
    * Recipe title, e.g. "Kadai Paneer".
    */
   title: string;
+  /**
+   * The source's own stated yield, e.g. "14 rasgulla". Null when not stated or not grounded by a number in the source text.
+   */
+  yield_text?: string | null;
 }
 /**
  * One ingredient line from the source recipe.
@@ -660,9 +668,17 @@ export interface RecipeSummary {
    */
   servings: number;
   /**
+   * See CookingGraph.servings_stated.
+   */
+  servings_stated?: boolean;
+  /**
    * Recipe title, e.g. "Kadai Paneer".
    */
   title: string;
+  /**
+   * See CookingGraph.yield_text.
+   */
+  yield_text?: string | null;
 }
 /**
  * Everything the Plan view needs, in one round trip.

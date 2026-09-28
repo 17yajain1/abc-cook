@@ -1,6 +1,27 @@
-import type { RecipePlanResponse } from '@abc-cook/schema'
+import type { RecipePlanResponse, ScheduledNode } from '@abc-cook/schema'
 
 import type { CookingModel, CookingNodeInfo } from './types'
+
+/**
+ * `plan.scheduled` re-keyed by `(start_min, occupies_cook ? 1 : 0, node_id)`. This
+ * restores the scheduler's own tick order — it places every ready hands-off node
+ * before starting one hands-on node at the same minute (`scheduler.py` steps (b) then
+ * (c)) — which the final `sort(key=(start_min, node_id))` serialisation discards.
+ * `scheduled` itself is never mutated; this returns a derived reading of it. Shared by
+ * `deriveCookingModel` (cooking mode) and `plan/derive.ts` (the Plan) — plan §D — so
+ * both walk the one cooking order (plan §F1/§K1).
+ */
+export function executionOrder(scheduled: readonly ScheduledNode[]): string[] {
+  return [...scheduled]
+    .sort((a, b) => {
+      if (a.start_min !== b.start_min) return a.start_min - b.start_min
+      const aRank = a.occupies_cook ? 1 : 0
+      const bRank = b.occupies_cook ? 1 : 0
+      if (aRank !== bRank) return aRank - bRank
+      return a.node_id.localeCompare(b.node_id)
+    })
+    .map((entry) => entry.node_id)
+}
 
 /**
  * Joins a scheduled plan to its graph into the lookups the session engine and
@@ -58,21 +79,8 @@ export function deriveCookingModel(payload: RecipePlanResponse): CookingModel {
     }
   }
 
-  // Execution order (§C1/§F1/§K1): `plan.scheduled` re-keyed by
-  // `(start_min, occupies_cook ? 1 : 0, node_id)`. This restores the scheduler's own
-  // tick order — it places every ready hands-off node before starting one hands-on node
-  // at the same minute (`scheduler.py` steps (b) then (c)) — which the final
-  // `sort(key=(start_min, node_id))` serialisation discards. `plan.scheduled` itself is
-  // untouched; this is a derived reading of it.
-  const order = [...plan.scheduled]
-    .sort((a, b) => {
-      if (a.start_min !== b.start_min) return a.start_min - b.start_min
-      const aRank = a.occupies_cook ? 1 : 0
-      const bRank = b.occupies_cook ? 1 : 0
-      if (aRank !== bRank) return aRank - bRank
-      return a.node_id.localeCompare(b.node_id)
-    })
-    .map((entry) => entry.node_id)
+  // Execution order (§C1/§F1/§K1) — see `executionOrder`'s own doc.
+  const order = executionOrder(plan.scheduled)
 
   const sinkId = Object.values(nodes).find((n) => n.isSink)?.id
   if (sinkId == null) {

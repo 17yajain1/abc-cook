@@ -10,6 +10,9 @@ import type {
   StageSpan,
 } from '@abc-cook/schema'
 
+import { executionOrder } from '@/cooking/model'
+import type { ServingsSource } from '@/lib/servings'
+
 /** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
 export type ProvenanceSource = NonNullable<NodeProvenance['fields']>[string]
 
@@ -33,7 +36,11 @@ export interface RenderTask {
   attention: Node['attention']
   /** How `durationTypical` was arrived at, or `null` when no provenance was supplied. */
   durationProvenance: ProvenanceSource | null
-  /** Position in `graph.stages` of the stage this task actually belongs to. Drives its tint. */
+  /** Position in `graph.stages` of the stage this task actually belongs to — always its
+   * own true home stage, whether the task is inline in its own stage's card, absorbed
+   * as a foreign row into a different card (`RenderStage.hasForeignRows`), or borrowed
+   * into a wait window. Drives its tint: equal to the containing card's own `index` in
+   * the ordinary case, different only for a foreign/borrowed row. */
   homeStageIndex: number
   /** `Node.tip`, verbatim. `null` when the graph gave none. */
   tip: string | null
@@ -67,22 +74,57 @@ export interface RenderWindow {
   tasks: RenderWindowTask[]
 }
 
-/** A stage as the Plan view lists it: its own inline work, plus any windows it hosts. */
+/**
+ * One card in the Plan, as it's actually drawn: a maximal run of consecutive inline
+ * tasks sharing one `Node.stage`, in cooking order (plan §D) — plus any windows hosted
+ * by a task in that run. Reading order is cooking order, so a stage whose inline work
+ * is interrupted by another stage's inline work draws as more than one card — UNLESS
+ * the interruption is a short one that resumes immediately, in which case it's folded
+ * into this card instead as absorbed foreign rows (`hasForeignRows` — see
+ * `groupIntoRuns`, the P1 #5 checkpoint finding: Kadai's own scheduler output
+ * interleaves a genuine Cook Base task between two Prep tasks, and splitting on every
+ * such interleave produced repeating 1/2/1/2 badges on an ordinary recipe). Tint and
+ * badge stay `index`; the running numeral never repeats within `derivePlan`'s output
+ * because both come from the same stage.
+ */
 export interface RenderStage {
   stageId: string
   label: string
   /** Index in `graph.stages`. Stage tint is `index % 6` — see index.css. */
   index: number
+  /** Unique per card — the run's first task's node id. Stable across re-renders,
+   * since scheduled order is deterministic; used for React `key`s and for the Plan's
+   * per-card expansion state (`PlanScreen`), so two runs of the same `stageId` expand
+   * independently. */
+  key: string
+  /** True for every run of `stageId` after the first. A repeated card's own ingredients
+   * are never shown — they already appeared on the first card (§R1) — but its tasks
+   * keep their own durations. */
+  repeated: boolean
+  /** `!repeated` — this card is the one place `ingredients` is drawn for `stageId`. */
+  firstOfStage: boolean
+  /** True when this card absorbed one or more short foreign-stage tasks
+   * (`groupIntoRuns`). The card's own whole-stage duration figure would then be an
+   * undercount of what's visibly inside it, so it's omitted — see `StageCard`. */
+  hasForeignRows: boolean
+  /** True when one or more of this card's OWN stage's tasks were instead absorbed as
+   * a foreign row into a *different* card. Symmetric to `hasForeignRows`: this card's
+   * whole-stage duration figure would then overstate what's visibly inside it (it's
+   * missing whatever moved elsewhere), so it's omitted too. */
+  rowsAbsorbedElsewhere: boolean
   span: StageSpan
-  /** Nodes in this stage the cook does inline, in scheduled order. */
+  /** Nodes in this run the cook does inline, in scheduled order — including any
+   * absorbed foreign rows (`hasForeignRows`), each still carrying its own true
+   * `homeStageIndex` for the foreign-row tint cue (`StageCard`). */
   inlineTasks: RenderTask[]
-  /** Wait windows whose host node lives in this stage, earliest first. */
+  /** Wait windows whose host node is in this run, in scheduled order. */
   windows: RenderWindow[]
   /** Graph ingredients consumed by a node whose *home* stage (`Node.stage`) is this
    * one — independent of where the scheduler physically placed the node (inline vs.
-   * borrowed into another stage's window). Graph order, not consumption order; a
-   * `consumes` id that names a component rather than an ingredient is silently
-   * absent, since it never matches an `Ingredient.id`. */
+   * borrowed into another stage's window, or absorbed as a foreign row into another
+   * stage's card). Graph order, not consumption order; a `consumes` id that names a
+   * component rather than an ingredient is silently absent, since it never matches an
+   * `Ingredient.id`. Empty on a repeated card (`!firstOfStage`) — see `repeated`. */
   ingredients: Ingredient[]
 }
 
@@ -108,6 +150,21 @@ export interface RenderPlan {
   recipeId: string
   title: string
   servings: number
+  /** False when `servings` is a default — not stated, or discarded by the PC5
+   * guard (a yield count the model mistook for a people count). `true` when the
+   * field is absent (a plan saved before it existed — every such recipe was
+   * hand-authored and genuinely stated; CLAUDE.md backward-compatibility). Read
+   * this before `servings` for display — see `lib/servings.ts`. */
+  servingsStated: boolean
+  /** The source's own stated yield, e.g. "14 rasgulla". `null` when not stated or
+   * not grounded by a number in the source text. */
+  yieldText: string | null
+  /** `{ servings, servingsStated, yieldText }` above, pre-shaped for `servingsLine`
+   * (`lib/servings.ts`) — the one place a presentation component is allowed to
+   * touch `.servings`/`.servings_stated`/`.yield_text` is inside that function
+   * itself; everywhere else reads this object (or the loose fields above) and
+   * calls `servingsLine`, never the raw graph. A grep-style Vitest enforces this. */
+  servingsSource: ServingsSource
   cuisine: string | null
   totalMin: number
   serialMin: number
@@ -160,6 +217,80 @@ function stageIngredients(graph: CookingGraph, stageId: string): Ingredient[] {
   return graph.ingredients.filter((ingredient) => consumed.has(ingredient.id))
 }
 
+/** How many consecutive tasks of a different stage may sit inside an otherwise
+ * single-stage run before the interleave counts as a real phase change rather than a
+ * short detour that resumes immediately (plan §D checkpoint finding). This is a tuned
+ * safety bound, not a derived constant: every fixture measured at the checkpoint only
+ * ever produced a 1-2 task detour before the interleaved stage gave up and moved on
+ * for good, or resumed on the very next or second-next task — so 2 absorbs every real
+ * case seen so far. It is deliberately not larger: the adversarial regression below
+ * shows why a longer cap would let a card's own badge stop describing most of what's
+ * actually inside it (three foreign tasks swallowed into a two-task "Prep" card reads
+ * as "Prep" while being mostly Cook Base).
+ */
+const FOREIGN_ABSORPTION_CAP = 2
+
+interface Run {
+  stageId: string
+  nodeIds: string[]
+  /** Node ids in this run whose true home stage isn't `stageId` — a short interleave
+   * absorbed in place rather than given its own card. */
+  foreignNodeIds: Set<string>
+}
+
+/**
+ * Groups an ordered, inline-only sequence of node ids into cards ("runs", plan §D),
+ * applying the short-interleave rule (checkpoint decision, approved 2026-09-28): a card
+ * opens on its first task's stage ("dominant") and keeps accumulating same-stage
+ * tasks; when a different stage's task appears, its maximal run of foreign tasks is
+ * folded into the current card — instead of closing it — only when that run is at
+ * most `FOREIGN_ABSORPTION_CAP` tasks long AND the dominant stage resumes immediately
+ * after it. Otherwise the card closes there and a new one opens at the first foreign
+ * task. Never reorders `inlineOrder` — only decides where to draw card boundaries over
+ * it — so flattening every returned run's `nodeIds` back to one sequence always
+ * reproduces `inlineOrder` exactly.
+ *
+ * Exported for direct testing: the adversarial (`A,B,B,B,A,C`) and alternating
+ * (`A,B,A,B,A`) regressions build a `stageOf` lookup by hand rather than a full
+ * `RecipePlanResponse` fixture.
+ */
+export function groupIntoRuns(
+  inlineOrder: readonly string[],
+  stageOf: (nodeId: string) => string,
+): Run[] {
+  const runs: Run[] = []
+  let i = 0
+  while (i < inlineOrder.length) {
+    const stageId = stageOf(inlineOrder[i])
+    const nodeIds = [inlineOrder[i]]
+    const foreignNodeIds = new Set<string>()
+    i++
+
+    while (i < inlineOrder.length) {
+      if (stageOf(inlineOrder[i]) === stageId) {
+        nodeIds.push(inlineOrder[i])
+        i++
+        continue
+      }
+      let j = i
+      while (j < inlineOrder.length && stageOf(inlineOrder[j]) !== stageId) j++
+      const resumes = j < inlineOrder.length // stageOf(inlineOrder[j]) === stageId, by the loop above
+      const foreignLength = j - i
+      if (resumes && foreignLength <= FOREIGN_ABSORPTION_CAP) {
+        for (let k = i; k < j; k++) {
+          nodeIds.push(inlineOrder[k])
+          foreignNodeIds.add(inlineOrder[k])
+        }
+        i = j
+      } else {
+        break
+      }
+    }
+    runs.push({ stageId, nodeIds, foreignNodeIds })
+  }
+  return runs
+}
+
 function groupIngredients(ingredients: readonly Ingredient[]): RenderIngredientGroup[] {
   const groups: RenderIngredientGroup[] = []
   // `null` is a valid Map key under SameValueZero, so ungrouped ingredients collect
@@ -195,12 +326,14 @@ export function derivePlan(
   const homeIndexOf = (nodeId: string): number =>
     stageIndex.get(nodes.get(nodeId)!.stage) ?? 0
 
-  // Windows, keyed by the stage that hosts them. `window.assigned` is already in the
-  // order the cook should work through — rank order — so it is not re-sorted.
-  const windowsByHostStage = new Map<string, RenderWindow[]>()
+  // Rendered windows, keyed by the node that hosts them — which run a window attaches
+  // to is decided below by where its host lands, not by `Node.stage`. `window.assigned`
+  // is already in the order the cook should work through — rank order — so it is not
+  // re-sorted.
+  const windowByHostNodeId = new Map<string, RenderWindow>()
   for (const window of plan.windows) {
     const host = nodes.get(window.host_node_id)!
-    const rendered: RenderWindow = {
+    windowByHostNodeId.set(window.host_node_id, {
       id: window.id,
       hostNodeId: window.host_node_id,
       hostLabel: host.label,
@@ -217,49 +350,56 @@ export function derivePlan(
           rankInWindow: scheduledByNode.get(nodeId)?.rank_in_window ?? 0,
         }
       }),
-    }
-    const bucket = windowsByHostStage.get(host.stage) ?? []
-    bucket.push(rendered)
-    windowsByHostStage.set(host.stage, bucket)
+    })
   }
 
-  const scheduledInStageOrder = [...plan.scheduled].sort(
-    (a, b) => a.start_min - b.start_min || a.node_id.localeCompare(b.node_id),
+  // The Plan reads in cooking order (plan §D): walk `executionOrder`, keep only the
+  // inline tasks (a window-assigned node is drawn under its host's window block, not
+  // as its own row), and group them into cards via the short-interleave rule
+  // (`groupIntoRuns`). On every golden fixture this produces exactly one card per
+  // stage, in cooking order — a short real interleave (Kadai's `saute_onion` between
+  // two Prep tasks) is absorbed as a foreign row rather than splitting the card.
+  const inlineOrder = executionOrder(plan.scheduled).filter(
+    (nodeId) => scheduledByNode.get(nodeId)?.window_id == null,
+  )
+  const runs = groupIntoRuns(inlineOrder, (nodeId) => nodes.get(nodeId)!.stage)
+
+  // A node absorbed as a foreign row in one run's card is, by construction, not a
+  // dominant member of any run — so this only ever flags a *different* run: the one
+  // whose own `stageId` equals that node's true home stage (`rowsAbsorbedElsewhere`).
+  const stagesWithNodesAbsorbedElsewhere = new Set(
+    runs.flatMap((run) => [...run.foreignNodeIds].map((nodeId) => nodes.get(nodeId)!.stage)),
   )
 
-  const renderStages: RenderStage[] = []
-  graph.stages.forEach((stage, index) => {
-    const span = spanByStage.get(stage.id)
-    if (!span) return // stage has no nodes — nothing to draw
+  const stageById = byId(graph.stages)
+  const seenStageIds = new Set<string>()
+  const renderStages: RenderStage[] = runs.map((run) => {
+    const stage = stageById.get(run.stageId)!
+    const index = stageIndex.get(run.stageId) ?? 0
+    const firstOfStage = !seenStageIds.has(run.stageId)
+    seenStageIds.add(run.stageId)
 
-    const inlineTasks = scheduledInStageOrder
-      .filter((entry) => {
-        const node = nodes.get(entry.node_id)!
-        return node.stage === stage.id && entry.window_id == null
-      })
-      .map((entry) => toTask(nodes.get(entry.node_id)!, index, provenance))
-
-    const windows = (windowsByHostStage.get(stage.id) ?? []).sort((a, b) => {
-      const aStart = scheduledByNode.get(a.hostNodeId)?.start_min ?? 0
-      const bStart = scheduledByNode.get(b.hostNodeId)?.start_min ?? 0
-      return aStart - bStart || a.id.localeCompare(b.id)
-    })
-
-    // A stage whose every task got slotted into another stage's wait window has no
-    // presence of its own on the timeline — its tasks are already shown, tinted with
-    // this stage's colour, inside those windows. Drop it rather than draw a "~0 min"
-    // card with nothing in it. Same principle as the scheduler dropping empty windows.
-    if (inlineTasks.length === 0 && windows.length === 0) return
-
-    renderStages.push({
-      stageId: stage.id,
+    return {
+      stageId: run.stageId,
       label: stage.label,
       index,
-      span,
-      inlineTasks,
-      windows,
-      ingredients: stageIngredients(graph, stage.id),
-    })
+      key: run.nodeIds[0],
+      repeated: !firstOfStage,
+      firstOfStage,
+      hasForeignRows: run.foreignNodeIds.size > 0,
+      rowsAbsorbedElsewhere: stagesWithNodesAbsorbedElsewhere.has(run.stageId),
+      // A run's stage always has at least this run's own nodes, so it always has a
+      // span — unlike the graph-stage sweep this replaced, which had to guard against
+      // a stage with no nodes at all.
+      span: spanByStage.get(run.stageId)!,
+      inlineTasks: run.nodeIds.map((nodeId) =>
+        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance),
+      ),
+      windows: run.nodeIds
+        .map((nodeId) => windowByHostNodeId.get(nodeId))
+        .filter((w): w is RenderWindow => w != null),
+      ingredients: firstOfStage ? stageIngredients(graph, run.stageId) : [],
+    }
   })
 
   const waitRows = deriveWaitRows(renderStages, nodes, payload.summary ?? null)
@@ -268,6 +408,13 @@ export function derivePlan(
     recipeId: graph.id,
     title: graph.title,
     servings: graph.servings,
+    servingsStated: graph.servings_stated ?? true,
+    yieldText: graph.yield_text ?? null,
+    servingsSource: {
+      servings: graph.servings,
+      servings_stated: graph.servings_stated ?? true,
+      yield_text: graph.yield_text ?? null,
+    },
     cuisine: graph.cuisine ?? null,
     totalMin: plan.total_min,
     serialMin: plan.serial_min,

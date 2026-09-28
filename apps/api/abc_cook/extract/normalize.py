@@ -69,16 +69,35 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
-_PROMPT_PATH = Path(__file__).parent / "prompts" / "v4.md"
-"""v4 (P0 #0) adds three rules `graph.py`'s new verification alone can't teach the
-model: attach a marker-less follow-on to the earlier OPTIONAL instruction it depends
-on (not the step it will modify), give a per-side/batch/piece estimate as the whole
-step's total, and treat "up to N" as a holding limit rather than the step's own
-duration. v3 (CP2) replaces `depends_on_previous` with explicit `depends_on_steps`,
-adds optional/alternative step roles, and refines attention; `graph.py` verifies all
-of it. v2 added the M2.10 "Sources" section (per-field precedence across description/
-blog/transcript, and the transcript-chatter rule); v1 kicked off M2.9. Kept as
-separate files rather than editing in place so a prior prompt version stays
+_PROMPT_PATH = Path(__file__).parent / "prompts" / "v7.md"
+"""v7 (P1 #5 Commit 4) adds `yield_text` and tightens `servings` to mean people only,
+never a yield's item count. `graph.py` still verifies both independently: `yield_text`
+is kept only if a number in it also appears in the source text, and the PC5 guard
+discards a "stated" `servings` claim that turns out to be the same number as
+`yield_text`'s own with no people word attached (a model that copied a piece count
+into `servings`, exactly the failure this field split exists to catch). v6 (P1 #5
+Commit 3) adds `title` guidance: a clean dish name grounded in the raw
+title or the linked blog's own name, not the raw title verbatim. `title.py`'s
+`resolve_title` verifies the grounding claim (case-folded, light suffix stemming) and
+replaces it with a deterministic cleanup of the raw title otherwise -- same
+never-trust-the-claim-as-is discipline as `label` below, applied to the one field
+already on `NormalizedRecipe` before this commit. `ImportResult.source_title` is
+never read from this field, resolved or not -- it is always `raw.title` verbatim
+(`import_pipeline.py`), so the raw and cleaned titles stay independently available.
+v5 (P1 #5 Commit 2) adds `label` -- a model-written, 1-4 word step heading -- with
+the shape rules `graph.py`'s `_accept_label` verifies (word count, no leading
+conditional marker, no trailing preposition/conjunction). Accepted or not, `label` is
+never checked against `text` for topical accuracy; a rejected label falls back to
+`_label(text)`'s own trim, same as when the model gives none at all. v4 (P0 #0) adds
+three rules `graph.py`'s new verification alone can't teach the model: attach a
+marker-less follow-on to the earlier OPTIONAL instruction it depends on (not the step
+it will modify), give a per-side/batch/piece estimate as the whole step's total, and
+treat "up to N" as a holding limit rather than the step's own duration. v3 (CP2)
+replaces `depends_on_previous` with explicit `depends_on_steps`, adds optional/
+alternative step roles, and refines attention; `graph.py` verifies all of it. v2 added
+the M2.10 "Sources" section (per-field precedence across description/blog/transcript,
+and the transcript-chatter rule); v1 kicked off M2.9. Kept as separate files rather
+than editing in place so a prior prompt version stays
 reproducible."""
 
 
@@ -156,10 +175,16 @@ def render_source_text(raw: RawAcquisition) -> str:
 def _tier0_result(
     raw: RawAcquisition, recipe: NormalizedRecipe | None, warnings: list[str]
 ) -> ImportResult:
-    """Build the Tier 0 `ImportResult` — ingredients preserved, no graph."""
+    """Build the Tier 0 `ImportResult` — ingredients preserved, no graph.
+
+    P1 #5 Commit 3: `source_title` is always `raw.title` verbatim, never
+    `recipe.title` — even when a recipe came back (steps empty, so still Tier 0),
+    its `title` claim is a dish-name guess, not the source's own title, and the two
+    are deliberately decoupled (`title.py`).
+    """
     return ImportResult(
         status="method_not_grounded",
-        source_title=recipe.title if recipe is not None else raw.title,
+        source_title=raw.title,
         ingredients=recipe.ingredients if recipe is not None else [],
         warnings=warnings,
     )

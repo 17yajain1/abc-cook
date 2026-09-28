@@ -69,14 +69,13 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v4() -> None:
-    """P0 #0 (§10 step 7) switched production extraction to v4, which adds the
-    borrowed-optional-follow-on, per-unit-duration, and holding-limit rules that
-    `graph.py`'s verification alone can't teach the model. v3 is kept on disk (a
+def test_production_extraction_uses_prompt_v7() -> None:
+    """P1 #5 Commit 4 switched production extraction to v7, which adds `yield_text`
+    guidance and tightens `servings` to mean people only. v6 is kept on disk (a
     prior prompt version stays reproducible), just no longer the production path."""
-    assert normalize._PROMPT_PATH.name == "v4.md"
-    assert "extraction prompt (v4)" in normalize.load_prompt()
-    assert (PROMPTS_DIR / "v3.md").exists()
+    assert normalize._PROMPT_PATH.name == "v7.md"
+    assert "extraction prompt (v7)" in normalize.load_prompt()
+    assert (PROMPTS_DIR / "v6.md").exists()
 
 
 def test_prompt_v3_schema_carries_the_new_fields() -> None:
@@ -143,3 +142,102 @@ def test_prompt_v4_examples_use_none_of_the_evaluated_recipes() -> None:
     v4 = (PROMPTS_DIR / "v4.md").read_text(encoding="utf-8").lower()
     for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
         assert word not in v4
+
+
+def test_prompt_v5_schema_carries_the_label_field() -> None:
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v5, NormalizedRecipe)
+    assert '"label"' in rendered
+
+
+def test_prompt_v5_instructs_label_semantics() -> None:
+    """P1 #5 Commit 2: v5 adds exactly the `label` section on top of v4's unchanged
+    content -- a summary, not a truncation, with the same shape rules `_accept_label`
+    verifies (word count, no leading conditional marker, no trailing preposition)."""
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v5)" in v5
+    assert "## Step labels" in v5
+    assert "a summary" in v5
+    assert "not a truncation" in v5
+    assert '"If", "When", "As", "Optional", or "Alternatively"' in v5
+    assert "do not end it on a preposition, conjunction, or article" in v5
+    # v4's content is carried forward unchanged, not replaced.
+    assert "## `depends_on_steps`" in v5
+    assert "## Optional, conditional and alternative instructions" in v5
+    assert "per side, per batch, or per piece" in v5
+
+
+def test_prompt_v5_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4 -- the label section's own examples must not be
+    tuned on the owner's evaluated evidence either."""
+    v5 = (PROMPTS_DIR / "v5.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v5
+
+
+def test_prompt_v6_schema_still_carries_title() -> None:
+    """`title` is not a new field (unlike `label`) -- just new guidance -- so this
+    only confirms it's still part of the rendered schema, not that it appeared."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v6, NormalizedRecipe)
+    assert '"title"' in rendered
+
+
+def test_prompt_v6_instructs_title_semantics() -> None:
+    """P1 #5 Commit 3: v6 adds exactly the `title` section on top of v5's unchanged
+    content -- a clean dish name grounded in the raw title or blog name, never an
+    invented descriptive word."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v6)" in v6
+    assert "## Title — `title`" in v6
+    assert "clean dish name" in v6
+    assert "not the raw video/page title" in v6
+    assert "Every word you use must come from the source" in v6
+    # v5's content is carried forward unchanged, not replaced.
+    assert "## Step labels" in v6
+    assert "## `depends_on_steps`" in v6
+    assert "## Optional, conditional and alternative instructions" in v6
+
+
+def test_prompt_v6_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4/v5 -- the title section's own examples must not be
+    tuned on the owner's evaluated evidence either."""
+    v6 = (PROMPTS_DIR / "v6.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v6
+
+
+def test_prompt_v7_schema_still_carries_servings_fields() -> None:
+    """`yield_text` and `servings` are not new fields on the rendered schema itself
+    (`yield_text` was added to the Pydantic model in this same commit, so it's
+    already in the schema regardless of prompt version) -- this only confirms both
+    are still part of what v7 renders."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8")
+    rendered = system_prompt(v7, NormalizedRecipe)
+    assert '"servings"' in rendered
+    assert '"yield_text"' in rendered
+
+
+def test_prompt_v7_instructs_servings_and_yield_semantics() -> None:
+    """P1 #5 Commit 4: v7 adds exactly the servings/yield tightening on top of v6's
+    unchanged content -- `servings` means people only, `yield_text` carries whatever
+    the source actually says it makes, and a piece count must never be copied into
+    `servings` just because it's the only number around."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8")
+    assert "extraction prompt (v7)" in v7
+    assert "## Servings, yield, cuisine, total time" in v7
+    assert "how many PEOPLE this feeds" in v7
+    assert "`servings` is never a yield count" in v7
+    assert "leave `servings` null and put the count in `yield_text` instead" in v7
+    # v6's content is carried forward unchanged, not replaced.
+    assert "## Title — `title`" in v7
+    assert "## Step labels" in v7
+    assert "## `depends_on_steps`" in v7
+
+
+def test_prompt_v7_examples_use_none_of_the_evaluated_recipes() -> None:
+    """Same CP2-C guard as v3/v4/v5/v6 -- the servings/yield section's own examples
+    must not be tuned on the owner's evaluated evidence either."""
+    v7 = (PROMPTS_DIR / "v7.md").read_text(encoding="utf-8").lower()
+    for word in ("pancake", "burger", "patty", "tikki", "oatmeal", "oats", "skillet"):
+        assert word not in v7

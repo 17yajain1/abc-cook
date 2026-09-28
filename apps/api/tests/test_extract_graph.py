@@ -16,18 +16,22 @@ import pytest
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import (
+    _LABEL_TRAILING_TRIM_WORDS,
     GraphBuildResult,
+    _accept_label,
     _clean_cue,
     _duration_expressions,
     _is_staple,
     _label,
     _parse_qty,
     _produced_labels,
+    _stages_for,
     _verify_duration,
     _verify_independence,
     build_graph,
 )
 from abc_cook.extract.normalize import render_source_text
+from abc_cook.extract.title import clean_title, resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -951,6 +955,95 @@ def test_label_generalized_trim(text: str, expected: str) -> None:
     assert _label(text) == expected
 
 
+# ---------------------------------------------------------------------------
+# P1 #5 §R4 -- the fallback's trailing trim widened beyond `_LABEL_FUNCTION_WORDS`
+# (`_LABEL_TRAILING_TRIM_WORDS`). The leading skip is unchanged -- only these three
+# real cases from the design doc's own analysis, which the narrower set left broken.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Remove the pan from the heat and let it cool.", "Remove the pan"),
+        ("Add melted butter while stirring constantly.", "Add melted butter"),
+        # The real dal-makhni fixture sentence (§R4's own example).
+        (
+            "Cook the tomatoes till they turn very thick and specs of butter ooze out.",
+            "Cook the tomatoes",
+        ),
+    ],
+)
+def test_label_widened_trailing_trim(text: str, expected: str) -> None:
+    assert _label(text) == expected
+
+
+# ---------------------------------------------------------------------------
+# P1 #5 §R2 -- shape-only acceptance of the model's own `NormalizedStep.label`.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("label", "text", "expected"),
+    [
+        # Accepted: 1-4 words, no leading marker, no trailing function word -- kept
+        # verbatim (capitalized), even though it doesn't lexically overlap `text` at
+        # all. This is the whole point of shape-only acceptance (§R2 calibration).
+        ("Mix marinade", "Whisk the eggs, sugar and vanilla together.", "Mix marinade"),
+        ("First rise", "Cover and leave in a warm spot for an hour.", "First rise"),
+        ("Toast whole spices", "Dry-roast the whole spices until fragrant.", "Toast whole spices"),
+        # Rejected: too many words (5) -- falls back to `_label(text)`, which (unlike
+        # the label) is not required to land on this text's own wording either.
+        (
+            "Whisk eggs sugar and vanilla",
+            "Whisk the eggs, sugar and vanilla together.",
+            "Whisk the eggs sugar",
+        ),
+        # Rejected: opens on a conditional/optional marker, even though otherwise
+        # well-shaped -- falls all the way through to `_label(text)`'s own trim of a
+        # differently-worded sentence, so the result visibly isn't the given label.
+        (
+            "If desired garnish",
+            "Sprinkle chopped coriander leaves for garnish.",
+            "Sprinkle chopped coriander leaves",
+        ),
+        (
+            "Optional bake method",
+            "Alternatively, you could roast them in the oven instead.",
+            "Alternatively you could roast",
+        ),
+        # Rejected: ends on a function word (original narrow set).
+        ("Add oil and", "Add oil and salt to the pan.", "Add oil and salt"),
+        # Rejected: ends on a WIDENED-only trailing word -- proves `_accept_label`
+        # checks the same widened set `_label`'s own fallback trim uses, not just
+        # the narrower `_LABEL_FUNCTION_WORDS`.
+        (
+            "Marinate chicken overnight before",
+            "Marinate the chicken overnight before cooking.",
+            "Marinate the chicken overnight",
+        ),
+        # No label given at all -- every pre-P1-5 captured replay takes this path.
+        (None, "Chop the onion.", "Chop the onion"),
+    ],
+)
+def test_accept_label(label: str | None, text: str, expected: str) -> None:
+    assert _accept_label(label, text) == expected
+
+
+def test_accept_label_never_ends_on_a_function_word_even_when_accepted() -> None:
+    """The invariant §R4's live report hard-asserts: whatever `_accept_label` returns
+    -- accepted or fallback -- never ends on a trailing function word."""
+    cases = [
+        ("Mix marinade", "text"),
+        (None, "Cook the tomatoes till they turn very thick."),
+        ("Add oil and", "Add oil and salt to the pan."),
+    ]
+    for label, text in cases:
+        result = _accept_label(label, text)
+        last_word = result.rsplit(" ", 1)[-1].lower()
+        assert last_word not in _LABEL_TRAILING_TRIM_WORDS
+
+
 def test_label_never_ends_on_bare_number_or_function_word_via_build_graph() -> None:
     """A1.1: exercise the fix through build_graph(), not just the private helper, and
     pin Node.instruction == original step.text through the label/cue transformations
@@ -1087,6 +1180,65 @@ def test_dal_makhni_cook_step_duration_is_grounded_despite_the_spelling_mismatch
     assert (node.duration_min, node.duration_typical, node.duration_max) == (28, 30, 32)
     assert decision.duration_source == "extracted"
     assert not any("Cook the dal for 30" in w for w in result.warnings)
+
+
+def test_dal_makhni_replay_has_no_captured_label_so_every_node_falls_back() -> None:
+    """P1 #5 §R4: this fixture predates `NormalizedStep.label` (v5) too -- same
+    fallback guarantee as the pizza replay, on the other captured recipe. Confirms
+    the widened trailing trim specifically on "Cook the tomatoes till they turn very
+    thick and specs of butter ooze out." -> "Cook the tomatoes" (§R4's own example)."""
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+    assert all(step.label is None for step in recipe.steps)
+
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+    steps_by_text = {step.text: step for step in recipe.steps}
+    for node in result.graph.nodes:
+        assert node.label == _label(steps_by_text[node.instruction].text)
+
+    tomato = next(n for n in result.graph.nodes if n.id == "step_cook_the_tomatoes_till_they_turn")
+    assert tomato.label == "Cook the tomatoes"
+
+
+def test_dal_makhni_replay_graph_title_vs_source_title() -> None:
+    """P1 #5 Commit 3, replacing a live check (§R4), on the other captured replay.
+
+    This fixture has no `.raw.json` (only `.normalized.json` + `.source_text.txt`),
+    so there is no genuine `RawAcquisition.title` to compare against. The captured
+    `recipe.title` itself stands in for it: this fixture predates v6's "clean dish
+    name" guidance, so like pizza, it is a verbatim echo of what the raw title
+    actually was. Same checkpoint fix as the pizza replay (see that test's
+    docstring): the echo is grounded but not a fixed point of `clean_title`, so
+    `resolve_title` now correctly rejects it and cleans up instead.
+    """
+    stand_in_raw_title = (
+        "Restaurant Style Dal Makhni Recipe in Hindi | Winter Special दाल मखनी रेस्टौरंट जैसी"
+    )
+    recipe = NormalizedRecipe.model_validate_json(
+        (_IMPORT_FIXTURES / "dal-makhni-multibranch.normalized.json").read_text(encoding="utf-8")
+    )
+    assert recipe.title == stand_in_raw_title  # the legacy-echo premise this test documents
+    source_text = (_IMPORT_FIXTURES / "dal-makhni-multibranch.source_text.txt").read_text(
+        encoding="utf-8"
+    )
+
+    resolved_title = resolve_title(recipe.title, stand_in_raw_title, None)
+    recipe = recipe.model_copy(update={"title": resolved_title})
+    result = _build(recipe, source_text)
+    assert result.graph is not None
+
+    print("\n=== dal-makhni replay: graph.title vs stand-in source_title ===")
+    print("source_title (stand-in):", stand_in_raw_title)
+    print("graph.title:            ", result.graph.title)
+
+    assert result.graph.title == "Restaurant Style Dal Makhni"
+    assert result.graph.title == clean_title(stand_in_raw_title)
+    assert result.graph.title != stand_in_raw_title
 
 
 # ---------------------------------------------------------------------------
@@ -2326,4 +2478,80 @@ def test_step6_required_microwave_method_now_gets_the_backstop_warning() -> None
         w.lower().startswith('step "microwave method') and "flagged for review" in w
         for w in result.warnings
     )
+
+
+# ---------------------------------------------------------------------------
+# P1 #5 §R3 -- monotonic stages, with a narrow trailing-finish rule for late garnish.
+# `_stages_for` operates purely on `kind`, never on text, so most cases below build
+# `kind` sequences directly; the last two lock in the real text -> kind -> stage
+# pipeline for the design doc's two literal examples, including the "chop" substring
+# quirk (inside "chopped") the trailing-finish rule exists to catch.
+# ---------------------------------------------------------------------------
+
+
+def test_stages_for_all_prep_recipe_stays_prep_plus_finish() -> None:
+    """"Chop onions. Dice tomatoes. Whisk dressing. Toss and serve." -- an all-prep
+    recipe must never collapse into Finish; only the last step is Finish."""
+    assert _stages_for(["prep", "prep", "prep", "finish"]) == ["prep", "prep", "prep", "finish"]
+
+
+def test_stages_for_trailing_garnish_is_finish_not_cook() -> None:
+    """A prep-kind step after the last cook-anchor is a genuine late garnish/plating
+    step, not cook-adjacent prep -- it gets `finish`, not `cook`."""
+    assert _stages_for(["prep", "active", "prep", "finish"]) == ["prep", "cook", "finish", "finish"]
+
+
+def test_stages_for_leading_soak_pulls_the_following_prep_step_into_cook() -> None:
+    """Dal's shape: a passive step 0 (the soak), then a prep-kind step (scrubbing the
+    soaked dal) that reads as prep but is cook-adjacent because it sits between two
+    cook anchors -- it must land in `cook`, not `prep`, or the whole recipe collapses
+    to Cook + Finish with no Prep at all once step 0 anchors it."""
+    kinds = ["passive", "prep", "active", "finish"]
+    assert _stages_for(kinds) == ["cook", "cook", "cook", "finish"]
+
+
+def test_stages_for_mid_recipe_prep_between_anchors_is_cook() -> None:
+    """The F5 keyword-bug shape (dal step 10, "add chopped garlic" between two pan
+    steps): `_infer_kind` still calls it `prep` (the "chop" substring inside
+    "chopped"), but §R3 places it in `cook` because it sits strictly between two
+    anchors -- which is the correct stage regardless of the keyword quirk."""
+    assert _stages_for(["active", "prep", "active", "finish"]) == ["cook", "cook", "cook", "finish"]
+
+
+def test_stages_for_single_step_recipe_is_just_finish() -> None:
+    assert _stages_for(["finish"]) == ["finish"]
+
+
+def test_stages_for_two_step_all_prep_chain_never_crashes() -> None:
+    assert _stages_for(["prep", "finish"]) == ["prep", "finish"]
+
+
+def test_all_prep_recipe_stages_through_the_full_pipeline() -> None:
+    """The literal §R3 example, through `build_graph` end to end."""
+    source = "Chop onions. Dice tomatoes. Whisk dressing. Toss and serve."
+    steps = [
+        _step(text="Chop onions."),
+        _step(text="Dice tomatoes."),
+        _step(text="Whisk dressing."),
+        _step(text="Toss and serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert [n.stage for n in result.graph.nodes] == ["prep", "prep", "prep", "finish"]
+
+
+def test_trailing_garnish_stages_through_the_full_pipeline() -> None:
+    """The literal §R3 example, through `build_graph` end to end -- including the
+    "chop" substring inside "chopped" that makes `_infer_kind` call the garnish step
+    `prep`; §R3's trailing-finish rule still routes it to Finish, not Cook."""
+    source = "Chop onion. Simmer the curry 10 min. Garnish with chopped coriander. Serve."
+    steps = [
+        _step(text="Chop onion."),
+        _step(text="Simmer the curry 10 min."),
+        _step(text="Garnish with chopped coriander."),
+        _step(text="Serve."),
+    ]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert [n.stage for n in result.graph.nodes] == ["prep", "cook", "finish", "finish"]
     assert all(n.tip is None for n in result.graph.nodes)

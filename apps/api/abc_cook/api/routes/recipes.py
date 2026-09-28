@@ -97,7 +97,13 @@ async def list_recipes() -> RecipeListResponse:
         Recipe summaries, sorted by title.
     """
     summaries = [
-        RecipeSummary(id=slug, title=graph.title, servings=graph.servings)
+        RecipeSummary(
+            id=slug,
+            title=graph.title,
+            servings=graph.servings,
+            servings_stated=graph.servings_stated,
+            yield_text=graph.yield_text,
+        )
         for slug, graph in ((slug, load_graph(slug)) for slug in _slugs())
     ]
     summaries.sort(key=lambda r: r.title)

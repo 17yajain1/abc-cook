@@ -14,9 +14,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.graph import build_graph
+from abc_cook.extract.graph import _label, build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.extract.provenance import compute_provenance
+from abc_cook.extract.title import clean_title, resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans
 from abc_cook.schema.graph import SourceRef
@@ -44,6 +45,20 @@ def test_pizza_dough_replay_makes_no_independence_claim() -> None:
     recipe, _ = _load_fixture()
     assert len(recipe.steps) == 14
     assert all(step.depends_on_previous for step in recipe.steps)
+
+
+def test_pizza_dough_replay_has_no_captured_label_so_every_node_falls_back() -> None:
+    """P1 #5 §R4: this fixture predates `NormalizedStep.label` (v5), so every step's
+    `label` is `None` and `build_graph` must fall back to `_label(step.text)` for
+    every node -- never silently invent one."""
+    recipe, source_text = _load_fixture()
+    assert all(step.label is None for step in recipe.steps)
+
+    result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
+    assert result.graph is not None
+    steps_by_text = {step.text: step for step in recipe.steps}
+    for node in result.graph.nodes:
+        assert node.label == _label(steps_by_text[node.instruction].text)
 
 
 def test_pizza_dough_replay_is_structurally_valid_and_makes_no_false_independence() -> None:
@@ -124,7 +139,16 @@ def test_pizza_dough_replay_full_pipeline_validates_schedules_and_spans_cleanly(
 def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> None:
     """C1/C2 gate: this is the exact §2.2 case (`Cook ~304 min` showing 289 min of
     unattended waits as undifferentiated work). The split must separate the two, and
-    the preheat host's inferred duration must still be marked inferred."""
+    the preheat host's inferred duration must still be marked inferred.
+
+    P1 #5 §R3: these per-stage numbers changed from the pre-monotonic-stages values.
+    Five steps that used to fall in Prep by the old kind-only rule (the overnight
+    fridge rest, pulling the dough an hour ahead, flouring the peel, shaping over the
+    knuckles, and topping the pizza) are cook-adjacent -- each sits after the first
+    cook anchor (the bulk rise) -- and now land in Cook instead, per the design doc's
+    pizza replay table. Prep keeps only the three genuine up-front steps (stir, measure,
+    knead); Cook absorbs the rest, including the long unattended waits that were
+    previously split across Prep and Cook."""
     recipe, source_text = _load_fixture()
     result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
     assert result.graph is not None
@@ -133,8 +157,8 @@ def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> Non
     spans = {span.stage_id: span for span in stage_spans(result.graph, plan)}
 
     prep, cook, finish = spans["prep"], spans["cook"], spans["finish"]
-    assert (prep.hands_on_min, prep.unattended_min, prep.inline_work_min) == (20.0, 1145.0, 1165.0)
-    assert (cook.hands_on_min, cook.unattended_min, cook.inline_work_min) == (15.0, 289.0, 304.0)
+    assert (prep.hands_on_min, prep.unattended_min, prep.inline_work_min) == (5.0, 5.0, 10.0)
+    assert (cook.hands_on_min, cook.unattended_min, cook.inline_work_min) == (30.0, 1429.0, 1459.0)
     assert (finish.hands_on_min, finish.unattended_min, finish.inline_work_min) == (0.0, 1.0, 1.0)
 
     provenance = compute_provenance(result)
@@ -142,3 +166,38 @@ def test_pizza_dough_replay_hands_on_unattended_split_and_inferred_host() -> Non
     assert preheat.fields["duration"] == "inferred"
     host = next(n for n in result.graph.nodes if n.id == "step_place_a_pizza_stone_or_inverted")
     assert host.attention == "unattended"
+
+
+def test_pizza_dough_replay_graph_title_vs_source_title() -> None:
+    """P1 #5 Commit 3, replacing a live check (§R4): offline, on the captured
+    fixture -- `source_title` (`raw.title`, verbatim) vs `graph.title` (resolved by
+    `title.py`, exactly as `import_pipeline.py` would apply it before `build_graph`).
+
+    This fixture's captured `recipe.title` predates v6's "clean dish name" guidance
+    and is a verbatim echo of `raw.title`. An identical echo is always grounded
+    (every word of a string is trivially present in itself), but `resolve_title`
+    ALSO requires the claim to be a fixed point of `clean_title` -- checkpoint fix,
+    added specifically because this fixture's echo is grounded but not clean, and
+    was wrongly accepted verbatim before that second check existed. `graph.title`
+    now correctly comes out cleaned, decoupled from `source_title`.
+    """
+    recipe, source_text = _load_fixture()
+    raw = RawAcquisition.model_validate_json(
+        (FIXTURES_DIR / "pizza-dough.raw.json").read_text(encoding="utf-8")
+    )
+    assert recipe.title == raw.title  # the legacy-echo premise this test documents
+
+    resolved_title = resolve_title(recipe.title, raw.title, None)
+    recipe = recipe.model_copy(update={"title": resolved_title})
+    result = build_graph(recipe, source_text, graph_id="g_pizza_replay", source=SOURCE)
+    assert result.graph is not None
+
+    source_title = raw.title  # import_pipeline.py never reads this from recipe.title
+    print("\n=== pizza-dough replay: graph.title vs source_title ===")
+    print("source_title:", source_title)
+    print("graph.title: ", result.graph.title)
+
+    assert source_title == "Best Homemade Pizza Dough Recipe | How To Make Pizza Crust"
+    assert result.graph.title == "Best Homemade Pizza Dough"
+    assert result.graph.title == clean_title(raw.title)
+    assert result.graph.title != source_title

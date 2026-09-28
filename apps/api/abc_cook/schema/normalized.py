@@ -86,6 +86,17 @@ class NormalizedStep(BaseModel):
     """
 
     text: str = Field(description="The step, lightly normalized. Never invented.")
+    label: str | None = Field(
+        default=None,
+        description=(
+            "A short (1-4 word) UI heading for this step -- a summary in your own "
+            "words (e.g. \"Mix marinade\", \"First rise\"), not a truncation of text. "
+            "Null if you have none. graph.py accepts it only by shape (word count, no "
+            "leading conditional marker, no trailing preposition/conjunction) and "
+            "falls back to its own trim of `text` otherwise -- it is never checked "
+            "against `text` for topical match, so accuracy is still your job."
+        ),
+    )
 
     attention: Attention = Field(
         description=(
@@ -209,7 +220,18 @@ class NormalizedRecipe(BaseModel):
     before any caller acts on it.
     """
 
-    title: str = Field(description="Source title, e.g. the video title.")
+    title: str = Field(
+        description=(
+            "A clean dish name (e.g. \"Buttermilk Pancakes\"), NOT the raw source "
+            "title verbatim -- the source's own title is preserved separately as "
+            "ImportResult.source_title regardless of what you put here. Never invent "
+            "a name unrelated to the source: title.py only accepts this claim when "
+            "every word in it is grounded in the raw title or a linked blog's own "
+            "name (case-folded, light stemming), and replaces it with a deterministic "
+            "cleanup of the raw title otherwise -- so an invented word is simply "
+            "discarded, not shown to the cook."
+        ),
+    )
     channel: str | None = Field(default=None, description="Source channel/site name.")
 
     method_grounded: bool = Field(
@@ -219,8 +241,28 @@ class NormalizedRecipe(BaseModel):
         ),
     )
 
-    servings: int | None = Field(default=None)
+    servings: int | None = Field(
+        default=None,
+        description=(
+            "How many PEOPLE this feeds — only if the source states that, in those "
+            "terms. Never the yield count (how many pieces/items the recipe makes) "
+            "— that goes in yield_text instead. If the source only gives a piece "
+            "count (\"makes 14 rasgulla\") with no separate people count, leave "
+            "this null; do not copy the piece count here."
+        ),
+    )
     servings_source: Literal["stated", "defaulted"] = Field(default="defaulted")
+    yield_text: str | None = Field(
+        default=None,
+        description=(
+            "The source's own stated yield, verbatim or lightly trimmed — "
+            "whatever it actually says it makes (\"14 rasgulla\", \"2 loaves\", "
+            "\"8 people\"), including a unit/item word even when that's just a "
+            "count of people. Only if a number is stated; null if the source "
+            "gives no number at all (\"makes a dozen\" has no digit — leave this "
+            "null rather than converting words to a number)."
+        ),
+    )
     cuisine: str | None = Field(default=None)
     stated_total_min: int | None = Field(
         default=None,

@@ -69,17 +69,18 @@ export function PlanScreen({
   const showingMap = tab === 'plan' && mode === 'map'
   const statusLine = statusLineFor(importMeta)
 
-  // M3.2: overview-first — every stage starts collapsed. This is ordinary component
+  // M3.2: overview-first — every card starts collapsed. This is ordinary component
   // state, not a ref, so it re-renders on toggle like any other UI state; it survives
   // a Plan<->Map round trip for the same reason `hasAnimatedMapRef` does (see above) —
   // switching `mode` never unmounts this component, only a recipe change does.
-  const stageIds = plan.stages.map((s) => s.stageId)
+  // P1 #5: keyed by `stage.key` (the run), not `stage.stageId` — a stage rendered as
+  // more than one card (plan §D) expands each card independently.
+  const stageKeys = plan.stages.map((s) => s.key)
   const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
-  const allExpanded = allStagesExpanded(stageIds, expandedStages)
-  const toggleStage = (stageId: string) =>
-    setExpandedStages((prev) => toggleStageSet(prev, stageId))
+  const allExpanded = allStagesExpanded(stageKeys, expandedStages)
+  const toggleStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
   const toggleAllStages = () =>
-    setExpandedStages(allExpanded ? new Set() : new Set(stageIds))
+    setExpandedStages(allExpanded ? new Set() : new Set(stageKeys))
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
   for (const row of plan.waitRows) {
@@ -123,7 +124,7 @@ export function PlanScreen({
   // against a sub-390px viewport.
   return (
     <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
-      <RecipeHeader plan={plan} save={save} />
+      <RecipeHeader plan={plan} save={save} importMeta={importMeta} />
       {statusLine && <p className="px-5 pb-2 text-[13px] text-ink-3">{statusLine}</p>}
 
       <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
@@ -152,7 +153,7 @@ export function PlanScreen({
               Map
             </ModeButton>
           </div>
-          {mode === 'plan' && stageIds.length > 0 && (
+          {mode === 'plan' && stageKeys.length > 0 && (
             <button
               type="button"
               onClick={toggleAllStages}
@@ -188,11 +189,11 @@ export function PlanScreen({
               <WaitRow key={`wait-pre-${i}`} row={row} />
             ))}
             {plan.stages.map((stage, index) => (
-              <Fragment key={stage.stageId}>
+              <Fragment key={stage.key}>
                 <StageCard
                   stage={stage}
-                  expanded={expandedStages.has(stage.stageId)}
-                  onToggle={() => toggleStage(stage.stageId)}
+                  expanded={expandedStages.has(stage.key)}
+                  onToggle={() => toggleStage(stage.key)}
                 />
                 {(waitRowsAfter.get(index) ?? []).map((row, i) => (
                   <WaitRow key={`wait-${index}-${i}`} row={row} />

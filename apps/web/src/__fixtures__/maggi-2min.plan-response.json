@@ -3,6 +3,8 @@
     "id": "maggi-2min",
     "title": "2-Minute Maggi",
     "servings": 1,
+    "servings_stated": true,
+    "yield_text": null,
     "cuisine": "Indian instant",
     "source": {
       "kind": "text",

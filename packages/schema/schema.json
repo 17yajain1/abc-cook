@@ -36,6 +36,11 @@
           "description": "Servings the quantities are stated for.",
           "type": "integer"
         },
+        "servings_stated": {
+          "default": true,
+          "description": "False when `servings` is a default (not stated, or discarded by the PC5 guard \u2014 a yield count the model mistook for a people count). Defaults True so every pre-P1-5 saved recipe (all hand-authored, all genuinely stated) reads as stated without a migration \u2014 see COOKING_GRAPH.md.",
+          "type": "boolean"
+        },
         "source": {
           "$ref": "#/$defs/SourceRef"
         },
@@ -60,6 +65,18 @@
         "title": {
           "description": "Recipe title, e.g. \"Kadai Paneer\".",
           "type": "string"
+        },
+        "yield_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The source's own stated yield, e.g. \"14 rasgulla\". Null when not stated or not grounded by a number in the source text."
         }
       },
       "required": [
@@ -834,9 +851,26 @@
           "description": "Servings the quantities are stated for.",
           "type": "integer"
         },
+        "servings_stated": {
+          "default": true,
+          "description": "See CookingGraph.servings_stated.",
+          "type": "boolean"
+        },
         "title": {
           "description": "Recipe title, e.g. \"Kadai Paneer\".",
           "type": "string"
+        },
+        "yield_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "See CookingGraph.yield_text."
         }
       },
       "required": [

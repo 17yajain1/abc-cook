@@ -30,6 +30,7 @@ from abc_cook.extract.normalize import normalize, render_source_text
 from abc_cook.extract.pricing import total_cost_inr
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.repair import repair_or_degrade
+from abc_cook.extract.title import resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema.graph import SourceRef
@@ -204,6 +205,17 @@ def run_import(
     recipe = outcome.recipe
     assert recipe is not None  # NormalizeOutcome: exactly one of recipe/tier0_result is set
 
+    # P1 #5 Commit 3: resolve `graph.title` once, here, before `build_graph` --
+    # never in graph.py, which only ever copies `recipe.title` through. The model's
+    # own claim is accepted if it's grounded in the raw title or the linked blog's
+    # `name`; otherwise this replaces it with a deterministic cleanup of the raw
+    # title. `source_title` below is deliberately never read from `recipe.title`,
+    # resolved or not -- it is always `raw.title`, verbatim (title.py).
+    blog_name = raw.blog_recipe.get("name") if raw.blog_recipe else None
+    resolved_title = resolve_title(recipe.title, raw.title, blog_name)
+    if resolved_title != recipe.title:
+        recipe = recipe.model_copy(update={"title": resolved_title})
+
     _status("validating")
     source_text = render_source_text(raw)
     source = SourceRef(kind="url", value=url, imported_at=datetime.now(UTC))
@@ -226,7 +238,7 @@ def run_import(
         )
         return ImportResult(
             status="method_not_grounded",
-            source_title=recipe.title,
+            source_title=raw.title,
             ingredients=recipe.ingredients,
             warnings=[
                 *build_result.warnings,
@@ -287,7 +299,7 @@ def run_import(
     )
     return ImportResult(
         status="done",
-        source_title=recipe.title,
+        source_title=raw.title,
         ingredients=recipe.ingredients,
         graph=graph,
         plan=plan,
