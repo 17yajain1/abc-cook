@@ -39,6 +39,35 @@ Not exponential/jittered -- that's more machinery than this failure mode has ear
 (shortform-video-import-plan.md Phase 1 audit: "do not introduce aggressive retries
 or a broad networking redesign")."""
 
+_JUNK_TAG_RE = re.compile(r"\[(music|musique|muzic[aă]|s[á]ngeci?|sangeet)\]", re.IGNORECASE)
+_WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+JUNK_WORD_THRESHOLD = 8
+"""A fetched transcript with fewer than this many real words (after stripping
+music/no-speech tags) is treated as junk, not a genuine spoken method.
+
+Threshold justified by the shortform-video-import Phase 0 eval's own diagnostic data
+(`scripts/shortform_eval.py`, same regexes, same constant): every confirmed-junk
+transcript in that run had 5 words or fewer -- a Norwegian/Danish ASR hallucination
+"Det er et stort problem." (5 words) on a video with no spoken recipe content, and
+several genuinely empty (0-word) results. Every confirmed-genuine spoken-method
+transcript had 129 words or more. 8 sits in the wide gap between those two clusters
+(comfortably above the observed junk ceiling of 5, far below the observed genuine
+floor of 129) -- not a guess, and not tuned to split a close call, because Phase 0
+produced no close call to split."""
+
+
+def is_junk_transcript(text: str) -> bool:
+    """Whether `text` looks like non-speech junk rather than a genuine spoken method.
+
+    Strips music/no-speech tags (`[Music]` and similar) before counting real words --
+    a track that is nothing but those tags must not read as "8+ words of content."
+    Never called on empty text by `youtube.fetch` (an empty fetch never reaches this
+    gate at all -- see its caller), but `is_junk_transcript("")` is `True` on its own
+    terms regardless, consistent with "fewer than 8 words."
+    """
+    stripped = _JUNK_TAG_RE.sub("", text)
+    return len(_WORD_RE.findall(stripped)) < JUNK_WORD_THRESHOLD
+
 
 class TranscriptSegment(BaseModel):
     """One caption event, before flattening. Transient -- extract-internal only.

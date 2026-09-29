@@ -169,7 +169,7 @@ export function ImportScreen({
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit()
         }}
-        placeholder="https://youtube.com/watch?v=…"
+        placeholder="YouTube or Instagram link…"
         className="mt-8 rounded-control border border-rule bg-paper px-3.5 py-3 text-[15px] text-ink outline-none focus:border-ink-3"
       />
 

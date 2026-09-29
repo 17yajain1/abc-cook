@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { SourceRef } from '@abc-cook/schema'
 
-import { canonicalSourceKey, thumbnailUrlFor, youtubeVideoId } from './sourceKey'
+import { canonicalSourceKey, instagramShortcode, thumbnailUrlFor, youtubeVideoId } from './sourceKey'
 
 function urlSource(value: string): SourceRef {
   return { kind: 'url', value, imported_at: '2026-09-15T00:00:00Z' }
@@ -28,6 +28,41 @@ describe('canonicalSourceKey — YouTube', () => {
 
   it('returns null for a non-YouTube host', () => {
     expect(youtubeVideoId('https://vimeo.com/watch?v=abc123')).toBeNull()
+  })
+})
+
+describe('canonicalSourceKey — Instagram', () => {
+  it('collapses /reel/, /reels/ and the username-prefixed shape to one key', () => {
+    // The username-prefixed shape is a confirmed real form (yt-dlp's own Instagram
+    // extractor test fixture: instagram.com/marvelskies.fc/reel/CWqAgUZgCku/), not
+    // just a defensive guess -- see instagramShortcode's docstring.
+    const a = canonicalSourceKey(urlSource('https://www.instagram.com/reel/Abc123/'))
+    const b = canonicalSourceKey(urlSource('https://instagram.com/reels/Abc123/'))
+    const c = canonicalSourceKey(
+      urlSource('https://www.instagram.com/marvelskies.fc/reel/Abc123/'),
+    )
+
+    expect(a).toBe('instagram:Abc123')
+    expect(b).toBe('instagram:Abc123')
+    expect(c).toBe('instagram:Abc123')
+  })
+
+  it('strips tracking params (igshid) via the shortcode path, same as before', () => {
+    const key = canonicalSourceKey(
+      urlSource('https://www.instagram.com/reel/Abc123/?igshid=xyz&utm_source=ig'),
+    )
+    expect(key).toBe('instagram:Abc123')
+  })
+
+  it('returns null for a non-Instagram host or a non-reel Instagram path', () => {
+    expect(instagramShortcode('https://vimeo.com/reel/Abc123')).toBeNull()
+    expect(instagramShortcode('https://www.instagram.com/someuser/')).toBeNull()
+    expect(instagramShortcode('https://www.instagram.com/p/Abc123/')).toBeNull()
+  })
+
+  it('falls back to the generic URL key for a non-reel Instagram link', () => {
+    const key = canonicalSourceKey(urlSource('https://www.instagram.com/someuser/'))
+    expect(key).toBe('url:instagram.com/someuser')
   })
 })
 
@@ -71,6 +106,7 @@ describe('thumbnailUrlFor', () => {
   })
 
   it('returns null for anything else', () => {
+    expect(thumbnailUrlFor('instagram:Abc123')).toBeNull() // no derivable public thumbnail
     expect(thumbnailUrlFor('url:example.com/page')).toBeNull()
     expect(thumbnailUrlFor('text:chop onion')).toBeNull()
   })

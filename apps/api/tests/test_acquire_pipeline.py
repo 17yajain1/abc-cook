@@ -83,3 +83,40 @@ def test_tries_each_candidate_until_one_resolves(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(pipeline, "fetch_recipe", _fetch_recipe)
     result = acquire("https://youtu.be/test")
     assert result.blog_recipe == {"@type": "Recipe"}
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 host allowlist -- rejects an unsupported host before any network call,
+# rather than handing it to `fetch_youtube`'s yt-dlp-generic extraction attempt
+# (shortform-video-import-plan.md: this used to take yt-dlp's full retry budget to
+# fail on a host like TikTok, reading as a hung import). `fetch_youtube` is
+# monkeypatched to raise if it's ever called, so these prove the rejection happens
+# strictly before leg 1, not just alongside it.
+# ---------------------------------------------------------------------------
+
+
+def _boom_fetch_youtube(url: str) -> RawAcquisition:
+    raise AssertionError("fetch_youtube must not be called for an unsupported host")
+
+
+def test_rejects_tiktok_before_any_network_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(pipeline, "fetch_youtube", _boom_fetch_youtube)
+    with pytest.raises(RuntimeError, match="Unsupported"):
+        acquire("https://www.tiktok.com/@someone/video/123")
+
+
+def test_rejects_a_directly_pasted_blog_link(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Blog links are only ever discovered via leg 2 (a video's description) -- a
+    blog URL pasted as the primary import URL was never a supported entry point and
+    must fail fast, same as any other unsupported host."""
+    monkeypatch.setattr(pipeline, "fetch_youtube", _boom_fetch_youtube)
+    with pytest.raises(RuntimeError, match="Unsupported"):
+        acquire("https://www.chefkunalkapur.com/dal-makhni/")
+
+
+def test_accepts_youtube_and_instagram_hosts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(pipeline, "fetch_youtube", lambda url: _raw())
+    assert acquire("https://youtu.be/test").source_url is not None
+    assert acquire("https://www.youtube.com/watch?v=test").source_url is not None
+    assert acquire("https://www.instagram.com/reel/Abc123/").source_url is not None
+    assert acquire("https://instagram.com/reel/Abc123/").source_url is not None  # no www.

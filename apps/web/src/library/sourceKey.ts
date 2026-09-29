@@ -35,6 +35,32 @@ export function youtubeVideoId(url: string): string | null {
   return null
 }
 
+/** Extracts an Instagram Reel shortcode from any of its URL shapes, or `null` if it
+ * isn't one. Confirmed real shapes (yt-dlp's own Instagram extractor test fixtures,
+ * `instagram.py`'s `_VALID_URL`): `/reel/<code>/`, the plural `/reels/<code>/`, and
+ * the username-prefixed `/<username>/reel/<code>/` (test case:
+ * `instagram.com/marvelskies.fc/reel/CWqAgUZgCku/`) -- the same reel shared two ways
+ * must collapse to one saved entry, same as the YouTube shapes above. */
+export function instagramShortcode(url: string): string | null {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return null
+  }
+
+  const host = parsed.hostname.toLowerCase()
+  if (host !== 'instagram.com' && !host.endsWith('.instagram.com')) return null
+
+  const segments = parsed.pathname.split('/').filter(Boolean)
+  const isReelSegment = (segment: string | undefined) => segment === 'reel' || segment === 'reels'
+
+  if (isReelSegment(segments[0])) return segments[1] ?? null
+  if (segments.length >= 3 && isReelSegment(segments[1])) return segments[2] ?? null
+
+  return null
+}
+
 /** `url:` + lowercased host (sans `www.`), path (sans trailing `/`), query sans tracking
  * params, no hash — for any non-YouTube URL. */
 function canonicalUrlKey(raw: string): string {
@@ -67,6 +93,9 @@ export function canonicalSourceKey(source: SourceRef): string {
 
   const videoId = youtubeVideoId(source.value)
   if (videoId) return `youtube:${videoId}`
+
+  const shortcode = instagramShortcode(source.value)
+  if (shortcode) return `instagram:${shortcode}`
 
   return canonicalUrlKey(source.value)
 }
