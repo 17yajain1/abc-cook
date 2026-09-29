@@ -106,7 +106,7 @@ def fetch(url: str) -> RawAcquisition:
     track = select_track(info)
     if track is not None:
         kind, lang, track_url = track
-        segments = fetch_segments(track_url)
+        segments, transient_failure = fetch_segments(track_url)
         text, truncated = flatten(segments)
         if text:
             transcript = text
@@ -117,6 +117,17 @@ def fetch(url: str) -> RawAcquisition:
                 acquisition_warnings.append(
                     f"Transcript truncated to {len(text)} characters (source was longer)."
                 )
+        elif transient_failure:
+            # A caption track exists (`select_track` found one) but every fetch
+            # attempt hit a retryable failure (429/5xx/transport error) -- this is
+            # NOT the same as "this video has no captions" and must not be read as
+            # that by anything inspecting `acquisition_warnings` (Phase 0 eval,
+            # future dashboards, a human debugging a Tier 0). `transcript` still
+            # stays None -- CLAUDE.md: acquisition never fails the import.
+            acquisition_warnings.append(
+                f"Caption track exists ({kind}/{lang}) but the fetch failed transiently "
+                "after retries; transcript unavailable for this import."
+            )
 
     return RawAcquisition(
         source_url=url,

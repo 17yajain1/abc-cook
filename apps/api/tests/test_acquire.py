@@ -12,10 +12,12 @@ Two tiers, per docs/M2.9-youtube-import-design.md §8.2:
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 import yt_dlp
 
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire import transcript as transcript_module
 from abc_cook.extract.acquire.blog import fetch_recipe, find_candidate_links
 from abc_cook.extract.acquire.transcript import select_track
 from abc_cook.extract.acquire.youtube import fetch, parse_chapters
@@ -225,6 +227,115 @@ def test_no_captions_fixture_has_no_transcript() -> None:
     assert acquisition.transcript_kind is None
     assert acquisition.transcript_segments == []
     assert acquisition.description  # ingredients are still there
+
+
+# ---------------------------------------------------------------------------
+# youtube.fetch() caption-fetch integration: transient vs. definitive vs. success.
+# Phase 0 audit finding (notes/shortform-video-import-plan-2026-09-29.md): a bare
+# `except httpx.HTTPError: return []` in fetch_segments made a rate-limited caption
+# fetch indistinguishable from "this video has no captions" -- 7 of 14 Phase 0 videos
+# were misclassified this way. `yt_dlp.YoutubeDL` and `httpx.get` are both
+# monkeypatched here; no network.
+# ---------------------------------------------------------------------------
+
+
+class _FakeYDL:
+    """Stands in for `yt_dlp.YoutubeDL` -- returns a canned `info` dict instead of
+    hitting the network, so `fetch()`'s caption-handling logic is testable offline."""
+
+    def __init__(self, opts: object, info: dict[str, object]) -> None:
+        self._info = info
+
+    def __enter__(self) -> "_FakeYDL":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        return None
+
+    def extract_info(self, url: str, download: bool = False) -> dict[str, object]:
+        return self._info
+
+
+class _FakeCaptionResponse:
+    def __init__(self, payload: object, *, status_code: int = 200) -> None:
+        self._payload = payload
+        self.status_code = status_code
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise httpx.HTTPStatusError("boom", request=None, response=None)  # type: ignore[arg-type]
+
+    def json(self) -> object:
+        return self._payload
+
+
+def _base_info(**overrides: object) -> dict[str, object]:
+    info: dict[str, object] = {
+        "title": "Test Video",
+        "channel": "Test Channel",
+        "description": None,
+        "duration": 60,
+        "language": "hi",
+        "subtitles": {},
+        "automatic_captions": {},
+    }
+    info.update(overrides)
+    return info
+
+
+def test_fetch_adds_no_warning_when_no_caption_track_genuinely_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Genuine absence (`select_track` returns None) is unchanged by this fix:
+    transcript stays None, no warning at all -- never conflated with a fetch failure."""
+    info = _base_info()  # automatic_captions={} -> select_track returns None
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    acquisition = fetch("https://www.youtube.com/shorts/fake-no-captions")
+    assert acquisition.transcript is None
+    assert acquisition.transcript_kind is None
+    assert acquisition.acquisition_warnings == []
+
+
+def test_fetch_populates_transcript_on_successful_caption_fetch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    info = _base_info(
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    payload = {"events": [{"tStartMs": 0, "dDurationMs": 1000, "segs": [{"utf8": "hello"}]}]}
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeCaptionResponse(payload))
+
+    acquisition = fetch("https://www.youtube.com/shorts/fake-success")
+
+    assert acquisition.transcript == "hello"
+    assert acquisition.transcript_kind == "auto"
+    assert acquisition.acquisition_warnings == []
+
+
+def test_fetch_surfaces_a_distinguishable_warning_on_transient_caption_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The confirmed Phase 0 bug, at the integration point: a caption track exists,
+    every fetch attempt is 429'd, and the result must be distinguishable from "no
+    captions" -- transcript stays None (never fails the import, CLAUDE.md), but a
+    warning names it as a transient fetch failure, not an absence."""
+    info = _base_info(
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    monkeypatch.setattr(
+        httpx, "get", lambda url, timeout=15.0: _FakeCaptionResponse({}, status_code=429)
+    )
+    monkeypatch.setattr(transcript_module.time, "sleep", lambda _: None)
+
+    acquisition = fetch("https://www.youtube.com/shorts/fake-transient")
+
+    assert acquisition.transcript is None
+    assert len(acquisition.acquisition_warnings) == 1
+    warning = acquisition.acquisition_warnings[0]
+    assert "transient" in warning.lower()
+    assert "no captions" not in warning.lower()  # must not read like genuine absence
 
 
 # ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ here (`fetch_segments`/`flatten`).
 from __future__ import annotations
 
 import re
+import time
 from typing import Any, Literal
 
 import httpx
@@ -26,6 +27,17 @@ reports it -- a module constant, not a function default, so callers can't drift.
 
 _FETCH_TIMEOUT_SEC = 15.0
 _WHITESPACE = re.compile(r"\s+")
+
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+"""Statuses worth a bounded retry -- rate-limited or momentarily unavailable, not
+"this doesn't exist" (404) or "this request is wrong" (4xx otherwise)."""
+_MAX_RETRIES = 2
+_RETRY_BACKOFF_SEC = 0.5
+"""Fixed, small backoff (0.5s, 1.0s) -- bounded total added latency (~1.5s worst
+case) on the rare transient-failure path; zero added latency on the normal path.
+Not exponential/jittered -- that's more machinery than this failure mode has earned
+(shortform-video-import-plan.md Phase 1 audit: "do not introduce aggressive retries
+or a broad networking redesign")."""
 
 
 class TranscriptSegment(BaseModel):
@@ -105,7 +117,9 @@ def select_track(info: dict[str, Any]) -> tuple[Literal["manual", "auto"], str, 
     return None
 
 
-def fetch_segments(url: str, *, timeout: float = _FETCH_TIMEOUT_SEC) -> list[TranscriptSegment]:
+def fetch_segments(
+    url: str, *, timeout: float = _FETCH_TIMEOUT_SEC, max_retries: int = _MAX_RETRIES
+) -> tuple[list[TranscriptSegment], bool]:
     """GET a `json3` caption track and parse it into segments. Never raises.
 
     A missing or broken transcript degrades the source set by one leg, never the
@@ -113,18 +127,49 @@ def fetch_segments(url: str, *, timeout: float = _FETCH_TIMEOUT_SEC) -> list[Tra
     event's `segs[].utf8` fragments with `""` (they are word-parts of the same line)
     and collapses internal whitespace; the space *between* segments that fixes glued
     event boundaries is added later, at `flatten` time.
+
+    Retries up to `max_retries` times, with a short fixed backoff, on a *retryable*
+    failure (429/5xx status, or a transport-level error like a timeout) before giving
+    up -- YouTube's caption endpoint (`timedtext`) rate-limits under burst traffic,
+    confirmed live during the shortform-video-import Phase 0 eval: 7 of 14 probed
+    videos had a real caption track that a bare `except httpx.HTTPError: return []`
+    turned into "no transcript", indistinguishable from the 7 that genuinely had none.
+    A *definitive* failure (404, or any other non-retryable status; malformed JSON)
+    still degrades silently on the first try, same as before -- that really does mean
+    "there is nothing usable here," not "ask again."
+
+    Returns:
+        `(segments, transient_failure)`. `transient_failure` is True only when every
+        attempt exhausted the retry budget on a retryable status/transport error --
+        never True for a clean 404 or an unparseable response. Callers should surface
+        `transient_failure` (e.g. as a warning) rather than silently reading an empty
+        `segments` list as "this video has no captions" when it's True.
     """
+    response: httpx.Response | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            candidate = httpx.get(url, timeout=timeout)
+        except httpx.TransportError:
+            candidate = None
+        if candidate is not None and candidate.status_code not in _RETRYABLE_STATUS:
+            response = candidate
+            break
+        if attempt < max_retries:
+            time.sleep(_RETRY_BACKOFF_SEC * (attempt + 1))
+    else:
+        return [], True  # every attempt hit a retryable status or transport error
+
+    assert response is not None  # guaranteed by the for/else above on a normal exit
     try:
-        response = httpx.get(url, timeout=timeout)
         response.raise_for_status()
-    except httpx.HTTPError:
-        return []
+    except httpx.HTTPStatusError:
+        return [], False  # a definitive non-retryable status (e.g. 404): genuinely nothing here
     try:
         data = response.json()
     except ValueError:
-        return []
+        return [], False
     if not isinstance(data, dict):
-        return []
+        return [], False
 
     segments: list[TranscriptSegment] = []
     for event in data.get("events") or []:
@@ -147,7 +192,7 @@ def fetch_segments(url: str, *, timeout: float = _FETCH_TIMEOUT_SEC) -> list[Tra
                 text=text,
             )
         )
-    return segments
+    return segments, False
 
 
 def flatten(

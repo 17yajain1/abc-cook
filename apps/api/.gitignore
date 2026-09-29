@@ -11,3 +11,8 @@ build/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Raw Phase 0 shortform-video eval output (notes/shortform-video-import-plan-2026-09-29.md):
+# regenerable via scripts/shortform_eval.py, not a curated golden fixture -- the
+# curated summary lives in the checkpoint report instead.
+tests/fixtures/shortform/phase0_results.json
