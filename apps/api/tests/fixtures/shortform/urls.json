@@ -1,0 +1,191 @@
+[
+  {
+    "url": "https://www.instagram.com/reel/DcsgVo2I5og/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success",
+    "recime_note": "Clean English steps (vegetable soup)."
+  },
+  {
+    "url": "https://www.instagram.com/reel/Dc0mvPmMXfS/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success-degraded",
+    "recime_note": "Hindi output, mostly readable; one ingredient garbled (कल मरच for काली मिरच / black pepper)."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DdTy28sBGYj/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success",
+    "recime_note": "Clean English ingredient list (paneer/turmeric/Greek yogurt dish)."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DTQ26fwkj_F/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success",
+    "recime_note": "Reached Save/nutrition screen cleanly."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DTiAc6dDM7Q/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Narration bleed-through: \"LOOK AT THAT\" (spoken filler) became an ingredient-section header."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DTm3HDqCJnI/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Commentary bleed-through: a health-benefit aside (\"JEERA, AJWAIN, SAUNF & HING → REDUCE GAS & BLOATING\") became a section header."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DQ6524MjmCs/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Wrong-language output entirely — ingredients rendered in Portuguese for a source that is not Portuguese. Matches this plan's junk-caption/language-misdetection risk."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DRWxuElkZQI/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Garbled phonetic Hindi transliteration of English ingredient terms (फरश करयडर, बलक पपर, लमन — \"fresh coriander\"/\"black pepper\"/\"lemon\" typed phonetically, unreadable)."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DSzEg6WDAey/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Colloquial spoken phrase kept as a quantity: \"Peri peri - Dil khol ke (but 10 g)\" — ambiguous, contradictory."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DUmjJn0lSHk/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success",
+    "recime_note": "Clean Tamil output (paneer marinade steps)."
+  },
+  {
+    "url": "https://www.instagram.com/reel/Dcnz1dFR9eA/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "unclear",
+    "recime_note": "Owner's capture session was very short (2 screenshots) — partial ingredient list only, inconclusive."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DY-Ai9qsKjE/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "failure",
+    "recime_note": "Same garbled-phonetic-Hindi bug as DRWxuElkZQI (तल for तेल/oil, वइट रइस for \"white rice\")."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DYhU6OPOCm5/",
+    "platform": "instagram",
+    "seed_source": "owner-recime-test",
+    "recime_verdict": "success",
+    "recime_note": "Clean Hindi output, readable steps."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/Mn94brtm2-Y",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "KabitasKitchen #shorts, ~15s — same creator probed in the original investigation."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/N8Fu-jcrR0w",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "No-fermentation instant dosa, ~98s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/XmUpinQdwuY",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Soft dosa recipe, ~113s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/80a6dSq0aOA",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Instant dosa with rava/sooji, ~177s — near the 3 min Shorts ceiling."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/aGRrpuJ_-QY",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Instant tomato dosa, ~92s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/qUHg37P2hFA",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "\"MAGGI | Rishtey Maangey bas 2-Minute\", ~45s — ad-slogan title, likely a junk-caption / no-real-recipe candidate."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/BUSx_nf8TYM",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "How to make plain maggi, ~60s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/DTlCC4-XcoU",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Spicy Maggi Masala Recipe, ~160s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/-nw5kN_fcM4",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Masala chai recipe, ~58s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/0x4IauamHoo",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Masala chai recipe, ~54s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/KPdOaaJv3f8",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Kadak masala chai, ~89s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/YEtvk7ntxpI",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Irani chai / tea recipe, ~61s, Hindi title."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/sLC04_AQ-x4",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Egg curry recipe, ~138s."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/xv4yVVB_1Yw",
+    "platform": "youtube",
+    "seed_source": "live-search",
+    "recime_verdict": null,
+    "recime_note": "Dhaba-style paneer butter masala, ~142s."
+  }
+]
