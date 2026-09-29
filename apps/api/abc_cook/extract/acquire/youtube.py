@@ -3,6 +3,11 @@
 See docs/M2.9-youtube-import-design.md §4.4. `yt-dlp` fetches public page metadata the
 same way the official player does — this is the one file that changes if it proves
 brittle and the swap to the official YouTube Data API v3 becomes necessary.
+
+Despite the module name, `fetch()` is yt-dlp-generic and is also `pipeline.py`'s only
+acquisition leg for Instagram Reels (there is no separate Instagram fetch path) --
+`instagram.py`'s `clean_placeholder_title` call below is the one Instagram-specific
+fixup layered on top of it.
 """
 
 from __future__ import annotations
@@ -12,10 +17,13 @@ import re
 import yt_dlp
 
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire.instagram import clean_placeholder_title
 from abc_cook.extract.acquire.transcript import (
+    JUNK_WORD_THRESHOLD,
     TranscriptSegment,
     fetch_segments,
     flatten,
+    is_junk_transcript,
     select_track,
 )
 from abc_cook.schema.normalized import NormalizedChapter
@@ -108,7 +116,20 @@ def fetch(url: str) -> RawAcquisition:
         kind, lang, track_url = track
         segments, transient_failure = fetch_segments(track_url)
         text, truncated = flatten(segments)
-        if text:
+        if text and is_junk_transcript(text):
+            # A caption track exists and fetched cleanly, but the text itself is
+            # non-speech/near-silent/wrong-language junk (Phase 1 speech-quality
+            # gate, transcript.py) -- never a transient_failure case (that branch
+            # below is for the fetch itself failing, not the text being unusable).
+            # transcript stays None: CLAUDE.md's "never invent" rule means junk text
+            # must not reach the LLM as if it were a real spoken method.
+            acquisition_warnings.append(
+                f"Caption track ({kind}/{lang}) fetched but looks like non-speech or "
+                f"wrong-language junk (fewer than {JUNK_WORD_THRESHOLD} real words "
+                "after stripping filler tags); ignored rather than risking an "
+                "invented recipe from it."
+            )
+        elif text:
             transcript = text
             transcript_segments = segments
             transcript_kind = kind
@@ -131,7 +152,7 @@ def fetch(url: str) -> RawAcquisition:
 
     return RawAcquisition(
         source_url=url,
-        title=info.get("title", ""),
+        title=clean_placeholder_title(info.get("title", ""), description),
         channel=info.get("channel") or info.get("uploader"),
         description=description,
         chapters=parse_chapters(description) if description else [],

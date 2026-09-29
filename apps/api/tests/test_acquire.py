@@ -296,6 +296,32 @@ def test_fetch_adds_no_warning_when_no_caption_track_genuinely_exists(
     assert acquisition.acquisition_warnings == []
 
 
+def test_fetch_replaces_instagram_placeholder_title_with_description(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Integration point for the Phase 1 title fix: `fetch()` is the one leg both
+    YouTube and Instagram URLs go through (`pipeline.py`'s host allowlist), so this
+    exercises `instagram.clean_placeholder_title` the same way a real IG import
+    would, not just the pure function in isolation."""
+    info = _base_info(
+        title="Video by batati.being.batati",
+        channel="batati.being.batati",
+        description="Lauki soup\n\nRecipe in pinned comment below",
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+
+    acquisition = fetch("https://www.instagram.com/reel/fake/")
+
+    assert acquisition.title == "Lauki soup\n\nRecipe in pinned comment below"
+
+
+def test_fetch_leaves_a_real_title_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
+    info = _base_info(title="Test Video")
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    acquisition = fetch("https://www.youtube.com/shorts/fake")
+    assert acquisition.title == "Test Video"
+
+
 def test_fetch_populates_transcript_on_successful_caption_fetch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -303,14 +329,45 @@ def test_fetch_populates_transcript_on_successful_caption_fetch(
         automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
     )
     monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
-    payload = {"events": [{"tStartMs": 0, "dDurationMs": 1000, "segs": [{"utf8": "hello"}]}]}
+    transcript_text = "first heat the oil then add the onions and cook until golden"
+    payload = {
+        "events": [{"tStartMs": 0, "dDurationMs": 1000, "segs": [{"utf8": transcript_text}]}]
+    }
     monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeCaptionResponse(payload))
 
     acquisition = fetch("https://www.youtube.com/shorts/fake-success")
 
-    assert acquisition.transcript == "hello"
+    assert acquisition.transcript == transcript_text
     assert acquisition.transcript_kind == "auto"
     assert acquisition.acquisition_warnings == []
+
+
+def test_fetch_ignores_a_junk_transcript_and_warns_instead(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Phase 1 speech-quality gate, at the integration point: a caption track exists
+    and fetches cleanly, but the text is wrong-language/non-speech junk -- transcript
+    must stay None (never invent a recipe from it), with a warning distinguishable
+    from both "no captions" and the transient-failure case."""
+    info = _base_info(
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    payload = {
+        "events": [
+            {"tStartMs": 0, "dDurationMs": 1000, "segs": [{"utf8": "Det er et stort problem."}]}
+        ]
+    }
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeCaptionResponse(payload))
+
+    acquisition = fetch("https://www.youtube.com/shorts/fake-junk")
+
+    assert acquisition.transcript is None
+    assert acquisition.transcript_kind is None
+    assert len(acquisition.acquisition_warnings) == 1
+    warning = acquisition.acquisition_warnings[0]
+    assert "junk" in warning.lower()
+    assert "transient" not in warning.lower()
 
 
 def test_fetch_surfaces_a_distinguishable_warning_on_transient_caption_failure(

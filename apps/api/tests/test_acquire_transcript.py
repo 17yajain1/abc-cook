@@ -14,9 +14,11 @@ import pytest
 
 from abc_cook.extract.acquire import transcript as transcript_module
 from abc_cook.extract.acquire.transcript import (
+    JUNK_WORD_THRESHOLD,
     TranscriptSegment,
     fetch_segments,
     flatten,
+    is_junk_transcript,
     select_track,
 )
 
@@ -364,3 +366,90 @@ def test_flatten_never_bisects_a_single_oversized_segment() -> None:
 
 def test_transcript_char_cap_is_24000() -> None:
     assert transcript_module.TRANSCRIPT_CHAR_CAP == 24_000
+
+
+# ---------------------------------------------------------------------------
+# is_junk_transcript -- Phase 1 speech-quality gate. Threshold justified by the
+# shortform-video-import Phase 0 eval's real cases: every confirmed-junk transcript
+# had <=5 real words; every confirmed-genuine spoken-method transcript had >=129.
+# No network.
+# ---------------------------------------------------------------------------
+
+
+def test_junk_word_threshold_is_8() -> None:
+    """The exact Phase 0-justified value -- see the constant's docstring."""
+    assert JUNK_WORD_THRESHOLD == 8
+
+
+def test_genuine_transcript_is_not_junk() -> None:
+    """A real spoken-method transcript, well above the threshold (Phase 0's shortest
+    confirmed-genuine case was 129 words; this is deliberately much shorter than that
+    and still clears 8)."""
+    text = (
+        "First heat oil in a pan then add cumin seeds and let them splutter for a "
+        "few seconds before adding the chopped onions and cooking until golden"
+    )
+    assert is_junk_transcript(text) is False
+
+
+def test_wrong_language_hallucination_is_junk() -> None:
+    """The confirmed Phase 0 case: a 14s clip ASR'd as Norwegian/Danish "Det er et
+    stort problem." (5 words) on a video with no spoken recipe content."""
+    assert is_junk_transcript("Det er et stort problem.") is True
+
+
+def test_music_only_tag_is_junk() -> None:
+    assert is_junk_transcript("[Music]") is True
+
+
+def test_music_tag_stripped_before_counting_remaining_words() -> None:
+    """A transcript that is mostly a tag plus a couple of stray words must not be
+    pushed over the threshold by counting the tag itself as content."""
+    assert is_junk_transcript("[Music] la la") is True
+
+
+def test_empty_text_is_junk() -> None:
+    assert is_junk_transcript("") is True
+
+
+def test_boundary_exactly_at_threshold_is_not_junk() -> None:
+    """Exactly `JUNK_WORD_THRESHOLD` real words clears the gate -- the check is
+    strictly "fewer than", never "at or below"."""
+    text = " ".join(["word"] * JUNK_WORD_THRESHOLD)
+    assert len(text.split()) == JUNK_WORD_THRESHOLD
+    assert is_junk_transcript(text) is False
+
+
+def test_boundary_one_below_threshold_is_junk() -> None:
+    text = " ".join(["word"] * (JUNK_WORD_THRESHOLD - 1))
+    assert is_junk_transcript(text) is True
+
+
+# ---------------------------------------------------------------------------
+# transient_failure must never be read as junk -- that distinction is
+# youtube.fetch's job (see test_acquire.py), but is_junk_transcript itself is only
+# ever called on text that was actually fetched, never on a transient-failure
+# result -- documented here so the invariant has a test next to the function, not
+# only at the integration point.
+# ---------------------------------------------------------------------------
+
+
+def test_transient_failure_never_reaches_the_junk_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A fetch that exhausts its retry budget returns `([], True)` -- empty segments,
+    so `flatten` produces `("", False)` and the empty text short-circuits before
+    `is_junk_transcript` is ever consulted (see youtube.py's `if text and ...`)."""
+
+    def _always_429(url: str, timeout: float = 15.0) -> object:
+        class _Resp:
+            status_code = 429
+
+        return _Resp()
+
+    monkeypatch.setattr(httpx, "get", _always_429)
+    monkeypatch.setattr(transcript_module.time, "sleep", lambda _: None)
+
+    segments, transient_failure = fetch_segments("https://example.test/caps.json3")
+    text, _truncated = flatten(segments)
+
+    assert transient_failure is True
+    assert text == ""  # nothing for is_junk_transcript to see -- the gate never fires
