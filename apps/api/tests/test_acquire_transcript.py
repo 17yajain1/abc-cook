@@ -178,8 +178,9 @@ def test_fetch_segments_joins_segs_within_an_event(monkeypatch: pytest.MonkeyPat
         ]
     }
     monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeResponse(payload))
-    segments = fetch_segments("https://example.test/caps.json3")
+    segments, transient_failure = fetch_segments("https://example.test/caps.json3")
     assert segments == [TranscriptSegment(start_sec=0.0, end_sec=2.0, text="Add salt")]
+    assert transient_failure is False
 
 
 def test_fetch_segments_collapses_internal_whitespace(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -193,7 +194,7 @@ def test_fetch_segments_collapses_internal_whitespace(monkeypatch: pytest.Monkey
         ]
     }
     monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeResponse(payload))
-    segments = fetch_segments("https://example.test/caps.json3")
+    segments, _ = fetch_segments("https://example.test/caps.json3")
     assert segments[0].text == "hello world"
 
 
@@ -206,33 +207,113 @@ def test_fetch_segments_skips_events_with_no_text(monkeypatch: pytest.MonkeyPatc
         ]
     }
     monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _FakeResponse(payload))
-    segments = fetch_segments("https://example.test/caps.json3")
+    segments, _ = fetch_segments("https://example.test/caps.json3")
     assert len(segments) == 1
     assert segments[0].text == "real text"
 
 
-def test_fetch_segments_returns_empty_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_segments_returns_empty_non_transient_on_connect_timeout_that_never_recovers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A transport error on every attempt (incl. retries) is transient_failure=True --
+    distinguishable from a clean 404, per the Phase 0 audit's false-negative finding."""
+
     def _boom(url: str, timeout: float = 15.0) -> _FakeResponse:
         raise httpx.ConnectTimeout("timed out")
 
     monkeypatch.setattr(httpx, "get", _boom)
-    assert fetch_segments("https://example.test/caps.json3") == []
+    monkeypatch.setattr(transcript_module.time, "sleep", lambda _: None)
+    assert fetch_segments("https://example.test/caps.json3") == ([], True)
 
 
-def test_fetch_segments_returns_empty_on_bad_status(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        httpx, "get", lambda url, timeout=15.0: _FakeResponse({}, status_code=404)
-    )
-    assert fetch_segments("https://example.test/caps.json3") == []
+def test_fetch_segments_returns_empty_non_transient_on_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """404 is definitive -- "genuinely nothing here" -- never retried, never
+    transient_failure=True. This is the "genuine no-caption" case."""
+    calls = []
+
+    def _get(url: str, timeout: float = 15.0) -> _FakeResponse:
+        calls.append(url)
+        return _FakeResponse({}, status_code=404)
+
+    monkeypatch.setattr(httpx, "get", _get)
+    assert fetch_segments("https://example.test/caps.json3") == ([], False)
+    assert len(calls) == 1  # never retried -- 404 isn't in _RETRYABLE_STATUS
 
 
-def test_fetch_segments_returns_empty_on_unparseable_json(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_segments_returns_empty_non_transient_on_unparseable_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class _BadJson(_FakeResponse):
         def json(self) -> object:
             raise ValueError("not json")
 
     monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _BadJson({}))
-    assert fetch_segments("https://example.test/caps.json3") == []
+    assert fetch_segments("https://example.test/caps.json3") == ([], False)
+
+
+def test_fetch_segments_retries_429_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The confirmed Phase 0 case: youtube.com/api/timedtext returns 429 under burst
+    traffic, then a real caption track is there on retry -- this must not be lost."""
+    payload = {
+        "events": [{"tStartMs": 0, "dDurationMs": 1000, "segs": [{"utf8": "recovered"}]}]
+    }
+    responses = iter(
+        [
+            _FakeResponse({}, status_code=429),
+            _FakeResponse({}, status_code=429),
+            _FakeResponse(payload),
+        ]
+    )
+    sleeps: list[float] = []
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: next(responses))
+    monkeypatch.setattr(transcript_module.time, "sleep", sleeps.append)
+
+    segments, transient_failure = fetch_segments("https://example.test/caps.json3")
+
+    assert transient_failure is False
+    assert len(segments) == 1
+    assert segments[0].text == "recovered"
+    assert len(sleeps) == 2  # backed off before each of the two retries
+
+
+def test_fetch_segments_429_exhausts_retries_is_transient_not_no_captions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """This is the exact Phase 0 bug: `select_track` found a real track, but every
+    fetch attempt was rate-limited. The old code returned `[]` here -- silently
+    identical to "no captions ever existed". The fix must make this distinguishable."""
+    call_count = 0
+
+    def _always_429(url: str, timeout: float = 15.0) -> _FakeResponse:
+        nonlocal call_count
+        call_count += 1
+        return _FakeResponse({}, status_code=429)
+
+    monkeypatch.setattr(httpx, "get", _always_429)
+    monkeypatch.setattr(transcript_module.time, "sleep", lambda _: None)
+
+    segments, transient_failure = fetch_segments("https://example.test/caps.json3", max_retries=2)
+
+    assert segments == []
+    assert transient_failure is True  # NOT the same outcome as a genuine 404/no-track case
+    assert call_count == 3  # initial attempt + 2 retries, bounded
+
+
+def test_fetch_segments_respects_max_retries_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    """max_retries=0 makes a single attempt -- no unbounded/aggressive retrying."""
+    call_count = 0
+
+    def _always_429(url: str, timeout: float = 15.0) -> _FakeResponse:
+        nonlocal call_count
+        call_count += 1
+        return _FakeResponse({}, status_code=429)
+
+    monkeypatch.setattr(httpx, "get", _always_429)
+    segments, transient_failure = fetch_segments("https://example.test/caps.json3", max_retries=0)
+    assert (segments, transient_failure) == ([], True)
+    assert call_count == 1
 
 
 # ---------------------------------------------------------------------------
