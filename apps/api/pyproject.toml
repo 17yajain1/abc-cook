@@ -16,6 +16,7 @@ dependencies = [
     "yt-dlp>=2024.12,<2027",
     "anthropic>=1.0",
     "openai>=1.0",
+    "idna>=3.7",
 ]
 
 [project.optional-dependencies]
