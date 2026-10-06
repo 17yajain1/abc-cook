@@ -118,6 +118,11 @@ export interface CookingView {
   showLink: boolean
   primary: ActionButton | null
   secondary: ActionButton | null
+  /** B0 (N3): true on every screen where the undo link can appear in `secondary`
+   * (`UNDO_ELIGIBLE_SCREENS`). The shell then keeps that slot's height whether or not a
+   * secondary is showing, so the primary never moves when the undo link comes or goes —
+   * a quick second tap where Done *was* must not land on "Back to …". */
+  reserveSecondary: boolean
 }
 
 export interface SheetRowView {
@@ -301,6 +306,7 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     showLink: false,
     primary: { label: 'Start cooking', solid: true, action: { kind: 'start' } },
     secondary: { label: 'See the plan', solid: false, action: { kind: 'seePlan' } },
+    reserveSecondary: false,
   }
 }
 
@@ -334,6 +340,7 @@ export function buildCookingView(
     showLink: false,
     primary: null,
     secondary: null,
+    reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id),
   }
 
   if (scr.id === 'task' || scr.id === 'handsoff_pending') {
@@ -429,7 +436,6 @@ export function buildCookingView(
     v.topRecipe = ''
     v.showTopRight = false
     v.title = `${options.recipeTitle} is done.`
-    v.instr = model.nodes[model.sinkId].instruction
     v.primary = { label: 'Finished cooking', solid: true, action: { kind: 'finish' } }
     applyUndoOverride(v, model, session, now, scr.id)
     return v

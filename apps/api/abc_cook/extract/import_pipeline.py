@@ -17,9 +17,10 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal
+from urllib.parse import urlparse
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
@@ -67,6 +68,21 @@ class ImportTelemetry:
     windows: int
     saved_min: float
     sources: list[ImportSource]
+    source_kind: str = "unknown"
+    """Coarse host family of the URL ("youtube" / "instagram" / "other") -- derived from
+    the hostname only, for bench tables; never used for routing."""
+    stage_s: dict[str, float] = field(default_factory=dict)
+    """A0: wall-clock seconds per pipeline stage, keys `acquire`, `extract` (normalize,
+    incl. its escalation retry), `build_graph`, `repair` (0.0 when none fired),
+    `schedule`. A stage the run never reached is absent (a Tier 0 refusal has no
+    `build_graph`). `extract` includes the ~all of GPT-5-mini's reasoning time."""
+    ttp_s: float = 0.0
+    """Time-to-cooking-plan: seconds from `run_import` entry to the finished result."""
+    ttr_s: float = 0.0
+    """Time-to-readable-recipe: seconds until the user could first read the recipe.
+    With no progressive preview yet (A2) this equals `ttp_s` by definition -- the
+    recipe is only readable when the whole plan is. A2 will make it the end of acquire
+    for blog URLs, so bench tables stay comparable across that change."""
     repair_attempted: bool | None = None
     """M2.10 s18 repair-scope triage: None when no repair was needed at all (tier is
     "tier0" or "clean"); False when violations existed but the triage gate skipped
@@ -80,9 +96,35 @@ class ImportTelemetry:
         return [*self.extraction_calls, *self.repair_calls]
 
     @property
+    def degraded(self) -> bool:
+        """True when the user got the linear fallback rather than a scheduled graph."""
+        return self.tier == "degraded"
+
+    @property
+    def output_tokens(self) -> int:
+        """Total output tokens across every call (includes reasoning tokens)."""
+        return sum(c.output_tokens for c in self.total_calls)
+
+    @property
+    def reasoning_tokens(self) -> int | None:
+        """Total hidden reasoning tokens, or None if no call reported any."""
+        reported = [c.reasoning_tokens for c in self.total_calls if c.reasoning_tokens is not None]
+        return sum(reported) if reported else None
+
+    @property
     def cost_inr(self) -> float | None:
         """This import's total measured cost, or None if any call is unpriced."""
         return total_cost_inr(self.total_calls)
+
+
+def _source_kind(url: str) -> str:
+    """Coarse host family for telemetry only (`ImportTelemetry.source_kind`)."""
+    host = (urlparse(url).hostname or "").lower()
+    if host.endswith(("youtube.com", "youtu.be")):
+        return "youtube"
+    if host.endswith("instagram.com"):
+        return "instagram"
+    return "other"
 
 
 def _sources(raw: RawAcquisition) -> list[ImportSource]:
@@ -131,6 +173,14 @@ def run_import(
         network exception `acquire_fn` doesn't catch) propagates to the caller.
     """
     started = time.monotonic()
+    stage_s: dict[str, float] = {}
+
+    def _timed[T](stage: str, fn: Callable[[], T]) -> T:
+        t0 = time.monotonic()
+        try:
+            return fn()
+        finally:
+            stage_s[stage] = time.monotonic() - t0
 
     def _status(status: ImportStatus) -> None:
         _logger.info(
@@ -153,37 +203,46 @@ def run_import(
         repair_attempted: bool | None = None,
         repair_skip_reason: str | None = None,
     ) -> None:
+        total_s = time.monotonic() - started
+        telemetry = ImportTelemetry(
+            extraction_calls=extraction_calls,
+            extraction_escalated=extraction_escalated,
+            extraction_truncations=extraction_truncations,
+            repair_calls=repair_calls,
+            violations_pre_repair=violations_pre_repair,
+            tier=tier,
+            step_count=step_count,
+            windows=windows,
+            saved_min=saved_min,
+            sources=sources,
+            source_kind=_source_kind(url),
+            stage_s=dict(stage_s),
+            ttp_s=total_s,
+            ttr_s=total_s,
+            repair_attempted=repair_attempted,
+            repair_skip_reason=repair_skip_reason,
+        )
         _logger.info(
-            "run_import: graph_id=%s finished tier=%s in %.1fs (llm calls: %s)",
+            "run_import: graph_id=%s finished tier=%s kind=%s ttp=%.1fs stages=%s "
+            "out_tokens=%d reasoning_tokens=%s llm calls: %s",
             graph_id,
             tier,
-            time.monotonic() - started,
+            telemetry.source_kind,
+            total_s,
+            {k: round(v, 2) for k, v in stage_s.items()},
+            telemetry.output_tokens,
+            telemetry.reasoning_tokens,
             [f"{c.model} {c.latency_ms / 1000:.1f}s" for c in [*extraction_calls, *repair_calls]],
         )
         if on_telemetry is not None:
-            on_telemetry(
-                ImportTelemetry(
-                    extraction_calls=extraction_calls,
-                    extraction_escalated=extraction_escalated,
-                    extraction_truncations=extraction_truncations,
-                    repair_calls=repair_calls,
-                    violations_pre_repair=violations_pre_repair,
-                    tier=tier,
-                    step_count=step_count,
-                    windows=windows,
-                    saved_min=saved_min,
-                    sources=sources,
-                    repair_attempted=repair_attempted,
-                    repair_skip_reason=repair_skip_reason,
-                )
-            )
+            on_telemetry(telemetry)
 
     _status("acquiring")
-    raw = acquire_fn(url)
+    raw = _timed("acquire", lambda: acquire_fn(url))
     sources = _sources(raw)
 
     _status("extracting")
-    outcome = normalize(raw, adapter)
+    outcome = _timed("extract", lambda: normalize(raw, adapter))
     if outcome.tier0_result is not None:
         _telemetry(
             extraction_calls=outcome.calls,
@@ -220,7 +279,10 @@ def run_import(
     source_text = render_source_text(raw)
     source = SourceRef(kind="url", value=url, imported_at=datetime.now(UTC))
 
-    build_result = build_graph(recipe, source_text, graph_id=graph_id, source=source)
+    build_result = _timed(
+        "build_graph",
+        lambda: build_graph(recipe, source_text, graph_id=graph_id, source=source),
+    )
     if build_result.graph is None:
         # Defensive only -- normalize.py's Tier 0 gate (bool(recipe.steps)) should
         # already have stopped this above; graph.py's own docstring says never rely
@@ -254,8 +316,11 @@ def run_import(
     repair_attempted: bool | None = None
     repair_skip_reason: str | None = None
     if violations:
-        repair_outcome = repair_or_degrade(
-            recipe, source_text, violations, adapter, graph_id=graph_id, source=source
+        repair_outcome = _timed(
+            "repair",
+            lambda: repair_or_degrade(
+                recipe, source_text, violations, adapter, graph_id=graph_id, source=source
+            ),
         )
         build_result = repair_outcome.build_result
         repair_calls = repair_outcome.calls
@@ -283,7 +348,7 @@ def run_import(
             [v.rule for v in final_violations],
         )
 
-    plan = schedule(graph, burner_capacity=DEFAULT_BURNER_CAPACITY)
+    plan = _timed("schedule", lambda: schedule(graph, burner_capacity=DEFAULT_BURNER_CAPACITY))
     _telemetry(
         extraction_calls=outcome.calls,
         extraction_escalated=outcome.escalated,

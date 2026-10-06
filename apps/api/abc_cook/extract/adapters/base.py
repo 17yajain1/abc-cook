@@ -57,6 +57,10 @@ class CallUsage:
     stop_reason: str | None
     latency_ms: float
     max_tokens_requested: int
+    reasoning_tokens: int | None = None
+    """Hidden reasoning tokens, already included in `output_tokens` (OpenAI reports
+    them as a subset of `completion_tokens`). `None` = the provider doesn't report
+    them (Anthropic here) -- not "zero". A0 instrumentation only; never priced twice."""
 
 
 @dataclass(frozen=True)

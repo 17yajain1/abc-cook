@@ -17,9 +17,9 @@ import pytest
 
 from abc_cook.extract import import_pipeline
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.adapters.base import ExtractResult
+from abc_cook.extract.adapters.base import CallUsage, ExtractResult
 from abc_cook.extract.graph import GraphBuildResult
-from abc_cook.extract.import_pipeline import run_import
+from abc_cook.extract.import_pipeline import ImportTelemetry, run_import
 from abc_cook.extract.title import clean_title
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
 
@@ -167,3 +167,75 @@ def test_success_path_ungrounded_model_title_falls_back_to_cleaned_raw_title() -
     assert result.source_title == raw.title
     assert result.graph.title == clean_title(raw.title)
     assert result.graph.title != "Spicy Butter Chicken"
+
+
+def _usage(*, output_tokens: int, reasoning_tokens: int | None) -> CallUsage:
+    return CallUsage(
+        model="gpt-5-mini",
+        input_tokens=100,
+        output_tokens=output_tokens,
+        cache_read_input_tokens=None,
+        cache_creation_input_tokens=None,
+        stop_reason="stop",
+        latency_ms=1000.0,
+        max_tokens_requested=16000,
+        reasoning_tokens=reasoning_tokens,
+    )
+
+
+def test_telemetry_reports_stage_timings_ttr_ttp_and_tokens() -> None:
+    """A0: per-stage seconds, TTR/TTP, source kind and reasoning tokens ride on
+    `ImportTelemetry` (never on `ImportResult`)."""
+    raw = _raw()
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(
+                recipe=_grounded_recipe(),
+                usage=_usage(output_tokens=900, reasoning_tokens=700),
+            )
+        ]
+    )
+    seen: list[ImportTelemetry] = []
+
+    run_import(
+        raw.source_url,
+        adapter,
+        graph_id="g_test",
+        acquire_fn=_fake_acquire(raw),
+        on_telemetry=seen.append,
+    )
+
+    (t,) = seen
+    assert t.source_kind == "youtube"
+    assert t.tier == "clean"
+    assert not t.degraded
+    # No repair fired -> that stage never ran and is absent, not 0.0.
+    assert set(t.stage_s) == {"acquire", "extract", "build_graph", "schedule"}
+    assert all(v >= 0.0 for v in t.stage_s.values())
+    assert t.ttp_s >= sum(t.stage_s.values()) - 1e-6
+    assert t.ttr_s == t.ttp_s  # no progressive preview yet (A2)
+    assert t.output_tokens == 900
+    assert t.reasoning_tokens == 700
+
+
+def test_telemetry_reasoning_tokens_none_when_provider_reports_none() -> None:
+    raw = _raw()
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(
+                recipe=_grounded_recipe(),
+                usage=_usage(output_tokens=900, reasoning_tokens=None),
+            )
+        ]
+    )
+    seen: list[ImportTelemetry] = []
+
+    run_import(
+        raw.source_url,
+        adapter,
+        graph_id="g_test",
+        acquire_fn=_fake_acquire(raw),
+        on_telemetry=seen.append,
+    )
+
+    assert seen[0].reasoning_tokens is None
