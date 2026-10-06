@@ -29,11 +29,13 @@ from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 DEFAULT_MODEL = "gpt-5-mini"
 
-EXTRACTION_EFFORT: EffortLevel | None = None
-"""Reasoning effort for the extraction call. `None` = send nothing, i.e. the provider
-default (GPT-5-mini: medium) -- the production setting, unchanged. A constant, not an
-env var, on purpose (competitor-audit plan A4): it changes only when an A/B measured
-on correctness first says so. `scripts/effort_ab.py` overrides it per run."""
+EXTRACTION_EFFORT: EffortLevel | None = "low"
+"""Reasoning effort for the extraction call: "low" per the A4 experiment and the owner
+decision of 2026-10-06 (`notes/step3-effort-ab/DECISION_MEMO.md` §13.6). `None` = send
+nothing, i.e. the provider default (GPT-5-mini: medium) -- the previous production
+setting and the rollback value. A constant, not an env var, on purpose: it changes only
+when an A/B measured on correctness first says so. `scripts/effort_ab.py` overrides it
+per run."""
 """M2.11: extraction moved from Haiku to GPT-5-mini per the M2.10 model bake-offs
 (directional evidence: comparable/better grounding, cheaper, ~4x fewer output tokens
 than Haiku on the same recipes). Repair stays on Sonnet (`repair.REPAIR_MODEL`) --

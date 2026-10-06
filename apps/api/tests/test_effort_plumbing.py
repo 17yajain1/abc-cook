@@ -1,4 +1,4 @@
-"""A4: reasoning effort is a plumbed constant, default unchanged (provider default)."""
+"""A4: reasoning effort is a plumbed constant; production default is "low"."""
 
 from __future__ import annotations
 
@@ -54,11 +54,11 @@ RAW = RawAcquisition(
 )
 
 
-def test_production_default_sends_no_effort_at_all() -> None:
-    assert EXTRACTION_EFFORT is None
+def test_production_default_sends_low_effort() -> None:
+    assert EXTRACTION_EFFORT == "low"
     recorder = _Recorder()
     normalize(RAW, recorder)
-    assert recorder.efforts == [None]
+    assert recorder.efforts == ["low"]
 
 
 def test_normalize_passes_an_explicit_effort_to_the_adapter() -> None:
