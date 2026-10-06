@@ -21,14 +21,17 @@ import logging
 import os
 import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Literal, Protocol
 
 import pydantic
 
-from abc_cook.schema.normalized import ImportResult
+from abc_cook.extract import normalize, repair
+from abc_cook.extract.adapters.base import EffortLevel
+from abc_cook.extract.adapters.prompting import system_prompt
+from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 _logger = logging.getLogger(__name__)
 
@@ -146,7 +149,7 @@ class DiskResultCache:
             return None
 
     def put(self, identity: str, entry: CachedResult) -> None:
-        """See `ResultCache.put`. Any `OSError` is logged and swallowed."""
+        """See `ResultCache.put`. Any `OSError`/`ValueError` is logged and swallowed."""
         tmp_name: str | None = None
         try:
             self._dir.mkdir(parents=True, exist_ok=True)
@@ -158,7 +161,7 @@ class DiskResultCache:
                 "step_count": entry.step_count,
                 "result": entry.result.model_dump(mode="json"),
             }
-            payload = json.dumps(envelope, ensure_ascii=False)
+            payload = json.dumps(envelope)  # ASCII-escaped: a source key may hold a lone surrogate
             with tempfile.NamedTemporaryFile(
                 "w", encoding="utf-8", dir=self._dir, suffix=".tmp", delete=False
             ) as tmp:
@@ -169,7 +172,7 @@ class DiskResultCache:
             os.replace(tmp_name, self._path(identity))
             tmp_name = None
             self._evict()
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             _logger.warning("result cache: put failed (%s); continuing without it", exc)
         finally:
             if tmp_name is not None:
@@ -194,3 +197,128 @@ class DiskResultCache:
                 os.unlink(path)
             count -= 1
             total -= size
+
+
+# --- Cache identity ------------------------------------------------------------------
+
+POSTPROCESS_VERSION = 1
+"""Version of everything between the model's JSON and the final `ImportResult`: graph
+building, validation, repair, titling, corroboration, provenance, the orchestration in
+`import_pipeline.py`, and the scheduler. Part of the cache identity, so bumping it makes
+every stored plan a miss. **Bump it whenever the behaviour of those modules changes.**
+`tests/test_postprocess_version.py` fails when they change without a bump; its history
+file is append-only (a new entry per bump, never an edited old one)."""
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class PipelineFingerprint:
+    """Everything, besides the source, that determines the final plan for a source.
+
+    Part of the cache identity: any change here is a miss. Covers the extraction call
+    (model, effort, prompt + schema text, token limits), the repair call, the post-
+    processing/scheduler version, and the shape of the stored result. It deliberately
+    does NOT include the provider's model snapshot (not exposed by the adapters) or the
+    source's own content (bounded by the TTL instead).
+    """
+
+    extraction_model: str
+    extraction_effort: str | None
+    extraction_prompt_sha256: str
+    repair_model: str
+    repair_effort: str | None
+    repair_prompt_sha256: str
+    max_tokens: int
+    escalated_max_tokens: int
+    repair_max_tokens: int
+    postprocess_version: int
+    burner_capacity: int
+    result_schema_sha256: str
+
+
+def current_fingerprint(
+    extraction_effort: EffortLevel | None,
+    *,
+    extraction_model: str | None = None,
+    extraction_prompt: str | None = None,
+    extraction_output_type: type[pydantic.BaseModel] = NormalizedRecipe,
+    repair_model: str | None = None,
+    repair_effort: EffortLevel | Literal["default"] | None = "default",
+    repair_prompt: str | None = None,
+    repair_output_type: type[pydantic.BaseModel] = repair.RepairProposal,
+    max_tokens: int | None = None,
+    escalated_max_tokens: int | None = None,
+    repair_max_tokens: int | None = None,
+    postprocess_version: int | None = None,
+    burner_capacity: int | None = None,
+    result_type: type[pydantic.BaseModel] = ImportResult,
+) -> PipelineFingerprint:
+    """The fingerprint of the pipeline as configured right now.
+
+    Args:
+        extraction_effort: The effort `run_import` actually uses for extraction (its
+            parameter, not the module default -- the A4 runner overrides it).
+        extraction_model: Test override; defaults to `normalize.DEFAULT_MODEL`.
+        extraction_prompt: Test override; defaults to `normalize.load_prompt()`.
+        extraction_output_type: Test override for the schema appended to the prompt.
+        repair_model: Test override; defaults to `repair.REPAIR_MODEL`.
+        repair_effort: Test override; defaults to `repair.REPAIR_EFFORT`.
+        repair_prompt: Test override; defaults to `repair.load_repair_prompt()`.
+        repair_output_type: Test override for the repair schema.
+        max_tokens: Test override; defaults to `normalize.MAX_TOKENS`.
+        escalated_max_tokens: Test override; defaults to `normalize.ESCALATED_MAX_TOKENS`.
+        repair_max_tokens: Test override; defaults to `repair.MAX_TOKENS`.
+        postprocess_version: Test override; defaults to `POSTPROCESS_VERSION`.
+        burner_capacity: Test override; defaults to the pipeline's `DEFAULT_BURNER_CAPACITY`.
+        result_type: Test override for the stored result's schema.
+
+    Returns:
+        The frozen fingerprint.
+    """
+    from abc_cook.extract.import_pipeline import DEFAULT_BURNER_CAPACITY  # avoids a cycle
+
+    return PipelineFingerprint(
+        extraction_model=extraction_model or normalize.DEFAULT_MODEL,
+        extraction_effort=extraction_effort,
+        extraction_prompt_sha256=_sha256(
+            system_prompt(
+                extraction_prompt if extraction_prompt is not None else normalize.load_prompt(),
+                extraction_output_type,
+            )
+        ),
+        repair_model=repair_model or repair.REPAIR_MODEL,
+        repair_effort=repair.REPAIR_EFFORT if repair_effort == "default" else repair_effort,
+        repair_prompt_sha256=_sha256(
+            system_prompt(
+                repair_prompt if repair_prompt is not None else repair.load_repair_prompt(),
+                repair_output_type,
+            )
+        ),
+        max_tokens=max_tokens if max_tokens is not None else normalize.MAX_TOKENS,
+        escalated_max_tokens=(
+            escalated_max_tokens
+            if escalated_max_tokens is not None
+            else normalize.ESCALATED_MAX_TOKENS
+        ),
+        repair_max_tokens=repair_max_tokens if repair_max_tokens is not None else repair.MAX_TOKENS,
+        postprocess_version=(
+            postprocess_version if postprocess_version is not None else POSTPROCESS_VERSION
+        ),
+        burner_capacity=burner_capacity if burner_capacity is not None else DEFAULT_BURNER_CAPACITY,
+        result_schema_sha256=_sha256(json.dumps(result_type.model_json_schema(), sort_keys=True)),
+    )
+
+
+def cache_identity(source_key: str, fingerprint: PipelineFingerprint) -> str:
+    """The full cache identity: canonical JSON of the source key plus the fingerprint.
+
+    ASCII-escaped, so it is always encodable (a source key can hold a lone surrogate).
+    `DiskResultCache` names the file `sha256(identity).json` and stores the identity in
+    the envelope, so a hash collision or a stale file can never be served.
+    """
+    return json.dumps(
+        {"source_key": source_key, **asdict(fingerprint)}, sort_keys=True, separators=(",", ":")
+    )

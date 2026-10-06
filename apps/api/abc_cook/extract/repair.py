@@ -48,6 +48,10 @@ REPAIR_MODEL = "claude-sonnet-5"
 
 MAX_TOKENS = 8000
 
+REPAIR_EFFORT: EffortLevel | None = "low"
+"""The repair call's reasoning effort (see `repair_or_degrade`'s `effort` docs). A named
+constant so the result-cache fingerprint (`cache.py`) can read what the pipeline uses."""
+
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "repair_v2.md"
 
 Tier = Literal["repaired", "degraded"]
@@ -290,7 +294,7 @@ def repair_or_degrade(
     source: SourceRef,
     model: str = REPAIR_MODEL,
     max_tokens: int = MAX_TOKENS,
-    effort: EffortLevel | None = "low",
+    effort: EffortLevel | None = REPAIR_EFFORT,
 ) -> RepairOutcome:
     """Try one repair pass on a graph that already failed `validate()`; else degrade.
 

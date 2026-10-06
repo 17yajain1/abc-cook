@@ -6,10 +6,12 @@ further down (stage 3).
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -17,10 +19,15 @@ from abc_cook.extract import cache as cache_mod
 from abc_cook.extract.cache import (
     CachedResult,
     DiskResultCache,
+    PipelineFingerprint,
+    cache_identity,
+    current_fingerprint,
     is_cacheable,
     is_cacheable_source,
 )
-from abc_cook.schema.normalized import ImportResult
+from abc_cook.extract.repair import RepairProposal
+from abc_cook.extract.source_key import canonical_source_key
+from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 T0 = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)
 
@@ -200,3 +207,113 @@ def test_is_cacheable_source() -> None:
     assert not is_cacheable_source("text:some pasted recipe")
     assert not is_cacheable_source("url:")
     assert not is_cacheable_source("")
+
+
+# --- Fingerprint / identity (A3 stage 3) -----------------------------------------------
+
+
+class _AlteredRecipe(NormalizedRecipe):
+    extra_field: int = 0
+
+
+class _AlteredResult(ImportResult):
+    extra_field: int = 0
+
+
+class _AlteredProposal(RepairProposal):
+    extra_field: int = 0
+
+
+_BASE = current_fingerprint("low")
+
+_ONE_CHANGE: dict[str, dict[str, Any]] = {
+    "extraction_effort": {"extraction_effort": "medium"},
+    "extraction_effort_none": {"extraction_effort": None},
+    "extraction_model": {"extraction_model": "gpt-5-nano"},
+    "extraction_prompt": {"extraction_prompt": "a different extraction prompt"},
+    "extraction_schema": {"extraction_output_type": _AlteredRecipe},
+    "repair_model": {"repair_model": "claude-other"},
+    "repair_effort": {"repair_effort": "high"},
+    "repair_prompt": {"repair_prompt": "a different repair prompt"},
+    "repair_schema": {"repair_output_type": _AlteredProposal},
+    "max_tokens": {"max_tokens": 16_001},
+    "escalated_max_tokens": {"escalated_max_tokens": 32_001},
+    "repair_max_tokens": {"repair_max_tokens": 8_001},
+    "postprocess_version": {"postprocess_version": 2},
+    "burner_capacity": {"burner_capacity": 2},
+    "result_schema": {"result_type": _AlteredResult},
+}
+
+
+def _fp(**overrides: Any) -> PipelineFingerprint:
+    return current_fingerprint(**{"extraction_effort": "low", **overrides})
+
+
+def _identity(**overrides: Any) -> str:
+    return cache_identity("youtube:abc", _fp(**overrides))
+
+
+def test_identity_is_stable_for_identical_inputs() -> None:
+    assert _identity() == _identity()
+    assert json.loads(_identity())["source_key"] == "youtube:abc"
+
+
+def test_fingerprint_defaults_read_the_live_pipeline_constants() -> None:
+    from abc_cook.extract import normalize, repair
+    from abc_cook.extract.import_pipeline import DEFAULT_BURNER_CAPACITY
+
+    assert _BASE.extraction_model == normalize.DEFAULT_MODEL
+    assert _BASE.repair_model == repair.REPAIR_MODEL
+    assert _BASE.repair_effort == repair.REPAIR_EFFORT
+    assert _BASE.max_tokens == normalize.MAX_TOKENS
+    assert _BASE.escalated_max_tokens == normalize.ESCALATED_MAX_TOKENS
+    assert _BASE.repair_max_tokens == repair.MAX_TOKENS
+    assert _BASE.postprocess_version == cache_mod.POSTPROCESS_VERSION
+    assert _BASE.burner_capacity == DEFAULT_BURNER_CAPACITY
+
+
+def test_source_key_is_part_of_the_identity() -> None:
+    assert cache_identity("youtube:abc", _BASE) != cache_identity("youtube:abd", _BASE)
+
+
+@pytest.mark.parametrize("name", list(_ONE_CHANGE))
+def test_changing_one_fingerprint_field_is_a_miss(name: str, tmp_path: Path) -> None:
+    c = DiskResultCache(tmp_path, now=_Clock())
+    c.put(_identity(), _entry())
+    assert c.get(_identity()) is not None
+    changed = _identity(**_ONE_CHANGE[name])
+    assert changed != _identity()
+    assert c.get(changed) is None
+
+
+def test_every_fingerprint_field_has_an_invalidation_case() -> None:
+    covered = {
+        "extraction_model",
+        "extraction_effort",
+        "extraction_prompt_sha256",
+        "repair_model",
+        "repair_effort",
+        "repair_prompt_sha256",
+        "max_tokens",
+        "escalated_max_tokens",
+        "repair_max_tokens",
+        "postprocess_version",
+        "burner_capacity",
+        "result_schema_sha256",
+    }
+    assert {f.name for f in dataclasses.fields(PipelineFingerprint)} == covered
+    # Each change above must move exactly the field(s) it targets.
+    moved = set()
+    for overrides in _ONE_CHANGE.values():
+        fp = _fp(**overrides)
+        moved |= {k for k, v in dataclasses.asdict(fp).items() if v != dataclasses.asdict(_BASE)[k]}
+    assert moved == covered
+
+
+def test_identity_with_a_lone_surrogate_source_key_is_encodable(tmp_path: Path) -> None:
+    key = canonical_source_key("text", "a\U0001f35b" * 30)  # 32-unit slice splits the pair
+    identity = cache_identity(key, _BASE)
+    identity.encode("utf-8")  # must not raise
+    c = DiskResultCache(tmp_path, now=_Clock())
+    c.put(identity, _entry())
+    assert c.get(identity) is not None
