@@ -104,6 +104,9 @@ class OpenAIAdapter:
         cached = 0
         if usage_obj is not None and usage_obj.prompt_tokens_details is not None:
             cached = usage_obj.prompt_tokens_details.cached_tokens or 0
+        reasoning: int | None = None
+        if usage_obj is not None and usage_obj.completion_tokens_details is not None:
+            reasoning = usage_obj.completion_tokens_details.reasoning_tokens
         usage = CallUsage(
             model=model,
             input_tokens=(usage_obj.prompt_tokens - cached) if usage_obj else 0,
@@ -113,6 +116,7 @@ class OpenAIAdapter:
             stop_reason=choice.finish_reason,
             latency_ms=latency_ms,
             max_tokens_requested=max_tokens,
+            reasoning_tokens=reasoning,
         )
 
         if choice.finish_reason == "length":
