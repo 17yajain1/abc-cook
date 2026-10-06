@@ -13,7 +13,7 @@ dependencies = [
     "pydantic>=2.9",
     "httpx>=0.27",
     "certifi>=2024.8",
-    "yt-dlp>=2024.12",
+    "yt-dlp>=2024.12,<2027",
     "anthropic>=1.0",
     "openai>=1.0",
 ]
