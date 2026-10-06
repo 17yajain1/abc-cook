@@ -273,7 +273,8 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 34 * MIN)
     expect(v.screenId).toBe('done')
     expect(v.title).toBe('Kadai Paneer is done.')
-    expect(v.instr).toBe(model.nodes.finish.instruction)
+    // B0 (N6): the done screen no longer repeats the last step's instruction.
+    expect(v.instr).toBeNull()
     expect(v.note).toBeNull()
     expect(v.qty).toBeNull()
     expect(v.topRecipe).toBe('')
@@ -347,6 +348,20 @@ describe('undo link — P1 #6 §C3', () => {
   const T0 = 1_700_000_000_000
   const kadaiModel = deriveCookingModel(KADAI)
   const kadaiIngredients = ingredientsById(KADAI.graph.ingredients)
+
+  it('reserves the secondary slot on every undo-eligible screen so the primary never moves (B0, N3)', () => {
+    let se = must(engine.start(null, kadaiModel, 'server:kadai', T0))
+    se = must(engine.markDone(se, kadaiModel, 'chop_onion', T0 + 1 * MIN))
+    const view = (now: number) =>
+      buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
+
+    // Same screen, same flag, with the undo link showing and after it lifts.
+    expect(view(T0 + 1 * MIN).reserveSecondary).toBe(true)
+    expect(view(T0 + 1 * MIN + 10_000).reserveSecondary).toBe(true)
+    // Entry screen is not undo-eligible: no reserved slot.
+    const timing = headerTiming(KADAI.summary ?? null, KADAI.plan.total_min)
+    expect(buildEntryView(kadaiModel, KADAI.graph.title, timing).reserveSecondary).toBe(false)
+  })
 
   it('shows at +0 s and +9.9 s, gone at +10 s, and is absent right after startNode clears lastTransition', () => {
     let se = must(engine.start(null, kadaiModel, 'server:kadai', T0))

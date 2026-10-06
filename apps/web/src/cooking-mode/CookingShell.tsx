@@ -45,25 +45,32 @@ export function CookingShell({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-[124px]">
-        {view.step && <div className={`mb-1 text-[13px] ${g.meta}`}>{view.step}</div>}
-        {view.label && <div className={`mb-3 text-[13px] ${g.meta}`}>{view.label}</div>}
-        <h1
-          className={`text-[30px] font-semibold leading-[1.15] ${g.ink}`}
-          style={{ fontStretch: '88%' }}
-        >
-          {view.title}
-        </h1>
-        {view.instr && <p className={`mt-5 text-[18px] leading-[1.55] ${g.ink}`}>{view.instr}</p>}
-        {view.waitTime && (
-          <div className="mt-4">
-            <p className={`text-[18px] leading-[1.55] ${g.ink}`}>{view.waitTime.left}</p>
-            <p className={`text-[15px] leading-[1.5] ${g.meta}`}>{view.waitTime.readyAt}</p>
-          </div>
-        )}
-        {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.qty}</p>}
-        {view.note && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.note}</p>}
-        {view.next && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.next}</p>}
+      {/* Body column (B0). The 124px lead-in is a spacer that *shrinks* (down to 24px)
+          before the content is pushed below the fold: short screens keep the calm M3.4
+          top margin, a long step starts near the top and keeps its quantity line and
+          "Next" in view. Content is `shrink-0`; only the spacer yields. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-6">
+        <div aria-hidden className="min-h-6 shrink basis-[124px]" />
+        <div className="shrink-0">
+          {view.step && <div className={`mb-1 text-[13px] ${g.meta}`}>{view.step}</div>}
+          {view.label && <div className={`mb-3 text-[13px] ${g.meta}`}>{view.label}</div>}
+          <h1
+            className={`text-[30px] font-semibold leading-[1.15] ${g.ink}`}
+            style={{ fontStretch: '88%' }}
+          >
+            {view.title}
+          </h1>
+          {view.instr && <p className={`mt-5 text-[18px] leading-[1.55] ${g.ink}`}>{view.instr}</p>}
+          {view.waitTime && (
+            <div className="mt-4">
+              <p className={`text-[18px] leading-[1.55] ${g.ink}`}>{view.waitTime.left}</p>
+              <p className={`text-[15px] leading-[1.5] ${g.meta}`}>{view.waitTime.readyAt}</p>
+            </div>
+          )}
+          {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.qty}</p>}
+          {view.note && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.note}</p>}
+          {view.next && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.next}</p>}
+        </div>
       </div>
 
       <div className="flex-shrink-0 px-6 pb-[34px]">
@@ -106,15 +113,17 @@ export function CookingShell({
             </button>
           ))}
 
-        {view.secondary && (
-          <div className="pt-3.5 text-center">
-            <button
-              type="button"
-              onClick={onSecondary}
-              className={`text-[15px] underline underline-offset-[3px] ${g.meta}`}
-            >
-              {view.secondary.label}
-            </button>
+        {(view.secondary || view.reserveSecondary) && (
+          <div className={`pt-3.5 text-center ${view.reserveSecondary ? 'min-h-[46px]' : ''}`}>
+            {view.secondary && (
+              <button
+                type="button"
+                onClick={onSecondary}
+                className={`text-[15px] underline underline-offset-[3px] ${g.meta}`}
+              >
+                {view.secondary.label}
+              </button>
+            )}
           </div>
         )}
       </div>
