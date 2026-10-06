@@ -17,8 +17,13 @@ def test_replaces_video_by_placeholder_with_description() -> None:
     assert clean_placeholder_title(title, description) == description
 
 
-def test_replaces_photo_by_placeholder_too() -> None:
-    assert clean_placeholder_title("Photo by someone", "Real caption text") == "Real caption text"
+def test_replaces_post_by_placeholder_too() -> None:
+    assert clean_placeholder_title("Post by someone", "Real caption text") == "Real caption text"
+
+
+def test_photo_by_is_not_a_known_placeholder() -> None:
+    """yt-dlp never emits "Photo by <handle>"; only Video by / Post by are synthesized."""
+    assert clean_placeholder_title("Photo by someone", "Real caption text") == "Photo by someone"
 
 
 def test_leaves_placeholder_unchanged_when_no_description() -> None:

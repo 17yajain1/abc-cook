@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import re
 
-_PLACEHOLDER_TITLE_RE = re.compile(r"^(?:Video|Photo) by (\S+)$")
+_PLACEHOLDER_TITLE_RE = re.compile(r"^(?:Video|Post) by (\S+)$")
 """yt-dlp's own Instagram extractor synthesizes exactly this shape -- the whole
-title, nothing more -- when Instagram gives no real title: `f"Video by {uploader}"`,
+title, nothing more -- when Instagram gives no real title: `f"Video by {uploader}"`
+(or `f"Post by {uploader}"` for image/carousel posts),
 `uploader` a single handle-shaped token with no spaces. Confirmed live during the
 shortform-video-import Phase 0 eval: 11/11 successfully acquired Instagram Reels had
 this placeholder (e.g. "Video by batati.being.batati"). It carries zero
