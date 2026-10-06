@@ -81,23 +81,50 @@ class RecordingAdapter:
         return result
 
 
+RESERVE_INR = 3.5
+"""Held against the cap for every run that is in flight. A real run costs ~2.2 (medium)
+to ~3.2 (low that triggers repair), measured; 3.5 covers that, so concurrent runs cannot
+jointly overshoot the cap. A run costing more than its reserve can still push the total
+past the cap by the excess (not bounded, but not seen in any measured run)."""
+
+
 @dataclass
 class Budget:
     cap_inr: float
+    reserve_inr: float = RESERVE_INR
     spent: float = 0.0
+    reserved: float = 0.0
     unpriced: int = 0
-    lock: threading.Lock = field(default_factory=threading.Lock)
+    cond: threading.Condition = field(default_factory=threading.Condition)
 
-    def add(self, cost: float | None) -> None:
-        with self.lock:
+    def acquire(self) -> bool:
+        """Reserve one run's worth of budget, waiting for in-flight runs if needed.
+
+        True = go. False = it cannot fit even with nothing else in flight (skip it).
+        """
+        with self.cond:
+            while True:
+                if self.spent + self.reserved + self.reserve_inr <= self.cap_inr:
+                    self.reserved += self.reserve_inr
+                    return True
+                if self.reserved == 0:
+                    return False
+                self.cond.wait()
+
+    def release(self, cost: float | None) -> None:
+        """Replace a run's reservation with what it actually cost.
+
+        `None` (unpriced call, or the run failed) is charged the full reserve: the
+        conservative reading, since a failed run may still have been billed.
+        """
+        with self.cond:
+            self.reserved -= self.reserve_inr
             if cost is None:
                 self.unpriced += 1
+                self.spent += self.reserve_inr
             else:
                 self.spent += cost
-
-    def exhausted(self) -> bool:
-        with self.lock:
-            return self.spent >= self.cap_inr
+            self.cond.notify_all()
 
 
 def _slug(text: str) -> str:
@@ -151,10 +178,18 @@ def offline_violations(raw: RawAcquisition, recipe: NormalizedRecipe) -> list[di
 def one_run(
     name: str, raw: RawAcquisition, arm: str, rep: int, out: Path, real: Any, budget: Budget
 ) -> dict[str, Any] | None:
-    if budget.exhausted():
-        print(f"SKIP {name}/{arm}/{rep}: budget cap reached", flush=True)
-        return None
     run_id = f"{name}__{arm}__{rep}"
+    if not budget.acquire():
+        print(f"SKIP {run_id}: would exceed the INR {budget.cap_inr:.2f} cap", flush=True)
+        return None
+    released = False
+
+    def _release(cost: float | None) -> None:
+        nonlocal released
+        if not released:
+            released = True
+            budget.release(cost)
+
     adapter = RecordingAdapter(real)
     box: list[ImportTelemetry] = []
     t0 = time.monotonic()
@@ -168,11 +203,12 @@ def one_run(
             extraction_effort=ARM_EFFORT[arm],
         )
     except Exception as exc:
+        _release(None)
         print(f"FAIL {run_id}: {type(exc).__name__}: {exc}", flush=True)
         return {"run_id": run_id, "input": name, "arm": arm, "rep": rep, "error": str(exc)}
     wall = time.monotonic() - t0
     tele = box[0]
-    budget.add(tele.cost_inr)
+    _release(tele.cost_inr)
 
     for i, recipe in enumerate(adapter.recipes):
         (out / f"{run_id}.call{i}.normalized.json").write_text(
@@ -215,6 +251,37 @@ def one_run(
         flush=True,
     )
     return row
+
+
+def order_inputs(
+    loaded: list[tuple[str, RawAcquisition]], specs: list[str], priority: list[str]
+) -> list[tuple[str, RawAcquisition]]:
+    """Stable-sort inputs so the `priority` tokens come first, in the order given.
+
+    A token matches an input whose spec or name contains it (case-insensitive). Inputs
+    matching nothing keep their given order, after all matched ones.
+    """
+
+    def rank(item: tuple[int, tuple[str, RawAcquisition]]) -> tuple[int, int]:
+        index, (name, _raw) = item
+        haystack = f"{specs[index]} {name}".lower()
+        for position, token in enumerate(priority):
+            if token.lower() in haystack:
+                return (position, index)
+        return (len(priority), index)
+
+    return [item for _, item in sorted(enumerate(loaded), key=rank)]
+
+
+def plan_jobs(
+    ordered: list[tuple[str, RawAcquisition]], arms: list[str], n: int
+) -> list[tuple[str, RawAcquisition, str, int]]:
+    """Input-major: every arm/rep of the top-priority input before the next input.
+
+    So when the cap bites it removes the lowest-priority inputs whole, never half of
+    a pair on a high-priority one.
+    """
+    return [(name, raw, arm, rep) for name, raw in ordered for rep in range(n) for arm in arms]
 
 
 def _jaccard(a: list[str], b: list[str]) -> float:
@@ -295,6 +362,17 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=2)
     parser.add_argument("--budget-inr", type=float, default=50.0)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument(
+        "--priority",
+        default="",
+        help="comma-separated tokens; inputs matching earlier tokens run first",
+    )
+    parser.add_argument("--reserve-inr", type=float, default=RESERVE_INR)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the job order and worst-case cost; no LLM calls",
+    )
     parser.add_argument("--report", type=Path, help="re-print the table from DIR/results.json")
     args = parser.parse_args()
 
@@ -311,9 +389,17 @@ def main() -> None:
             parser.error(f"unknown arm {arm!r}")
 
     loaded = [load_input(spec, args.out) for spec in args.inputs]
+    priority = [t for t in args.priority.split(",") if t.strip()]
+    jobs = plan_jobs(order_inputs(loaded, list(args.inputs), priority), arms, args.n)
+    if args.dry_run:
+        print(
+            f"{len(jobs)} runs, cap INR {args.budget_inr:.2f}, reserve INR {args.reserve_inr} each:"
+        )
+        for i, (n, _raw, arm, rep) in enumerate(jobs, 1):
+            print(f"  {i:>2}. {n} / {arm} / rep {rep}")
+        return
     real = build_default_adapter()
-    budget = Budget(cap_inr=args.budget_inr)
-    jobs = [(n, raw, arm, rep) for rep in range(args.n) for n, raw in loaded for arm in arms]
+    budget = Budget(cap_inr=args.budget_inr, reserve_inr=args.reserve_inr)
     rows: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = [
@@ -321,7 +407,11 @@ def main() -> None:
             for n, raw, arm, rep in jobs
         ]
         rows = [r for f in futures if (r := f.result()) is not None]
-    print(f"\nspent INR {budget.spent:.2f} (unpriced calls: {budget.unpriced})")
+    print(
+        f"\nspent INR {budget.spent:.2f} of {budget.cap_inr:.2f} cap "
+        f"(unpriced/failed runs charged at reserve: {budget.unpriced}); "
+        f"ran {len(rows)} of {len(jobs)} planned"
+    )
     report(rows, args.out)
 
 
