@@ -15,12 +15,14 @@ network or an LLM (docs/M2.9-youtube-import-design.md §8.2).
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
 
 from abc_cook.extract.acquire import RawAcquisition
@@ -28,7 +30,9 @@ from abc_cook.extract.acquire.pipeline import acquire as default_acquire
 from abc_cook.extract.acquire.text import PastedTextError, from_pasted_text
 from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
+from abc_cook.extract.cache import DiskResultCache, ResultCache
 from abc_cook.extract.import_pipeline import run_import
+from abc_cook.extract.source_key import canonical_source_key
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
@@ -119,6 +123,19 @@ def get_adapter() -> LLMAdapter:
     return build_default_adapter()
 
 
+RESULT_CACHE_ENV = "ABC_COOK_RESULT_CACHE_DIR"
+
+
+def get_result_cache() -> ResultCache | None:
+    """FastAPI dependency: the A3 result cache, or None when it is not configured.
+
+    Off unless `ABC_COOK_RESULT_CACHE_DIR` is set, so tests and the A4 runner stay
+    cache-free by default; `.env.example` enables it for local dev. Overridden in tests.
+    """
+    directory = os.environ.get(RESULT_CACHE_ENV)
+    return DiskResultCache(Path(directory)) if directory else None
+
+
 def get_acquire() -> Callable[[str], RawAcquisition]:
     """FastAPI dependency: the acquisition function. Overridden in tests with a fake."""
     return default_acquire
@@ -130,6 +147,9 @@ def _run_job(
     adapter: LLMAdapter,
     acquire_fn: Callable[[str], RawAcquisition],
     store: JobStore,
+    cache: ResultCache | None = None,
+    fresh: bool = False,
+    source_key: str | None = None,
 ) -> None:
     """The background task body: run the pipeline, then write the terminal state.
 
@@ -158,6 +178,9 @@ def _run_job(
             acquire_fn=acquire_fn,
             on_status=on_status,
             on_preview=on_preview,
+            cache=cache,
+            fresh=fresh,
+            source_key=source_key,
         )
     except Exception as exc:  # last-resort boundary, see docstring
         store.put(job_id, JobState(status="failed", error=str(exc), preview=preview))
@@ -172,6 +195,8 @@ async def start_import(
     store: JobStore = Depends(get_job_store),
     adapter: LLMAdapter = Depends(get_adapter),
     acquire_fn: Callable[[str], RawAcquisition] = Depends(get_acquire),
+    cache: ResultCache | None = Depends(get_result_cache),
+    fresh: bool = Query(False, description="Skip the result-cache lookup (it is still stored)."),
 ) -> ImportStartResponse:
     """Start an import job. Returns immediately; poll `GET /import/{job_id}`.
 
@@ -187,12 +212,18 @@ async def start_import(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         source = pasted.source_url
         acquire_fn = lambda _url: pasted  # noqa: E731
+        # A `text:` key makes `run_import` bypass the cache for both get and put, rather
+        # than relying on `source_url` being empty.
+        source_key = canonical_source_key("text", pasted.description or "")
     else:
         assert request.url is not None  # `_exactly_one_source`
         source = request.url
+        source_key = None
     job_id = uuid.uuid4().hex
     store.put(job_id, JobState(status="acquiring"))
-    background_tasks.add_task(_run_job, job_id, source, adapter, acquire_fn, store)
+    background_tasks.add_task(
+        _run_job, job_id, source, adapter, acquire_fn, store, cache, fresh, source_key
+    )
     return ImportStartResponse(job_id=job_id)
 
 
