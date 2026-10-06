@@ -27,12 +27,21 @@ from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
 from abc_cook.extract.acquire.preview import build_preview
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, LLMAdapter
+from abc_cook.extract.cache import (
+    CachedResult,
+    ResultCache,
+    cache_identity,
+    current_fingerprint,
+    is_cacheable,
+    is_cacheable_source,
+)
 from abc_cook.extract.corroborate import corroborate
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import EXTRACTION_EFFORT, normalize, render_source_text
 from abc_cook.extract.pricing import total_cost_inr
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.repair import repair_or_degrade
+from abc_cook.extract.source_key import SourceKey, make_source_key
 from abc_cook.extract.title import resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans, summarize
@@ -96,6 +105,10 @@ class ImportTelemetry:
     the Sonnet call because at least one was outside `repair.REPAIRABLE_RULES`
     (`repair_calls` is then always `[]`); True when repair was actually attempted."""
     repair_skip_reason: str | None = None
+    cache_hit: bool = False
+    """A3: True when the result was served from the result cache -- no acquire, no LLM
+    call, no scheduling ran (`tier`/`step_count` are the stored cold run's, and `stage_s`
+    is just `{"cache": seconds}`). Never set on the cold path."""
 
     @property
     def total_calls(self) -> list[CallUsage]:
@@ -146,6 +159,23 @@ def _sources(raw: RawAcquisition) -> list[ImportSource]:
     return sources
 
 
+def _lookup(cache: ResultCache, identity: str) -> CachedResult | None:
+    """`cache.get`, with any failure treated as a miss (a cache never fails an import)."""
+    try:
+        return cache.get(identity)
+    except Exception:
+        _logger.warning("result cache: get failed; treating as a miss", exc_info=True)
+        return None
+
+
+def _store(cache: ResultCache, identity: str, entry: CachedResult) -> None:
+    """`cache.put`, best effort."""
+    try:
+        cache.put(identity, entry)
+    except Exception:
+        _logger.warning("result cache: put failed; continuing", exc_info=True)
+
+
 def run_import(
     url: str,
     adapter: LLMAdapter,
@@ -156,6 +186,9 @@ def run_import(
     on_telemetry: Callable[[ImportTelemetry], None] | None = None,
     on_preview: Callable[[SourcePreview], None] | None = None,
     extraction_effort: EffortLevel | None = EXTRACTION_EFFORT,
+    cache: ResultCache | None = None,
+    fresh: bool = False,
+    source_key: SourceKey | None = None,
 ) -> ImportResult:
     """Run the full pipeline for one URL.
 
@@ -179,6 +212,15 @@ def run_import(
         on_preview: Optional callback invoked once, right after acquire, when the
             source has a readable `SourcePreview` (A2). From then on the reported
             status is `plan_building` instead of `extracting`/`validating`.
+        cache: Optional result cache (A3). `None` (the default) leaves the pipeline
+            exactly as it was. When set, a repeat import of a cacheable source returns
+            the stored result untouched -- same `graph.id`, same `source.imported_at` --
+            without calling acquire, the adapter, `build_graph` or `schedule`.
+        fresh: Skip the cache *lookup* only; a cacheable result is still stored.
+        source_key: The typed source key. Defaults to the URL's own
+            (`make_source_key("url", url)`); the route passes a `text` key for pasted
+            text. Text and fallback-derived keys (`SourceKey.is_fallback`) are never
+            cached (no get, no put).
 
     Returns:
         An `ImportResult`. Always one of the three tiers (§4.2): Tier 0 refusal,
@@ -199,6 +241,12 @@ def run_import(
     has_preview = False
     sources: list[ImportSource] = []
     source_label = _source_kind(url)
+
+    key = source_key if source_key is not None else make_source_key("url", url)
+    use_cache = cache is not None and is_cacheable_source(key)
+    identity = (
+        cache_identity(key.value, current_fingerprint(extraction_effort)) if use_cache else None
+    )
 
     def _status(status: ImportStatus) -> None:
         if has_preview and status in ("extracting", "validating"):
@@ -222,6 +270,7 @@ def run_import(
         saved_min: float,
         repair_attempted: bool | None = None,
         repair_skip_reason: str | None = None,
+        cache_hit: bool = False,
     ) -> None:
         total_s = time.monotonic() - started
         telemetry = ImportTelemetry(
@@ -241,10 +290,11 @@ def run_import(
             ttr_s=total_s,
             repair_attempted=repair_attempted,
             repair_skip_reason=repair_skip_reason,
+            cache_hit=cache_hit,
         )
         _logger.info(
             "run_import: graph_id=%s finished tier=%s kind=%s ttp=%.1fs stages=%s "
-            "out_tokens=%d reasoning_tokens=%s llm calls: %s",
+            "out_tokens=%d reasoning_tokens=%s llm calls: %s cache_hit=%s",
             graph_id,
             tier,
             telemetry.source_kind,
@@ -253,9 +303,29 @@ def run_import(
             telemetry.output_tokens,
             telemetry.reasoning_tokens,
             [f"{c.model} {c.latency_ms / 1000:.1f}s" for c in [*extraction_calls, *repair_calls]],
+            cache_hit,
         )
         if on_telemetry is not None:
             on_telemetry(telemetry)
+
+    if cache is not None and identity is not None and not fresh:
+        hit = _lookup(cache, identity)
+        if hit is not None:
+            stage_s["cache"] = time.monotonic() - started
+            sources = hit.result.sources
+            _telemetry(
+                extraction_calls=[],
+                extraction_escalated=False,
+                extraction_truncations=0,
+                repair_calls=[],
+                violations_pre_repair=[],
+                tier=hit.tier,
+                step_count=hit.step_count,
+                windows=len(hit.result.plan.windows) if hit.result.plan else 0,
+                saved_min=hit.result.plan.saved_min if hit.result.plan else 0.0,
+                cache_hit=True,
+            )
+            return hit.result
 
     _status("acquiring")
     try:
@@ -413,7 +483,7 @@ def run_import(
         repair_attempted=repair_attempted,
         repair_skip_reason=repair_skip_reason,
     )
-    return ImportResult(
+    result = ImportResult(
         status="done",
         source_title=raw.title,
         ingredients=recipe.ingredients,
@@ -426,3 +496,14 @@ def run_import(
         warnings=[*build_result.warnings, *raw.acquisition_warnings, *corroborate(recipe, graph)],
         sources=sources,
     )
+    # Second `text:` guard on purpose: `raw.source_kind` is the acquisition's own word
+    # for it, independent of whatever `source_key` the caller passed.
+    if (
+        cache is not None
+        and identity is not None
+        and raw.source_kind != "text"
+        and tier in ("clean", "repaired")
+        and is_cacheable(result, tier)
+    ):
+        _store(cache, identity, CachedResult(result, tier, len(recipe.steps)))
+    return result

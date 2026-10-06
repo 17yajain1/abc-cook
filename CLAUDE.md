@@ -107,6 +107,10 @@ abc-cook/
 - **Every scheduler change runs the golden fixtures.** `pytest tests/test_schedule.py`.
   If a fixture's expected plan changes, that is a product decision, not a test fix —
   surface it rather than updating the expected file silently.
+- **Changing import post-processing means bumping `POSTPROCESS_VERSION`.** The result cache
+  (`extract/cache.py`) stores finished plans; any behaviour change in `extract/{graph,validate,
+  repair,normalize,title,corroborate,provenance,import_pipeline}.py` or `schedule/` must bump it
+  (`tests/test_postprocess_version.py` fails until it does). Append a history entry; never edit an old one.
 - **Timers survive backgrounding.** Store the absolute wall-clock end time, never a
   counting-down integer in React state. Phones sleep; kitchens are slow.
 - **The frontend is a renderer of `CookingPlan`, nothing more.** It must never

@@ -1,0 +1,594 @@
+{
+ "_comment": "Shared parity vectors for canonicalSourceKey. `key` is the output of the TypeScript implementation (apps/web/src/library/sourceKey.ts, run under Node 22) -- the reference. Both tests/test_source_key.py and apps/web/src/library/sourceKey.vectors.test.ts assert every vector. `known_divergences` are shapes the Python port does not emulate; they are reported, not asserted equal. Never hand-edit `key`; regenerate from the TS.",
+ "vectors": [
+  {
+   "kind": "url",
+   "value": "https://youtu.be/nF8krMx7OxA?si=6ZkZIzKDjRjBeu8Z&",
+   "key": "youtube:nF8krMx7OxA"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/watch?v=nF8krMx7OxA&t=42s",
+   "key": "youtube:nF8krMx7OxA"
+  },
+  {
+   "kind": "url",
+   "value": "https://m.youtube.com/shorts/nF8krMx7OxA",
+   "key": "youtube:nF8krMx7OxA"
+  },
+  {
+   "kind": "url",
+   "value": "https://youtube.com/embed/abc123",
+   "key": "youtube:abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/live/abc123?feature=share",
+   "key": "youtube:abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/watch?v=",
+   "key": "url:youtube.com/watch?v="
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/watch",
+   "key": "url:youtube.com/watch"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/playlist?list=PL1",
+   "key": "url:youtube.com/playlist?list=PL1"
+  },
+  {
+   "kind": "url",
+   "value": "https://youtu.be/",
+   "key": "url:youtu.be"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtu.be/abc123",
+   "key": "url:youtu.be/abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://vimeo.com/watch?v=abc123",
+   "key": "url:vimeo.com/watch?v=abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/reel/Abc123/",
+   "key": "instagram:Abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://instagram.com/reels/Abc123/",
+   "key": "instagram:Abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/marvelskies.fc/reel/Abc123/",
+   "key": "instagram:Abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/reel/Abc123/?igshid=xyz&utm_source=ig",
+   "key": "instagram:Abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/someuser/",
+   "key": "url:instagram.com/someuser"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/p/Abc123/",
+   "key": "url:instagram.com/p/Abc123"
+  },
+  {
+   "kind": "url",
+   "value": "https://WWW.Example.com/Recipes/dal/?utm_source=ig&ref=x#top",
+   "key": "url:example.com/Recipes/dal?ref=x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/Recipes/dal?ref=x",
+   "key": "url:example.com/Recipes/dal?ref=x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/page?si=1&fbclid=2&igshid=3&keep=yes",
+   "key": "url:example.com/page?keep=yes"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/page?UTM_Medium=x&Keep=1",
+   "key": "url:example.com/page?Keep=1"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com:8080/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com:443/dal/",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com",
+   "key": "url:example.com"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/",
+   "key": "url:example.com"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com///",
+   "key": "url:example.com"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a%20b/c%2Fd",
+   "key": "url:example.com/a%20b/c%2Fd"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a b/c",
+   "key": "url:example.com/a%20b/c"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/caf\u00e9",
+   "key": "url:example.com/caf%C3%A9"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a/../b/./c",
+   "key": "url:example.com/b/c"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?q=a b&r=x+y",
+   "key": "url:example.com/p?q=a+b&r=x+y"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?q=a%20b&r=%7Etilde&s=a*b-c._d",
+   "key": "url:example.com/p?q=a+b&r=%7Etilde&s=a*b-c._d"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?b=2&a=1&b=1&a=0",
+   "key": "url:example.com/p?a=1&a=0&b=2&b=1"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?flag&x=1",
+   "key": "url:example.com/p?flag=&x=1"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=\u00e9",
+   "key": "url:example.com/p?x=%C3%A9"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=%E0%A4%A",
+   "key": "url:example.com/p?x=%EF%BF%BD%25A"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=1&&y=2&",
+   "key": "url:example.com/p?x=1&y=2"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?a=1=2",
+   "key": "url:example.com/p?a=1%3D2"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=1#frag?y=2",
+   "key": "url:example.com/p?x=1"
+  },
+  {
+   "kind": "url",
+   "value": "https://user:pw@example.com/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "http://example.com/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "HTTPS://EXAMPLE.COM/Dal",
+   "key": "url:example.com/Dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://m\u00fcnchen.de/rezept",
+   "key": "url:xn--mnchen-3ya.de/rezept"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com\\dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a\\b\\c",
+   "key": "url:example.com/a/b/c"
+  },
+  {
+   "kind": "url",
+   "value": "http:example.com/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https:///example.com/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://EXAMPLE.com./x",
+   "key": "url:example.com./x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/%7Euser/%E0%A4%A",
+   "key": "url:example.com/%7Euser/%E0%A4%A"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a|b{c}`d\"e<f>g",
+   "key": "url:example.com/a|b%7Bc%7D%60d%22e%3Cf%3Eg"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/?",
+   "key": "url:example.com"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=a|b",
+   "key": "url:example.com/p?x=a%7Cb"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x='q'",
+   "key": "url:example.com/p?x=%27q%27"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=%00%0A",
+   "key": "url:example.com/p?x=%00%0A"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/%2e%2e/x/%2E/y",
+   "key": "url:example.com/x/y"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a/b/../../../c",
+   "key": "url:example.com/c"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.www.example.com/x",
+   "key": "url:www.example.com/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.Example.com:80/x?utm_x=1",
+   "key": "url:example.com/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?\u00e9=1&\u00e0=2&z=3&a=4",
+   "key": "url:example.com/p?a=4&z=3&%C3%A0=2&%C3%A9=1"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?\ud83c\udf5b=1&\uff5a=2",
+   "key": "url:example.com/p?%F0%9F%8D%9B=1&%EF%BD%9A=2"
+  },
+  {
+   "kind": "url",
+   "value": "not a url at all",
+   "key": "url:not a url at all"
+  },
+  {
+   "kind": "url",
+   "value": "  https://example.com/dal  ",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "",
+   "key": "url:"
+  },
+  {
+   "kind": "url",
+   "value": "/relative/path",
+   "key": "url:/relative/path"
+  },
+  {
+   "kind": "url",
+   "value": "example.com/dal",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "mailto:a@b.com",
+   "key": "url:a@b.com"
+  },
+  {
+   "kind": "url",
+   "value": "javascript:alert(1)",
+   "key": "url:alert(1)"
+  },
+  {
+   "kind": "url",
+   "value": "ftp://example.com/dal/",
+   "key": "url:example.com/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://[::1]/dal",
+   "key": "url:[::1]/dal"
+  },
+  {
+   "kind": "url",
+   "value": "https://exa mple.com/x",
+   "key": "url:https://exa mple.com/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com:99999/x",
+   "key": "url:https://example.com:99999/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://\u00df.de/x",
+   "key": "url:xn--zca.de/x"
+  },
+  {
+   "kind": "url",
+   "value": "http://192.168.0.1:8000/x",
+   "key": "url:192.168.0.1/x"
+  },
+  {
+   "kind": "url",
+   "value": "http://0x7f.1/x",
+   "key": "url:127.0.0.1/x"
+  },
+  {
+   "kind": "text",
+   "value": "chop onion",
+   "key": "text:chop onion"
+  },
+  {
+   "kind": "text",
+   "value": "  Chop   ONION\n",
+   "key": "text:chop onion"
+  },
+  {
+   "kind": "text",
+   "value": "",
+   "key": "text:"
+  },
+  {
+   "kind": "text",
+   "value": "Ingredients: one onion, two tomatoes. Method: chop, fry, serve hot with rice. Ingredients: one onion, two tomatoes. Method: chop, fry, serve hot with rice.",
+   "key": "text:ingredients: one onion, two toma#17185b57"
+  },
+  {
+   "kind": "text",
+   "value": "  INGREDIENTS:  ONE ONION, TWO TOMATOES.\nMETHOD: CHOP, FRY, SERVE HOT WITH RICE. INGREDIENTS: ONE ONION, TWO TOMATOES. METHOD: CHOP, FRY, SERVE HOT WITH RICE.",
+   "key": "text:ingredients: one onion, two toma#17185b57"
+  },
+  {
+   "kind": "text",
+   "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "key": "text:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "kind": "text",
+   "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "key": "text:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx#b42b1787"
+  },
+  {
+   "kind": "text",
+   "value": "\u0938\u092c\u094d\u091c\u093c\u0940 \u092c\u0928\u093e\u0928\u0947 \u0915\u0940 \u0935\u093f\u0927\u093f: \u092a\u094d\u092f\u093e\u091c\u093c \u0915\u093e\u091f\u0947\u0902, \u092d\u0942\u0928\u0947\u0902 \u0914\u0930 \u092a\u0930\u094b\u0938\u0947\u0902\u0964 \u0917\u0930\u092e \u092a\u0930\u094b\u0938\u0947\u0902\u0964 \u0938\u094d\u0935\u093e\u0926\u093f\u0937\u094d\u091f\u0964",
+   "key": "text:\u0938\u092c\u094d\u091c\u093c\u0940 \u092c\u0928\u093e\u0928\u0947 \u0915\u0940 \u0935\u093f\u0927\u093f: \u092a\u094d\u092f\u093e\u091c\u093c \u0915\u093e\u091f#b0c2f1f2"
+  },
+  {
+   "kind": "text",
+   "value": "\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b",
+   "key": "text:\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b\ud83c\udf5b#efedcce5"
+  },
+  {
+   "kind": "text",
+   "value": "a\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5b",
+   "key": "text:a\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c\udf5ba\ud83c#fa7bea1d"
+  },
+  {
+   "kind": "text",
+   "value": "Tab\tseparated\u00a0nbsp\u2003em\u200bzero-width\ufeffbom\u2028ls",
+   "key": "text:tab separated nbsp em\u200bzero-width bom ls"
+  },
+  {
+   "kind": "text",
+   "value": "\u0130STANBUL \u0130STANBUL \u0130STANBUL \u0130STANBUL \u0130STANBUL \u0130STANBUL \u0130STANBUL \u0130STANBUL ",
+   "key": "text:i\u0307stanbul i\u0307stanbul i\u0307stanbul i\u0307#c25dc027"
+  },
+  {
+   "kind": "text",
+   "value": "ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ODYSSEUS\u03a3 ",
+   "key": "text:odysseus\u03c2 odysseus\u03c2 odysseus\u03c2 od#de89e337"
+  },
+  {
+   "kind": "image",
+   "value": "img_123",
+   "key": "image:img_123"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a^b",
+   "key": "url:example.com/a^b"
+  },
+  {
+   "kind": "url",
+   "value": "https://[2001:db8:0:0:1:0:0:1]/x",
+   "key": "url:[2001:db8::1:0:0:1]/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://[::ffff:1.2.3.4]/x",
+   "key": "url:[::ffff:102:304]/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://[2001:0DB8::]/x",
+   "key": "url:[2001:db8::]/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://1.2.3/x",
+   "key": "url:1.2.0.3/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://a.b.c.123/x",
+   "key": "url:https://a.b.c.123/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=%",
+   "key": "url:example.com/p?x=%25"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com:/x",
+   "key": "url:example.com/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com:abc/x",
+   "key": "url:https://example.com:abc/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/watch?v=a%20b&v=second",
+   "key": "youtube:a b"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/watch/?v=x",
+   "key": "youtube:x"
+  },
+  {
+   "kind": "url",
+   "value": "https://youtu.be/%E0%A4%95",
+   "key": "youtube:%E0%A4%95"
+  },
+  {
+   "kind": "url",
+   "value": "https://youtube.com//shorts//abc",
+   "key": "youtube:abc"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.youtube.com/shorts/",
+   "key": "url:youtube.com/shorts"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/reel/",
+   "key": "url:instagram.com/reel"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/a/reel/",
+   "key": "url:instagram.com/a/reel"
+  },
+  {
+   "kind": "url",
+   "value": "https://www.instagram.com/a/b/reel/c",
+   "key": "url:instagram.com/a/b/reel/c"
+  },
+  {
+   "kind": "url",
+   "value": "https://EXAMPLE.com/p?V=1&v=2",
+   "key": "url:example.com/p?V=1&v=2"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?a=%zz",
+   "key": "url:example.com/p?a=%25zz"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?+=+&%20=%2B",
+   "key": "url:example.com/p?+=+&+=%2B"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/p?x=1;y=2",
+   "key": "url:example.com/p?x=1%3By%3D2"
+  },
+  {
+   "kind": "url",
+   "value": "ws://example.com:80/x/",
+   "key": "url:example.com/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://xn--mnchen-3ya.de/x",
+   "key": "url:xn--mnchen-3ya.de/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://\uff21\uff22.example/x",
+   "key": "url:ab.example/x"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com./",
+   "key": "url:example.com."
+  },
+  {
+   "kind": "text",
+   "value": "\u00a0\u00a0",
+   "key": "text:"
+  },
+  {
+   "kind": "text",
+   "value": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\ud83c\udf5bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+   "key": "text:yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\ud83c#69a6b5e7"
+  }
+ ],
+ "known_divergences": [
+  {
+   "kind": "url",
+   "value": "gopher://example.com/x",
+   "ts_key": "url:example.com/x",
+   "reason": "non-special scheme with an authority: not emulated; Python falls back to the raw key"
+  },
+  {
+   "kind": "url",
+   "value": "file:///tmp/x",
+   "ts_key": "url:/tmp/x",
+   "reason": "file: URLs are not emulated; Python falls back to the raw key"
+  }
+ ]
+}
