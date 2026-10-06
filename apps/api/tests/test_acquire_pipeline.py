@@ -12,6 +12,7 @@ from __future__ import annotations
 import pytest
 
 from abc_cook.extract.acquire import RawAcquisition, pipeline
+from abc_cook.extract.acquire.blog import RecipePage
 from abc_cook.extract.acquire.pipeline import acquire
 
 
@@ -105,12 +106,17 @@ def test_rejects_tiktok_before_any_network_call(monkeypatch: pytest.MonkeyPatch)
         acquire("https://www.tiktok.com/@someone/video/123")
 
 
-def test_rejects_a_directly_pasted_blog_link(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Blog links are only ever discovered via leg 2 (a video's description) -- a
-    blog URL pasted as the primary import URL was never a supported entry point and
-    must fail fast, same as any other unsupported host."""
+def test_directly_pasted_recipe_page_is_no_longer_rejected_by_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A1 deliberately reverses PR #29 for recipe pages: routing is by content, not
+    hostname. It still never goes to yt-dlp; a failed/blocked page is a plain failure,
+    not an 'Unsupported host' one (test_recipe_page.py covers the page leg)."""
     monkeypatch.setattr(pipeline, "fetch_youtube", _boom_fetch_youtube)
-    with pytest.raises(RuntimeError, match="Unsupported"):
+    monkeypatch.setattr(
+        pipeline, "fetch_recipe_page", lambda url: RecipePage(recipe=None, reason="http 403")
+    )
+    with pytest.raises(RuntimeError, match="couldn't open"):
         acquire("https://www.chefkunalkapur.com/dal-makhni/")
 
 

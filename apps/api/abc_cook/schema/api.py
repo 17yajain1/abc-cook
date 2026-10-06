@@ -7,7 +7,7 @@ hand-mirrored in `.ts`.
 from pydantic import BaseModel, Field
 
 from abc_cook.schema.graph import CookingGraph
-from abc_cook.schema.normalized import ImportResult, ImportStatus
+from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
 
@@ -67,3 +67,8 @@ class ImportJobResponse(BaseModel):
         description="Present once status is a terminal value (done / method_not_grounded).",
     )
     error: str | None = Field(default=None, description="Set when status is failed.")
+    preview: SourcePreview | None = Field(
+        default=None,
+        description="The source's own readable recipe, once acquire has produced one (A2). "
+        "Kept on every later status, so a failed or degraded job can still show it.",
+    )

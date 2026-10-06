@@ -25,25 +25,48 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.acquire.blog import fetch_recipe, find_candidate_links
+from abc_cook.extract.acquire.blog import (
+    NoRecipeFoundError,
+    fetch_recipe,
+    fetch_recipe_page,
+    find_candidate_links,
+    has_usable_instructions,
+)
 from abc_cook.extract.acquire.youtube import fetch as fetch_youtube
 
 _SUPPORTED_HOSTS = frozenset({"youtube.com", "youtu.be", "instagram.com"})
 """The only hosts `youtube.fetch`'s yt-dlp-generic leg is actually exercised
 against and frozen-fixture-tested for (docs/M2.9 design; shortform-video-import-
-plan.md Phase 0 eval). Everything else -- TikTok, Facebook, a blog link pasted
-directly as the primary URL, a typo -- is rejected here rather than handed to
-yt-dlp."""
+plan.md Phase 0 eval)."""
+
+_UNSUPPORTED_HOSTS = frozenset(
+    {
+        "tiktok.com",
+        "facebook.com",
+        "fb.watch",
+        "twitter.com",
+        "x.com",
+        "vimeo.com",
+        "pinterest.com",
+        "snapchat.com",
+        "bit.ly",
+        "amazon.com",
+        "amazon.in",
+    }
+)
+"""Video/social/shortener/shop hosts that are neither a supported video host nor a
+recipe page. Rejected up front, before any network call (PR #29's fast-fail, kept for
+video hosts). Any host in neither set is treated as a candidate recipe page (A1):
+routing is by *content* -- does the page carry a schema.org Recipe -- not by hostname
+category."""
 
 
 def _host_of(url: str) -> str:
     return urlparse(url).netloc.lower().removeprefix("www.")
 
 
-def _is_supported_host(host: str) -> bool:
-    return any(
-        host == supported or host.endswith(f".{supported}") for supported in _SUPPORTED_HOSTS
-    )
+def _host_in(host: str, hosts: frozenset[str]) -> bool:
+    return any(host == h or host.endswith(f".{h}") for h in hosts)
 
 
 def acquire(url: str) -> RawAcquisition:
@@ -54,16 +77,26 @@ def acquire(url: str) -> RawAcquisition:
     link resolves to a Recipe, `blog_recipe` stays None and the description-only
     result from legs 1+3 is returned unchanged.
 
+    Any other https URL is treated as a recipe page (`_acquire_recipe_page`).
+
     Raises:
-        RuntimeError: `url`'s host isn't in `_SUPPORTED_HOSTS` (fast, before any
-            network call), or `youtube.fetch` itself failed for a supported host.
+        NoRecipeFoundError: a recipe-page URL was fetched but carries no usable Recipe.
+        RuntimeError: `url`'s host is in `_UNSUPPORTED_HOSTS` (fast, before any network
+            call), a recipe page couldn't be opened, or `youtube.fetch` itself failed
+            for a supported video host.
     """
+    if "://" not in url:
+        url = f"https://{url.strip()}"
+    elif url.startswith("http://"):
+        url = f"https://{url.removeprefix('http://')}"
     host = _host_of(url)
-    if not _is_supported_host(host):
+    if _host_in(host, _UNSUPPORTED_HOSTS):
         raise RuntimeError(
-            f"Unsupported link host {host!r} -- only YouTube and Instagram links "
-            "can be imported."
+            f"Unsupported link host {host!r} -- only YouTube, Instagram and recipe "
+            "web pages can be imported."
         )
+    if not _host_in(host, _SUPPORTED_HOSTS):
+        return _acquire_recipe_page(url, host)
     raw = fetch_youtube(url)
     if raw.blog_recipe is not None or not raw.description:
         return raw
@@ -73,3 +106,23 @@ def acquire(url: str) -> RawAcquisition:
         if recipe is not None:
             return raw.model_copy(update={"blog_recipe": recipe})
     return raw
+
+
+def _acquire_recipe_page(url: str, host: str) -> RawAcquisition:
+    """A pasted recipe-page URL -> `RawAcquisition(blog_recipe=...)`. No LLM.
+
+    The page's schema.org Recipe JSON-LD becomes `blog_recipe`, the same field a
+    description-linked blog fills, so `normalize` needs no new input shape. No Recipe,
+    or a Recipe with no instructions, raises `NoRecipeFoundError` rather than falling back
+    to an LLM over raw HTML (the method must come from the page, never be invented).
+    """
+    page = fetch_recipe_page(url)
+    if page.final_url is None:
+        raise RuntimeError(
+            "We couldn't open that page. Check the link, or paste the recipe text instead."
+        )
+    if page.recipe is None or not has_usable_instructions(page.recipe):
+        raise NoRecipeFoundError(page.reason or "Recipe has no instructions")
+    name = page.recipe.get("name")
+    title = name.strip() if isinstance(name, str) and name.strip() else host
+    return RawAcquisition(source_url=url, title=title, channel=host, blog_recipe=page.recipe)

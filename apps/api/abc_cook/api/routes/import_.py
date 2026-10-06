@@ -29,7 +29,7 @@ from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.import_pipeline import run_import
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
-from abc_cook.schema.normalized import ImportResult, ImportStatus
+from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
 router = APIRouter(tags=["import"])
 
@@ -47,6 +47,7 @@ class JobState:
     status: ImportStatus
     result: ImportResult | None = None
     error: str | None = None
+    preview: SourcePreview | None = None
 
 
 class JobStore(Protocol):
@@ -122,18 +123,31 @@ def _run_job(
     way for a poller to learn anything went wrong. `failed` exists in the design
     doc's status enum for exactly this.
     """
+    preview: SourcePreview | None = None
 
     def on_status(status: ImportStatus) -> None:
-        store.put(job_id, JobState(status=status))
+        store.put(job_id, JobState(status=status, preview=preview))
+
+    def on_preview(value: SourcePreview) -> None:
+        # Fires between `acquiring` and `plan_building`; the next `on_status` write
+        # carries it, and every later write keeps it -- so even a failed job can
+        # still show the source's own recipe.
+        nonlocal preview
+        preview = value
 
     try:
         result = run_import(
-            url, adapter, graph_id=job_id, acquire_fn=acquire_fn, on_status=on_status
+            url,
+            adapter,
+            graph_id=job_id,
+            acquire_fn=acquire_fn,
+            on_status=on_status,
+            on_preview=on_preview,
         )
     except Exception as exc:  # last-resort boundary, see docstring
-        store.put(job_id, JobState(status="failed", error=str(exc)))
+        store.put(job_id, JobState(status="failed", error=str(exc), preview=preview))
         return
-    store.put(job_id, JobState(status=result.status, result=result))
+    store.put(job_id, JobState(status=result.status, result=result, preview=preview))
 
 
 @router.post("/import", status_code=202)
@@ -156,9 +170,7 @@ async def start_import(
 
 
 @router.get("/import/{job_id}")
-async def get_import(
-    job_id: str, store: JobStore = Depends(get_job_store)
-) -> ImportJobResponse:
+async def get_import(job_id: str, store: JobStore = Depends(get_job_store)) -> ImportJobResponse:
     """Poll one import job's status.
 
     Args:
@@ -174,4 +186,10 @@ async def get_import(
     job = store.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail=f"Unknown job {job_id!r}")
-    return ImportJobResponse(job_id=job_id, status=job.status, result=job.result, error=job.error)
+    return ImportJobResponse(
+        job_id=job_id,
+        status=job.status,
+        result=job.result,
+        error=job.error,
+        preview=job.preview,
+    )
