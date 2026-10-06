@@ -31,6 +31,7 @@ import pydantic
 from abc_cook.extract import normalize, repair
 from abc_cook.extract.adapters.base import EffortLevel
 from abc_cook.extract.adapters.prompting import system_prompt
+from abc_cook.extract.source_key import SourceKey
 from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 _logger = logging.getLogger(__name__)
@@ -80,13 +81,16 @@ def is_cacheable(result: ImportResult, tier: str) -> bool:
     return result.status == "done" and tier in ("clean", "repaired")
 
 
-def is_cacheable_source(source_key: str) -> bool:
-    """False for pasted text (`text:`) and for an empty URL key -- those never cache.
+def is_cacheable_source(source_key: SourceKey) -> bool:
+    """False for pasted text and for any fallback-derived key -- those never cache.
 
     Pasted text is the user's own content (nothing to re-fetch, and the key would be
-    the text itself); an empty `url:` key can't identify anything.
+    the text itself). A fallback key (`SourceKey.is_fallback`: unparseable or
+    not-emulated URL) only lower-cases the raw value, so distinct sources can collide on
+    it; it is excluded from lookup and write. Decided from the typed fields, never by
+    inspecting the key string.
     """
-    return not source_key.startswith("text:") and source_key not in ("", "url:")
+    return source_key.kind != "text" and not source_key.is_fallback
 
 
 DEFAULT_TTL = timedelta(days=7)

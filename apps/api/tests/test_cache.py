@@ -26,7 +26,7 @@ from abc_cook.extract.cache import (
     is_cacheable_source,
 )
 from abc_cook.extract.repair import RepairProposal
-from abc_cook.extract.source_key import canonical_source_key
+from abc_cook.extract.source_key import SourceKey, canonical_source_key, make_source_key
 from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 T0 = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)
@@ -202,11 +202,22 @@ def test_is_cacheable() -> None:
 
 
 def test_is_cacheable_source() -> None:
-    assert is_cacheable_source("youtube:abc")
-    assert is_cacheable_source("url:example.com/dal")
-    assert not is_cacheable_source("text:some pasted recipe")
-    assert not is_cacheable_source("url:")
-    assert not is_cacheable_source("")
+    assert is_cacheable_source(make_source_key("url", "https://youtu.be/abc123"))
+    assert is_cacheable_source(make_source_key("url", "https://example.com/dal"))
+    assert not is_cacheable_source(make_source_key("text", "some pasted recipe"))
+    assert not is_cacheable_source(make_source_key("url", ""))  # empty -> fallback
+    assert not is_cacheable_source(make_source_key("url", "site.com/r/AbC123"))  # scheme-less
+
+
+def test_cacheability_is_decided_by_the_typed_fields_not_the_key_string() -> None:
+    # Same string shape, opposite flags: the flag, not the text, decides.
+    assert not is_cacheable_source(SourceKey("url", "url:example.com/dal", is_fallback=True))
+    assert is_cacheable_source(SourceKey("url", "url:example.com/dal", is_fallback=False))
+    # A string that merely *looks* like a fallback / text key is still cacheable when typed
+    # as a canonicalised url, and a `text` kind is excluded whatever its string says.
+    assert is_cacheable_source(SourceKey("url", "url:not a url", is_fallback=False))
+    assert is_cacheable_source(SourceKey("url", "text:looks-like-text", is_fallback=False))
+    assert not is_cacheable_source(SourceKey("text", "url:example.com/dal"))
 
 
 # --- Fingerprint / identity (A3 stage 3) -----------------------------------------------

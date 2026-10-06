@@ -356,8 +356,53 @@ def _canonical_url_key(url: _Url, pairs: list[tuple[str, str]]) -> str:
     return f"url:{host}{path}{'?' + query if query else ''}"
 
 
+@dataclass(frozen=True)
+class SourceKey:
+    """A source key plus how it was produced.
+
+    `is_fallback` is set where canonicalisation *fails or is skipped* (an unparseable or
+    not-emulated URL, or an uncanonicalised `image` reference) -- never inferred from the
+    key string afterwards, because a fallback `url:` key and a canonicalised `url:` key
+    look identical. A fallback key only lower-cases the raw value, so two different
+    sources can share one; the result cache therefore never reads or writes on it.
+    """
+
+    kind: SourceKind
+    value: str
+    is_fallback: bool = False
+
+
+def make_source_key(kind: SourceKind, value: str) -> SourceKey:
+    """The canonical dedup key for a source, with its fallback provenance.
+
+    `.value` is identical to `canonicalSourceKey`'s output (and to
+    `canonical_source_key`); see that function for the key shapes. `.is_fallback` is True
+    for `url:<trimmed lower-cased raw>` (the value did not parse as a URL, or is a shape
+    this port does not emulate) and for `image:<raw>` (never canonicalised). `youtube:`,
+    `instagram:`, canonicalised `url:` and `text:` keys are never fallbacks: the first
+    three are derived only after a successful parse, and a malformed id there falls
+    through to the canonicalised `url:` key, not to the raw value.
+    """
+    if kind == "text":
+        return SourceKey(kind, _text_key(value))
+    if kind != "url":
+        return SourceKey(kind, f"{kind}:{value}", is_fallback=True)
+    try:
+        url = _parse_url(value)
+    except _UnparseableError:
+        return SourceKey(kind, f"url:{_js_trim(value).lower()}", is_fallback=True)
+    pairs = _query_pairs(url.query)
+    video_id = _youtube_video_id(url, pairs)
+    if video_id:
+        return SourceKey(kind, f"youtube:{video_id}")
+    shortcode = _instagram_shortcode(url)
+    if shortcode:
+        return SourceKey(kind, f"instagram:{shortcode}")
+    return SourceKey(kind, _canonical_url_key(url, pairs))
+
+
 def canonical_source_key(kind: SourceKind, value: str) -> str:
-    """The canonical dedup key for a source -- identical to `canonicalSourceKey`.
+    """The canonical dedup key string -- identical to `canonicalSourceKey`.
 
     Args:
         kind: `"url"`, `"text"` (or `"image"`, passed through as `image:<value>`).
@@ -366,21 +411,7 @@ def canonical_source_key(kind: SourceKind, value: str) -> str:
     Returns:
         `text:<inline or prefix#fnv>`, `youtube:<id>`, `instagram:<code>`, or
         `url:<host><path>?<sorted query>`; `url:<trimmed lower-cased raw>` when the
-        value does not parse as a URL.
+        value does not parse as a URL. Use `make_source_key` when provenance matters
+        (anything that decides cacheability).
     """
-    if kind == "text":
-        return _text_key(value)
-    if kind != "url":
-        return f"{kind}:{value}"
-    try:
-        url = _parse_url(value)
-    except _UnparseableError:
-        return f"url:{_js_trim(value).lower()}"
-    pairs = _query_pairs(url.query)
-    video_id = _youtube_video_id(url, pairs)
-    if video_id:
-        return f"youtube:{video_id}"
-    shortcode = _instagram_shortcode(url)
-    if shortcode:
-        return f"instagram:{shortcode}"
-    return _canonical_url_key(url, pairs)
+    return make_source_key(kind, value).value

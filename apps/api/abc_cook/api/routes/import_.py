@@ -32,7 +32,7 @@ from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.cache import DiskResultCache, ResultCache
 from abc_cook.extract.import_pipeline import run_import
-from abc_cook.extract.source_key import canonical_source_key
+from abc_cook.extract.source_key import SourceKey, make_source_key
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
@@ -149,7 +149,7 @@ def _run_job(
     store: JobStore,
     cache: ResultCache | None = None,
     fresh: bool = False,
-    source_key: str | None = None,
+    source_key: SourceKey | None = None,
 ) -> None:
     """The background task body: run the pipeline, then write the terminal state.
 
@@ -214,7 +214,7 @@ async def start_import(
         acquire_fn = lambda _url: pasted  # noqa: E731
         # A `text:` key makes `run_import` bypass the cache for both get and put, rather
         # than relying on `source_url` being empty.
-        source_key = canonical_source_key("text", pasted.description or "")
+        source_key = make_source_key("text", pasted.description or "")
     else:
         assert request.url is not None  # `_exactly_one_source`
         source = request.url

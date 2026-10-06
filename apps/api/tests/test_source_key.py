@@ -12,7 +12,12 @@ from typing import Any
 
 import pytest
 
-from abc_cook.extract.source_key import _fnv1a, _utf16_units, canonical_source_key
+from abc_cook.extract.source_key import (
+    _fnv1a,
+    _utf16_units,
+    canonical_source_key,
+    make_source_key,
+)
 
 _VECTORS = Path(__file__).parent / "fixtures" / "source_key_vectors.json"
 _DOC: dict[str, Any] = json.loads(_VECTORS.read_text(encoding="utf-8"))
@@ -62,3 +67,82 @@ def test_same_recipe_different_share_forms_collapse() -> None:
     a = canonical_source_key("url", "https://youtu.be/nF8krMx7OxA?si=abc")
     b = canonical_source_key("url", "https://www.youtube.com/watch?v=nF8krMx7OxA&t=42s")
     assert a == b == "youtube:nF8krMx7OxA"
+
+
+# --- fallback provenance (typed, never inferred from the key string) -----------------
+
+
+@pytest.mark.parametrize(
+    "vector", _DOC["vectors"], ids=lambda v: f"{v['kind']}:{v['value'][:40]!r}"
+)
+def test_make_source_key_value_matches_every_parity_vector(vector: dict[str, str]) -> None:
+    sk = make_source_key(vector["kind"], vector["value"])  # type: ignore[arg-type]
+    assert sk.value == vector["key"]
+    assert sk.kind == vector["kind"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "not a url at all",
+        "/relative/path",
+        "site.com/r/AbC123",  # scheme-less: acquire() accepts it, the parser does not
+        "example.com/dal",
+        "https://exa mple.com/x",  # space in host
+        "https://example.com:99999/x",  # bad port
+        "gopher://example.com/x",  # non-special scheme with an authority: not emulated
+        "file:///tmp/x",
+    ],
+)
+def test_unparseable_or_unemulated_urls_are_marked_fallback(value: str) -> None:
+    sk = make_source_key("url", value)
+    assert sk.is_fallback
+    assert sk.value == canonical_source_key("url", value)  # key string unchanged
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://example.com/dal",
+        "http://example.com/dal",
+        "https://WWW.Example.com/Recipes/dal/?utm_source=x",
+        "https://youtu.be/nF8krMx7OxA",
+        "https://www.youtube.com/watch?v=nF8krMx7OxA",
+        "https://www.youtube.com/watch?v=",  # empty id: canonicalised url key, not raw
+        "https://www.instagram.com/reel/Abc123/",
+        "https://www.instagram.com/someuser/",  # not a reel: canonicalised url key
+        "ftp://example.com/dal",  # emulated special scheme
+        "mailto:a@b.com",  # opaque path is parsed, not a fallback
+    ],
+)
+def test_canonicalised_urls_are_not_fallback(value: str) -> None:
+    assert not make_source_key("url", value).is_fallback
+
+
+def test_youtube_and_instagram_keys_are_never_fallback() -> None:
+    assert not make_source_key("url", "https://youtu.be/AbC").is_fallback
+    assert not make_source_key("url", "https://instagram.com/reels/AbC/").is_fallback
+    assert make_source_key("url", "https://youtu.be/AbC").value == "youtube:AbC"
+
+
+def test_text_is_not_a_fallback_but_is_a_text_kind() -> None:
+    sk = make_source_key("text", "chop onion")
+    assert sk.kind == "text"
+    assert not sk.is_fallback
+
+
+def test_image_reference_is_never_canonicalised_so_it_is_fallback() -> None:
+    assert make_source_key("image", "img_123").is_fallback
+
+
+def test_fallback_keys_collide_but_canonical_ones_do_not() -> None:
+    a = make_source_key("url", "site.com/r/AbC123")
+    b = make_source_key("url", "site.com/r/abc123")
+    assert a.value == b.value  # the collision that motivates never caching fallbacks
+    assert a.is_fallback
+    assert b.is_fallback
+    assert (
+        make_source_key("url", "https://site.com/r/AbC123").value
+        != make_source_key("url", "https://site.com/r/abc123").value
+    )

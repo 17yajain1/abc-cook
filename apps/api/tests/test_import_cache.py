@@ -29,11 +29,10 @@ from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import ExtractResult
 from abc_cook.extract.cache import CachedResult, DiskResultCache
 from abc_cook.extract.import_pipeline import ImportTelemetry, run_import
-from abc_cook.extract.source_key import canonical_source_key
+from abc_cook.extract.source_key import SourceKey, make_source_key
 from abc_cook.schema.normalized import ImportResult
 
 URL = "https://example.test/recipe/dal"
-KEY = canonical_source_key("url", URL)
 FROZEN = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)
 
 
@@ -122,7 +121,7 @@ def _run(
     cache: Any = None,
     fresh: bool = False,
     graph_id: str = "g_1",
-    source_key: str | None = None,
+    source_key: SourceKey | None = None,
     telemetry: list[ImportTelemetry] | None = None,
 ) -> tuple[ImportResult, _Adapter, _Acquire]:
     raw, results = _scenario(name)
@@ -354,7 +353,7 @@ def test_text_source_key_never_touches_the_cache() -> None:
         graph_id="g",
         acquire_fn=_Acquire(raw),
         cache=spy,
-        source_key=canonical_source_key("text", raw.description or ""),
+        source_key=make_source_key("text", raw.description or ""),
     )
     assert spy.gets == []
     assert spy.puts == []
@@ -493,3 +492,101 @@ def test_cache_is_off_unless_the_env_var_is_set(
     assert import_routes.get_result_cache() is None
     monkeypatch.setenv(import_routes.RESULT_CACHE_ENV, str(tmp_path))
     assert isinstance(import_routes.get_result_cache(), DiskResultCache)
+
+
+# --- fallback-derived keys are never cached (typed signal, not string shape) ------------
+
+FALLBACK_A = "site.com/r/AbC123"  # scheme-less: acquire() accepts it, the key falls back
+FALLBACK_B = "site.com/r/abc123"  # a different page whose fallback key is identical
+
+
+def _run_url(url: str, cache: Any, *, source_key: SourceKey | None = None) -> tuple[Any, _Adapter]:
+    raw = _raw(source_url=url)
+    adapter = _Adapter([ExtractResult(recipe=_grounded_recipe())])
+    run_import(
+        url,
+        adapter,  # type: ignore[arg-type]
+        graph_id="g",
+        acquire_fn=_Acquire(raw),
+        cache=cache,
+        source_key=source_key,
+    )
+    return raw, adapter
+
+
+def test_fallback_derived_url_does_no_lookup_and_no_write() -> None:
+    spy = _SpyCache(store=True)
+    _, adapter = _run_url(FALLBACK_A, spy)
+    assert adapter.calls == 1
+    assert spy.gets == []
+    assert spy.puts == []
+
+
+def test_fresh_fallback_url_is_not_written_either() -> None:
+    spy = _SpyCache(store=True)
+    raw = _raw(source_url=FALLBACK_A)
+    run_import(
+        FALLBACK_A,
+        _Adapter([ExtractResult(recipe=_grounded_recipe())]),  # type: ignore[arg-type]
+        graph_id="g",
+        acquire_fn=_Acquire(raw),
+        cache=spy,
+        fresh=True,
+    )
+    assert spy.gets == []
+    assert spy.puts == []
+
+
+def test_case_variant_scheme_less_urls_cannot_hit_each_other(tmp_path: Path) -> None:
+    cache = DiskResultCache(tmp_path)
+    _run_url(FALLBACK_A, cache)
+    assert list(tmp_path.glob("*.json")) == []  # nothing was stored
+
+    _, adapter = _run_url(FALLBACK_B, cache)
+    assert adapter.calls == 1  # ran cold: no hit from the colliding fallback key
+    assert list(tmp_path.glob("*.json")) == []
+
+
+def test_canonicalised_url_still_does_lookup_and_write() -> None:
+    spy = _SpyCache(store=True)
+    _run_url("https://example.test/recipe/dal", spy)
+    assert len(spy.gets) == 1
+    assert len(spy.puts) == 1
+
+
+def test_the_typed_flag_controls_caching_not_the_key_string() -> None:
+    url = "https://example.test/recipe/dal"
+    # Canonical-looking string, but typed fallback -> bypassed.
+    spy = _SpyCache(store=True)
+    _run_url(url, spy, source_key=SourceKey("url", "url:example.test/recipe/dal", is_fallback=True))
+    assert spy.gets == []
+    assert spy.puts == []
+    # Fallback-looking string, typed as canonicalised -> cached.
+    spy = _SpyCache(store=True)
+    _run_url(url, spy, source_key=SourceKey("url", "url:not a url", is_fallback=False))
+    assert len(spy.gets) == 1
+    assert len(spy.puts) == 1
+
+
+def test_text_kind_stays_non_cacheable_whatever_the_flag_or_string() -> None:
+    spy = _SpyCache(store=True)
+    raw = _raw(source_url="", source_kind="text")
+    run_import(
+        "",
+        _Adapter([ExtractResult(recipe=_grounded_recipe())]),  # type: ignore[arg-type]
+        graph_id="g",
+        acquire_fn=_Acquire(raw),
+        cache=spy,
+        source_key=SourceKey("text", "url:example.test/looks-like-a-url", is_fallback=False),
+    )
+    assert spy.gets == []
+    assert spy.puts == []
+
+
+def test_route_scheme_less_url_never_touches_the_cache() -> None:
+    spy = _SpyCache(store=True)
+    raw = _raw(source_url=FALLBACK_A)
+    client = _client(spy, [ExtractResult(recipe=_grounded_recipe())], raw)
+    assert client.post("/import", json={"url": FALLBACK_A}).status_code == 202
+    assert spy.gets == []
+    assert spy.puts == []

@@ -41,7 +41,7 @@ from abc_cook.extract.normalize import EXTRACTION_EFFORT, normalize, render_sour
 from abc_cook.extract.pricing import total_cost_inr
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.repair import repair_or_degrade
-from abc_cook.extract.source_key import canonical_source_key
+from abc_cook.extract.source_key import SourceKey, make_source_key
 from abc_cook.extract.title import resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schedule import schedule, stage_spans, summarize
@@ -188,7 +188,7 @@ def run_import(
     extraction_effort: EffortLevel | None = EXTRACTION_EFFORT,
     cache: ResultCache | None = None,
     fresh: bool = False,
-    source_key: str | None = None,
+    source_key: SourceKey | None = None,
 ) -> ImportResult:
     """Run the full pipeline for one URL.
 
@@ -217,9 +217,10 @@ def run_import(
             the stored result untouched -- same `graph.id`, same `source.imported_at` --
             without calling acquire, the adapter, `build_graph` or `schedule`.
         fresh: Skip the cache *lookup* only; a cacheable result is still stored.
-        source_key: The canonical source key. Defaults to the URL's own
-            (`canonical_source_key("url", url)`); the route passes a `text:` key for
-            pasted text, which is never cached (get or put).
+        source_key: The typed source key. Defaults to the URL's own
+            (`make_source_key("url", url)`); the route passes a `text` key for pasted
+            text. Text and fallback-derived keys (`SourceKey.is_fallback`) are never
+            cached (no get, no put).
 
     Returns:
         An `ImportResult`. Always one of the three tiers (§4.2): Tier 0 refusal,
@@ -241,9 +242,11 @@ def run_import(
     sources: list[ImportSource] = []
     source_label = _source_kind(url)
 
-    key = source_key if source_key is not None else canonical_source_key("url", url)
+    key = source_key if source_key is not None else make_source_key("url", url)
     use_cache = cache is not None and is_cacheable_source(key)
-    identity = cache_identity(key, current_fingerprint(extraction_effort)) if use_cache else None
+    identity = (
+        cache_identity(key.value, current_fingerprint(extraction_effort)) if use_cache else None
+    )
 
     def _status(status: ImportStatus) -> None:
         if has_preview and status in ("extracting", "validating"):
