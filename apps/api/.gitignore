@@ -16,3 +16,6 @@ htmlcov/
 # regenerable via scripts/shortform_eval.py, not a curated golden fixture -- the
 # curated summary lives in the checkpoint report instead.
 tests/fixtures/shortform/phase0_results.json
+
+# A3 result cache (ABC_COOK_RESULT_CACHE_DIR, e.g. .cache/results): regenerable, never committed.
+.cache/
