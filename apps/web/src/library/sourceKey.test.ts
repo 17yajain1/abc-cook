@@ -92,6 +92,20 @@ describe('canonicalSourceKey — non-URL sources', () => {
     )
   })
 
+  it('dedups a long pasted text by fingerprint, ignoring whitespace and case', () => {
+    const body = 'Ingredients: one onion, two tomatoes. Method: chop, fry, serve hot with rice. '.repeat(20)
+    const a = canonicalSourceKey({ kind: 'text', value: body, imported_at: '2026-09-15T00:00:00Z' })
+    const b = canonicalSourceKey({
+      kind: 'text',
+      value: `  ${body.toUpperCase().replace(/ /g, '  ')}\n`,
+      imported_at: '2026-10-01T00:00:00Z',
+    })
+    expect(a).toBe(b)
+    expect(a.length).toBeLessThan(60) // not the whole paste
+    const other = canonicalSourceKey({ kind: 'text', value: `${body} extra`, imported_at: '2026-09-15T00:00:00Z' })
+    expect(other).not.toBe(a)
+  })
+
   it('does not throw on a garbage URL value', () => {
     expect(() => canonicalSourceKey(urlSource('not a url at all'))).not.toThrow()
     expect(canonicalSourceKey(urlSource('not a url at all'))).toBe('url:not a url at all')

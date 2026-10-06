@@ -50,6 +50,20 @@ export function fetchPlan(recipeId: string): Promise<RecipePlanResponse> {
   return getJson<RecipePlanResponse>(`/recipes/${encodeURIComponent(recipeId)}/plan`)
 }
 
+/** The API's own sentence for a 4xx (`{detail: string}`, e.g. a too-short paste), else the
+ * generic "path returned status" line. */
+async function errorMessage(response: Response, path: string): Promise<string> {
+  try {
+    const body: unknown = await response.json()
+    if (body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string') {
+      return body.detail
+    }
+  } catch {
+    // not JSON — fall through
+  }
+  return `${path} returned ${response.status}`
+}
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   let response: Response
   try {
@@ -62,7 +76,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     throw new ApiError(0, `Could not reach the API at ${API_BASE}. Is it running?`)
   }
   if (!response.ok) {
-    throw new ApiError(response.status, `${path} returned ${response.status}`)
+    throw new ApiError(response.status, await errorMessage(response, path))
   }
   return response.json() as Promise<T>
 }
@@ -70,6 +84,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 /** Starts an import job for a recipe URL (design doc §4.5). Returns immediately. */
 export function startImport(url: string): Promise<ImportStartResponse> {
   return postJson<ImportStartResponse>('/import', { url })
+}
+
+/** Starts an import job from pasted recipe text (A8) — no acquisition on the server. */
+export function startImportText(text: string): Promise<ImportStartResponse> {
+  return postJson<ImportStartResponse>('/import', { text })
 }
 
 /** One poll of an import job's status. */
