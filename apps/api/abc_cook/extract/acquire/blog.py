@@ -11,11 +11,16 @@ broken blog link must never block the import — the description path still runs
 from __future__ import annotations
 
 import json
+import logging
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
-import httpx
+from abc_cook.extract.acquire.safe_fetch import FetchedPage, FetchError, fetch_html
+
+_logger = logging.getLogger(__name__)
 
 _EXCLUDED_HOSTS = frozenset(
     {
@@ -42,7 +47,13 @@ _LDJSON_BLOCK = re.compile(
 )
 _URL_IN_TEXT = re.compile(r'https?://[^\s<>"\')]+')
 
-_USER_AGENT = "Mozilla/5.0 (compatible; ABCCookImport/1.0; +https://abccook.app)"
+
+class NoRecipeFoundError(RuntimeError):
+    """The page was fetched but carries no usable schema.org Recipe (A1).
+
+    Distinct from a fetch failure: the user gets "we couldn't find a recipe on this
+    page" and the paste-text option, never an LLM guess over raw HTML.
+    """
 
 
 def _host_of(url: str) -> str:
@@ -93,30 +104,9 @@ def _find_recipe_node(data: Any) -> dict[str, Any] | None:
     return None
 
 
-def fetch_recipe(url: str, *, timeout: float = 15.0) -> dict[str, Any] | None:
-    """Fetch `url`, follow redirects, and return its Recipe JSON-LD node if present.
-
-    Returns None on any fetch error, non-2xx status, or absence of a Recipe node —
-    never raises. `httpx`'s default SSL context (backed by `certifi`) avoids the local
-    certificate-store issue `urllib` hit against a bit.ly redirect during design
-    (§10.A) — a plain `urllib` implementation would need the same explicit `certifi`
-    handling to reproduce this reliably on Windows.
-    """
-    try:
-        response = httpx.get(
-            url,
-            follow_redirects=True,
-            timeout=timeout,
-            headers={"User-Agent": _USER_AGENT},
-        )
-        response.raise_for_status()
-    except httpx.HTTPError:
-        return None
-
-    if _is_excluded(_host_of(str(response.url))):
-        return None
-
-    for block in _LDJSON_BLOCK.findall(response.text):
+def recipe_in_html(html: str) -> dict[str, Any] | None:
+    """The first schema.org Recipe node in any JSON-LD block of `html`, if any."""
+    for block in _LDJSON_BLOCK.findall(html):
         try:
             data = json.loads(block)
         except json.JSONDecodeError:
@@ -125,3 +115,76 @@ def fetch_recipe(url: str, *, timeout: float = 15.0) -> dict[str, Any] | None:
         if recipe is not None:
             return recipe
     return None
+
+
+def _instruction_texts(node: Any) -> list[str]:
+    """Every non-blank instruction string in a `recipeInstructions` value.
+
+    The field is a string, a list of strings, a list of `HowToStep` (`text`), or a list
+    of `HowToSection` (`itemListElement` of the same) -- all shapes seen in the wild.
+    """
+    if isinstance(node, str):
+        return [node.strip()] if node.strip() else []
+    if isinstance(node, list):
+        return [text for item in node for text in _instruction_texts(item)]
+    if isinstance(node, dict):
+        if "itemListElement" in node:
+            return _instruction_texts(node["itemListElement"])
+        return _instruction_texts(node.get("text") or node.get("name"))
+    return []
+
+
+def has_usable_instructions(recipe: dict[str, Any]) -> bool:
+    """Whether a Recipe node carries a method of its own (A1 decision 4).
+
+    A Recipe with ingredients but no instructions is treated as "no recipe on this
+    page": the method must be grounded in the page's own text, never invented.
+    """
+    return bool(_instruction_texts(recipe.get("recipeInstructions")))
+
+
+@dataclass(frozen=True)
+class RecipePage:
+    """Result of `fetch_recipe_page`: exactly one of `recipe` / `reason` is set."""
+
+    recipe: dict[str, Any] | None
+    final_url: str | None = None
+    reason: str | None = None
+
+
+def fetch_recipe_page(
+    url: str,
+    *,
+    allow_http: bool = False,
+    fetch: Callable[..., FetchedPage] = fetch_html,
+) -> RecipePage:
+    """Fetch `url` through the SSRF-guarded fetcher and find its Recipe JSON-LD.
+
+    Never raises: a refused or failed fetch, a redirect onto an excluded host, or a page
+    with no Recipe node all come back as `RecipePage(recipe=None, reason=...)`, so the
+    caller can tell *why* (the previous implementation swallowed every error silently).
+    """
+    try:
+        page = fetch(url, allow_http=allow_http)
+    except FetchError as exc:
+        return RecipePage(recipe=None, reason=exc.reason)
+    if _is_excluded(_host_of(page.final_url)):
+        return RecipePage(
+            recipe=None, final_url=page.final_url, reason="redirected to excluded host"
+        )
+    recipe = recipe_in_html(page.text)
+    if recipe is None:
+        return RecipePage(recipe=None, final_url=page.final_url, reason="no Recipe JSON-LD")
+    return RecipePage(recipe=recipe, final_url=page.final_url)
+
+
+def fetch_recipe(url: str) -> dict[str, Any] | None:
+    """Leg 2 (description-linked blog): its Recipe JSON-LD node, or None. Never raises.
+
+    http links are allowed here (they were fetchable before the SSRF guard existed);
+    every other guard applies. A failure is logged with its reason rather than lost.
+    """
+    result = fetch_recipe_page(url, allow_http=True)
+    if result.recipe is None:
+        _logger.info("fetch_recipe: %s -> %s", url, result.reason)
+    return result.recipe

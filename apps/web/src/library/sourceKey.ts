@@ -87,8 +87,30 @@ function canonicalUrlKey(raw: string): string {
   return `url:${host}${path}${query ? `?${query}` : ''}`
 }
 
+/** FNV-1a, 32-bit, hex — a dedup fingerprint, not a security hash. */
+function fnv1a(text: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+const TEXT_KEY_INLINE_MAX = 64
+
+/** `text:` + the pasted text, whitespace-collapsed and lower-cased, so the same paste
+ * dedups. A long paste (up to 20k chars) is a prefix plus a fingerprint, not stored twice
+ * as a key. */
+function textKey(value: string): string {
+  const normalized = value.replace(/\s+/g, ' ').trim().toLowerCase()
+  if (normalized.length <= TEXT_KEY_INLINE_MAX) return `text:${normalized}`
+  return `text:${normalized.slice(0, 32)}#${fnv1a(normalized)}`
+}
+
 /** The canonical dedup key for a graph's source (M2.12 design decision 2). */
 export function canonicalSourceKey(source: SourceRef): string {
+  if (source.kind === 'text') return textKey(source.value)
   if (source.kind !== 'url') return `${source.kind}:${source.value}`
 
   const videoId = youtubeVideoId(source.value)

@@ -17,6 +17,7 @@ import pytest
 
 from abc_cook.extract import import_pipeline
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import CallUsage, ExtractResult
 from abc_cook.extract.graph import GraphBuildResult
 from abc_cook.extract.import_pipeline import ImportTelemetry, run_import
@@ -239,3 +240,71 @@ def test_telemetry_reasoning_tokens_none_when_provider_reports_none() -> None:
     )
 
     assert seen[0].reasoning_tokens is None
+
+
+def _blog_raw() -> RawAcquisition:
+    recipe = {
+        "@type": "Recipe",
+        "name": "Dal Makhni",
+        "recipeIngredient": ["1 onion"],
+        "recipeInstructions": ["Heat oil, add onion, cook until golden, serve hot."],
+    }
+    return _raw(description=None, blog_recipe=recipe)
+
+
+def test_preview_is_emitted_once_and_later_statuses_become_plan_building() -> None:
+    """A2: a source with a readable preview reports `plan_building` instead of
+    `extracting`/`validating`, and `on_preview` fires before the first of them."""
+    raw = _blog_raw()
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
+    events: list[str] = []
+
+    result = run_import(
+        raw.source_url,
+        adapter,
+        graph_id="g_test",
+        acquire_fn=_fake_acquire(raw),
+        on_status=lambda status: events.append(f"status:{status}"),
+        on_preview=lambda preview: events.append(f"preview:{preview.title}"),
+    )
+
+    assert events == [
+        "status:acquiring",
+        "preview:Dal Makhni",
+        "status:plan_building",
+        "status:plan_building",
+    ]
+    assert result.status == "done"
+
+
+def test_no_preview_for_a_video_without_a_linked_recipe_page() -> None:
+    raw = _raw()  # description only
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
+    events: list[str] = []
+
+    run_import(
+        raw.source_url,
+        adapter,
+        graph_id="g_test",
+        acquire_fn=_fake_acquire(raw),
+        on_status=events.append,
+        on_preview=lambda preview: events.append("preview"),
+    )
+
+    assert events == ["acquiring", "extracting", "validating"]
+
+
+def test_no_recipe_on_page_returns_no_recipe_found_without_any_llm_call() -> None:
+    def acquire_fn(url: str) -> RawAcquisition:
+        raise NoRecipeFoundError("no Recipe JSON-LD")
+
+    adapter = _FakeAdapter(results=[])  # a call would IndexError
+
+    result = run_import(
+        "https://kitchen.example/post", adapter, graph_id="g_test", acquire_fn=acquire_fn
+    )
+
+    assert result.status == "no_recipe_found"
+    assert result.graph is None
+    assert result.plan is None
+    assert adapter.calls == 0

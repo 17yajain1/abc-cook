@@ -21,23 +21,38 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
+from abc_cook.extract.acquire.text import PastedTextError, from_pasted_text
 from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.import_pipeline import run_import
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
-from abc_cook.schema.normalized import ImportResult, ImportStatus
+from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
 router = APIRouter(tags=["import"])
 
 
 class ImportRequest(BaseModel):
-    """`POST /import` body."""
+    """`POST /import` body: exactly one of `url` or `text`."""
 
-    url: str = Field(description="Recipe source URL, e.g. a YouTube link.")
+    url: str | None = Field(
+        default=None, description="Recipe source URL, e.g. a YouTube link or a recipe page."
+    )
+    text: str | None = Field(
+        default=None,
+        description="The recipe itself, pasted (A8). Skips acquisition entirely.",
+    )
+    title: str | None = Field(default=None, description="Optional title for pasted `text`.")
+
+    @model_validator(mode="after")
+    def _exactly_one_source(self) -> ImportRequest:
+        """Reject a body with both or neither of `url` / `text`."""
+        if (self.url is None) == (self.text is None):
+            raise ValueError("Send exactly one of `url` or `text`.")
+        return self
 
 
 @dataclass
@@ -47,6 +62,7 @@ class JobState:
     status: ImportStatus
     result: ImportResult | None = None
     error: str | None = None
+    preview: SourcePreview | None = None
 
 
 class JobStore(Protocol):
@@ -122,18 +138,31 @@ def _run_job(
     way for a poller to learn anything went wrong. `failed` exists in the design
     doc's status enum for exactly this.
     """
+    preview: SourcePreview | None = None
 
     def on_status(status: ImportStatus) -> None:
-        store.put(job_id, JobState(status=status))
+        store.put(job_id, JobState(status=status, preview=preview))
+
+    def on_preview(value: SourcePreview) -> None:
+        # Fires between `acquiring` and `plan_building`; the next `on_status` write
+        # carries it, and every later write keeps it -- so even a failed job can
+        # still show the source's own recipe.
+        nonlocal preview
+        preview = value
 
     try:
         result = run_import(
-            url, adapter, graph_id=job_id, acquire_fn=acquire_fn, on_status=on_status
+            url,
+            adapter,
+            graph_id=job_id,
+            acquire_fn=acquire_fn,
+            on_status=on_status,
+            on_preview=on_preview,
         )
     except Exception as exc:  # last-resort boundary, see docstring
-        store.put(job_id, JobState(status="failed", error=str(exc)))
+        store.put(job_id, JobState(status="failed", error=str(exc), preview=preview))
         return
-    store.put(job_id, JobState(status=result.status, result=result))
+    store.put(job_id, JobState(status=result.status, result=result, preview=preview))
 
 
 @router.post("/import", status_code=202)
@@ -149,16 +178,26 @@ async def start_import(
     Returns:
         The new job's id.
     """
+    if request.text is not None:
+        # Pasted text (A8): validated here so a bad paste is an immediate 422, and handed
+        # to the same pipeline with acquisition replaced by the already-built raw.
+        try:
+            pasted = from_pasted_text(request.text, request.title)
+        except PastedTextError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        source = pasted.source_url
+        acquire_fn = lambda _url: pasted  # noqa: E731
+    else:
+        assert request.url is not None  # `_exactly_one_source`
+        source = request.url
     job_id = uuid.uuid4().hex
     store.put(job_id, JobState(status="acquiring"))
-    background_tasks.add_task(_run_job, job_id, request.url, adapter, acquire_fn, store)
+    background_tasks.add_task(_run_job, job_id, source, adapter, acquire_fn, store)
     return ImportStartResponse(job_id=job_id)
 
 
 @router.get("/import/{job_id}")
-async def get_import(
-    job_id: str, store: JobStore = Depends(get_job_store)
-) -> ImportJobResponse:
+async def get_import(job_id: str, store: JobStore = Depends(get_job_store)) -> ImportJobResponse:
     """Poll one import job's status.
 
     Args:
@@ -174,4 +213,10 @@ async def get_import(
     job = store.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail=f"Unknown job {job_id!r}")
-    return ImportJobResponse(job_id=job_id, status=job.status, result=job.result, error=job.error)
+    return ImportJobResponse(
+        job_id=job_id,
+        status=job.status,
+        result=job.result,
+        error=job.error,
+        preview=job.preview,
+    )

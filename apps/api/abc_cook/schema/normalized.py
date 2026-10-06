@@ -31,14 +31,50 @@ ProvenanceSource = Literal["extracted", "inferred", "defaulted"]
 self-reported by the LLM (design doc §10.C)."""
 
 ImportStatus = Literal[
-    "acquiring", "extracting", "validating", "done", "method_not_grounded", "failed"
+    "acquiring",
+    "extracting",
+    "validating",
+    "plan_building",
+    "done",
+    "method_not_grounded",
+    "no_recipe_found",
+    "failed",
 ]
-"""Job status for `GET /import/{job_id}` (design doc §4.5)."""
+"""Job status for `GET /import/{job_id}` (design doc §4.5).
+
+`plan_building` (A2): the readable `SourcePreview` is available and the cooking plan is
+still being built -- it replaces `extracting`/`validating` for jobs that have a preview.
+`no_recipe_found` (A1): a recipe-page URL was fetched but carries no usable recipe."""
 
 ImportSource = Literal["description", "blog", "transcript"]
 """Which `RawAcquisition` legs actually fed a given import (M2.10 decision 6's
 sibling: `ImportResult.sources` reports this so a report or a future UI hint can say
 "grounded from the transcript" without a second round trip)."""
+
+
+class PreviewSection(BaseModel):
+    """A run of source lines under an optional heading, e.g. "FOR THE SYRUP"."""
+
+    heading: str | None = Field(default=None, description="Section title as the source gave it.")
+    lines: list[str] = Field(description="Source lines, verbatim apart from tag/entity cleanup.")
+
+
+class SourcePreview(BaseModel):
+    """The source's own recipe text, readable before any LLM call (A2).
+
+    Deliberately a third layer, separate from `NormalizedRecipe` (LLM output) and
+    `CookingGraph`/`CookingPlan` (validated, scheduled): it holds *strings only* --
+    no parsed quantities, no durations, no computed numbers -- so nothing downstream
+    can mistake it for validated data, and rendering it never needs the scheduler.
+    """
+
+    title: str = Field(description="The page's recipe name, as published.")
+    ingredients: list[str] = Field(
+        description='Ingredient lines verbatim, e.g. "200 g flour (7 oz)".'
+    )
+    instructions: list[PreviewSection] = Field(
+        description="Method, in source order; one headingless section when the source has none."
+    )
 
 
 class NormalizedIngredient(BaseModel):

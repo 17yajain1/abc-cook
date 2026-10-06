@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 from abc_cook.api.main import create_app
 from abc_cook.api.routes import import_ as import_routes
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import ExtractResult
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
@@ -271,6 +272,66 @@ def test_unknown_job_is_404() -> None:
 # ---------------------------------------------------------------------------
 # Real end-to-end: real acquisition, real LLM. Excluded from the default run.
 # ---------------------------------------------------------------------------
+
+def _blog_acquire(url: str) -> RawAcquisition:
+    recipe = {
+        "@type": "Recipe",
+        "name": "Test Recipe",
+        "recipeIngredient": ["1 onion"],
+        "recipeInstructions": ["Heat oil, add onion, cook until golden, serve hot."],
+    }
+    return _raw(source_url=url, description=None, blog_recipe=recipe)
+
+
+def test_job_keeps_the_source_preview_through_to_done() -> None:
+    """A2: the job record carries `preview` once acquire produced one, and every later
+    write (including the terminal one) keeps it."""
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _blog_acquire
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_grounded_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://kitchen.example/r"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.status == "done"
+    assert job.preview is not None
+    assert job.preview.title == "Test Recipe"
+    assert job.preview.ingredients == ["1 onion"]
+
+
+def test_video_job_without_a_linked_page_has_no_preview() -> None:
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: _fake_acquire
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(
+        results=[ExtractResult(recipe=_grounded_recipe())]
+    )
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.preview is None
+
+
+def test_page_without_a_recipe_ends_as_no_recipe_found() -> None:
+    def acquire_fn(url: str) -> RawAcquisition:
+        raise NoRecipeFoundError("no Recipe JSON-LD")
+
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: acquire_fn
+    app.dependency_overrides[import_routes.get_adapter] = lambda: _FakeAdapter(results=[])
+    client = TestClient(app)
+
+    job_id = client.post("/import", json={"url": "https://kitchen.example/post"}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+    assert job.status == "no_recipe_found"
+    assert job.error is None
+    assert job.preview is None
+
 
 FULL_METHOD_URL = "https://youtu.be/o3k55z-tv9I"  # Pakoda Kadhi, bucket A (test_acquire.py)
 

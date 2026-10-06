@@ -12,6 +12,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from abc_cook.extract.acquire.transcript import TranscriptSegment
+from abc_cook.schema.graph import SourceKind
 from abc_cook.schema.normalized import NormalizedChapter
 
 
@@ -23,6 +24,13 @@ class RawAcquisition(BaseModel):
     """
 
     source_url: str = Field(description="The URL the import started from.")
+    source_kind: SourceKind = Field(
+        default="url",
+        description=(
+            "How the recipe arrived. `text` = pasted by the user (A8): `description` "
+            "then holds that text and `source_url` is empty."
+        ),
+    )
     title: str = Field(description="Video or page title.")
     channel: str | None = Field(default=None, description="Channel or site name.")
 

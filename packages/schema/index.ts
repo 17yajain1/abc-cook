@@ -379,13 +379,66 @@ export interface ImportJobResponse {
    */
   job_id: string;
   /**
+   * The source's own readable recipe, once acquire has produced one (A2). Kept on every later status, so a failed or degraded job can still show it.
+   */
+  preview?: SourcePreview | null;
+  /**
    * Present once status is a terminal value (done / method_not_grounded).
    */
   result?: ImportResult | null;
   /**
    * Where the job is in the pipeline.
    */
-  status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
+  status:
+    | 'acquiring'
+    | 'extracting'
+    | 'validating'
+    | 'plan_building'
+    | 'done'
+    | 'method_not_grounded'
+    | 'no_recipe_found'
+    | 'failed';
+}
+/**
+ * The source's own recipe text, readable before any LLM call (A2).
+ *
+ * Deliberately a third layer, separate from `NormalizedRecipe` (LLM output) and
+ * `CookingGraph`/`CookingPlan` (validated, scheduled): it holds *strings only* --
+ * no parsed quantities, no durations, no computed numbers -- so nothing downstream
+ * can mistake it for validated data, and rendering it never needs the scheduler.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SourcePreview".
+ */
+export interface SourcePreview {
+  /**
+   * Ingredient lines verbatim, e.g. "200 g flour (7 oz)".
+   */
+  ingredients: string[];
+  /**
+   * Method, in source order; one headingless section when the source has none.
+   */
+  instructions: PreviewSection[];
+  /**
+   * The page's recipe name, as published.
+   */
+  title: string;
+}
+/**
+ * A run of source lines under an optional heading, e.g. "FOR THE SYRUP".
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "PreviewSection".
+ */
+export interface PreviewSection {
+  /**
+   * Section title as the source gave it.
+   */
+  heading?: string | null;
+  /**
+   * Source lines, verbatim apart from tag/entity cleanup.
+   */
+  lines: string[];
 }
 /**
  * The `/import` response payload.
@@ -411,7 +464,15 @@ export interface ImportResult {
    */
   sources?: ('description' | 'blog' | 'transcript')[];
   stages?: StageSpan[] | null;
-  status: 'acquiring' | 'extracting' | 'validating' | 'done' | 'method_not_grounded' | 'failed';
+  status:
+    | 'acquiring'
+    | 'extracting'
+    | 'validating'
+    | 'plan_building'
+    | 'done'
+    | 'method_not_grounded'
+    | 'no_recipe_found'
+    | 'failed';
   summary?: PlanSummary | null;
   warnings?: string[];
 }

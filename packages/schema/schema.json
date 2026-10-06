@@ -182,6 +182,18 @@
           "description": "Id returned by `POST /import`.",
           "type": "string"
         },
+        "preview": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourcePreview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The source's own readable recipe, once acquire has produced one (A2). Kept on every later status, so a failed or degraded job can still show it."
+        },
         "result": {
           "anyOf": [
             {
@@ -200,8 +212,10 @@
             "acquiring",
             "extracting",
             "validating",
+            "plan_building",
             "done",
             "method_not_grounded",
+            "no_recipe_found",
             "failed"
           ],
           "type": "string"
@@ -344,8 +358,10 @@
             "acquiring",
             "extracting",
             "validating",
+            "plan_building",
             "done",
             "method_not_grounded",
+            "no_recipe_found",
             "failed"
           ],
           "type": "string"
@@ -788,6 +804,34 @@
       ],
       "type": "object"
     },
+    "PreviewSection": {
+      "description": "A run of source lines under an optional heading, e.g. \"FOR THE SYRUP\".",
+      "properties": {
+        "heading": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Section title as the source gave it."
+        },
+        "lines": {
+          "description": "Source lines, verbatim apart from tag/entity cleanup.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "lines"
+      ],
+      "type": "object"
+    },
     "RecipeListResponse": {
       "description": "Every recipe the API can currently serve.",
       "properties": {
@@ -1058,6 +1102,35 @@
         "elapsed_min",
         "elapsed_high_min",
         "preceded_by_host_node_ids"
+      ],
+      "type": "object"
+    },
+    "SourcePreview": {
+      "description": "The source's own recipe text, readable before any LLM call (A2).\n\nDeliberately a third layer, separate from `NormalizedRecipe` (LLM output) and\n`CookingGraph`/`CookingPlan` (validated, scheduled): it holds *strings only* --\nno parsed quantities, no durations, no computed numbers -- so nothing downstream\ncan mistake it for validated data, and rendering it never needs the scheduler.",
+      "properties": {
+        "ingredients": {
+          "description": "Ingredient lines verbatim, e.g. \"200 g flour (7 oz)\".",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "instructions": {
+          "description": "Method, in source order; one headingless section when the source has none.",
+          "items": {
+            "$ref": "#/$defs/PreviewSection"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "The page's recipe name, as published.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "ingredients",
+        "instructions"
       ],
       "type": "object"
     },
