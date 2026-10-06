@@ -26,10 +26,10 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
 from abc_cook.extract.acquire.preview import build_preview
-from abc_cook.extract.adapters.base import CallUsage, LLMAdapter
+from abc_cook.extract.adapters.base import CallUsage, EffortLevel, LLMAdapter
 from abc_cook.extract.corroborate import corroborate
 from abc_cook.extract.graph import build_graph
-from abc_cook.extract.normalize import normalize, render_source_text
+from abc_cook.extract.normalize import EXTRACTION_EFFORT, normalize, render_source_text
 from abc_cook.extract.pricing import total_cost_inr
 from abc_cook.extract.provenance import compute_provenance
 from abc_cook.extract.repair import repair_or_degrade
@@ -155,6 +155,7 @@ def run_import(
     on_status: Callable[[ImportStatus], None] | None = None,
     on_telemetry: Callable[[ImportTelemetry], None] | None = None,
     on_preview: Callable[[SourcePreview], None] | None = None,
+    extraction_effort: EffortLevel | None = EXTRACTION_EFFORT,
 ) -> ImportResult:
     """Run the full pipeline for one URL.
 
@@ -173,6 +174,8 @@ def run_import(
         on_telemetry: Optional callback invoked exactly once, right before this
             function returns, with this import's `ImportTelemetry` (M2.10 s18 F5) --
             never a field on `ImportResult` itself (§ImportTelemetry docstring).
+        extraction_effort: Reasoning effort for the extraction call (default: the
+            provider's own, i.e. production behaviour). Overridden only by the A4 A/B script.
         on_preview: Optional callback invoked once, right after acquire, when the
             source has a readable `SourcePreview` (A2). From then on the reported
             status is `plan_building` instead of `extracting`/`validating`.
@@ -280,7 +283,7 @@ def run_import(
             on_preview(preview)
 
     _status("extracting")
-    outcome = _timed("extract", lambda: normalize(raw, adapter))
+    outcome = _timed("extract", lambda: normalize(raw, adapter, effort=extraction_effort))
     if outcome.tier0_result is not None:
         _telemetry(
             extraction_calls=outcome.calls,

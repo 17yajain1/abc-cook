@@ -85,7 +85,9 @@ class AnthropicAdapter:
     ) -> ExtractResult[T]:
         """Run one plain-text extraction call. Never raises — see `LLMAdapter.extract`."""
         output_config: anthropic.types.OutputConfigParam | anthropic.Omit = (
-            {"effort": effort} if effort is not None else anthropic.omit
+            {"effort": "low" if effort == "minimal" else effort}  # no "minimal" here
+            if effort is not None
+            else anthropic.omit
         )
         system = system_prompt(prompt, output_type)
         messages: list[anthropic.types.MessageParam] = [{"role": "user", "content": source_text}]
