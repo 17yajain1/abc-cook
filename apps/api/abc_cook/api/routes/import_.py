@@ -21,10 +21,11 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
+from abc_cook.extract.acquire.text import PastedTextError, from_pasted_text
 from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.import_pipeline import run_import
@@ -35,9 +36,23 @@ router = APIRouter(tags=["import"])
 
 
 class ImportRequest(BaseModel):
-    """`POST /import` body."""
+    """`POST /import` body: exactly one of `url` or `text`."""
 
-    url: str = Field(description="Recipe source URL, e.g. a YouTube link.")
+    url: str | None = Field(
+        default=None, description="Recipe source URL, e.g. a YouTube link or a recipe page."
+    )
+    text: str | None = Field(
+        default=None,
+        description="The recipe itself, pasted (A8). Skips acquisition entirely.",
+    )
+    title: str | None = Field(default=None, description="Optional title for pasted `text`.")
+
+    @model_validator(mode="after")
+    def _exactly_one_source(self) -> ImportRequest:
+        """Reject a body with both or neither of `url` / `text`."""
+        if (self.url is None) == (self.text is None):
+            raise ValueError("Send exactly one of `url` or `text`.")
+        return self
 
 
 @dataclass
@@ -163,9 +178,21 @@ async def start_import(
     Returns:
         The new job's id.
     """
+    if request.text is not None:
+        # Pasted text (A8): validated here so a bad paste is an immediate 422, and handed
+        # to the same pipeline with acquisition replaced by the already-built raw.
+        try:
+            pasted = from_pasted_text(request.text, request.title)
+        except PastedTextError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        source = pasted.source_url
+        acquire_fn = lambda _url: pasted  # noqa: E731
+    else:
+        assert request.url is not None  # `_exactly_one_source`
+        source = request.url
     job_id = uuid.uuid4().hex
     store.put(job_id, JobState(status="acquiring"))
-    background_tasks.add_task(_run_job, job_id, request.url, adapter, acquire_fn, store)
+    background_tasks.add_task(_run_job, job_id, source, adapter, acquire_fn, store)
     return ImportStartResponse(job_id=job_id)
 
 

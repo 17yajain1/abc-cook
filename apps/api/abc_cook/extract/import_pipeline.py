@@ -195,6 +195,7 @@ def run_import(
 
     has_preview = False
     sources: list[ImportSource] = []
+    source_label = _source_kind(url)
 
     def _status(status: ImportStatus) -> None:
         if has_preview and status in ("extracting", "validating"):
@@ -231,7 +232,7 @@ def run_import(
             windows=windows,
             saved_min=saved_min,
             sources=sources,
-            source_kind=_source_kind(url),
+            source_kind=source_label,
             stage_s=dict(stage_s),
             ttp_s=total_s,
             ttr_s=total_s,
@@ -270,6 +271,8 @@ def run_import(
         )
         return ImportResult(status="no_recipe_found", warnings=[str(exc)])
     sources = _sources(raw)
+    if raw.source_kind == "text":
+        source_label = "text"
     preview = build_preview(raw)
     if preview is not None:
         has_preview = True
@@ -306,13 +309,23 @@ def run_import(
     # title. `source_title` below is deliberately never read from `recipe.title`,
     # resolved or not -- it is always `raw.title`, verbatim (title.py).
     blog_name = raw.blog_recipe.get("name") if raw.blog_recipe else None
-    resolved_title = resolve_title(recipe.title, raw.title, blog_name)
+    resolved_title = resolve_title(
+        recipe.title,
+        raw.title,
+        blog_name,
+        source_text=raw.description if raw.source_kind == "text" else None,
+    )
     if resolved_title != recipe.title:
         recipe = recipe.model_copy(update={"title": resolved_title})
 
     _status("validating")
     source_text = render_source_text(raw)
-    source = SourceRef(kind="url", value=url, imported_at=datetime.now(UTC))
+    # A pasted text is its own source (`SourceRef` docs: "the pasted text itself").
+    source = SourceRef(
+        kind=raw.source_kind,
+        value=(raw.description or "") if raw.source_kind == "text" else url,
+        imported_at=datetime.now(UTC),
+    )
 
     build_result = _timed(
         "build_graph",

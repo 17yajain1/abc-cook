@@ -120,11 +120,17 @@ def _content_words(text: str) -> set[str]:
     return {_stem(w) for w in _WORD_RE.findall(text) if len(w) >= 2}
 
 
-def _is_grounded(claimed_title: str, raw_title: str, blog_name: str | None) -> bool:
+def _is_grounded(
+    claimed_title: str,
+    raw_title: str,
+    blog_name: str | None,
+    source_text: str | None = None,
+) -> bool:
     """Whether `claimed_title` is grounded in `raw_title` or `blog_name` (§R4).
 
     Every content word of `claimed_title` must appear, after stemming, in
-    `raw_title` or `blog_name`. An empty claim is never grounded (nothing to accept).
+    `raw_title`, `blog_name` or `source_text`. An empty claim is never grounded
+    (nothing to accept).
     """
     claimed_words = _content_words(claimed_title)
     if not claimed_words:
@@ -132,10 +138,17 @@ def _is_grounded(claimed_title: str, raw_title: str, blog_name: str | None) -> b
     source_words = _content_words(raw_title)
     if blog_name:
         source_words |= _content_words(blog_name)
+    if source_text:
+        source_words |= _content_words(source_text)
     return claimed_words <= source_words
 
 
-def resolve_title(claimed_title: str, raw_title: str, blog_name: str | None = None) -> str:
+def resolve_title(
+    claimed_title: str,
+    raw_title: str,
+    blog_name: str | None = None,
+    source_text: str | None = None,
+) -> str:
     """`graph.title` for an import: the model's claim if it earns trust, else a fallback.
 
     Accepted only when the claim is BOTH grounded (`_is_grounded`) and a fixed point
@@ -146,11 +159,14 @@ def resolve_title(claimed_title: str, raw_title: str, blog_name: str | None = No
         raw_title: `RawAcquisition.title`, verbatim.
         blog_name: The linked blog's own `name` (schema.org `Recipe.name`), if any —
             a second, independent source the model's claim may be grounded in.
+        source_text: The user's own pasted recipe (A8), a third such source. Only
+            passed for pasted-text imports, where the raw title is just the first
+            line of that same text.
 
     Returns:
         The title to use as `graph.title`.
     """
-    grounded = _is_grounded(claimed_title, raw_title, blog_name)
+    grounded = _is_grounded(claimed_title, raw_title, blog_name, source_text)
     fixed_point = clean_title(claimed_title) == claimed_title
     if grounded and fixed_point:
         return claimed_title
