@@ -19,7 +19,7 @@ from typing import Literal, Protocol
 
 import pydantic
 
-EffortLevel = Literal["low", "medium", "high", "xhigh", "max"]
+EffortLevel = Literal["minimal", "low", "medium", "high", "xhigh", "max"]
 """Reasoning-effort hint (design doc §6.2: "adaptive thinking at effort: low" for the
 repair pass). Optional and provider-dependent — an adapter that has no such concept
 simply ignores it."""

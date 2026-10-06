@@ -44,7 +44,8 @@ from abc_cook.extract.adapters.base import (
 )
 from abc_cook.extract.adapters.prompting import parse, system_prompt
 
-_EFFORT_MAP: dict[EffortLevel, Literal["low", "medium", "high"]] = {
+_EFFORT_MAP: dict[EffortLevel, Literal["minimal", "low", "medium", "high"]] = {
+    "minimal": "minimal",
     "low": "low",
     "medium": "medium",
     "high": "high",
