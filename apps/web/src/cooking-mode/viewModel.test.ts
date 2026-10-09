@@ -69,7 +69,10 @@ describe('kadai-paneer', () => {
     const v = view(se, T0)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Chop onion')
-    expect(v.qty).toBe('2 medium onion')
+    // F2: the step screen's amounts move from the quantity line to ingredient chips —
+    // the same structured phrase, one chip per ingredient; the quantity line is gone.
+    expect(v.chips).toEqual(['2 medium onion'])
+    expect(v.qty).toBeNull()
     expect(v.primary).toEqual({ label: 'Done', solid: true, action: { kind: 'markDone', nodeId: 'chop_onion' } })
     // P1 #6 §C1/§C2: "Step 1 of 10" and a preview of what Done would unblock next.
     expect(v.step).toBe('Step 1 of 10')
@@ -94,6 +97,10 @@ describe('kadai-paneer', () => {
     // it" and finds the first window prep task it unblocks.
     expect(v.step).toBe('Step 4 of 10')
     expect(v.next).toBe('Next: Cube capsicum')
+    // F2 covers the pending hands-off start screen too: cook_tomato_base consumes ing_salt
+    // ("to taste") plus two comp_* ids, which have no ingredient row and no chip.
+    expect(v.chips).toEqual(['salt to taste'])
+    expect(v.qty).toBeNull()
   })
 
   it('task_window: shows a task inside the wait window with a whisper naming the host', () => {
@@ -110,6 +117,7 @@ describe('kadai-paneer', () => {
     expect(v.whisperText).toContain('Cook tomato base')
     expect(v.step).toBe('Step 5 of 10')
     expect(v.next).toBe('Next: Cube paneer')
+    expect(v.chips).toEqual(['1 large capsicum'])
   })
 
   it('task_window: the last prep in a window previews the step blocked behind the wait, not a node the wait subject blocks', () => {
@@ -189,6 +197,8 @@ describe('kadai-paneer', () => {
     // No current step on a wait screen — no step count, no preview.
     expect(atTransition.step).toBeNull()
     expect(atTransition.next).toBeNull()
+    // F2 chips are step-screen only.
+    expect(atTransition.chips).toEqual([])
 
     // Past the 10 s undo window, "Give it longer" is back.
     const v = view(se, T0 + 16 * MIN + 10_000)
@@ -234,6 +244,9 @@ describe('kadai-paneer', () => {
     // must_attend (periodic) + overrun >= 60s -> the elapsed-fact wording, not the
     // plain "is done"/"wants a look" copy (that's handover_ready's distinguishing case).
     expect(v.title).toBe('One minute past.')
+    // F2 does not touch the dark handover screen: no chips, no quantity line.
+    expect(v.chips).toEqual([])
+    expect(v.qty).toBeNull()
     expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'acknowledge' } })
     expect(v.secondary).toEqual({
       label: 'Needs a minute more',
@@ -277,6 +290,7 @@ describe('kadai-paneer', () => {
     expect(v.instr).toBeNull()
     expect(v.note).toBeNull()
     expect(v.qty).toBeNull()
+    expect(v.chips).toEqual([])
     expect(v.topRecipe).toBe('')
     expect(v.showTopRight).toBe(false)
     expect(v.primary).toEqual({ label: 'Finished cooking', solid: true, action: { kind: 'finish' } })

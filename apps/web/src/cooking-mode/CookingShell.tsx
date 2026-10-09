@@ -79,7 +79,22 @@ export function CookingShell({
             <p className={`text-[19px] leading-[1.45] ${g.ink}`} style={{ textWrap: 'pretty' }}>
               {view.title}
             </p>
-            {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.ink2}`}>{view.qty}</p>}
+            {/* F2 ingredient chips: amount + name per ingredient, in the slot the quantity
+                line used (16px below the instruction). Display only — a list, not
+                controls: no handler, no button role, no focus. A chip wraps internally only
+                when its phrase cannot fit a full line on its own, so no amount is ever cut. */}
+            {view.chips.length > 0 && (
+              <ul role="list" aria-label="Ingredients" className="mt-4 flex flex-wrap gap-1">
+                {view.chips.map((chip) => (
+                  <li
+                    key={chip}
+                    className={`rounded-control border px-2 py-[5px] text-[13px] leading-none break-words ${g.rule} ${g.ink}`}
+                  >
+                    {chip}
+                  </li>
+                ))}
+              </ul>
+            )}
             {view.note && <p className={`mt-3 text-[15px] leading-[1.5] ${g.ink2}`}>{view.note}</p>}
           </div>
         ) : (

@@ -3,22 +3,22 @@ import type { Ingredient } from '@abc-cook/schema'
 import type { CookingNodeInfo } from '@/cooking/types'
 
 /**
- * The calm screen's quantity line (M3.4 implementation handoff §5): `ing_*` ids only
- * (`comp_*` never listed — a component has no ingredient row to quote), each rendered
- * as `qty unit name` lower-cased and joined ` · `. A node consuming only components
- * renders no line at all (`null`, not an empty string — an absent slot per §3).
+ * One phrase per consumed ingredient, in `consumes` order: `ing_*` ids only (`comp_*`
+ * never listed — a component has no ingredient row to quote), each rendered as
+ * `qty unit name` lower-cased. The step screen's F2 ingredient chips show these
+ * directly; `quantityLine` is their join, so the two can never disagree.
  *
  * `prep_note` composition and the single-qty-split-across-nodes case are open items
  * (§8 — "still needs the schema answer") and are intentionally not attempted here.
  */
-export function quantityLine(
+export function quantityPhrases(
   node: CookingNodeInfo,
   ingredientsById: ReadonlyMap<string, Ingredient>,
-): string | null {
+): string[] {
   // Identical phrases collapse ("salt to taste · salt to taste" when one node consumes
   // two ids for the same ingredient). Same name with *different* amounts is left alone:
   // which one is right is not something the screen can know.
-  const phrases = [
+  return [
     ...new Set(
       node.consumes
         .filter((id) => id.startsWith('ing_'))
@@ -27,7 +27,18 @@ export function quantityLine(
         .map(quantityPhrase),
     ),
   ]
+}
 
+/**
+ * The calm screen's quantity line (M3.4 implementation handoff §5): `quantityPhrases`
+ * joined ` · `. A node consuming only components renders no line at all (`null`, not an
+ * empty string — an absent slot per §3).
+ */
+export function quantityLine(
+  node: CookingNodeInfo,
+  ingredientsById: ReadonlyMap<string, Ingredient>,
+): string | null {
+  const phrases = quantityPhrases(node, ingredientsById)
   return phrases.length > 0 ? phrases.join(' · ') : null
 }
 
