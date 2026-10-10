@@ -116,6 +116,11 @@ export interface CookingView {
   waitTime: { left: string; readyAt: string } | null
   whisperText: string | null
   showLink: boolean
+  /** V2.1 running-work strip on `task`/`handsoff_pending` (1d — Owner-selected, not
+   * usability-validated; reopen condition in the design record). When set, it replaces
+   * `whisperText` on that screen. `null` everywhere
+   * else, and for a periodic host (which keeps the whisper). */
+  strip: RunningStripView | null
   primary: ActionButton | null
   secondary: ActionButton | null
   /** B0 (N3): true on every screen where the undo link can appear in `secondary`
@@ -123,6 +128,15 @@ export interface CookingView {
    * secondary is showing, so the primary never moves when the undo link comes or goes —
    * a quick second tap where Done *was* must not land on "Back to …". */
   reserveSecondary: boolean
+}
+
+export interface RunningStripView {
+  label: string
+  /** "About N min left" while running (D6 — never `m:ss`, never a clock), else "Holding". */
+  right: string
+  /** Drawn hollow instead of filled once the timer is up. */
+  holding: boolean
+  sub: string | null
 }
 
 export interface SheetRowView {
@@ -200,35 +214,78 @@ function resolveScreen(
   return { ...empty, id: r }
 }
 
-/** `whisperFor` (dc.html), ported verbatim over the real `whisperInput`/`running`/
- * `holding` selectors — picks the soonest node worth naming that isn't the one already
- * on screen. */
+interface BackgroundSubject {
+  nodeId: string
+  /** `holding`: the `holding()` selector's own not-required expiry. `past`: the whisper
+   * subject's timer is up (no `required` verdict either way). */
+  phase: 'running' | 'past' | 'holding'
+}
+
+/** The node the whisper names (dc.html's `whisperFor` choice), over the real
+ * `whisperInput`/`running`/`holding` selectors — the soonest node worth naming that
+ * isn't the one already on screen. Shared by `whisperFor` and `stripFor` so the two
+ * can never disagree about *which* background work to surface. */
+function backgroundSubject(
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  onScreenNodeId: string | null,
+): BackgroundSubject | null {
+  const wi = whisperInput(model, session, now)
+  if (!wi) {
+    const holdingIds = holding(model, session, now)
+    return holdingIds.length > 0 ? { nodeId: holdingIds[0], phase: 'holding' } : null
+  }
+  let id = wi.nodeId
+  if (id === onScreenNodeId) {
+    const others = running(model, session).filter((x) => x !== onScreenNodeId)
+    if (others.length === 0) return null
+    id = others[0]
+  }
+  return { nodeId: id, phase: endsAtOf(session, id) - now <= 0 ? 'past' : 'running' }
+}
+
+/** `whisperFor` (dc.html), ported verbatim over `backgroundSubject`. */
 function whisperFor(
   model: CookingModel,
   session: CookingSession,
   now: number,
   onScreenNodeId: string | null,
 ): string | null {
-  const wi = whisperInput(model, session, now)
-  const run = running(model, session)
-  if (!wi) {
-    const holdingIds = holding(model, session, now)
-    if (holdingIds.length > 0) {
-      return `${model.nodes[holdingIds[0]].label} is holding. Nothing needs you for it yet.`
-    }
-    return null
-  }
-  let id = wi.nodeId
-  if (id === onScreenNodeId) {
-    const others = run.filter((x) => x !== onScreenNodeId)
-    if (others.length === 0) return null
-    id = others[0]
-  }
-  const info = model.nodes[id]
-  const rem = endsAtOf(session, id) - now
-  if (rem <= 0) return `${info.label} is past its time and holding.`
+  const s = backgroundSubject(model, session, now, onScreenNodeId)
+  if (s == null) return null
+  const info = model.nodes[s.nodeId]
+  if (s.phase === 'holding') return `${info.label} is holding. Nothing needs you for it yet.`
+  if (s.phase === 'past') return `${info.label} is past its time and holding.`
+  const rem = endsAtOf(session, s.nodeId) - now
   const tail = info.attention === 'periodic' ? ', so give it a stir when you pass.' : '.'
   return `${info.label} has about ${aboutMinutes(rem)} left${tail}`
+}
+
+/** V2.1 running-work strip (B1/B2 variant 1d — Owner-selected, not usability-validated;
+ * reopen condition in the design record):
+ * the same subject the whisper would name, as label + "About N min left". Read-only —
+ * no control of any kind (O1). `null` for a periodic host: 1d has no approved wording
+ * for "give it a stir" (1l/1t are not promoted), so that case keeps the whisper. */
+function stripFor(
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  onScreenNodeId: string | null,
+): RunningStripView | null {
+  const s = backgroundSubject(model, session, now, onScreenNodeId)
+  if (s == null) return null
+  const info = model.nodes[s.nodeId]
+  if (info.attention === 'periodic') return null
+  if (s.phase === 'running') {
+    return { label: info.label, right: minutesLeft(endsAtOf(session, s.nodeId) - now), holding: false, sub: null }
+  }
+  return {
+    label: info.label,
+    right: 'Holding',
+    holding: true,
+    sub: s.phase === 'holding' ? 'Nothing needs you for it yet.' : null,
+  }
 }
 
 export interface CookingViewOptions {
@@ -304,6 +361,7 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     waitTime: null,
     whisperText: null,
     showLink: false,
+    strip: null,
     primary: { label: 'Start cooking', solid: true, action: { kind: 'start' } },
     secondary: { label: 'See the plan', solid: false, action: { kind: 'seePlan' } },
     reserveSecondary: false,
@@ -338,6 +396,7 @@ export function buildCookingView(
     waitTime: null,
     whisperText: null,
     showLink: false,
+    strip: null,
     primary: null,
     secondary: null,
     reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id),
@@ -346,13 +405,14 @@ export function buildCookingView(
   if (scr.id === 'task' || scr.id === 'handsoff_pending') {
     const cur = scr.currentNodeId!
     const n = model.nodes[cur]
-    const c = splitCopy(n.instruction)
+    // V2.1 (1a order, reweighted): the step label is the screen's title and the full
+    // instruction follows it untruncated — no `splitCopy` on the task screen.
     v.label = n.label
-    v.title = c.title
-    v.instr = c.body
+    v.title = n.instruction
     v.qty = quantityLine(n, ingredients)
     v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
-    v.whisperText = whisperFor(model, session, now, cur)
+    v.strip = stripFor(model, session, now, cur)
+    if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)
     v.showLink = running(model, session).length > 0
     const pos = stepPosition(model, session)
     v.step = `Step ${pos.n} of ${pos.total}`

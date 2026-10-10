@@ -662,10 +662,145 @@ describe('strawberry-shortcake', () => {
     expect(v.showLink).toBe(true)
     // bake_shortcakes' completion is what unblocks cool_shortcakes; macerate_berries'
     // completion doesn't yet unblock anything (assemble_shortcakes still needs
-    // cool_shortcakes/slice_garnish_berries too) — so the whisper names bake_shortcakes
-    // and never mentions macerate_berries.
-    expect(v.whisperText).toContain('Bake shortcakes')
-    expect(v.whisperText).not.toContain('Macerate berries')
+    // cool_shortcakes/slice_garnish_berries too) — so the running-work strip (V2.1, 1d)
+    // names bake_shortcakes, never macerate_berries; the sheet link above still lists
+    // both.
+    expect(v.whisperText).toBeNull()
+    expect(v.strip?.label).toBe('Bake shortcakes')
+    expect(v.strip?.right).toBe('About 13 min left')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// V2.1 running-work strip (1d — PROVISIONAL, UNVALIDATED, V-A PENDING): the strip, the
+// whisper it replaces on step screens, and the What's cooking link beside it.
+// Not constructible through the real engine, so not tested here: the strip's `past`
+// phase and the whisper's "is holding" sentence (see the V2.1 coverage note).
+// ---------------------------------------------------------------------------
+
+describe('V2.1 running-work strip', () => {
+  const SHORTCAKE = strawberryShortcake as RecipePlanResponse
+  const KADAI = kadaiPaneer as RecipePlanResponse
+  const T0 = 1_700_000_000_000
+  const shortcake: CookingModel = deriveCookingModel(SHORTCAKE)
+  const kadai: CookingModel = deriveCookingModel(KADAI)
+  const shortcakeIngredients = ingredientsById(SHORTCAKE.graph.ingredients)
+  const kadaiIngredients = ingredientsById(KADAI.graph.ingredients)
+
+  function shortcakeView(session: CookingSession, now: number, leaving = false) {
+    return buildCookingView(shortcake, session, now, shortcakeIngredients, { recipeTitle: SHORTCAKE.graph.title, leaving })
+  }
+
+  /** bake_shortcakes running (ends +24), hull_and_slice_berries current. */
+  function bakeRunning(): CookingSession {
+    let se = must(engine.start(null, shortcake, 'server:shortcake', T0))
+    se = must(engine.markDone(se, shortcake, 'mix_dough', T0 + 6 * MIN))
+    return must(engine.startNode(se, shortcake, 'bake_shortcakes', T0 + 6 * MIN))
+  }
+
+  /** Bake handed over at +24 and cool_shortcakes started (ends +34); macerate_berries
+   * (ends +31) runs on with whip_cream current. */
+  function coolingWithMacerateRunning(): CookingSession {
+    let se = bakeRunning()
+    se = must(engine.markDone(se, shortcake, 'hull_and_slice_berries', T0 + 11 * MIN))
+    se = must(engine.startNode(se, shortcake, 'macerate_berries', T0 + 11 * MIN))
+    se = must(engine.acknowledge(se, shortcake, T0 + 24 * MIN))
+    return must(engine.startNode(se, shortcake, 'cool_shortcakes', T0 + 24 * MIN))
+  }
+
+  it('exactly one other node running: the strip names it and the What\'s cooking link still shows', () => {
+    const v = shortcakeView(bakeRunning(), T0 + 6 * MIN)
+    expect(v.screenId).toBe('task')
+    expect(v.label).toBe('Hull and slice berries')
+    expect(v.strip).toEqual({ label: 'Bake shortcakes', right: 'About 18 min left', holding: false, sub: null })
+    expect(v.whisperText).toBeNull()
+    expect(v.showLink).toBe(true)
+  })
+
+  it('handsoff_pending: the strip names the other running node while the pending one waits to be started', () => {
+    const se = must(engine.markDone(bakeRunning(), shortcake, 'hull_and_slice_berries', T0 + 11 * MIN))
+    const v = shortcakeView(se, T0 + 11 * MIN)
+    expect(v.screenId).toBe('handsoff_pending')
+    expect(v.label).toBe('Macerate berries')
+    expect(v.strip).toEqual({ label: 'Bake shortcakes', right: 'About 13 min left', holding: false, sub: null })
+    expect(v.whisperText).toBeNull()
+    expect(v.showLink).toBe(true)
+  })
+
+  it('holding: an expired node nothing needs yet reads "Holding" with the calm line, never as a whisper', () => {
+    // macerate_berries ended at +31; assemble_shortcakes still waits on cool_shortcakes
+    // and whip_cream, so nothing requires it (holding), and cool_shortcakes isn't
+    // required-if-expired either — no whisper subject, so the holding node is named.
+    const v = shortcakeView(coolingWithMacerateRunning(), T0 + 32 * MIN)
+    expect(v.screenId).toBe('task')
+    expect(v.label).toBe('Whip cream')
+    expect(v.strip).toEqual({
+      label: 'Macerate berries',
+      right: 'Holding',
+      holding: true,
+      sub: 'Nothing needs you for it yet.',
+    })
+    expect(v.whisperText).toBeNull()
+    expect(v.showLink).toBe(true)
+  })
+
+  it('periodic host: no strip; the whisper keeps its "give it a stir" wording', () => {
+    let se = must(engine.start(null, kadai, 'server:kadai', T0))
+    se = must(engine.markDone(se, kadai, 'chop_onion', T0 + 3 * MIN))
+    se = must(engine.markDone(se, kadai, 'saute_onion', T0 + 8 * MIN))
+    se = must(engine.markDone(se, kadai, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN)) // periodic, 12-min typical
+
+    const v = buildCookingView(kadai, se, T0 + 10 * MIN + 1000, kadaiIngredients, {
+      recipeTitle: KADAI.graph.title,
+      leaving: false,
+    })
+    expect(v.screenId).toBe('task')
+    expect(v.strip).toBeNull()
+    expect(v.whisperText).toBe('Cook tomato base has about twelve minutes left, so give it a stir when you pass.')
+    expect(v.showLink).toBe(true)
+  })
+
+  it('wait screen: no strip, and the whisper names a past-its-time node other than the wait subject', () => {
+    let se = coolingWithMacerateRunning()
+    se = must(engine.markDone(se, shortcake, 'whip_cream', T0 + 28 * MIN))
+    se = must(engine.markDone(se, shortcake, 'slice_garnish_berries', T0 + 30 * MIN))
+    // cool_shortcakes (ends +34) is the wait subject; macerate_berries expired at +31
+    // and nothing requires it yet.
+    const v = shortcakeView(se, T0 + 32 * MIN)
+    expect(v.screenId).toBe('wait')
+    expect(v.label).toBe('Cool shortcakes')
+    expect(v.strip).toBeNull()
+    expect(v.whisperText).toBe('Macerate berries is past its time and holding.')
+  })
+
+  it('non-step screens never carry a strip: handover, leaving, done', () => {
+    const handoverView = shortcakeView(bakeRunning(), T0 + 24 * MIN)
+    expect(handoverView.screenId).toBe('handover')
+    expect(handoverView.strip).toBeNull()
+
+    const leavingView = shortcakeView(bakeRunning(), T0 + 7 * MIN, true)
+    expect(leavingView.screenId).toBe('leaving')
+    expect(leavingView.strip).toBeNull()
+
+    let se = must(engine.start(null, kadai, 'server:kadai', T0))
+    for (const id of ['chop_onion', 'saute_onion', 'chop_tomato'] as const) {
+      se = must(engine.markDone(se, kadai, id, T0 + 10 * MIN))
+    }
+    se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN))
+    for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) {
+      se = must(engine.markDone(se, kadai, id, T0 + 16 * MIN))
+    }
+    se = must(engine.acknowledge(se, kadai, T0 + 22 * MIN))
+    for (const id of ['add_veggies', 'add_paneer', 'finish'] as const) {
+      se = must(engine.markDone(se, kadai, id, T0 + 34 * MIN))
+    }
+    const doneView = buildCookingView(kadai, se, T0 + 34 * MIN, kadaiIngredients, {
+      recipeTitle: KADAI.graph.title,
+      leaving: false,
+    })
+    expect(doneView.screenId).toBe('done')
+    expect(doneView.strip).toBeNull()
   })
 })
 
