@@ -1,11 +1,12 @@
 # V2.1 follow-ups: issue log (observations only, nothing fixed here)
 
-Worktree `ABC cook-v2`, branch `v2/cooking-hierarchy`, uncommitted. Written 2026-10-09 during the approved
-"V2.1 follow-up: tap targets and quantity-line weight" implementation. The running-work strip remains
-**PROVISIONAL — UNVALIDATED — V-A PENDING**. V-A, V-B and V-C are pending, and S2–S4 have not been run.
+Branch `v2/cooking-hierarchy`. Written 2026-10-09 during the approved
+"V2.1 follow-up: tap targets and quantity-line weight" implementation. The running-work strip (1d) is
+owner-selected, not usability-validated; reopen condition in the design record. V-B and V-C are pending, and S2–S4
+have not been run.
 
 ## 1. Burger: ingredient assignment and data inconsistency (suspected extraction issue, root cause not proven)
-- Fixture: `notes/b1-b2-design-pack/burger.plan-response.json` (main checkout).
+- Fixture: the B1/B2 design-pack Burger plan response (not tracked in the repo).
 - The oil rows:
   - `ing_oil` "1 tsp", group "Veggie patty mixture".
   - `ing_oil_2` "1 tbsp" and `ing_oil_3` "for frying", both in group "For making the crispy veggie patty".
@@ -29,8 +30,7 @@ Worktree `ABC cook-v2`, branch `v2/cooking-hierarchy`, uncommitted. Written 2026
 
 ## 3. Skip for now tap target (pre-existing on main)
 - Hit-tested size: 81 × 23 px (`elementFromPoint`; 632–654 on Burger Make batter, 360×697).
-- Not changed in this follow-up; for later review only. The real-touch mapping from this session (Chrome touch
-  adjustment included) is recorded in the follow-up report.
+- Not changed in this follow-up; for later review only.
 
 ## 4. Short-step whitespace (watch item, not a confirmed defect)
 - On short instructions, the fixed footer leaves a large empty band above it. Examples: Kadai "Cube capsicum",
