@@ -23,7 +23,7 @@ import type { HeaderTiming } from '@/lib/duration'
 
 import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
-import { quantityLine } from './quantity'
+import { quantityPhrases } from './quantity'
 
 /**
  * The screen-selection and copy layer for Cooking Mode (M3.4), ported from the design
@@ -100,6 +100,10 @@ export interface CookingView {
   title: string
   instr: string | null
   qty: string | null
+  /** F2 ingredient chips: one `quantityPhrases` entry per consumed ingredient (structured
+   * amount + name, never parsed from the instruction). Only on `task`/`handsoff_pending`,
+   * which no longer set `qty`; `[]` everywhere else. Display only — not controls. */
+  chips: string[]
   note: string | null
   /** "Step n of N" (P1 #6 plan §C1) — only on `task`/`handsoff_pending`, where there is
    * a current step to count. `null` everywhere else. */
@@ -355,6 +359,7 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     title: recipeTitle,
     instr: timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`,
     qty: null,
+    chips: [],
     note: `${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
     step: null,
     next: null,
@@ -390,6 +395,7 @@ export function buildCookingView(
     title: '',
     instr: null,
     qty: null,
+    chips: [],
     note: null,
     step: null,
     next: null,
@@ -409,7 +415,7 @@ export function buildCookingView(
     // instruction follows it untruncated — no `splitCopy` on the task screen.
     v.label = n.label
     v.title = n.instruction
-    v.qty = quantityLine(n, ingredients)
+    v.chips = quantityPhrases(n, ingredients)
     v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
     v.strip = stripFor(model, session, now, cur)
     if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)

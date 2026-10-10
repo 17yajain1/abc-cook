@@ -57,7 +57,7 @@ export function CookingShell({
       {/* Body column (B0). The lead-in (124px; 56px on step screens, whose content is
           taller) is a spacer that *shrinks* (down to 24px) before the content is pushed
           below the fold: short screens keep a calm top margin, a long step starts near
-          the top and keeps its quantity line in view. Content is `shrink-0`; only the
+          the top and keeps its ingredient chips in view. Content is `shrink-0`; only the
           spacer yields. */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-6">
         <div aria-hidden className={`min-h-6 shrink ${isStep ? 'basis-[56px]' : 'basis-[124px]'}`} />
@@ -79,7 +79,22 @@ export function CookingShell({
             <p className={`text-[19px] leading-[1.45] ${g.ink}`} style={{ textWrap: 'pretty' }}>
               {view.title}
             </p>
-            {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.ink2}`}>{view.qty}</p>}
+            {/* F2 ingredient chips: amount + name per ingredient, in the slot the quantity
+                line used (16px below the instruction). Display only — a list, not
+                controls: no handler, no button role, no focus. A chip wraps internally only
+                when its phrase cannot fit a full line on its own, so no amount is ever cut. */}
+            {view.chips.length > 0 && (
+              <ul role="list" aria-label="Ingredients" className="mt-4 flex flex-wrap gap-x-1.5 gap-y-1">
+                {view.chips.map((chip) => (
+                  <li
+                    key={chip}
+                    className={`rounded-control border px-2.5 py-[2.25px] text-[14px] leading-[1.25] break-words ${g.rule} ${g.ink}`}
+                  >
+                    {chip}
+                  </li>
+                ))}
+              </ul>
+            )}
             {view.note && <p className={`mt-3 text-[15px] leading-[1.5] ${g.ink2}`}>{view.note}</p>}
           </div>
         ) : (
