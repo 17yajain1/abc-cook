@@ -49,10 +49,10 @@ describe('CookingShell — F2 ingredient chips', () => {
     const html = render(view(se, T0))
     const list = chipList(html)
     expect(list).not.toBeNull()
-    expect(list).toMatch(/^<ul role="list" aria-label="Ingredients" class="mt-4 flex flex-wrap gap-1">/)
+    expect(list).toMatch(/^<ul role="list" aria-label="Ingredients" class="mt-4 flex flex-wrap gap-1.5">/)
     expect(chipTexts(list!)).toEqual(['2 medium onion'])
     const li = list!.match(/<li class="([^"]*)"/)![1].split(' ')
-    for (const c of ['rounded-control', 'border', 'px-2', 'py-[5px]', 'text-[13px]', 'leading-none', 'border-rule', 'text-ink']) {
+    for (const c of ['rounded-control', 'border', 'px-2.5', 'py-[4.25px]', 'text-[14px]', 'leading-[1.25]', 'border-rule', 'text-ink']) {
       expect(li, c).toContain(c)
     }
     // Display only: nothing focusable or clickable inside the list.
