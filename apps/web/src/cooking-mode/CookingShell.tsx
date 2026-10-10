@@ -122,7 +122,8 @@ export function CookingShell({
           </div>
         )}
 
-        {/* 1d running-work strip — PROVISIONAL, UNVALIDATED, V-A PENDING. Read-only (O1):
+        {/* 1d running-work strip — Owner-selected, not usability-validated; reopen
+            condition in the design record. Read-only (O1):
             no control except the existing What's cooking sheet link (main's rule: shown
             whenever anything is running). */}
         {view.strip && (

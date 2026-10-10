@@ -116,8 +116,9 @@ export interface CookingView {
   waitTime: { left: string; readyAt: string } | null
   whisperText: string | null
   showLink: boolean
-  /** V2.1 running-work strip on `task`/`handsoff_pending` (1d — PROVISIONAL, UNVALIDATED,
-   * V-A PENDING). When set, it replaces `whisperText` on that screen. `null` everywhere
+  /** V2.1 running-work strip on `task`/`handsoff_pending` (1d — Owner-selected, not
+   * usability-validated; reopen condition in the design record). When set, it replaces
+   * `whisperText` on that screen. `null` everywhere
    * else, and for a periodic host (which keeps the whisper). */
   strip: RunningStripView | null
   primary: ActionButton | null
@@ -261,7 +262,8 @@ function whisperFor(
   return `${info.label} has about ${aboutMinutes(rem)} left${tail}`
 }
 
-/** V2.1 running-work strip (B1/B2 variant 1d — PROVISIONAL, UNVALIDATED, V-A PENDING):
+/** V2.1 running-work strip (B1/B2 variant 1d — Owner-selected, not usability-validated;
+ * reopen condition in the design record):
  * the same subject the whisper would name, as label + "About N min left". Read-only —
  * no control of any kind (O1). `null` for a periodic host: 1d has no approved wording
  * for "give it a stir" (1l/1t are not promoted), so that case keeps the whisper. */
