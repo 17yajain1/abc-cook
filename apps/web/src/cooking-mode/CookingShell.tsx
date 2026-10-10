@@ -84,11 +84,11 @@ export function CookingShell({
                 controls: no handler, no button role, no focus. A chip wraps internally only
                 when its phrase cannot fit a full line on its own, so no amount is ever cut. */}
             {view.chips.length > 0 && (
-              <ul role="list" aria-label="Ingredients" className="mt-4 flex flex-wrap gap-1.5">
+              <ul role="list" aria-label="Ingredients" className="mt-4 flex flex-wrap gap-x-1.5 gap-y-1">
                 {view.chips.map((chip) => (
                   <li
                     key={chip}
-                    className={`rounded-control border px-2.5 py-[4.25px] text-[14px] leading-[1.25] break-words ${g.rule} ${g.ink}`}
+                    className={`rounded-control border px-2.5 py-[2.25px] text-[14px] leading-[1.25] break-words ${g.rule} ${g.ink}`}
                   >
                     {chip}
                   </li>
