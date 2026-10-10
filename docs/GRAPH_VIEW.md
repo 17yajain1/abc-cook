@@ -38,7 +38,7 @@ contact with a phone.
 | View | When | What it optimises for |
 |---|---|---|
 | **Plan** (vertical stages) | Default. Before and during cooking. | Scannability, one thumb, calm |
-| **Map** (the actual graph) | On demand — a `Plan · Map` mode switch inside the Cooking Plan tab | Comprehension of structure. The "oh, I see" view. |
+| **Map** (the actual graph) | On demand — a contextual 'View cooking map' action, shown only when the plan has parallel work (`DESIGN_SYSTEM.md` § Resolved in B1/B2) | Comprehension of structure. The "oh, I see" view. |
 | **Step** | While cooking | One instruction. Nothing else. |
 
 The Plan view is what people use. **The Map view is what makes them understand the

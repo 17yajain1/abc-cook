@@ -701,6 +701,8 @@ pill, no segmented-control chrome (§ *Avoid generated-design tells*). The `Star
 CTA is hidden in Map mode, as the mock draws it; confirmed or reversed at the M2.75 render
 checkpoint.
 
+Superseded in B1/B2: no switch; a contextual "View cooking map" action — § *Resolved in B1/B2*.
+
 | Meaning | Mark |
 |---|---|
 | Classification | Pure interval math, no per-task flag. A task in a window's `assigned` is a **window child**. A window's `host_node_id` is seeded onto the **mainline** first (Decision 1 below). Everything else is walked in `start_min` order (ties broken by `end_min` ascending, then `node_id`) against the mainline intervals reserved so far: no overlap → **mainline**; overlaps something already reserved → **independent** (own card, no connector). |
@@ -786,6 +788,7 @@ trip (`expandedStages`, `PlanScreen.tsx`); `Show full recipe` / `Show overview` 
 every stage at once and sit on the `Plan · Map` mode row, not as a separate control (§
 *Resolved in M3.2*). The reversal follows directly from making the Plan view
 overview-first — a screenful of every stage pre-expanded was never an overview.
+Reversed again in B1/B2: stages start expanded — § *Resolved in B1/B2*.
 
 A stage that hosts a wait window stated its free minutes as a **second value in the
 duration column when the stage is collapsed** — `12 free` then `~17 min`, two aligned
@@ -1092,6 +1095,9 @@ A future session must not build either of these ahead of its own milestone's che
 Documented so they don't come back:
 
 - Progress-styled bars on a screen shown before cooking starts.
+- A progress bar in cooking mode (B1 1c). Orientation is the "Step N of M" meta line
+  (§ *Resolved in P1 #6*); N counts started steps — orientation, not sequential completion.
+  In a parallel cook a bar fills out of plan order and reads as sequential progress it isn't.
 - Consumed/elapsed language pre-start (`"9 of 12 min used"`).
 - Three equally weighted parallel tasks with no recommended first.
 - Desktop-style horizontal cooking graph on mobile.
@@ -1263,6 +1269,18 @@ This is a Plan-tab presentation fix, not a data fix — the companion data-side 
 (`graph.py`'s `_stages_for`, §R3's monotonic-by-cook-anchor stage rule) is documented in
 `COOKING_GRAPH.md`, not here. See `docs/cooking-plan-investigation.md` §8, "Stage
 interleave for imports", for the before/after this replaced.
+
+## Resolved in B1/B2 (design freeze v1, 2026-10-07)
+
+Source: the B1/B2 design freeze (D10/D12). Documentation-only — nothing here is built yet,
+and no token, colour, type, component or interaction grammar is added.
+
+| Item | Resolution |
+|---|---|
+| Map entry point | No `Plan · Map` switch and no tabs. A secondary **"View cooking map"** action appears only when the plan has meaningful parallel work (`plan.windows.length > 0`; the scheduler already drops empty windows). It is hidden on a linear plan. Reverses the § *Resolved in M2.75* entry-point row. The Map grammar itself is unchanged. |
+| Plan structure | Cooking-order-first, extending § *Resolved in P1 #5*'s reading order: title and actions near the top; warnings beside the content they affect; sticky Start Cooking as the one PrimaryCTA. The 1r overlap bracket mark is **not** recorded here — it is new Plan-view grammar pending a render checkpoint. |
+| Stage default | Stages start **expanded inline**; collapsed-by-default is rejected. Reverses § *Resolved in M3.2* "Stage expansion state". Open, not resolved: whether the `Show full recipe` / `Show overview` toggle survives (it sat on the removed mode row). |
+| Cooking-mode progress indicator | Rejected (1c); keep "Step N of M" for linear and parallel cooking; never "X of Y done". |
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
