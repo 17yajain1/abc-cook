@@ -298,6 +298,9 @@ describe('kadai-paneer', () => {
     // "Back to <finish label>" for 10 s, then gone.
     expect(v.secondary).toEqual({ label: 'Back to Finish', solid: false, action: { kind: 'undo' } })
     expect(view(se, T0 + 34 * MIN + 10_000).secondary).toBeNull()
+    // M5: completion counting is wired behind this `finish` action, so the screen's one
+    // primary must stay exactly this — before and after the undo window — with no new action.
+    expect(view(se, T0 + 34 * MIN + 10_000).primary).toEqual(v.primary)
     expect(v.step).toBeNull()
     expect(v.next).toBeNull()
 

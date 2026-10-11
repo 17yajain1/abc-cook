@@ -14,6 +14,7 @@ import { LibraryScreen } from './library/LibraryScreen'
 import { canonicalSourceKey } from './library/sourceKey'
 import { createLibrary } from './library/store'
 import { layoutMap, type MapLayout } from './map/layout'
+import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 import type { SaveControl } from './plan/RecipeHeader'
@@ -27,6 +28,14 @@ const library = createLibrary()
  * lifetime, reading `localStorage['abc-cook:session:v1']` once at module load
  * (`@/cooking/store.ts`). `useSession` binds React to it with `useSyncExternalStore`. */
 const sessionStore = createSessionStore(window.localStorage, () => Date.now())
+
+/** M5 completion metric: confirmed session completions land in a local, de-duplicated
+ * outbox (`abc-cook:events:v1`). Nothing sends them anywhere yet — transport is later M5
+ * work. A failed append is intentionally ignored: it must never block finishing a cook. */
+const outbox = createOutbox()
+const emitCompletion = (event: SessionFinished): void => {
+  outbox.append(event)
+}
 
 type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
@@ -238,6 +247,7 @@ export default function App() {
           onGoTo={goToConflict}
           canGoTo={canGoToConflict}
           onFinish={backToPicker}
+          emitCompletion={emitCompletion}
         />
       )
     default:

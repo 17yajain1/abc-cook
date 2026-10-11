@@ -9,6 +9,7 @@ import { useSession } from '@/cooking/useSession'
 import { headerTiming } from '@/lib/duration'
 
 import { CookingShell } from './CookingShell'
+import { finishCooking, replaceSession, type SessionFinished } from './finalizeSession'
 import { ingredientsById } from './quantity'
 import { useWakeLock } from './useWakeLock'
 import {
@@ -42,6 +43,7 @@ export function CookingModeScreen({
   onGoTo,
   canGoTo,
   onFinish,
+  emitCompletion,
 }: {
   payload: RecipePlanResponse
   planKey: string
@@ -58,6 +60,9 @@ export function CookingModeScreen({
   /** P1 #6 §C4: called after the done screen's "Finished cooking" ends the session —
    * navigates to the Library (`App.tsx` passes `backToPicker`). */
   onFinish: () => void
+  /** M5: receives a confirmed session completion ("Finished cooking" tapped, or a finished
+   * session replaced through the conflict flow). `App.tsx` appends it to the local outbox. */
+  emitCompletion: (event: SessionFinished) => void
 }) {
   const model = useMemo(() => deriveCookingModel(payload), [payload])
   const ingredients = useMemo(() => ingredientsById(payload.graph.ingredients), [payload])
@@ -131,7 +136,17 @@ export function CookingModeScreen({
           // session (A) and starts this one (B) — `store.replace` (CP-A). No
           // separate `session.end()` call anywhere in this path (§3 "Central design
           // finding").
-          const result = session.replace(model, planKey, pendingReplace, payload.graph.title)
+          // `replaceSession` is that same `store.replace` dispatch, plus the M5
+          // completion event when the session being discarded was finished.
+          const result = replaceSession(
+            store,
+            model,
+            planKey,
+            pendingReplace,
+            payload.graph.title,
+            emitCompletion,
+            Date.now(),
+          )
           if (result.ok) {
             setPendingReplace(null)
             setReplaceError(false)
@@ -178,7 +193,7 @@ export function CookingModeScreen({
         runEngine(() => session.undo(model))
         return
       case 'finish':
-        runEngine(() => session.end())
+        runEngine(() => finishCooking(store, emitCompletion, Date.now()))
         onFinish()
         return
       case 'endAndExit':
