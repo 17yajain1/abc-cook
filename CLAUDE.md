@@ -11,11 +11,28 @@ The one-sentence test for every feature:
 > Does this help the user cook the dish faster or with less confusion than reading the
 > recipe would?
 
-If no, it does not ship in v1.
+If no, it does not ship in v1. This test governs cooking features.
 
-**We are not building** a recipe database, a social feed, a meal planner, a recipe
-saver, or "an app that converts recipes into pretty grids." Those are all crowded.
-See `docs/PRODUCT.md` for the competitive reasoning behind that.
+For Home, Cookbook, the public feed and the Meal Planner, the test is instead:
+
+> Does this bring the user to cook with a plan, or bring them back to do it?
+
+Cookbook, feed and planner features must lead the user toward cooking with a plan.
+
+**Scope.** The app has three pillars and a public feed, all reached from a new **Home**
+screen:
+
+1. **Copy a recipe** — import (link, Instagram, YouTube, photo, text), the Cooking Plan,
+   the Map and Cooking mode. Everything built so far lives here.
+2. **Cookbook** — saved recipes plus cook history (the existing `library/` code;
+   "Cookbook" is the user-facing name).
+3. **Meal Planner** — log meals and track nutrition. Not started; shows as "Coming soon".
+4. **Public recipes** — a feed on Home of recipes other users imported. Rules in
+   `docs/PRODUCT.md` § Public recipes.
+
+The cooking plan and scheduler stay USP #1 and the moat. The new features exist to bring
+people to a cooking plan, not to replace it. We are still not building "an app that
+converts recipes into pretty grids"; see `docs/PRODUCT.md` for the competitive reasoning.
 
 Two differentiators, in this order:
 
@@ -73,7 +90,7 @@ abc-cook/
 │   ├── COOKING_GRAPH.md       ← THE spec: schema + scheduler algorithm. Read before touching either.
 │   ├── GRAPH_VIEW.md          ← how the graph is drawn on a phone. USP #1.
 │   ├── DESIGN_SYSTEM.md       ← tokens, stage colors, component states
-│   └── ROADMAP.md             ← milestones M0–M5 and their exit criteria
+│   └── ROADMAP.md             ← milestones M0–M5, H1–H3 and their exit criteria
 ├── apps/
 │   ├── web/                   ← React + Vite PWA
 │   │   └── src/
@@ -115,9 +132,11 @@ abc-cook/
   counting-down integer in React state. Phones sleep; kitchens are slow.
 - **The frontend is a renderer of `CookingPlan`, nothing more.** It must never
   independently infer dependencies, durations, parallelism, savings, or scheduling
-  decisions. Every number on screen — cooking time, parallel prep capacity, time saved
-  — originates from the scheduler. If you see a duration in a `.tsx` file that isn't
-  read from the plan JSON, that's a bug.
+  decisions. Every cooking figure on screen — cooking time, parallel prep capacity, time
+  saved — originates from the scheduler. If you see a duration in a `.tsx` file that isn't
+  read from the plan JSON, that's a bug. The rule covers cooking figures (durations,
+  parallelism, time saved) only: social counts such as "Saved by N" come from the server,
+  and nutrition figures come from a stated data source, never an LLM.
 - **No hardcoded demo numbers.** Kadai Paneer fixture values (`9 min`, `12 min`, three
   parallel tasks) exist for tests. Production UI consumes computed `CookingPlan` data.
   Claude Code will see these numbers in Figma screenshots — do not copy them into
@@ -151,6 +170,11 @@ Mixing these up in code or copy is how the product gets muddy.
 | **Wait window** | An unattended interval that can host prep work | No |
 | **Parallel task** | A prep node the scheduler placed inside a wait window | Yes — surfaced under the wait-window field; wording derives from the host's `attention` (`DESIGN_SYSTEM.md` § WaitWindowBlock), **not** a fixed "while this cooks" (that assumes heat the graph can't confirm) |
 | **Station** | A contended resource: burner, oven, counter, sink | No |
+| **Home** | The landing screen: entry to Copy a recipe, Cookbook and Meal Planner, plus the public-recipes feed | Yes |
+| **Cookbook** | Saved recipes plus cook history. The code and folder may stay `library` (`library/`); UI copy says "Cookbook", never "Library" | Yes — "Cookbook" only |
+| **Public recipe** | A recipe whose import produced a validated Cooking Graph (not the linear fallback) and whose Visibility is on. Listed in the Home feed, de-duplicated by canonical source key | Yes |
+| **Visibility** | A per-recipe toggle, public or private. ON (public) by default; the owner can switch it off at any time | Yes |
+| **Meal Planner** | Meal log first, then nutrition tracking. Not started; "Coming soon" | Yes |
 
 ## Product copy rules
 

@@ -33,8 +33,10 @@ Three groups, and only one of them matters much.
 
 **Recipe discovery (India)** — Veg Recipes of India (~990K visits/mo), Hebbar's Kitchen
 (~680K organic/mo), Tarla Dalal (~390K/mo), Archana's Kitchen, Cookpad and Tasty (10M+
-Play installs each). These own the discovery habit. We do not compete here and should
-not try to. Their scale is the demand signal: India has an enormous recipe audience.
+Play installs each). These own the discovery habit. We do not compete as a recipe search
+or discovery destination, and should not try to. Our public feed is a by-product of
+imports, and every recipe in it carries a cooking plan, which is the differentiator.
+Their scale is the demand signal: India has an enormous recipe audience.
 
 **Recipe management** — ReciMe is the serious one: imports from Instagram/TikTok/
 YouTube/Pinterest, grocery lists, meal planning, scaling, 1M+ Play installs.
@@ -50,13 +52,14 @@ the whole pitch:
 |---|---|---|
 | Import from anywhere | ✅ | ✅ (table stakes, not a reason to exist) |
 | Clean ingredients + steps | ✅ | ✅ |
-| Organise, meal-plan, grocery list | ✅ | Not building |
+| Organise, meal-plan, grocery list | ✅ | Building, staged (Cookbook, then Meal Planner; grocery list stays Phase 3+) |
 | **Show how the dish is built** | ❌ | **✅ visual graph** |
 | **Tell you what to do while something cooks** | ❌ | **✅ scheduler** |
 | **Guide you through the cook** | Limited | **✅ cooking mode** |
 
-We should not build a better recipe saver. We should be the thing people open *after*
-they've got the recipe.
+We should not build a better recipe saver. The Cookbook is not the product; it is where
+plans live. We should be the thing people open *after* they've got the recipe, and the
+differentiator remains the plan.
 
 **Visual recipe converters** — GridRecipe (photo → grid, paid per conversion), Chart My
 Recipes (URL/photo → flowchart, voice, AI assistant), Treecipes (recipe → tree, ~500
@@ -90,12 +93,42 @@ only thing we do.
 - Local persistence of imported recipes
 
 **Out, deliberately:**
-- Accounts and social features
 - Meal planning
-- A recipe database or discovery feed
 - Grocery delivery integration (see below)
 - Video/YouTube import (do it after image and text work well)
 - Native iOS/Android apps — ship a PWA, "Add to Home Screen"
+
+Home, accounts, public recipes and the Meal Planner are staged after v0.1 — see
+`ROADMAP.md` H1–H3 and § Public recipes below.
+
+## Public recipes
+
+A feed on Home of recipes other users imported. It exists to bring people to a Cooking
+Plan, not to be a destination of its own (`CLAUDE.md`: "Cookbook, feed and planner
+features must lead the user toward cooking with a plan").
+
+**Rules**
+
+- **Public automatically on success.** An import becomes public when it succeeds, and
+  "succeeds" means it produced a validated Cooking Graph — not the plain linear-steps
+  fallback. A fallback import is never listed.
+- **Visibility toggle.** Each recipe has one, ON (public) by default. The owner can switch
+  it off at any time to make the recipe private. The save screen must show the default
+  clearly; a recipe must never become public without that default being visible.
+- **Add to Cookbook.** Any user can add a public recipe to their own Cookbook.
+- **De-duplicate by canonical source key** (`library/sourceKey.ts`). The same video
+  copied by 50 users is one public recipe with "Saved by 50", not 50 cards.
+- **Attribution.** Always credit the original creator: handle, platform, and a link back
+  to the source. A public recipe without attribution is not listed.
+- **Report and takedown.** Every public recipe has a "Report" action. A takedown request
+  from the original creator removes the recipe from the feed.
+- **Accounts and a server-side store.** Public recipes need accounts and Supabase.
+  Today the Cookbook is `localStorage` only.
+
+**Not yet decided (settle in H2 before building, do not invent):** who reviews reports
+and how fast; whether a taken-down or switched-private recipe stays in the Cookbooks of
+users who already added it; which copy represents a deduplicated recipe (first import,
+latest, best-validated); how an existing `localStorage` Cookbook migrates to an account.
 
 ## Ingredient shopping — Phase 3+, not now
 
