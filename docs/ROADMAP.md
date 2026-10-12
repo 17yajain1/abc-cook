@@ -239,6 +239,30 @@ per import.
 
 ---
 
+## H1 — Home shell  ·  scope not yet estimated
+
+*Placed before M5 by the owner's decision. H2 and H3 follow M5.*
+
+The Home screen, a bottom nav, three tiles wired to existing screens (Copy a recipe,
+Cookbook, Meal Planner as "Coming soon"), and the public-recipes feed rendered from a
+typed mock source. No accounts, no server. **The feed section is hidden behind a flag
+until H2.**
+
+The Home visual register is deferred: `DESIGN_SYSTEM.md` has no Home register yet, and
+none is written until the owner approves a rendered design. Per `CLAUDE.md` § Working
+style, render one Home screen and put the screenshot in front of the owner before
+building the rest.
+
+The mock feed sits behind one interface that H2 replaces. No hand-written TypeScript
+mirror of a Pydantic model survives past H1 (`CLAUDE.md` schema rule).
+
+**Exit:** the owner has approved a rendered Home screenshot at 390×844, and the register
+it implies is recorded in `DESIGN_SYSTEM.md`. Each tile reaches its existing screen; Meal
+Planner shows "Coming soon" and nothing behind it. With the flag off, the feed is absent;
+with it on, a feed card leads to a Cooking Plan, not a dead end. `vitest` and `lint` green.
+
+---
+
 ## M5 — Ship to ten people  ·  ~2 evenings
 
 Deploy. Supabase persistence. A crude usage log: imports, plans opened, cooking sessions
@@ -248,6 +272,34 @@ started, cooking sessions *finished*, parallel tasks completed.
 cooking session. That last number is the only one that matters — the honest question
 this milestone answers is whether anyone actually cooks with a phone in this mode, or
 whether the plan is admired and then abandoned at the stove.
+
+---
+
+## H2 — Public recipes  ·  scope not yet estimated
+
+Accounts, Supabase tables, the visibility toggle, the feed API, de-duplication by
+canonical source key, attribution and report — per `PRODUCT.md` § Public recipes. Settle
+that section's "not yet decided" list before starting.
+
+**Exit:** with two real accounts: user A imports a link and the recipe appears in the feed
+only if the import produced a validated Cooking Graph — a linear-fallback import never
+appears. The save screen shows visibility ON by default; switching it off removes the
+recipe from the feed. User B adds it to their Cookbook. Three users importing the same
+source key produce one feed card reading "Saved by 3". Every card credits the creator
+(handle, platform, link back), and "Report" records a report. `pytest` and `vitest` green.
+
+---
+
+## H3 — Meal Planner  ·  scope not yet estimated
+
+Meal log first, then nutrition. Stages, in this order: log meals; then nutrition on top
+of the log. Do not start nutrition until the log has been used for real.
+
+**Exit:** *log* — you log every meal for a week using the app, and note every time you
+gave up or went elsewhere. *Nutrition* — per-meal and per-day totals shown, computed
+deterministically from a stated data source and never estimated by an LLM per interaction
+(`CLAUDE.md`: one LLM call per import). Logging a Cookbook recipe offers a path into its
+Cooking Plan. The nutrition data source is not yet chosen — decide it before starting.
 
 ---
 
