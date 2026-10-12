@@ -312,6 +312,7 @@ Cooking Plan. The nutrition data source is not yet chosen — decide it before s
 5. YouTube and Instagram import
 6. Printable IKEA-style sheet — a renderer of the same graph, cheap and very shareable
 7. Ingredient shopping (`PRODUCT.md` § Phase 3+)
+8. Image import (photo / screenshots) — after H2
 
 ---
 
