@@ -17,6 +17,9 @@
   --color-home-sage-text: #5f7148;
   /* Amends the render: #5f7148 on the sage chip is 4.0:1, under AA at 12px. */
   --color-home-sage-chip-text: #4b5c36;
+  /* Stacked-thumbnail fallback tints (Cookbook tile). */
+  --color-home-tint-1: #f6dfc8;
+  --color-home-tint-2: #e8c4a2;
   --color-home-rule: #eadfd3;
   --color-home-thumb: #f1e9e0;
   --color-home-skeleton-1: #f3ece4;

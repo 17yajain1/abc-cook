@@ -4,7 +4,7 @@ import type { Phase } from '@/import/useImportJob'
 
 import { displayUrl, platformOfUrl } from './clipboard'
 import { SHEET } from './copy'
-import { CloseIcon, InstagramIcon, LinkIcon, TextLinesIcon, YoutubeIcon } from './icons'
+import { CloseIcon, InstagramIcon, LinkIcon, YoutubeIcon } from './icons'
 
 /** The bottom sheet behind the hero's CTA: a clipboard shortcut (when one was found), the
  * Paste text route, and a URL field. Import itself runs in the shell's `useImportJob`; the
@@ -81,22 +81,7 @@ export function CopySheet({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={onPasteText}
-          className="mt-4 flex h-14 w-full items-center justify-center gap-2.5 rounded-home-card border border-home-rule bg-home-ground text-[15px] font-semibold"
-        >
-          <TextLinesIcon className="text-[22px] text-home-terracotta" />
-          {SHEET.pasteText}
-        </button>
-
-        <div className="my-4 flex items-center gap-3 text-[13px] text-home-ink-2">
-          <div className="h-px flex-1 bg-home-rule" />
-          {SHEET.or}
-          <div className="h-px flex-1 bg-home-rule" />
-        </div>
-
-        <div className="flex h-[54px] items-center gap-3 rounded-[14px] border border-home-rule bg-home-ground px-4">
+        <div className="mt-5 flex h-[54px] items-center gap-3 rounded-[14px] border border-home-rule bg-home-ground px-4">
           <LinkIcon className="shrink-0 text-[20px] text-home-ink-2" />
           <input
             type="url"
@@ -149,6 +134,19 @@ export function CopySheet({
           className="mt-4 h-14 w-full rounded-full bg-home-terracotta text-[15px] font-semibold text-home-ground disabled:bg-[#f1e7de] disabled:text-[#8c7a6f]"
         >
           {SHEET.copyIt}
+        </button>
+
+        <div className="my-3 flex items-center gap-3 text-[13px] text-home-ink-2">
+          <div className="h-px flex-1 bg-home-rule" />
+          {SHEET.or}
+          <div className="h-px flex-1 bg-home-rule" />
+        </div>
+        <button
+          type="button"
+          onClick={onPasteText}
+          className="mx-auto block h-11 text-[13px] text-home-ink-2 underline underline-offset-4"
+        >
+          {SHEET.pasteText}
         </button>
       </div>
     </div>

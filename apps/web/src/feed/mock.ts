@@ -30,9 +30,9 @@ const UNDER_MINUTES = 30
 
 export const MOCK_FILTERS: FeedFilter[] = [
   { id: 'all', label: 'All', emoji: null, matches: () => true },
-  { id: 'under30', label: 'Under 30 min', emoji: '⏱️', matches: (i) => i.totalMin < UNDER_MINUTES },
-  { id: 'veg', label: 'Veg', emoji: '🥬', matches: (i) => i.diet === 'veg' },
-  { id: 'indian', label: 'Indian', emoji: '🍛', matches: (i) => /indian|hyderabadi/i.test(i.cuisine ?? '') },
+  { id: 'under30', label: 'Under 30 min', emoji: null, matches: (i) => i.totalMin < UNDER_MINUTES },
+  { id: 'veg', label: 'Veg', emoji: null, matches: (i) => i.diet === 'veg' },
+  { id: 'indian', label: 'Indian', emoji: null, matches: (i) => /indian|hyderabadi/i.test(i.cuisine ?? '') },
 ]
 
 interface Entry {

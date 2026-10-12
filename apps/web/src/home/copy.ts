@@ -6,7 +6,7 @@ export const WORDMARK = 'ABC Cook'
 export const HERO = {
   title: 'Copy a recipe',
   // No "photo": image import doesn't exist yet (ROADMAP § Later).
-  sub: 'Paste a reel, link or recipe text… Get a step-by-step cooking plan.',
+  sub: 'Paste a reel, link or recipe text. Get a step-by-step cooking plan.',
   worksWith: 'Works with',
   cta: 'Paste a link',
   /** The two lines of the Now / Meanwhile card. Names only, deliberately without a
@@ -59,7 +59,7 @@ export const SHEET = {
   title: 'Copy a recipe',
   sub: 'We’ll read it and build your cooking plan.',
   clipboardFound: 'Found a link in your clipboard',
-  pasteText: 'Paste text',
+  pasteText: 'Paste recipe text instead',
   or: 'or',
   urlPlaceholder: 'Paste any URL',
   paste: 'Paste',
