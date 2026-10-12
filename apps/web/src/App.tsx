@@ -10,7 +10,6 @@ import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
 import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
-import { LibraryScreen } from './library/LibraryScreen'
 import { canonicalSourceKey } from './library/sourceKey'
 import { createLibrary } from './library/store'
 import { layoutMap, type MapLayout } from './map/layout'
@@ -18,6 +17,8 @@ import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 import type { SaveControl } from './plan/RecipeHeader'
+import { NO_IMPORT_META } from './feed/saveFromFeed'
+import { AppShell } from './shell/AppShell'
 
 /** Single instance for the app's lifetime — reads `localStorage` once, synchronously,
  * at module load; every save/read after that goes through this same closure (M2.12
@@ -40,7 +41,7 @@ const emitCompletion = (event: SessionFinished): void => {
 type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
 type View =
-  | { kind: 'picker' }
+  | { kind: 'home' }
   | { kind: 'import' }
   | { kind: 'loading'; recipeId: string }
   | {
@@ -60,7 +61,7 @@ type View =
   | { kind: 'error'; message: string }
 
 export default function App() {
-  const [view, setView] = useState<View>({ kind: 'picker' })
+  const [view, setView] = useState<View>({ kind: 'home' })
 
   const openRecipe = useCallback((recipeId: string) => {
     setView({ kind: 'loading', recipeId })
@@ -99,7 +100,23 @@ export default function App() {
     })
   }, [])
 
-  const backToPicker = useCallback(() => setView({ kind: 'picker' }), [])
+  // A feed recipe opens as an unsaved import, so the header's Save and `saveCurrent` handle
+  // "save from the plan" with no new path. TODO(H2): `emitCompletion` records only
+  // `plan_key`, so a feed-opened plan reports `import:<graph.id>` (or `library:<id>` once
+  // saved) — H2 must decide whether feed opens get their own key.
+  const openFeedRecipe = useCallback((payload: RecipePlanResponse) => {
+    setView({
+      kind: 'plan',
+      plan: derivePlan(payload),
+      map: layoutMap(payload),
+      origin: { kind: 'import', payload, importMeta: NO_IMPORT_META },
+      saveState: { status: 'idle' },
+      importMeta: NO_IMPORT_META,
+      payload,
+    })
+  }, [])
+
+  const backToHome = useCallback(() => setView({ kind: 'home' }), [])
   const openImport = useCallback(() => setView({ kind: 'import' }), [])
   // Every finished import lands in the library straight away; re-importing the same
   // source replaces its entry (`library.save` dedups by source key). On a failed write
@@ -208,7 +225,7 @@ export default function App() {
 
   switch (view.kind) {
     case 'import':
-      return <ImportScreen onImported={onImported} onCancel={backToPicker} />
+      return <ImportScreen onImported={onImported} onCancel={backToHome} />
     case 'loading':
       return <Centered>Scheduling {view.recipeId}…</Centered>
     case 'error':
@@ -217,7 +234,7 @@ export default function App() {
           <p className="text-[15px] text-ink">{view.message}</p>
           <button
             type="button"
-            onClick={backToPicker}
+            onClick={backToHome}
             className="mt-5 rounded-control bg-signal px-4 py-2 text-[15px] font-semibold text-paper"
           >
             Back
@@ -230,7 +247,7 @@ export default function App() {
           key={planKey(view.origin)}
           plan={view.plan}
           map={view.map}
-          onPickAnother={backToPicker}
+          onPickAnother={backToHome}
           onStartCooking={startCooking}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}
@@ -246,17 +263,21 @@ export default function App() {
           onExit={exitCooking}
           onGoTo={goToConflict}
           canGoTo={canGoToConflict}
-          onFinish={backToPicker}
+          onFinish={backToHome}
           emitCompletion={emitCompletion}
         />
       )
     default:
       return (
-        <LibraryScreen
-          savedRecipes={library.list()}
+        <AppShell
+          library={library}
+          sessionStore={sessionStore}
+          onResume={goToConflict}
           onOpenSaved={openSaved}
           onPick={openRecipe}
           onImport={openImport}
+          onImported={onImported}
+          onOpenFeedRecipe={openFeedRecipe}
         />
       )
   }

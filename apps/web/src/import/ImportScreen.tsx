@@ -1,32 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import type { ImportJobResponse, NormalizedIngredient } from '@abc-cook/schema'
 
-import type {
-  ImportJobResponse,
-  ImportMeta,
-  ImportResult,
-  NormalizedIngredient,
-  RecipePlanResponse,
-  SourcePreview,
-} from '@abc-cook/schema'
-
-import { ApiError, pollImport, startImport, startImportText } from '../api/client'
-import { layoutMap, type MapLayout } from '../map/layout'
-import { derivePlan, type RenderPlan } from '../plan/derive'
 import { notGroundedCopy } from './notGroundedCopy'
 import { RecipePreview } from './RecipePreview'
-
-/** No standalone `ImportStatus` export exists in the generated package (it's inlined
- * as a literal union on `ImportJobResponse.status`) — derive it rather than duplicate
- * the status union by hand, which CLAUDE.md's schema rule forbids. */
-type ImportStatus = ImportJobResponse['status']
-
-const POLL_INTERVAL_MS = 1200
-const MAX_POLLS = 250
-/** ~5 min before asking the user. Measured 2026-09-24: a clean GPT-5-mini import took
- * 124s (112s in the one extraction call), and a repair pass adds a Sonnet call on top.
- * Hitting the ceiling never abandons the job — the `slow` phase keeps its id so
- * "Keep waiting" resumes polling; the server's own per-call timeouts are what end a
- * genuinely stuck job (as `failed`). */
+import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
 
 /** A7: one line per real pipeline stage (design doc §4.5), in the words the cook would use.
  * No percentages or invented progress — a line changes only when the server's status does.
@@ -50,150 +26,28 @@ function PreviewFooter() {
 
 const NO_RECIPE_COPY = 'That page doesn’t have a recipe we can read.'
 
-type Phase =
-  | { kind: 'entry' }
-  | { kind: 'polling'; status: ImportStatus; preview: SourcePreview | null }
-  | { kind: 'not_grounded'; job: ImportJobResponse }
-  | { kind: 'no_recipe' }
-  | { kind: 'paste'; error: string | null }
-  | { kind: 'error'; message: string; preview: SourcePreview | null }
-  | { kind: 'slow'; jobId: string; token: number; status: ImportStatus; preview: SourcePreview | null }
+/** Phases `ImportProgress` takes over the whole screen for. `entry`, `slow` and `error`
+ * without a preview stay inline wherever the entry form lives (here, or the Home Copy sheet). */
+export function isProgressPhase(phase: Phase): boolean {
+  return (
+    phase.kind === 'polling' ||
+    phase.kind === 'no_recipe' ||
+    phase.kind === 'paste' ||
+    phase.kind === 'not_grounded' ||
+    (phase.kind === 'error' && phase.preview != null)
+  )
+}
 
-/**
- * Paste-a-link import flow (design doc §4.5/§12 step 12): submit a URL, poll the job,
- * and hand a finished plan back to `App` — the same `RenderPlan`/`MapLayout` shape
- * `fetchPlan` produces, so it reaches the existing `PlanScreen` unchanged. A Tier 0
- * (`method_not_grounded`) result renders inline here instead, since there is no plan
- * to hand off.
- */
-export function ImportScreen({
-  onImported,
+/** The non-entry branches of the import flow: polling, no recipe, paste, error with a
+ * preview, no method found. Render only when `isProgressPhase(job.phase)`. */
+export function ImportProgress({
+  job,
   onCancel,
 }: {
-  onImported: (
-    plan: RenderPlan,
-    map: MapLayout,
-    payload: RecipePlanResponse,
-    importMeta: ImportMeta,
-  ) => void
+  job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
-  const [url, setUrl] = useState('')
-  const [text, setText] = useState('')
-
-  // Bumped on every new submit and on unmount, so a stale poll chain (from a previous
-  // submit, or one that outlives the component) can never overwrite newer state.
-  const tokenRef = useRef(0)
-  const timerRef = useRef<number | undefined>(undefined)
-
-  useEffect(
-    () => () => {
-      tokenRef.current += 1
-      window.clearTimeout(timerRef.current)
-    },
-    [],
-  )
-
-  const poll = (jobId: string, token: number, attempt: number) => {
-    pollImport(jobId)
-      .then((job) => {
-        if (tokenRef.current !== token) return
-
-        if (job.status === 'done' && job.result?.graph && job.result.plan && job.result.stages) {
-          const payload = {
-            graph: job.result.graph,
-            plan: job.result.plan,
-            stages: job.result.stages,
-            summary: job.result.summary ?? null,
-          }
-          onImported(
-            derivePlan(payload, job.result.provenance ?? null),
-            layoutMap(payload),
-            payload,
-            importMetaFrom(job.result),
-          )
-          return
-        }
-        if (job.status === 'method_not_grounded') {
-          setPhase({ kind: 'not_grounded', job })
-          return
-        }
-        if (job.status === 'no_recipe_found') {
-          setPhase({ kind: 'no_recipe' })
-          return
-        }
-        if (job.status === 'failed') {
-          setPhase({
-            kind: 'error',
-            message: job.error ?? 'The import failed.',
-            preview: job.preview ?? null,
-          })
-          return
-        }
-        const preview = job.preview ?? null
-        if (attempt >= MAX_POLLS) {
-          setPhase({ kind: 'slow', jobId, token, status: job.status, preview })
-          return
-        }
-        setPhase({ kind: 'polling', status: job.status, preview })
-        timerRef.current = window.setTimeout(
-          () => poll(jobId, token, attempt + 1),
-          POLL_INTERVAL_MS,
-        )
-      })
-      .catch((err: unknown) => {
-        if (tokenRef.current !== token) return
-        setPhase({ kind: 'error', message: messageFor(err), preview: null })
-      })
-  }
-
-  const submit = () => {
-    const trimmed = url.trim()
-    if (!trimmed) return
-    const token = ++tokenRef.current
-    setPhase({ kind: 'polling', status: 'acquiring', preview: null })
-    startImport(trimmed)
-      .then(({ job_id }) => {
-        if (tokenRef.current !== token) return
-        poll(job_id, token, 0)
-      })
-      .catch((err: unknown) => {
-        if (tokenRef.current !== token) return
-        setPhase({ kind: 'error', message: messageFor(err), preview: null })
-      })
-  }
-
-  const submitText = () => {
-    if (!text.trim()) return
-    const token = ++tokenRef.current
-    setPhase({ kind: 'polling', status: 'acquiring', preview: null })
-    startImportText(text)
-      .then(({ job_id }) => {
-        if (tokenRef.current !== token) return
-        poll(job_id, token, 0)
-      })
-      .catch((err: unknown) => {
-        if (tokenRef.current !== token) return
-        // A too-short / too-long paste is the API's own 422 sentence: show it where the
-        // text still is, so the user can fix it rather than start over.
-        setPhase({ kind: 'paste', error: messageFor(err) })
-      })
-  }
-
-  const keepWaiting = () => {
-    if (phase.kind !== 'slow' || tokenRef.current !== phase.token) return
-    setPhase({ kind: 'polling', status: phase.status, preview: phase.preview })
-    poll(phase.jobId, phase.token, 0)
-  }
-
-  const reset = () => {
-    tokenRef.current += 1
-    window.clearTimeout(timerRef.current)
-    setUrl('')
-    setText('')
-    setPhase({ kind: 'entry' })
-  }
+  const { phase, setPhase, text, setText, submitText, reset } = job
 
   if (phase.kind === 'polling') {
     // Once the source's own recipe is readable, show it and keep the plan-building line
@@ -254,6 +108,28 @@ export function ImportScreen({
     return <NotGroundedResult job={phase.job} onTryAnother={reset} onCancel={onCancel} />
   }
 
+  return null
+}
+
+/**
+ * Paste-a-link import flow (design doc §4.5/§12 step 12): submit a URL, poll the job,
+ * and hand a finished plan back to `App` — the same `RenderPlan`/`MapLayout` shape
+ * `fetchPlan` produces, so it reaches the existing `PlanScreen` unchanged. A Tier 0
+ * (`method_not_grounded`) result renders inline here instead, since there is no plan
+ * to hand off.
+ */
+export function ImportScreen({
+  onImported,
+  onCancel,
+}: {
+  onImported: OnImported
+  onCancel: () => void
+}) {
+  const job = useImportJob(onImported)
+  const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
+
+  if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />
+
   return (
     <div className="flex h-full flex-col bg-paper px-5 pt-16">
       <h1 className="text-[22px] font-semibold text-ink">Add a recipe</h1>
@@ -289,7 +165,7 @@ export function ImportScreen({
 
       <button
         type="button"
-        onClick={submit}
+        onClick={() => submit()}
         disabled={!url.trim()}
         className="mt-4 rounded-control bg-signal py-3 text-[15px] font-semibold text-paper disabled:opacity-40"
       >
@@ -490,24 +366,3 @@ function groupIngredients(
   return groups
 }
 
-/** A6: import-status fields the frozen `RecipePlanResponse` doesn't carry, computed
- * once here so App/PlanScreen/the saved-library entry all thread the same value
- * rather than re-deriving `degraded` at each hop. */
-function importMetaFrom(result: ImportResult): ImportMeta {
-  const warnings = result.warnings ?? []
-  return {
-    warnings,
-    review_recommended: result.review_recommended ?? false,
-    sources: result.sources ?? [],
-    provenance: result.provenance ?? null,
-    degraded: warnings.includes('degraded'),
-  }
-}
-
-function messageFor(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.status === 0 || err.status === 422) return err.message
-    return `The server had a problem (${err.status}).`
-  }
-  return 'Something went wrong starting the import.'
-}

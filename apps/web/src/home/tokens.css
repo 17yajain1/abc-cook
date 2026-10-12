@@ -1,0 +1,86 @@
+/* Home register tokens (docs/DESIGN_SYSTEM.md § Register: Home and browse screens).
+   Values read from the owner-approved study render. Every name is prefixed `home-` so
+   nothing here can be confused with, or override, a Plan token (`paper`, `ink`, `signal`,
+   `--radius-control`): no Home component uses those, and no Plan component uses these. */
+@theme {
+  --color-home-ground: #fbf8f4;
+  --color-home-ink: #23100a;
+  --color-home-ink-2: #6b5a50;
+  --color-home-surface: #ffffff;
+  --color-home-terracotta: #af5428;
+  --color-home-terracotta-text: #a9481a;
+  --color-home-peach: #fcefe2;
+  --color-home-peach-rule: #f1dcc6;
+  --color-home-sage: #eceee1;
+  --color-home-sage-rule: #d9dec8;
+  --color-home-sage-accent: #dce2cc;
+  --color-home-sage-text: #5f7148;
+  /* Amends the render: #5f7148 on the sage chip is 4.0:1, under AA at 12px. */
+  --color-home-sage-chip-text: #4b5c36;
+  /* Stacked-thumbnail fallback tints (Cookbook tile). */
+  --color-home-tint-1: #f6dfc8;
+  --color-home-tint-2: #e8c4a2;
+  --color-home-rule: #eadfd3;
+  --color-home-thumb: #f1e9e0;
+  --color-home-skeleton-1: #f3ece4;
+  --color-home-skeleton-2: #f6f0e9;
+  --color-home-veg: #2f8a3e;
+  --color-home-nonveg: #b3261e;
+
+  --radius-home-tile: 20px;
+  --radius-home-card: 16px;
+  --radius-home-mini: 12px;
+
+  /* The bottom nav only. Nothing else on Home carries a shadow. */
+  --shadow-home-nav: 0 8px 24px rgba(35, 16, 10, 0.08);
+}
+
+/* The page behind a Home-register screen. `AppShell` sets `data-surface="home"` on <html>
+   while one is showing, so the safe-area strip and over-scroll are the Home ground rather
+   than the Plan's paper. Plan and Cooking views never set it. The root takes the ground
+   here; `body` does so only on phones (below), so a wide window shows the Plan grey. */
+html[data-surface='home'] #root {
+  background: var(--color-home-ground);
+}
+
+/* Below 600px (every phone) a Home screen fills the whole viewport: no 390px cap, and
+   `body` is the Home ground too, so there are no grey strips and over-scroll matches. From
+   600px up, the centred 390px column on the Plan's grey is kept. */
+@media (max-width: 599px) {
+  html[data-surface='home'] #root {
+    width: 100%;
+    max-width: none;
+  }
+  html[data-surface='home'] body {
+    background: var(--color-home-ground);
+  }
+}
+
+/* Home screens own the top safe-area inset (a small fixed gap plus the inset), so the
+   root must not add it as well: counted twice, the wordmark sat ~110px down on a notched
+   phone. Plan-register screens keep the root's inset (index.css). */
+html[data-surface='home'] #root {
+  padding-top: 0;
+}
+
+/* The floating nav: its height and its offset from the bottom edge (plus the inset). */
+:root {
+  --home-nav-height: 64px;
+  --home-nav-offset: 20px;
+}
+
+/* Room for the last row to clear the nav: nav height + its bottom offset + a 16px breath
+   + the home-indicator inset. */
+.home-nav-clearance {
+  padding-bottom: calc(
+    var(--home-nav-height) + var(--home-nav-offset) + 16px + env(safe-area-inset-bottom)
+  );
+}
+
+/* Scrolling Home-register screen: the gap above the wordmark / title, and nav clearance. */
+.home-page {
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: calc(
+    var(--home-nav-height) + var(--home-nav-offset) + 16px + env(safe-area-inset-bottom)
+  );
+}

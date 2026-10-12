@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './home/tokens.css';
 
 /* Archivo, self-hosted and subset. The M2 no-webfont rule is kept in intent and relaxed
    in mechanism: it was written against a render-blocking round trip to Google Fonts.
