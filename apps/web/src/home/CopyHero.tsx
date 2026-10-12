@@ -7,7 +7,7 @@ import { InstagramIcon, LinkIcon, TextLinesIcon, YoutubeIcon } from './icons'
  * in a circle at the right and a Now / Meanwhile card (names only) over its corner. */
 export function CopyHero({ onOpen }: { onOpen: () => void }) {
   return (
-    <section className="relative h-[252px] overflow-hidden rounded-home-tile bg-home-terracotta text-home-ground">
+    <section className="relative h-[220px] overflow-hidden rounded-home-tile bg-home-terracotta text-home-ground">
       <img
         src={heroPhoto}
         alt=""
@@ -15,7 +15,7 @@ export function CopyHero({ onOpen }: { onOpen: () => void }) {
       />
       <div className="relative flex h-full flex-col px-5 pb-4 pt-5">
         <h2 className="text-[30px] font-bold leading-8 tracking-[-0.5px]">{HERO.title}</h2>
-        <p className="mt-2 max-w-[165px] text-[15px] leading-[18px]">{HERO.sub}</p>
+        <p className="mt-2 max-w-[190px] text-[15px] leading-[18px]">{HERO.sub}</p>
         <div className="mt-2.5 flex items-center gap-2 text-[13px] text-home-ground/70">
           <span>{HERO.worksWith}</span>
           <LinkIcon className="text-[16px]" />
@@ -31,15 +31,13 @@ export function CopyHero({ onOpen }: { onOpen: () => void }) {
           {HERO.cta}
         </button>
       </div>
-      <div className="absolute bottom-3 right-3 flex w-[150px] flex-col gap-1.5">
-        <p className="text-[11px] leading-[14px] text-home-ground">{HERO.exampleCaption}</p>
-        <div className="rounded-home-mini bg-home-surface p-2.5 text-home-ink">
-          <p className="text-[12px] font-semibold">{HERO.now}</p>
-          <p className="text-[14px] font-semibold leading-[17px]">{HERO.nowStep}</p>
-          <div className="my-1.5 h-px bg-home-rule" />
-          <p className="text-[12px] font-semibold text-home-sage-text">{HERO.meanwhile}</p>
-          <p className="text-[14px] font-semibold leading-[17px]">{HERO.meanwhileStep}</p>
-        </div>
+      <div className="absolute bottom-3 right-3 w-[150px] rounded-home-mini bg-home-surface p-2.5 text-home-ink">
+        <p className="mb-1 text-[12px] text-home-ink-2">{HERO.exampleLabel}</p>
+        <p className="text-[12px] font-semibold">{HERO.now}</p>
+        <p className="text-[14px] font-semibold leading-[17px]">{HERO.nowStep}</p>
+        <div className="my-1.5 h-px bg-home-rule" />
+        <p className="text-[12px] font-semibold text-home-sage-text">{HERO.meanwhile}</p>
+        <p className="text-[14px] font-semibold leading-[17px]">{HERO.meanwhileStep}</p>
       </div>
     </section>
   )

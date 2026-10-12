@@ -26,7 +26,10 @@ export function ContinueStrip({ info, onResume }: { info: ContinueInfo; onResume
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold leading-[19px]">{info.title}</p>
-        {info.step && (
+        {info.state === 'stale' ? (
+          <p className="text-[13px] leading-[17px] text-home-ink-2">{CONTINUE.leftAWhileAgo}</p>
+        ) : (
+          info.step && (
           <>
             <p className="text-[13px] leading-[17px] text-home-ink-2">
               {CONTINUE.stepLine(info.step.n, info.step.total)}
@@ -38,6 +41,7 @@ export function ContinueStrip({ info, onResume }: { info: ContinueInfo; onResume
               />
             </div>
           </>
+          )
         )}
       </div>
       <button

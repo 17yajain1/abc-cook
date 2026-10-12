@@ -15,12 +15,13 @@ export const HERO = {
   nowStep: 'Temper jeera',
   meanwhile: 'Meanwhile',
   meanwhileStep: 'Chop tomatoes',
-  /** Under the example card, so it reads as an example and not a live status. */
-  exampleCaption: 'Your plan tells you what to do now, and what to do meanwhile.',
+  /** A label inside the card, so it reads as an example and not a live status. */
+  exampleLabel: 'Example',
 } as const
 
 export const CONTINUE = {
   resume: 'Resume',
+  leftAWhileAgo: 'Left a while ago',
   resumeLabel: (title: string) => `Resume cooking ${title}`,
   stepLine: (n: number, total: number) => `Step ${n} of ${total}`,
 } as const

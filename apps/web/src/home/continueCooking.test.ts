@@ -52,9 +52,17 @@ describe('selectContinue', () => {
     expect(info?.sourceKey).toBeNull()
   })
 
-  it('hides finished, stale and legacy (no totalMin) sessions', () => {
+  it('shows a stale session with its state and no step line', () => {
+    const info = selectContinue(session('library:abc'), T0 + 500 * HOUR, libraryEntry)
+    expect(info).toMatchObject({ planKey: 'library:abc', title: 'Kadai paneer', state: 'stale', step: null })
+  })
+
+  it('marks a live session active', () => {
+    expect(selectContinue(session('library:abc'), T0 + 60_000, libraryEntry)?.state).toBe('active')
+  })
+
+  it('hides finished and legacy (no totalMin) sessions', () => {
     expect(selectContinue(session('library:abc', { finishedAt: T0 + 1000 }), T0 + 2000, libraryEntry)).toBeNull()
-    expect(selectContinue(session('library:abc'), T0 + 500 * HOUR, libraryEntry)).toBeNull()
     expect(selectContinue(session('library:abc', { totalMin: undefined }), T0 + 1000, libraryEntry)).toBeNull()
   })
 
