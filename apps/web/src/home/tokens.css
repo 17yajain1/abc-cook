@@ -37,16 +37,20 @@
 
 /* The page behind a Home-register screen. `AppShell` sets `data-surface="home"` on <html>
    while one is showing, so the safe-area strip and over-scroll are the Home ground rather
-   than the Plan's paper. Plan and Cooking views never set it. */
-/* Only the column: outside it (a viewport wider than 390px) `body` keeps the Plan's sunk
-   page colour, so Home sits in a column exactly like the Plan screen does. */
+   than the Plan's paper. Plan and Cooking views never set it. The root takes the ground
+   here; `body` does so only on phones (below), so a wide window shows the Plan grey. */
 html[data-surface='home'] #root {
   background: var(--color-home-ground);
 }
 
-/* At or below the column width the column IS the viewport, so `body` (over-scroll, the
-   strip behind the safe-area insets) must be the Home ground too. */
-@media (max-width: 390px) {
+/* Below 600px (every phone) a Home screen fills the whole viewport: no 390px cap, and
+   `body` is the Home ground too, so there are no grey strips and over-scroll matches. From
+   600px up, the centred 390px column on the Plan's grey is kept. */
+@media (max-width: 599px) {
+  html[data-surface='home'] #root {
+    width: 100%;
+    max-width: none;
+  }
   html[data-surface='home'] body {
     background: var(--color-home-ground);
   }
