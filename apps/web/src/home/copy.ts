@@ -23,6 +23,15 @@ export const CONTINUE = {
   stepLine: (n: number, total: number) => `Step ${n} of ${total}`,
 } as const
 
+export const DISCOVER = {
+  title: 'Discover recipes',
+  seeAll: 'See all',
+  empty: 'Nothing matches that filter yet.',
+  back: 'Back to Home',
+  cardView: 'Card view',
+  listView: 'List view',
+} as const
+
 export const TILES = {
   cookbookTitle: 'My cookbook',
   cookbookEmpty: 'Your first recipe lands here',

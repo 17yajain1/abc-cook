@@ -5,6 +5,9 @@ import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 import type { SessionStore } from '@/cooking/store'
 import type { Library } from '@/library/store'
 import { selectContinue } from '@/home/continueCooking'
+import { DiscoverScreen } from '@/feed/DiscoverScreen'
+import { DiscoverSection } from '@/feed/DiscoverSection'
+import { useFeed } from '@/feed/useFeed'
 import { CopySheet } from '@/home/CopySheet'
 import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
@@ -16,7 +19,7 @@ import type { RenderPlan } from '@/plan/derive'
 import { LibraryScreen } from '@/library/LibraryScreen'
 
 import { BottomNav, type Tab } from './BottomNav'
-import { devToolsEnabled } from './flags'
+import { devToolsEnabled, feedEnabled } from './flags'
 
 /** Remembered across the shell unmounting (opening a plan replaces it), so leaving a plan
  * returns to the tab the person was on. */
@@ -35,6 +38,7 @@ export function AppShell({
   onPick,
   onImport,
   onImported,
+  onOpenFeedRecipe,
 }: {
   library: Library
   sessionStore: SessionStore
@@ -49,10 +53,13 @@ export function AppShell({
     payload: RecipePlanResponse,
     importMeta: ImportMeta,
   ) => void
+  onOpenFeedRecipe: (payload: RecipePlanResponse) => void
 }) {
   const [tab, setTabState] = useState<Tab>(lastTab)
+  const [seeAll, setSeeAll] = useState(false)
   const setTab = (next: Tab) => {
     lastTab = next
+    setSeeAll(false)
     setTabState(next)
   }
 
@@ -63,6 +70,8 @@ export function AppShell({
   const job = useImportJob(onImported)
   const clipboard = useClipboardUrl()
   const [sheetOpen, setSheetOpen] = useState(false)
+  // Null with the flag off: nothing loads, and the section is not rendered at all.
+  const feed = useFeed(feedEnabled(), library, onOpenFeedRecipe)
 
   const openSheet = () => {
     setSheetOpen(true)
@@ -77,13 +86,15 @@ export function AppShell({
 
   return (
     <div data-testid="app-shell" className="relative h-full overflow-hidden bg-home-ground text-home-ink">
-      {tab === 'home' && <HomeScreen
+      {tab === 'home' && seeAll && feed && <DiscoverScreen feed={feed} onBack={() => setSeeAll(false)} />}
+      {tab === 'home' && !(seeAll && feed) && <HomeScreen
           recipes={library.list()}
           continueInfo={continueInfo}
           onResume={onResume}
           onOpenCopy={openSheet}
           onOpenCookbook={() => setTab('cookbook')}
           onOpenPlanner={() => setTab('planner')}
+          discover={feed && <DiscoverSection feed={feed} onSeeAll={() => setSeeAll(true)} />}
         />}
       {tab === 'cookbook' && (
         <LibraryScreen

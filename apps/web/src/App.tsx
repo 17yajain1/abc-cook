@@ -17,6 +17,7 @@ import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 import type { SaveControl } from './plan/RecipeHeader'
+import { NO_IMPORT_META } from './feed/saveFromFeed'
 import { AppShell } from './shell/AppShell'
 
 /** Single instance for the app's lifetime — reads `localStorage` once, synchronously,
@@ -96,6 +97,22 @@ export default function App() {
       saveState: { status: 'saved' },
       importMeta: recipe.import_meta ?? null,
       payload: recipe.payload,
+    })
+  }, [])
+
+  // A feed recipe opens as an unsaved import, so the header's Save and `saveCurrent` handle
+  // "save from the plan" with no new path. TODO(H2): `emitCompletion` records only
+  // `plan_key`, so a feed-opened plan reports `import:<graph.id>` (or `library:<id>` once
+  // saved) — H2 must decide whether feed opens get their own key.
+  const openFeedRecipe = useCallback((payload: RecipePlanResponse) => {
+    setView({
+      kind: 'plan',
+      plan: derivePlan(payload),
+      map: layoutMap(payload),
+      origin: { kind: 'import', payload, importMeta: NO_IMPORT_META },
+      saveState: { status: 'idle' },
+      importMeta: NO_IMPORT_META,
+      payload,
     })
   }, [])
 
@@ -260,6 +277,7 @@ export default function App() {
           onPick={openRecipe}
           onImport={openImport}
           onImported={onImported}
+          onOpenFeedRecipe={openFeedRecipe}
         />
       )
   }

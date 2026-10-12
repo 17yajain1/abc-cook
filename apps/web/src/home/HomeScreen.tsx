@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { SavedRecipe } from '@abc-cook/schema'
 
 import { ContinueStrip } from './ContinueStrip'
@@ -9,7 +11,7 @@ import { PlannerTile } from './PlannerTile'
 
 /** Home tab: wordmark header, then (top to bottom) the Copy-a-recipe hero and the
  * Cookbook / Planner tiles, with the Continue strip above the hero when a session is
- * active. A later H1 commit adds the feed below the tiles. */
+ * active, and the feed below the tiles when its flag is on. */
 export function HomeScreen({
   recipes,
   continueInfo,
@@ -17,6 +19,7 @@ export function HomeScreen({
   onOpenCopy,
   onOpenCookbook,
   onOpenPlanner,
+  discover,
 }: {
   recipes: SavedRecipe[]
   /** Non-null only while a session is active (see `selectContinue`). */
@@ -25,6 +28,8 @@ export function HomeScreen({
   onOpenCopy: () => void
   onOpenCookbook: () => void
   onOpenPlanner: () => void
+  /** The feed block; absent when the feed flag is off. */
+  discover?: ReactNode
 }) {
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto px-5 pb-28 pt-16">
@@ -35,6 +40,7 @@ export function HomeScreen({
         <CookbookTile recipes={recipes} onOpen={onOpenCookbook} onPasteFirst={onOpenCopy} />
         <PlannerTile onOpen={onOpenPlanner} />
       </div>
+      {discover}
     </div>
   )
 }
