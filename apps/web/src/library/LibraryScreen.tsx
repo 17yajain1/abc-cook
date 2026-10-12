@@ -17,23 +17,33 @@ export function LibraryScreen({
   onOpenSaved,
   onPick,
   onImport,
+  showSamples = true,
+  bottomInset = false,
 }: {
   savedRecipes: SavedRecipe[]
   onOpenSaved: (id: string) => void
   onPick: (recipeId: string) => void
   onImport: () => void
+  /** The server's sample recipes (the dev fixture picker). Off in the shell unless the
+   * dev flag is set. */
+  showSamples?: boolean
+  /** Reserve room for the floating bottom nav. */
+  bottomInset?: boolean
 }) {
   const [recipes, setRecipes] = useState<RecipeSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!showSamples) return
     fetchRecipes()
       .then((r) => setRecipes(r.recipes))
       .catch((err: unknown) => setError(messageFor(err)))
-  }, [])
+  }, [showSamples])
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-paper px-5 pt-16">
+    <div
+      className={`flex h-full flex-col overflow-y-auto bg-paper px-5 pt-16 ${bottomInset ? 'pb-24' : ''}`}
+    >
       <h1 className="text-[22px] font-semibold text-ink">ABC Cook</h1>
       <p className="mt-1 text-[15px] text-ink-2">Pick a recipe to see its cooking plan.</p>
 
@@ -54,6 +64,7 @@ export function LibraryScreen({
         )}
       </section>
 
+      {showSamples && (
       <section className="mt-8">
         <h2 className="text-[13px] font-semibold uppercase tracking-wide text-ink-3">
           Sample recipes
@@ -68,6 +79,7 @@ export function LibraryScreen({
           {!recipes && !error && <li className="py-3.5 text-[15px] text-ink-3">Loading…</li>}
         </ul>
       </section>
+      )}
 
       <button
         type="button"
