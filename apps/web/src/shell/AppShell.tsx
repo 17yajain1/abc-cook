@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
@@ -82,7 +82,20 @@ export function AppShell({
     setSheetOpen(false)
   }
 
-  if (isProgressPhase(job.phase)) return <ImportProgress job={job} onCancel={cancelImport} />
+  // Which register owns the page behind the app: Home and Planner paint the Home ground on
+  // the root (so the safe-area strip and over-scroll match); Cookbook (Plan register) and the
+  // import-progress screens keep the Plan paper. Cleared when the shell unmounts for a plan.
+  const progress = isProgressPhase(job.phase)
+  const homeSurface = !progress && tab !== 'cookbook'
+  useEffect(() => {
+    if (!homeSurface) return
+    document.documentElement.dataset.surface = 'home'
+    return () => {
+      delete document.documentElement.dataset.surface
+    }
+  }, [homeSurface])
+
+  if (progress) return <ImportProgress job={job} onCancel={cancelImport} />
 
   return (
     <div data-testid="app-shell" className="relative h-full overflow-hidden bg-home-ground text-home-ink">

@@ -34,3 +34,11 @@
   /* The bottom nav only. Nothing else on Home carries a shadow. */
   --shadow-home-nav: 0 8px 24px rgba(35, 16, 10, 0.08);
 }
+
+/* The page behind a Home-register screen. `AppShell` sets `data-surface="home"` on <html>
+   while one is showing, so the safe-area strip and over-scroll are the Home ground rather
+   than the Plan's paper. Plan and Cooking views never set it. */
+html[data-surface='home'] body,
+html[data-surface='home'] #root {
+  background: var(--color-home-ground);
+}
