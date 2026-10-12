@@ -254,6 +254,8 @@ export default function App() {
       return (
         <AppShell
           library={library}
+          sessionStore={sessionStore}
+          onResume={goToConflict}
           onOpenSaved={openSaved}
           onPick={openRecipe}
           onImport={openImport}

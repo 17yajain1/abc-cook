@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
+import type { SessionStore } from '@/cooking/store'
 import type { Library } from '@/library/store'
+import { selectContinue } from '@/home/continueCooking'
 import { CopySheet } from '@/home/CopySheet'
 import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
@@ -27,12 +29,17 @@ let lastTab: Tab = 'home'
  */
 export function AppShell({
   library,
+  sessionStore,
+  onResume,
   onOpenSaved,
   onPick,
   onImport,
   onImported,
 }: {
   library: Library
+  sessionStore: SessionStore
+  /** Reuses `App`'s `goToConflict`: resolves `library:`/`server:` plan keys. */
+  onResume: (planKey: string) => void
   onOpenSaved: (id: string) => void
   onPick: (recipeId: string) => void
   onImport: () => void
@@ -51,6 +58,8 @@ export function AppShell({
 
   // The shell owns the import job so the Copy sheet can start one. Submissions come from
   // click handlers only — a mount effect would double-fire under StrictMode.
+  const session = useSyncExternalStore(sessionStore.subscribe, sessionStore.getState)
+  const continueInfo = selectContinue(session, Date.now(), library.get)
   const job = useImportJob(onImported)
   const clipboard = useClipboardUrl()
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -70,6 +79,8 @@ export function AppShell({
     <div data-testid="app-shell" className="relative h-full overflow-hidden bg-home-ground text-home-ink">
       {tab === 'home' && <HomeScreen
           recipes={library.list()}
+          continueInfo={continueInfo}
+          onResume={onResume}
           onOpenCopy={openSheet}
           onOpenCookbook={() => setTab('cookbook')}
           onOpenPlanner={() => setTab('planner')}

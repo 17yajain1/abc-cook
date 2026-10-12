@@ -17,6 +17,12 @@ export const HERO = {
   meanwhileStep: 'Chop tomatoes',
 } as const
 
+export const CONTINUE = {
+  resume: 'Resume',
+  resumeLabel: (title: string) => `Resume cooking ${title}`,
+  stepLine: (n: number, total: number) => `Step ${n} of ${total}`,
+} as const
+
 export const TILES = {
   cookbookTitle: 'My cookbook',
   cookbookEmpty: 'Your first recipe lands here',
