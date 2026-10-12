@@ -58,6 +58,7 @@ export function useFeed(
       if (!source) return
       void saveFromFeed(library, source, item)
         .then(() => bump((n) => n + 1))
+        // TODO(H2): a failed save is silent. Surface it (and a retry) once the feed is real.
         .catch(() => {})
     },
     [source, library],
@@ -66,6 +67,7 @@ export function useFeed(
   const open = useCallback(
     (item: FeedItem) => {
       if (!source) return
+      // TODO(H2): a failed open is silent. Add a loading state and an error once the feed is real.
       void source.getPlan(item.id).then(onOpenPlan).catch(() => {})
     },
     [source, onOpenPlan],

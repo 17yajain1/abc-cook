@@ -16,8 +16,11 @@ export function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) =>
   return (
     <nav
       aria-label="Main"
-      className="absolute inset-x-5 bottom-5 z-10 flex h-16 items-center gap-0 rounded-full border border-home-rule bg-home-surface p-1.5 shadow-home-nav"
-      style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+      className="absolute inset-x-5 z-10 flex items-center gap-0 rounded-full border border-home-rule bg-home-surface p-1.5 shadow-home-nav"
+      style={{
+        height: 'var(--home-nav-height)',
+        bottom: 'calc(var(--home-nav-offset) + env(safe-area-inset-bottom))',
+      }}
     >
       {TABS.map(({ id, label, Icon }) => {
         const active = id === tab

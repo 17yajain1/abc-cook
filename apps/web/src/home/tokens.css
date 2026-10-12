@@ -50,7 +50,24 @@ html[data-surface='home'] #root {
   padding-top: 0;
 }
 
-/* Scrolling Home-register screen: the gap above the wordmark / title. */
+/* The floating nav: its height and its offset from the bottom edge (plus the inset). */
+:root {
+  --home-nav-height: 64px;
+  --home-nav-offset: 20px;
+}
+
+/* Room for the last row to clear the nav: nav height + its bottom offset + a 16px breath
+   + the home-indicator inset. */
+.home-nav-clearance {
+  padding-bottom: calc(
+    var(--home-nav-height) + var(--home-nav-offset) + 16px + env(safe-area-inset-bottom)
+  );
+}
+
+/* Scrolling Home-register screen: the gap above the wordmark / title, and nav clearance. */
 .home-page {
   padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: calc(
+    var(--home-nav-height) + var(--home-nav-offset) + 16px + env(safe-area-inset-bottom)
+  );
 }

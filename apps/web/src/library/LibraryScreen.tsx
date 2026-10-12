@@ -42,7 +42,7 @@ export function LibraryScreen({
 
   return (
     <div
-      className={`flex h-full flex-col overflow-y-auto bg-paper px-5 pt-16 ${bottomInset ? 'pb-24' : ''}`}
+      className={`flex h-full flex-col overflow-y-auto bg-paper px-5 pt-16 ${bottomInset ? 'home-nav-clearance' : ''}`}
     >
       <h1 className="text-[22px] font-semibold text-ink">ABC Cook</h1>
       <p className="mt-1 text-[15px] text-ink-2">Pick a recipe to see its cooking plan.</p>
