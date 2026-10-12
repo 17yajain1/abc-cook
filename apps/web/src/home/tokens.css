@@ -44,6 +44,14 @@ html[data-surface='home'] #root {
   background: var(--color-home-ground);
 }
 
+/* At or below the column width the column IS the viewport, so `body` (over-scroll, the
+   strip behind the safe-area insets) must be the Home ground too. */
+@media (max-width: 390px) {
+  html[data-surface='home'] body {
+    background: var(--color-home-ground);
+  }
+}
+
 /* Home screens own the top safe-area inset (a small fixed gap plus the inset), so the
    root must not add it as well: counted twice, the wordmark sat ~110px down on a notched
    phone. Plan-register screens keep the root's inset (index.css). */

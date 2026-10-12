@@ -6,8 +6,7 @@ export const WORDMARK = 'ABC Cook'
 export const HERO = {
   title: 'Copy a recipe',
   // No "photo": image import doesn't exist yet (ROADMAP § Later).
-  sub: 'Paste a reel, link or recipe text. We’ll tell you what to do next, and what to do while things cook.',
-  worksWith: 'Works with',
+  sub: 'Paste a reel, link or recipe text. We’ll tell you what to do while things cook.',
   cta: 'Paste a link',
 } as const
 
