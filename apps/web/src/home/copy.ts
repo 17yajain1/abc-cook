@@ -15,6 +15,8 @@ export const HERO = {
   nowStep: 'Temper jeera',
   meanwhile: 'Meanwhile',
   meanwhileStep: 'Chop tomatoes',
+  /** Under the example card, so it reads as an example and not a live status. */
+  exampleCaption: 'Your plan tells you what to do now, and what to do meanwhile.',
 } as const
 
 export const CONTINUE = {
