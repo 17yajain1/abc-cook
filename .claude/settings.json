@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/truncate-output-hook.py\""
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/truncate-output-hook.py\""
           }
         ]
       }
