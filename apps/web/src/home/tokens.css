@@ -42,3 +42,15 @@ html[data-surface='home'] body,
 html[data-surface='home'] #root {
   background: var(--color-home-ground);
 }
+
+/* Home screens own the top safe-area inset (a small fixed gap plus the inset), so the
+   root must not add it as well: counted twice, the wordmark sat ~110px down on a notched
+   phone. Plan-register screens keep the root's inset (index.css). */
+html[data-surface='home'] #root {
+  padding-top: 0;
+}
+
+/* Scrolling Home-register screen: the gap above the wordmark / title. */
+.home-page {
+  padding-top: calc(24px + env(safe-area-inset-top));
+}

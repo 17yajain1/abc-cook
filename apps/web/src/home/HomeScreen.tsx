@@ -32,7 +32,7 @@ export function HomeScreen({
   discover?: ReactNode
 }) {
   return (
-    <div className="flex h-full flex-col gap-3 overflow-y-auto px-5 pb-28 pt-16 [&>*]:shrink-0">
+    <div className="flex h-full flex-col gap-3 overflow-y-auto home-page px-5 pb-28 [&>*]:shrink-0">
       <h1 className="mb-1 text-[24px] font-bold leading-none tracking-[-0.4px] text-home-ink">{WORDMARK}</h1>
       {continueInfo && <ContinueStrip info={continueInfo} onResume={() => onResume(continueInfo.planKey)} />}
       <CopyHero onOpen={onOpenCopy} />

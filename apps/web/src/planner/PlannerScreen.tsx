@@ -12,7 +12,7 @@ export function PlannerScreen() {
   const [noted, setNoted] = useState(() => isOnWaitlist())
 
   return (
-    <div className="h-full overflow-y-auto px-5 pb-28 pt-16">
+    <div className="h-full overflow-y-auto home-page px-5 pb-28">
       <h1 className="text-[22px] font-bold leading-[26px] tracking-[-0.3px]">{PLANNER.screenTitle}</h1>
       <div className="mt-5 aspect-[350/263] overflow-hidden rounded-home-tile border border-home-sage-rule bg-home-sage">
         <img src={plannerPhoto} alt="" className="h-full w-full object-cover" />
