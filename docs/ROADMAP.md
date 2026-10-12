@@ -248,8 +248,8 @@ Cookbook, Meal Planner as "Coming soon"), and the public-recipes feed rendered f
 typed mock source. No accounts, no server. **The feed section is hidden behind a flag
 until H2.**
 
-The Home visual register is deferred: `DESIGN_SYSTEM.md` has no Home register yet, and
-none is written until the owner approves a rendered design. Per `CLAUDE.md` § Working
+The Home register is now specified in `docs/DESIGN_SYSTEM.md` (§ *Register: Home and
+browse screens*); Cookbook is the one piece still awaiting a design round. Per `CLAUDE.md` § Working
 style, render one Home screen and put the screenshot in front of the owner before
 building the rest.
 

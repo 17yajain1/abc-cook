@@ -245,6 +245,112 @@ different amounts of austerity.
   the connector language — **does not transfer to the Plan automatically.** Anything the
   Plan borrows from it is a deliberate, named decision, not a default.
 
+### Register: Home and browse screens
+
+A third register, alongside the Map and the Plan. **Home is a browsing screen held for
+seconds, not a kitchen screen held for forty minutes, and the owner chose warmth over the
+Plan's printed austerity for it.** Nothing on Home is read with steam on the phone, so it
+does not take the Plan's cost.
+
+**The boundary is deliberate and split by what the person is doing.** The *Home register*
+covers **browsing and collecting**: Home, Cookbook, Planner, See all, and the Copy sheet.
+The *Plan register* (everything above) covers **reading and running a plan**: the recipe
+page, the Plan, the Map and Cooking mode. **No Plan or Map token changes** — Home is
+specified in its own values below. Cookbook's target is the Home register, but it has not
+been designed: in H1 the existing `LibraryScreen` keeps its current style until a separate
+Cookbook design round is done (§ *Still open* #11).
+
+The bottom nav has **three tabs — Home, Cookbook, Planner.** The profile avatar sits in
+the header; there is no Me tab.
+
+Source: the owner-approved study `docs/design/home-study.html` ("Turn 2", frames 2a–2j),
+rendered in `docs/design/renders/home-v2-2a.png` … `2j.png`. Every value below is a
+computed style read from that render, not from its source. Frame chrome (the phone bezel,
+status bar, home indicator) is mock device furniture and is not specified here.
+
+**Rules**
+
+- **Recipe thumbnails** are centre-cropped to **4:3**, with a **1px inner border** and a
+  **platform badge bottom-left**. The no-image fallback is the **dish name set in the title
+  font on peach** — never an icon. The **Hero and Planner photos are fixed app assets**,
+  not user content and not fetched.
+- **Exception, list view only:** the thumbnail is a **72×72 (1:1) square**, not 4:3, with a
+  **14px platform badge at its bottom-left**. Grid and card views keep 4:3 and the 24px
+  badge. The badge's inset in the list thumbnail is not specified (decide at build time, H1).
+- **Emoji only in filter chips and one-off microcopy.** Never in headings, titles or
+  buttons.
+- **With an active session, the Continue cooking strip goes above the hero, and Resume is
+  terracotta.** With no session the strip is absent and the hero is first (frames 2a vs 2b).
+- **Still banned on Home:** gradients, illustrations or mascots, sparkle lines, decorative
+  icon circles, Title Case. (Copy is sentence case throughout the study.)
+- Photography carries the colour; the UI around it stays on the Home ground.
+
+**Values read from the render (Archivo throughout; 390px frame)**
+
+| Token role | Value | Where |
+|---|---|---|
+| Ground | `#FBF8F4` | Screen background; text on terracotta; the *Paste a link* button fill |
+| Ink | `#23100A` | All primary text, the *All* chip fill |
+| Ink, secondary | `#6B5A50` | Step line, meta, descriptions, inactive nav (6.2:1 on ground) |
+| Surface | `#FFFFFF` | Strip, recipe cards, chips, nav, Copy sheet |
+| Terracotta | `#AF5428` | Hero ground, *Resume*, *Notify me*, *Copy it*, saved-state check, strip progress fill. White on it 5.1:1; ground on it 4.8:1 |
+| Terracotta text | `#A9481A` | *See all*, active nav, *Now*, *Paste a link* label, fallback dish name. 5.5:1 on ground, 5.1:1 on peach |
+| Peach | `#FCEFE2` fill, `#F1DCC6` border | Cookbook tile, active-nav pill, avatar, clipboard row, no-image fallback |
+| Sage | `#ECEEE1` fill, `#D9DEC8` border, `#DCE2CC` accents | Planner tile and page photo slot; *Coming soon* chip; tile disc |
+| Sage text | `#5F7148` | *Meanwhile* on white or the ground only (5.3:1 on white, 5.0:1 on ground) |
+| Sage text on sage chip | `#4B5C36` | *Coming soon* chip label on `#DCE2CC`, 5.5:1. **Amends the render**, which draws `#5F7148` here at 4.0:1, below AA for 12px |
+| Rule | `#EADFD3` | Card, strip, chip and nav 1px borders; progress track; dividers |
+| Thumbnail ground / inner border | `#F1E9E0` / `rgba(234,223,211,0.6)` 1px | Every thumbnail |
+| Skeleton | `#F3ECE4`, `#F6F0E9` | Feed loading bars (2h) |
+| Veg / non-veg mark | `#2F8A3E` / `#B3261E` | Meta row: 12px box, 1px border, 2px radius, 5px dot. **Unchanged**: it is a graphic with fixed, recognised colours, not text, and meets the 3:1 non-text requirement (green 4.35:1 and red 6.5:1 on white; green 4.1:1 on the ground) |
+| Sheet scrim | `rgba(35,16,10,0.42)` | Behind the Copy sheet (2e) |
+| Shadow | `0 8px 24px rgba(35,16,10,0.08)` | **The bottom nav only.** Nothing else on Home carries one |
+
+| Kind | Radius | Notes |
+|---|---|---|
+| Buttons, chips, nav and its tab pills, grid/list toggle, *Coming soon* | `999px` | |
+| Hero, Cookbook and Planner tiles, Planner photo slot | `20px` | Tiles carry a 1px border in their own tint |
+| Recipe cards, Continue strip, clipboard row, Copy-sheet option buttons | `16px` | Card thumbnail has no radius of its own; the card's corner clips it |
+| *Now / Meanwhile* card on the hero | `12px` | |
+| Strip thumbnail | `10px` | 64×48 |
+| Stacked cookbook thumbnails | `9px` outer, 2px ring in tile peach | 52×40 outer, three overlapping |
+| Platform badge | `7px` | 24×24, `rgba(255,255,255,0.94)`, inset 8px from bottom and left |
+| Copy sheet | `24px 24px 0 0` | 14px for the URL field |
+| Save control | `50%` | 32px visible circle inside a **44×44** tap target |
+
+| Type role | Size / weight / line / tracking |
+|---|---|
+| Hero title (*Copy a recipe*), page title (*Meal planner is coming*) | 30 / 700 / 32–34 / −0.5px |
+| Wordmark | 24 / 700 / — / −0.4px |
+| Section title (*Discover recipes*), screen title, sheet title | 22 / 700 / 26 / −0.3px |
+| Tile title, card title (card view) | 18 / 700 / 22 |
+| Fallback dish name | 18 / 700 / 19.8 / −0.2px, in `#A9481A` |
+| Card title (grid, list), *Resume* and other buttons, *See all* | 15 / 600 / 19 |
+| Planner body | 15 / 400 / 22 |
+| Item names on the hero card, clipboard row | 14 / 600 |
+| Chips, tile figures (*12 recipes*) | 13 / 600 |
+| Caption, tile description | 13 / 400 / 17–18 |
+| Meta, nav labels, *Now*, *Meanwhile*, chips inside tiles | 12 / 400 or 600 |
+
+| Spacing | Value |
+|---|---|
+| Screen gutter | 20px |
+| Gap between strip, hero, tiles and section title | 12px; the two tiles sit 12px apart |
+| Padding | Strip 10; hero 20 / 20 / 16; tile 14 / 16 |
+| Recipe card (grid, two columns) | 169px wide, thumbnail 167×125, body padding 10 / 12 / 12, gap 6 |
+| List row | 72×72 thumbnail (the 1:1 exception above), 12px vertical padding, 12px gap, 1px rule between rows |
+| Chip | 40px tall, 16px side padding, 8px gap |
+| Bottom nav | 350×64 pill, 20px in from each side, 6px padding, three 109×50 tabs |
+
+**Decide at build time (H1) — not readable from the render, deliberately not guessed:** the
+real shape and crop of the Hero and Planner photos (the study draws a 236px circle at
+`rgba(0,0,0,0.12)` and a 350×263 slot as labelled placeholders); the `font-stretch` (width)
+axis in use (computed size and weight were read, width was not); the pressed, focus and
+loading states of every control (2e shows one disabled primary button, label `#8C7A6F`,
+fill not read); and the platform badge glyphs beyond the marks the study draws. The
+study's placeholder dashed outlines are slot furniture, not a design element, and are not
+specified.
+
 ### The locked composition — Direction 3, "Two Kinds of Minute"
 
 Chosen in s6 after the first M2.5 pass (a straight application of the direction's full
@@ -1264,6 +1370,27 @@ This is a Plan-tab presentation fix, not a data fix — the companion data-side 
 `COOKING_GRAPH.md`, not here. See `docs/cooking-plan-investigation.md` §8, "Stage
 interleave for imports", for the before/after this replaced.
 
+## Resolved: Home register
+
+H1 needed a visual register for Home, which has no Figma frame and no precedent here. The
+owner reviewed a rendered study (`docs/design/home-study.html`, renders
+`docs/design/renders/home-v2-2a.png` … `2j.png`) before this entry was written, per
+`CLAUDE.md` § Working style. Nothing in the Plan or Map changes.
+
+| Question | Resolution | Why |
+|---|---|---|
+| Does Home inherit the Plan's register? | No — its own, § *Register: Home and browse screens*. | Home is a browsing screen held for seconds, not a kitchen screen held for forty minutes. The owner chose warmth over the Plan's printed austerity for it. |
+| Palette | Warm ground `#FBF8F4`, ink `#23100A`, terracotta `#AF5428`, peach and sage tints. Values read from the render, not the source. | The study's own, approved as rendered. The Plan's palette (`#efeeea`, true black, `--color-signal`) is untouched. |
+| Photography | Carries the colour on Home and the feed. Hero and Planner photos are fixed app assets; recipe thumbnails are user content. | A feed with no food in it fails the screen's one job. |
+| Recipe thumbnails | Centre-cropped 4:3, 1px inner border, platform badge bottom-left. No-image fallback: dish name in the title font on peach, never an icon. | The study was built against messy real thumbnails (16:9 YouTube with burned-in text, 9:16 reel covers); one fixed crop is what makes them uniform. The fallback keeps a card legible without inventing an image. |
+| Emoji | Filter chips and one-off microcopy only; never headings, titles or buttons. | Keeps the one place the study uses them from spreading into the type hierarchy. |
+| Active session | Continue cooking strip above the hero; Resume is terracotta. | A started cook is the screen's highest-priority action, so it outranks starting a new copy. |
+| Bans | Gradients, illustrations or mascots, sparkle lines, decorative icon circles, Title Case. | A warmer register is not a licence for the generated-design tells (§ *Avoid generated-design tells*). |
+| Home/Plan seam (was #11) | A deliberate boundary, split by what the person is doing: Home register for browsing and collecting (Home, Cookbook, Planner, See all, Copy sheet); Plan register for reading and running a plan (recipe page, Plan, Map, Cooking mode). | A different job gets a different amount of austerity — the same argument that separates the Map from the Plan (§ *Register: the Map is an instrument*). Cookbook's design is the one piece still open. |
+| Home-only styling (was #12) | Confirmed 2026-10-12: `999px` pills, the nav shadow, weight `700` and the 14 / 24 type sizes apply only to Home-register screens. The nav shadow is intentional. | Scoped by register, so nothing contradicts the Plan's rules (§ Radius and elevation, § Type). The pending scale amendment (14 / 16 / 19 / 26) stays a separate decision. |
+| List thumbnails (was #13) | 72×72 (1:1) is intended for list view only, with a 14px platform badge bottom-left. Recorded as an explicit exception to the 4:3 rule. | Owner decision, 2026-10-12. |
+| Contrast (was #14) | *Coming soon* chip text is `#4B5C36` (5.5:1 on `#DCE2CC`); `#5F7148` stays for *Meanwhile* on white or the ground. The veg mark is unchanged. | The chip pair measured 4.0:1, under AA at 12px. The veg mark is a graphic with fixed, recognised colours and meets the 3:1 non-text requirement. |
+
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
 | # | Item | Class | Note |
@@ -1281,3 +1408,4 @@ interleave for imports", for the before/after this replaced.
 | 8 | **Authored `wait_phrase`** — the caption's better version. | A (deferred) | Scope, not merit. See § *Authored wait phrase*. |
 | 9 | **`CookingGraph` cannot express "hot" vs "passive rest".** | A (deferred) | The caption is process-neutral because of this. A real heat field is an M4 schema decision if it is ever wanted; nothing in M2.5–M3 needs it. |
 | 10 | **The six `--stage-*` colours cluster tightly for red-green colour-vision deficiency.** Simulated (Machado/Vienot-Brettel-style linear-RGB transform, CIE76 ΔE on the result): stage-0/stage-4 ΔE≈1.2 under protanopia (near-identical), stage-1/stage-4 ΔE≈2.9 under deuteranopia. All six also sit within a narrow 0.125–0.181 luminance band, so hue is doing nearly all the separating work. | B (M2.5-wide) | Found during the M2.75 Map CP2 accessibility pass, but these tokens are shared with the Plan view and predate this milestone — not something M2.75 owns or should fix unilaterally. Logged, not acted on, per the owner's explicit CP2 decision. Fixing it means picking new stage hues with real lightness separation, which touches every screen that reads `stageColor()`, not just the Map. |
+| 11 | **Cookbook has no Home-register design yet.** The seam between the registers is settled (§ *Register: Home and browse screens*, *Resolved: Home register*): Cookbook's target is the Home register, but it has not been designed. In H1 the existing `LibraryScreen` keeps its current style, so for now the tab bar's middle tab opens a screen in the Plan's register. | B | Needs a separate Cookbook design round, rendered and approved per `CLAUDE.md` § Working style, before `LibraryScreen` is restyled. Look at Home → Cookbook → Plan on the phone first: Cookbook is the screen between the two palettes. |
