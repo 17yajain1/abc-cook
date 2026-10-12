@@ -39,6 +39,9 @@ export function MapView({
 }) {
   const titleId = useId()
   const descId = useId()
+  const minX = Math.min(...layout.cards.map((c) => c.x))
+  const maxX = Math.max(...layout.cards.map((c) => c.x + c.w))
+  const centerShift = layout.cards.length ? (layout.width - (minX + maxX)) / 2 : 0
   const lateDelayMs = connectorDelayMs(layout.cards, layout.height)
   const lateProps = skipEntryAnimation
     ? {}
@@ -82,6 +85,10 @@ export function MapView({
           </marker>
         </defs>
 
+        {/* Centre the cards' bounding box in the viewBox. The layout is left-anchored with
+            a reserved right gutter, so without this the map sat left of centre at every
+            width. A pure translate: no scaling, and edges move with the cards. */}
+        <g transform={`translate(${centerShift} 0)`}>
         {/* Edges, brackets and fold labels: the second entry beat, once this map's own
             slowest card has landed (§ Map entry animation, `connectorDelayMs`). One
             <g> so they fade in as a single unit. */}
@@ -145,6 +152,7 @@ export function MapView({
               {fold.text}
             </text>
           ))}
+        </g>
         </g>
       </svg>
 
