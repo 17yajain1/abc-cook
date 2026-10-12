@@ -1,0 +1,33 @@
+/* Home register tokens (docs/DESIGN_SYSTEM.md § Register: Home and browse screens).
+   Values read from the owner-approved study render. Every name is prefixed `home-` so
+   nothing here can be confused with, or override, a Plan token (`paper`, `ink`, `signal`,
+   `--radius-control`): no Home component uses those, and no Plan component uses these. */
+@theme {
+  --color-home-ground: #fbf8f4;
+  --color-home-ink: #23100a;
+  --color-home-ink-2: #6b5a50;
+  --color-home-surface: #ffffff;
+  --color-home-terracotta: #af5428;
+  --color-home-terracotta-text: #a9481a;
+  --color-home-peach: #fcefe2;
+  --color-home-peach-rule: #f1dcc6;
+  --color-home-sage: #eceee1;
+  --color-home-sage-rule: #d9dec8;
+  --color-home-sage-accent: #dce2cc;
+  --color-home-sage-text: #5f7148;
+  /* Amends the render: #5f7148 on the sage chip is 4.0:1, under AA at 12px. */
+  --color-home-sage-chip-text: #4b5c36;
+  --color-home-rule: #eadfd3;
+  --color-home-thumb: #f1e9e0;
+  --color-home-skeleton-1: #f3ece4;
+  --color-home-skeleton-2: #f6f0e9;
+  --color-home-veg: #2f8a3e;
+  --color-home-nonveg: #b3261e;
+
+  --radius-home-tile: 20px;
+  --radius-home-card: 16px;
+  --radius-home-mini: 12px;
+
+  /* The bottom nav only. Nothing else on Home carries a shadow. */
+  --shadow-home-nav: 0 8px 24px rgba(35, 16, 10, 0.08);
+}
