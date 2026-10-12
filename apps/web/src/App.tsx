@@ -252,7 +252,13 @@ export default function App() {
       )
     default:
       return (
-        <AppShell library={library} onOpenSaved={openSaved} onPick={openRecipe} onImport={openImport} />
+        <AppShell
+          library={library}
+          onOpenSaved={openSaved}
+          onPick={openRecipe}
+          onImport={openImport}
+          onImported={onImported}
+        />
       )
   }
 }
