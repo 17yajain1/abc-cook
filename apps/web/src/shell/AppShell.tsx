@@ -9,6 +9,7 @@ import { useClipboardUrl } from '@/home/useClipboardUrl'
 import { ImportProgress, isProgressPhase } from '@/import/ImportScreen'
 import { useImportJob } from '@/import/useImportJob'
 import type { MapLayout } from '@/map/layout'
+import { PlannerScreen } from '@/planner/PlannerScreen'
 import type { RenderPlan } from '@/plan/derive'
 import { LibraryScreen } from '@/library/LibraryScreen'
 
@@ -67,7 +68,12 @@ export function AppShell({
 
   return (
     <div data-testid="app-shell" className="relative h-full overflow-hidden bg-home-ground text-home-ink">
-      {tab === 'home' && <HomeScreen onOpenCopy={openSheet} />}
+      {tab === 'home' && <HomeScreen
+          recipes={library.list()}
+          onOpenCopy={openSheet}
+          onOpenCookbook={() => setTab('cookbook')}
+          onOpenPlanner={() => setTab('planner')}
+        />}
       {tab === 'cookbook' && (
         <LibraryScreen
           savedRecipes={library.list()}
@@ -78,9 +84,7 @@ export function AppShell({
           bottomInset
         />
       )}
-      {tab === 'planner' && (
-        <div className="px-5 pt-16 text-[15px] text-home-ink-2">Planner is coming soon.</div>
-      )}
+      {tab === 'planner' && <PlannerScreen />}
       <BottomNav tab={tab} onChange={setTab} />
       {sheetOpen && (
         <CopySheet

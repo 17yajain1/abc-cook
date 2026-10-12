@@ -17,6 +17,29 @@ export const HERO = {
   meanwhileStep: 'Chop tomatoes',
 } as const
 
+export const TILES = {
+  cookbookTitle: 'My cookbook',
+  cookbookEmpty: 'Your first recipe lands here',
+  cookbookEmptyCta: 'Paste your first link',
+  plannerTitle: 'Meal planner',
+  plannerSub: 'Plan meals, track nutrition',
+  comingSoon: 'Coming soon',
+} as const
+
+export function recipeCount(n: number): string {
+  return n === 1 ? '1 recipe' : `${n} recipes`
+}
+
+export const PLANNER = {
+  screenTitle: 'Planner',
+  heading: 'Meal planner is coming',
+  body: 'Plan your week from your cookbook and see protein, carbs and fat for each day.',
+  notify: 'Notify me',
+  noted: 'Noted',
+  notedTitle: 'Noted.',
+  notedBody: 'The meal planner will show up right here when it’s ready.',
+} as const
+
 export const SHEET = {
   title: 'Copy a recipe',
   sub: 'We’ll read it and build your cooking plan.',
