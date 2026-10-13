@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
+import type { Ingredient } from '@abc-cook/schema'
+
 import {
-  allStagesExpanded,
-  overviewControlLabel,
+  ingredientCount,
   statusLineFor,
   toggleStageSet,
 } from './PlanScreen'
@@ -62,26 +63,23 @@ describe('toggleStageSet (M3.2)', () => {
   })
 })
 
-describe('allStagesExpanded (M3.2)', () => {
-  it('is false for an empty stage list — there is nothing to call "all expanded"', () => {
-    expect(allStagesExpanded([], new Set())).toBe(false)
+describe('ingredientCount (R1 tab label)', () => {
+  const item = (id: string) => ({ id }) as Ingredient
+
+  it('counts every item across groups', () => {
+    expect(
+      ingredientCount([
+        { group: 'For the khichdi', items: [item('a'), item('b'), item('c')] },
+        { group: 'For the chutney', items: [item('d'), item('e')] },
+      ]),
+    ).toBe(5)
   })
 
-  it('is false when at least one stage is missing from the expanded set', () => {
-    expect(allStagesExpanded(['prep', 'cook'], new Set(['prep']))).toBe(false)
+  it('counts an ungrouped list', () => {
+    expect(ingredientCount([{ group: null, items: [item('a'), item('b')] }])).toBe(2)
   })
 
-  it('is true only once every stage id is present', () => {
-    expect(allStagesExpanded(['prep', 'cook'], new Set(['prep', 'cook']))).toBe(true)
-  })
-})
-
-describe('overviewControlLabel (M3.2)', () => {
-  it('reads "Show full recipe" when not everything is expanded', () => {
-    expect(overviewControlLabel(false)).toBe('Show full recipe')
-  })
-
-  it('reads "Show overview" once everything is expanded', () => {
-    expect(overviewControlLabel(true)).toBe('Show overview')
+  it('is 0 for a recipe with no ingredients', () => {
+    expect(ingredientCount([])).toBe(0)
   })
 })

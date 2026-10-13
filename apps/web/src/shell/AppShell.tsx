@@ -13,7 +13,6 @@ import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
 import { ImportProgress, isProgressPhase } from '@/import/ImportScreen'
 import { useImportJob } from '@/import/useImportJob'
-import type { MapLayout } from '@/map/layout'
 import { PlannerScreen } from '@/planner/PlannerScreen'
 import type { RenderPlan } from '@/plan/derive'
 import { LibraryScreen } from '@/library/LibraryScreen'
@@ -50,7 +49,6 @@ export function AppShell({
   onImport: () => void
   onImported: (
     plan: RenderPlan,
-    map: MapLayout,
     payload: RecipePlanResponse,
     importMeta: ImportMeta,
   ) => void

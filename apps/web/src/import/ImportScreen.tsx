@@ -113,7 +113,7 @@ export function ImportProgress({
 
 /**
  * Paste-a-link import flow (design doc §4.5/§12 step 12): submit a URL, poll the job,
- * and hand a finished plan back to `App` — the same `RenderPlan`/`MapLayout` shape
+ * and hand a finished plan back to `App` — the same `RenderPlan` shape
  * `fetchPlan` produces, so it reaches the existing `PlanScreen` unchanged. A Tier 0
  * (`method_not_grounded`) result renders inline here instead, since there is no plan
  * to hand off.
