@@ -253,10 +253,13 @@ Plan's printed austerity for it.** Nothing on Home is read with steam on the pho
 does not take the Plan's cost.
 
 **The boundary is deliberate and split by what the person is doing.** The *Home register*
-covers **browsing and collecting**: Home, Cookbook, Planner, See all, and the Copy sheet.
-The *Plan register* (everything above) covers **reading and running a plan**: the recipe
-page, the Plan, the Map and Cooking mode. **No Plan or Map token changes** — Home is
-specified in its own values below. Cookbook's target is the Home register, but it has not
+covers **browsing, collecting and deciding**: Home, Cookbook, Planner, See all, the Copy
+sheet, and **the recipe page** (header, Plan and Ingredients tabs, Start cooking), where
+the person reads a plan to decide whether and when to cook it. The *Plan register*
+(everything above) covers **running a plan**: Cooking mode. The recipe page moved across
+on 2026-10-13 by owner decision (R1, § *Resolved in R1*); before that it was Plan
+register. **No Plan or Map token changes** — Home is specified in its own values below,
+and the recipe page uses them. Cookbook's target is the Home register, but it has not
 been designed: in H1 the existing `LibraryScreen` keeps its current style until a separate
 Cookbook design round is done (§ *Still open* #11).
 
@@ -371,6 +374,12 @@ Locked, and not reopened without a render that demonstrates a real contradiction
   stage-tint edge down its leading side. Flat: no radius, no shadow. Height is
   content-driven, never proportional — a 60-minute window is not ten screens tall.
 
+  **Amended in R1 (2026-10-13, owner decision), recipe page:** the stage is now a white
+  card, not a tint ground; the field has a **12px radius** and **no leading edge** (the
+  2px tint edge curved into a "(" at the rounded corners, and the card already says which
+  stage hosts the window). Containment, the keying to `plan.windows` and content-driven
+  height are unchanged. § *Resolved in R1*.
+
   **Why containment, and not a place.** Direction 3 drew the field as a full-bleed slab —
   "a place the plan steps onto" — and the composition was coherent on plain paper. Once
   stages became tinted grounds it stopped being coherent twice over: a full bleed was the
@@ -397,7 +406,9 @@ Locked, and not reopened without a render that demonstrates a real contradiction
   number at all.
 - **The ranked first task** gets weight and a `Start with this` cue in `--color-signal`;
   the rest are secondary. Suppressed entirely on a single-task window — ranking a list of
-  one is noise.
+  one is noise. **Amended in R1:** on the recipe page the first task sits on its own white
+  card inside the field, with the cue above its name in terracotta text (§ *Resolved in
+  R1*).
 - **Orphan-absorb:** when a stage's only content is its hosted field (the host pulled out,
   nothing left inline), the field absorbs the stage header rather than leaving it stranded
   on paper above.
@@ -597,6 +608,15 @@ a quiet bump.
 - **Plan view — a 22px filled circular badge in the stage tint**, ordinal in `paper`,
   at the head of the stage. Identity is not a margin note on this view: the stage list
   is the screen's armature and the badge is what makes it one.
+
+  **Amended in R1 (2026-10-13, owner decision), recipe page:** stage identity is the
+  **filled badge plus the title weight only**. The 18% tinted stage ground is **retired on
+  the recipe page**: each stage is a white (`#FFFFFF`) card with a 1px `#EADFD3` rule and a
+  16px radius, spanning the full content width. The badge moved inside the card header,
+  before the stage name (no left gutter), and its ordinal is white, not `paper`. Reason:
+  on the warm Home ground the grey tints read cold and muddy, and the field barely
+  separated from the Cook tint. Cooking mode keeps its own register and is unchanged.
+  § *Resolved in R1* has the measurements.
 - **Map view — the card's fill.** A task card is filled with its own stage tint at
   `--map-card-alpha` (§ *The Map grammar*). Tried as a 3px strip on the M2.5 bar's top
   edge first, and at true size it vanished: a 3px line on a 152px bar reads as a
@@ -676,6 +696,14 @@ gives ~55 at 15px.
 **No tracked-out ALL-CAPS anywhere.** It is a generated-design tell and it costs
 legibility at 12–13px on a screen with steam on it. Section and stage labels are sentence
 case at weight 600: `Cooking plan`, `Ingredients`, `Prep`, `Cook the base`, `Finish`.
+
+**iOS rule: form fields are 16px minimum.** Every `input`, `textarea` and `select`, in
+every register, renders at 16px or larger. Below 16px, iOS Safari zooms the page in when
+the field gets focus and keeps the zoom afterwards, so the next screen opens cut off on
+the right. `index.css` sets 16px as the base-layer default, and the e2e check
+(`e2e/overflow.spec.ts`) fails if any field renders smaller. Accepted by the owner
+2026-10-13 (R1), ahead of the pending type-scale amendment; never fix this with
+`maximum-scale=1`, which blocks pinch zoom for everyone.
 
 ## Radius and elevation
 
@@ -789,6 +817,12 @@ There is no drawn time axis — vertical order and each card's own duration labe
 "when". The five-second question it answers is *"what happens when, and what can I do in
 parallel?"*
 
+> **Removed 2026-10-13 (R1, owner decision).** The Map is no longer on the recipe page:
+> no `Plan · Map` switch, one tab row `Plan · Ingredients N`. Reason: it fails the
+> five-second test on real imports (long waits dominate; parallel work hidden in "+N
+> more"). `src/map/` stays, unused, until a later clean-up PR. This section is kept as
+> the record of the Map grammar. § *Resolved in R1*.
+
 **Entry point — a mode of the Cooking Plan tab, not a tab of its own.** The product model
 is:
 
@@ -889,7 +923,8 @@ kept above as history — it is still correct, just no longer the product's answ
 **M3.2 reverses the default: every stage now starts collapsed.** `PlanScreen` owns
 expansion as a `Set<stageId>`, independent per stage, surviving a Plan → Map → Plan round
 trip (`expandedStages`, `PlanScreen.tsx`); `Show full recipe` / `Show overview` toggle
-every stage at once and sit on the `Plan · Map` mode row, not as a separate control (§
+every stage at once and sit on the `Plan · Map` mode row, not as a separate control (both
+removed in R1 with the Map; each stage still opens on its own) (§
 *Resolved in M3.2*). The reversal follows directly from making the Plan view
 overview-first — a screenful of every stage pre-expanded was never an overview.
 
@@ -974,7 +1009,8 @@ Top to bottom:
   repeated, carrying no information and failing this document's own "remove it and lose
   nothing" test. Drawn conditionally, the mark means something when it appears. (The
   panel's own 2px leading edge is the *stage's* tint and is a different mark — it says
-  "this work sits inside this stage's host", not "this task came from elsewhere.") Rows
+  "this work sits inside this stage's host", not "this task came from elsewhere." The
+  panel edge is retired on the recipe page in R1; the per-task bar stays.) Rows
   are `≥ 44px` and separated by a `1px --color-rule` hairline.
 - **First-task emphasis** — the first row's name goes to weight 600 and gets a
   `Start with this` cue in `--color-signal` beneath it. **Suppressed entirely when the
@@ -1386,12 +1422,40 @@ owner reviewed a rendered study (`docs/design/home-study.html`, renders
 | Emoji | Filter chips and one-off microcopy only; never headings, titles or buttons. | Keeps the one place the study uses them from spreading into the type hierarchy. |
 | Active session | Continue cooking strip above the hero; Resume is terracotta. | A started cook is the screen's highest-priority action, so it outranks starting a new copy. |
 | Bans | Gradients, illustrations or mascots, sparkle lines, decorative icon circles, Title Case. | A warmer register is not a licence for the generated-design tells (§ *Avoid generated-design tells*). |
-| Home/Plan seam (was #11) | A deliberate boundary, split by what the person is doing: Home register for browsing and collecting (Home, Cookbook, Planner, See all, Copy sheet); Plan register for reading and running a plan (recipe page, Plan, Map, Cooking mode). | A different job gets a different amount of austerity — the same argument that separates the Map from the Plan (§ *Register: the Map is an instrument*). Cookbook's design is the one piece still open. |
+| Home/Plan seam (was #11) | A deliberate boundary, split by what the person is doing: Home register for browsing, collecting and **deciding** (Home, Cookbook, Planner, See all, Copy sheet, and the recipe page); Plan register for **running** a plan (Cooking mode). **Amended 2026-10-13 (R1):** the recipe page moved from the Plan register to the Home register by owner decision. | A different job gets a different amount of austerity — the same argument that separates the Map from the Plan (§ *Register: the Map is an instrument*). The recipe page is read to decide whether and when to cook, not held at the stove; Cooking mode is. Cookbook's design is the one piece still open. |
 | Home-only styling (was #12) | Confirmed 2026-10-12: `999px` pills, the nav shadow, weight `700` and the 14 / 24 type sizes apply only to Home-register screens. The nav shadow is intentional. | Scoped by register, so nothing contradicts the Plan's rules (§ Radius and elevation, § Type). The pending scale amendment (14 / 16 / 19 / 26) stays a separate decision. |
 | List thumbnails (was #13) | 72×72 (1:1) is intended for list view only, with a 14px platform badge bottom-left. Recorded as an explicit exception to the 4:3 rule. | Owner decision, 2026-10-12. |
 | Contrast (was #14) | *Coming soon* chip text is `#4B5C36` (5.5:1 on `#DCE2CC`); `#5F7148` stays for *Meanwhile* on white or the ground. The veg mark is unchanged. | The chip pair measured 4.0:1, under AA at 12px. The veg mark is a graphic with fixed, recognised colours and meets the 3:1 non-text requirement. |
 | H1 build deviations from the study | **Header is the wordmark only**; the avatar arrives in H2 and there is no search. **Take photo and Screenshots are hidden** until image import exists (ROADMAP § Later), so the Copy sheet offers Paste text and the URL field; the hero copy reads "Paste a reel, link or recipe text…" and its *Works with* row drops the camera glyph. **The study's Now / Meanwhile slip on the hero was dropped in H1**: it explains a screen new users haven't seen yet, and it covered the hero photo. The hero subtitle carries the parallel-cooking idea instead ("We'll tell you what to do next, and what to do while things cook"), so Home shows no cooking step or duration that isn't read from a plan. **Notify me** becomes a disabled "Noted" button (on every return) with the confirmation "Noted. / The meal planner will show up right here when it's ready." below it. | Owner decisions, 2026-10-12, made while planning H1. Each removes a promise the app can't keep yet, or a number Home has no plan to read it from (`CLAUDE.md`: the frontend never invents cooking figures). |
 | Continue strip and column width (H1) | **The Continue strip shows stale sessions** too, with "Left a while ago" in place of the step line and progress bar; Resume lands on the existing stale screen (Continue / Start again). Finished and legacy-unknown sessions stay hidden. **Home fills the viewport below 600px** (no 390px cap, `body` also the Home ground, so no grey strips or grey over-scroll) **and is a centred 390px column on the Plan grey from 600px up.** | A stale session still blocks a new cook (`engine.open`), so hiding it from Home left the person with an unexplained "Already cooking" screen; showing it clears nothing silently. Phones are 412 and 430px wide, so a 390px cap showed grey edges. The Plan and Cooking views keep their 390px cap for now (known gap). |
+
+## Resolved in R1 (recipe page, 2026-10-13)
+
+The recipe page (header, Plan and Ingredients tabs, Start cooking) moves from the Plan
+register to the Home register. Source: the owner-reviewed study
+`docs/design/recipe-page-study/` (composition only; built in `home/tokens.css`), then a
+rendered checkpoint of the real Sabudana import at 390×844. Cooking mode is out of scope
+and keeps the Plan register.
+
+| Question | Resolution | Why |
+|---|---|---|
+| Register | Home register: ground `#FBF8F4`, ink `#23100A`, secondary `#6B5A50`, rule `#EADFD3`, Archivo at normal width, title 30/700. | Owner decision. The page is for deciding, not running (§ *Register: Home and browse screens*). |
+| Start cooking | Terracotta `#AF5428` pill (`999px`), label in the ground colour (4.8:1), sentence case "Start cooking". | Terracotta is the Home register's primary action; Home bans Title Case. Replaces `--color-signal` here only. |
+| Stage card | White `#FFFFFF`, 1px `#EADFD3` rule, 16px radius, full content width. Tinted stage ground retired on this page. | The 18% grey tints read cold and muddy on the warm ground, and the field barely separated from the Cook tint (ΔE 8.6 at worst). |
+| Stage identity | Filled badge in the stage tint, inside the header before the name, plus the title weight. Ordinal in white: 4.55–5.99:1 across the six tints (the ground colour gave 4.30:1 at worst). Badge vs white card 4.55–5.99:1 as a non-text mark. | Removing the left gutter gives step text the full card width. |
+| Wait-window field | `--color-field` `#E7DCC3`, 12px radius, no leading edge. Field vs white card ΔE 18.2 (ratio 1.36); vs the ground ΔE 14.9. Secondary text on the field 4.81:1, ink 13.4:1. | The 2px tint edge curved into a "(" at the rounded corners. The white card around the field already says which stage hosts it. |
+| Ranked first task | Its own white card inside the field, 12px radius; `Start with this` above the name in terracotta text `#A9481A`, 5.79:1. | On the field the cue measured 4.25:1, under AA at 12px. The card follows the study. |
+| Text on the white card | Ink 18:1+, secondary `#6B5A50` 6.56:1. The per-task home-stage bar and the foreign-row bar are unchanged. | No contrast step-up is needed on white, unlike the old tint grounds. |
+| Map | **Removed from the recipe page.** No `Plan · Map` switch; `src/map/` stays unused until a clean-up PR. `docs/GRAPH_VIEW.md` carries the same note. | Fails the five-second test on real imports: long waits dominate, and the parallel work is hidden in "+N more". |
+| Tabs | One row: `Plan` and `Ingredients N`, N counted from the plan's ingredient groups. `Show full recipe` / `Show overview` removed; stages start collapsed and each opens on its own. | With the Map gone, `Cooking Plan` had nothing left to contain. |
+| Back | 44×44 control top-left (a 40px white circle in the full header, bare arrow in the compact bar). Returns to the tab the recipe was opened from (Home or Cookbook). `change recipe` removed: it did exactly what back does. Known gap: a recipe opened from the feed's See all list returns to Home. | Study frame 1. |
+| Header on scroll | The full header scrolls away; a compact bar (back, title, tabs) takes over once the page's tab row reaches it, and the full header returns at the top. The bar overlays the page, so content never jumps. | Study frame 2. Keeps the tabs reachable on a long plan. |
+| Stage toggle | `+` / `−` pinned top-right on the name row in both states. Collapsed: `~N min` sits on that row before the toggle. Expanded: the hands-on / waiting split is a subline under the name. | The expanded split wrapped the row and left the toggle trailing on line two. |
+| Tap focus on a stage header | Focus ring only for keyboard (`:focus-visible`). | A tap left the browser's default ring as a black box. |
+| Non-Latin doneness cues | Hidden on the recipe page (`lib/displayCue.ts`). Cooking mode is untouched. | Stopgap for Sabudana decision D4; the real fix is prompt v8. |
+| iOS: form fields | 16px minimum (§ *Type*, iOS rule). | The 15px URL fields made iOS Safari zoom in on focus; the recipe page then opened cut off on the right (iPhone retest). |
+| iOS: page height and insets | The recipe page is `100dvh` (fallback `100%`). Safe-area insets are read through `--safe-top` / `--safe-bottom` (`index.css`); the CTA bar's bottom padding is at least the home-indicator inset. | dvh follows Safari's toolbars; the variables let a desktop test simulate a notch, where `env()` is always 0. |
+| iOS: compact bar | Mounted only while showing, not faded with opacity/visibility. | On iOS Safari the faded-in bar painted the back arrow but not the title. The e2e check now asserts the title's size, text and visibility. |
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
