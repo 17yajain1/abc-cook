@@ -250,7 +250,7 @@ _ONE_CHANGE: dict[str, dict[str, Any]] = {
     "max_tokens": {"max_tokens": 16_001},
     "escalated_max_tokens": {"escalated_max_tokens": 32_001},
     "repair_max_tokens": {"repair_max_tokens": 8_001},
-    "postprocess_version": {"postprocess_version": 2},
+    "postprocess_version": {"postprocess_version": cache_mod.POSTPROCESS_VERSION + 1},
     "burner_capacity": {"burner_capacity": 2},
     "result_schema": {"result_type": _AlteredResult},
 }
