@@ -2,8 +2,8 @@
   "graph_id": "kadai-paneer",
   "scheduled": [
     { "node_id": "chop_onion", "start_min": 0.0, "end_min": 3.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
-    { "node_id": "saute_onion", "start_min": 3.0, "end_min": 8.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
-    { "node_id": "chop_tomato", "start_min": 8.0, "end_min": 10.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "chop_tomato", "start_min": 3.0, "end_min": 5.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
+    { "node_id": "saute_onion", "start_min": 5.0, "end_min": 10.0, "occupies_cook": true, "window_id": null, "rank_in_window": null },
     { "node_id": "chop_capsicum", "start_min": 10.0, "end_min": 15.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 0 },
     { "node_id": "cook_tomato_base", "start_min": 10.0, "end_min": 22.0, "occupies_cook": false, "window_id": null, "rank_in_window": null },
     { "node_id": "cube_paneer", "start_min": 15.0, "end_min": 17.0, "occupies_cook": true, "window_id": "w1", "rank_in_window": 1 },

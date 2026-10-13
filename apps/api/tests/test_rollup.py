@@ -126,7 +126,7 @@ def test_kadai_paneer_stages_overlap() -> None:
     """The interleaving the Plan view exists to show.
 
     Three prep nodes run inside the cook-base window, so `prep` is still open at t=19
-    while `cook_base` has been running since t=3. A UI that drew stages as sequential
+    while `cook_base` has been running since t=5. A UI that drew stages as sequential
     blocks would be lying about this recipe.
     """
     graph = _graph("kadai-paneer")
@@ -135,7 +135,7 @@ def test_kadai_paneer_stages_overlap() -> None:
     prep, cook_base = spans["prep"], spans["cook_base"]
 
     assert (prep.start_min, prep.end_min) == (0.0, 19.0)
-    assert (cook_base.start_min, cook_base.end_min) == (3.0, 22.0)
+    assert (cook_base.start_min, cook_base.end_min) == (5.0, 22.0)
     assert cook_base.start_min < prep.end_min, "prep and cook_base must overlap"
 
     # Prep is 14 min of work, but 9 of it is absorbed into the cook-base window, so the
