@@ -233,8 +233,8 @@ Scheduled:
 
 ```
 t=0    chop_onion        (cook busy 0–3)
-t=3    saute_onion       (cook busy 3–8, burner)
-t=8    chop_tomato       (cook busy 8–10)   ← must precede the base
+t=3    chop_tomato       (cook busy 3–5)    ← must precede the base
+t=5    saute_onion       (cook busy 5–10, burner)
 t=10   cook_tomato_base  (burner 10–22, periodic → cook mostly free)
        ┌─ WINDOW w1, capacity 12 × 0.75 = 9.0 min usable
        │  t=10  chop_capsicum      5 min   rank 0  ← "start with this"
@@ -305,7 +305,8 @@ them?"*. Never let logic from one leak into the other.
         whose station has capacity (§4.6). Do this FIRST — see §4.2. These nodes
         do not occupy the cook.
      c. If the cook is free, start ONE ready `hands_on` node whose station has
-        capacity and that is not being withheld for freshness (§4.5). Choose it:
+        capacity and that is not being withheld for freshness or as part of a
+        pan chain (§4.5). Choose it:
           — while a wait window is open (some unattended/periodic node is running):
             by the §4.4 key — longest `duration_typical` first, then `node_id`.
             The cook is filling time; critical-path rank does not apply here.
@@ -446,6 +447,22 @@ after any earlier window has closed.
   several consumers is scheduled normally (no delay); the post-hoc lead warning still
   fires for every consumer. Multi-consumer freshness scheduling — which consumer to
   time against — is **deferred until explicitly specified**.
+- **Pan chain** (`_pan_chain_gates`): a `hands_on` `burner` step that feeds another
+  `burner` step keeps its output in the pan, so it must not float into an unrelated wait
+  window and then sit for the window's length (sabudana: tempered spices and potatoes at
+  min 18–28 inside a 2-hour soak). Like freshness, step (c) **withholds** it: a flagged
+  node starts only when its *gate* is `done` — the other dependencies of the burner
+  step(s) it feeds, recursively through flagged successors, minus anything downstream of
+  itself. A node with a consumer that is off the burner and not a sink is exempt (its
+  output leaves the pan; a tadka poured over dal cooking off the burner still floats into
+  the dal's wait). Deadlock valve: if the cook is free, nothing is running and every
+  ready hands-on candidate is pan-withheld (two pan steps feeding one burner step), the
+  gate is released for that pick.
+
+  **Known gap:** the schema has no pan/vessel identity, so "same pan" is inferred from
+  burner-step adjacency. Some safe overlaps (tadka poured in, then a short simmer) are
+  serialised on purpose — an honest, slightly longer plan. The real fix is pan/vessel
+  identity (PR-D / prompt v8).
 - **Station contention**: the scheduler may run up to `burner_capacity` (§4.6) burner
   nodes at once; every other station is capacity 1. Whenever the finished timeline has
   two or more nodes sharing a station at any instant, emit one note per station:
