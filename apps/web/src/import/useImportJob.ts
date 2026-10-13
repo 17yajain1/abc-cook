@@ -9,7 +9,6 @@ import type {
 } from '@abc-cook/schema'
 
 import { ApiError, pollImport, startImport, startImportText } from '../api/client'
-import { layoutMap, type MapLayout } from '../map/layout'
 import { derivePlan, type RenderPlan } from '../plan/derive'
 
 /** No standalone `ImportStatus` export exists in the generated package (it's inlined
@@ -36,7 +35,6 @@ export type Phase =
 
 export type OnImported = (
   plan: RenderPlan,
-  map: MapLayout,
   payload: RecipePlanResponse,
   importMeta: ImportMeta,
 ) => void
@@ -79,7 +77,6 @@ export function useImportJob(onImported: OnImported) {
           }
           onImported(
             derivePlan(payload, job.result.provenance ?? null),
-            layoutMap(payload),
             payload,
             importMetaFrom(job.result),
           )

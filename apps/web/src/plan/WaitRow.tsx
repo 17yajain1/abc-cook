@@ -15,6 +15,6 @@ export function WaitRow({ row }: { row: RenderWaitRow }) {
       : `Wait about ${phrase}`
 
   return (
-    <p className="my-4 border-t border-rule pt-4 text-[13px] text-ink-3">{text}</p>
+    <p className="my-4 border-t border-home-rule pt-4 text-[13px] text-home-ink-2">{text}</p>
   )
 }

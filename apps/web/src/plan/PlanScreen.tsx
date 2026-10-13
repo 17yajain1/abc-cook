@@ -1,11 +1,11 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
-import { MapView } from '@/map/MapView'
-import type { MapLayout } from '@/map/layout'
+import { useHomeSurface } from '@/shell/useHomeSurface'
 
-import type { RenderPlan, RenderWaitRow } from './derive'
+import { BackButton } from './BackButton'
+import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import { StageCard } from './StageCard'
@@ -28,59 +28,92 @@ export function toggleStageSet(expanded: ReadonlySet<string>, stageId: string): 
   return next
 }
 
-/** Whether every rendered stage is open — an empty stage list is never "all expanded"
- *  (an empty recipe never shows the toggle control at all; see its call site). */
-export function allStagesExpanded(stageIds: readonly string[], expanded: ReadonlySet<string>): boolean {
-  return stageIds.length > 0 && stageIds.every((id) => expanded.has(id))
+/** The N in the `Ingredients N` tab: every ingredient the plan lists, across groups. */
+export function ingredientCount(groups: readonly RenderIngredientGroup[]): number {
+  return groups.reduce((n, g) => n + g.items.length, 0)
 }
 
-/** "Show full recipe" flips every stage open; "Show overview" is only offered once
- *  they already are, so it always describes what tapping it will do next, not the
- *  current state. */
-export function overviewControlLabel(allExpanded: boolean): string {
-  return allExpanded ? 'Show overview' : 'Show full recipe'
+/**
+ * R1: whether the compact sticky bar should show. It takes over once the page's own tab
+ * row has scrolled up to where the bar's copy of the tabs sits, so the tabs appear to
+ * stay put while the full header scrolls away. Both offsets are measured from the top of
+ * the scroll area (the bar's offset includes the phone's top safe-area inset).
+ */
+export function isCompactHeader(scrollTop: number, pageTabsTop: number, barTabsTop: number): boolean {
+  return scrollTop > 0 && scrollTop >= pageTabsTop - barTabsTop
 }
 
 type Tab = 'plan' | 'ingredients'
-/**
- * Plan/Map is a mode switch inside the Cooking Plan tab, not a third top-level tab —
- * both views stay, neither replaces the other (`DESIGN_SYSTEM.md` § The Map grammar,
- * "Entry point"). `Plan` is the permanent default when a recipe opens.
- */
-type Mode = 'plan' | 'map'
 
+/**
+ * The recipe page (R1, Home register). One scroll area holds the full header, the
+ * `Plan · Ingredients N` tab row and the tab's content. The Map mode was removed from
+ * this page on 2026-10-13 (`docs/GRAPH_VIEW.md`); `src/map/` stays, unused, until a
+ * later clean-up PR.
+ *
+ * The compact bar (back, title, tabs) is a second copy laid over the top of the scroll
+ * area, rendered only while `isCompactHeader` says the page's own tabs have reached it.
+ * Overlaying it rather than making the page's own header sticky means the content below
+ * never jumps when the bar appears. It is mounted and unmounted, not faded with
+ * opacity/visibility: on iOS Safari the faded-in bar painted its back arrow but not its
+ * title text (R1, iPhone retest), and a freshly mounted element has nothing to repaint.
+ * An empty, invisible spacer of the same height stays mounted so the threshold can
+ * still be measured while the bar is absent.
+ */
 export function PlanScreen({
   plan,
-  map,
-  onPickAnother,
+  onBack,
   onStartCooking,
   save,
   importMeta,
 }: {
   plan: RenderPlan
-  map: MapLayout
-  onPickAnother: () => void
+  /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
+   *  the shell, which reopens the tab the person was on. */
+  onBack: () => void
   onStartCooking: () => void
   save?: SaveControl
   importMeta?: ImportMeta | null
 }) {
   const [tab, setTab] = useState<Tab>('plan')
-  const [mode, setMode] = useState<Mode>('plan')
-  const showingMap = tab === 'plan' && mode === 'map'
   const statusLine = statusLineFor(importMeta)
+  // R1: the recipe page is a Home-register screen (DESIGN_SYSTEM.md § Register: Home and
+  // browse screens), so the page behind it takes the Home ground too.
+  useHomeSurface(true)
 
-  // M3.2: overview-first — every card starts collapsed. This is ordinary component
-  // state, not a ref, so it re-renders on toggle like any other UI state; it survives
-  // a Plan<->Map round trip for the same reason `hasAnimatedMapRef` does (see above) —
-  // switching `mode` never unmounts this component, only a recipe change does.
+  // M3.2: overview-first — every card starts collapsed, and each opens on its own.
   // P1 #5: keyed by `stage.key` (the run), not `stage.stageId` — a stage rendered as
   // more than one card (plan §D) expands each card independently.
-  const stageKeys = plan.stages.map((s) => s.key)
   const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
-  const allExpanded = allStagesExpanded(stageKeys, expandedStages)
   const toggleStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
-  const toggleAllStages = () =>
-    setExpandedStages(allExpanded ? new Set() : new Set(stageKeys))
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const pageTabsRef = useRef<HTMLDivElement>(null)
+  const barSpacerRef = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(false)
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el || !pageTabsRef.current || !barSpacerRef.current) return
+    setCompact(
+      isCompactHeader(el.scrollTop, pageTabsRef.current.offsetTop, barSpacerRef.current.offsetHeight),
+    )
+  }
+
+  // Switching tabs while the bar is showing keeps the tabs pinned: the new tab's content
+  // starts right under the bar instead of wherever the old tab was scrolled to. Runs
+  // before paint (layout effect), so the old scroll position never flashes.
+  const pinTabsRef = useRef(false)
+  const switchTab = (next: Tab) => {
+    if (next === tab) return
+    pinTabsRef.current = compact
+    setTab(next)
+  }
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || !pinTabsRef.current) return
+    pinTabsRef.current = false
+    el.scrollTop = (pageTabsRef.current?.offsetTop ?? 0) - (barSpacerRef.current?.offsetHeight ?? 0)
+  }, [tab])
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
   for (const row of plan.waitRows) {
@@ -89,85 +122,39 @@ export function PlanScreen({
     waitRowsAfter.set(row.afterStageIndex, bucket)
   }
 
-  // The Map's entry animation plays once per recipe, not on every Plan<->Map toggle
-  // (`DESIGN_SYSTEM.md` § Map entry animation) — replaying it on every glance would
-  // fight the app's own "fast answer, wet hands" premise. A ref (not state) is the
-  // right boundary, for two reasons:
-  // 1. Lifecycle: App.tsx never transitions directly between two `{kind:'plan'}`
-  //    views — every recipe change passes through `loading` first, a different
-  //    component at the same JSX slot, which unmounts this PlanScreen and gives the
-  //    next recipe a fresh instance (and a fresh ref). Toggling `mode` only re-renders
-  //    this same instance, so the ref survives exactly across the toggles it should
-  //    and resets exactly when the recipe does.
-  // 2. Correctness under a `useState` alternative was tried and is actively wrong:
-  //    flipping state right after the animated mount commits re-renders this same,
-  //    still-mounted `MapView` instance mid-animation with `skipEntryAnimation=true`,
-  //    which strips the animation classes off already-animating elements and snaps
-  //    every card straight to full opacity almost instantly — defeating the animation
-  //    on the one mount it's supposed to play on. A ref's mutation triggers no
-  //    re-render, so flipping it immediately after mount is inert until PlanScreen
-  //    re-renders for some other reason (the next toggle) — which is exactly what's
-  //    needed here. This is a deliberate exception to "don't read refs during render":
-  //    that guidance protects against stale reads because a ref's mutation won't
-  //    trigger a re-render — which is precisely the property this relies on, not a
-  //    hazard to avoid. (Read at the JSX call site below, with the lint suppression.)
-  const hasAnimatedMapRef = useRef(false)
-  useEffect(() => {
-    if (mode === 'map') hasAnimatedMapRef.current = true
-  }, [mode])
+  const nIngredients = ingredientCount(plan.ingredientGroups)
+  const tabs = (
+    <>
+      <TabButton active={tab === 'plan'} onClick={() => switchTab('plan')}>
+        Plan
+      </TabButton>
+      <TabButton active={tab === 'ingredients'} onClick={() => switchTab('ingredients')}>
+        Ingredients <span className="tabular">{nIngredients}</span>
+      </TabButton>
+    </>
+  )
 
-  // `relative` matters: the CTA below is absolutely positioned, and without a positioned
-  // ancestor it resolved against the viewport and escaped the 390px column at any wider
-  // width. Invisible at exactly 390px, which is why M2 shipped it.
-  // `overflow-x-clip`: nothing bleeds past the content box any more (the wait-window
-  // panel is fully contained in its stage's own body), but the clip stays as a guard
-  // against a sub-390px viewport.
+  // `relative` matters: the CTA and the compact bar are absolutely positioned, and
+  // without a positioned ancestor they resolved against the viewport and escaped the
+  // 390px column at any wider width.
+  // `overflow-x-clip`: a guard against a sub-390px viewport.
+  // `h-screen-dynamic` (index.css): 100dvh, so the page tracks Safari's toolbars.
   return (
-    <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
-      <RecipeHeader plan={plan} save={save} importMeta={importMeta} />
-      {statusLine && <p className="px-5 pb-2 text-[13px] text-ink-3">{statusLine}</p>}
+    <div className="h-screen-dynamic relative overflow-x-clip bg-home-ground text-home-ink">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
+      >
+        <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} />
+        {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 
-      <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
-        <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>
-          Cooking Plan
-        </TabButton>
-        <TabButton active={tab === 'ingredients'} onClick={() => setTab('ingredients')}>
-          Ingredients
-        </TabButton>
-        <button
-          type="button"
-          onClick={onPickAnother}
-          className="ml-auto self-center text-[13px] text-ink-3 underline underline-offset-4"
-        >
-          change recipe
-        </button>
-      </div>
-
-      {tab === 'plan' && (
-        <div className="flex flex-shrink-0 items-center justify-between gap-4 px-5 pt-2.5">
-          <div className="flex items-stretch gap-4">
-            <ModeButton active={mode === 'plan'} onClick={() => setMode('plan')}>
-              Plan
-            </ModeButton>
-            <ModeButton active={mode === 'map'} onClick={() => setMode('map')}>
-              Map
-            </ModeButton>
-          </div>
-          {mode === 'plan' && stageKeys.length > 0 && (
-            <button
-              type="button"
-              onClick={toggleAllStages}
-              className="pb-1.5 text-[13px] font-medium text-ink-3 underline underline-offset-4"
-            >
-              {overviewControlLabel(allExpanded)}
-            </button>
-          )}
+        <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
+          {tabs}
         </div>
-      )}
 
-      <div className={`no-scrollbar flex-1 overflow-y-auto ${showingMap ? '' : 'pb-56'}`}>
         {plan.warnings.length > 0 && (
-          <div className="mx-5 mt-4 border-l-2 border-ink bg-paper-sunk px-3 py-2 text-[13px] text-ink-2">
+          <div className="mx-5 mt-4 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
             {plan.warnings.map((w) => (
               <p key={w}>{sentence(w)}</p>
             ))}
@@ -176,15 +163,8 @@ export function PlanScreen({
 
         {tab === 'ingredients' ? (
           <IngredientsPanel groups={plan.ingredientGroups} />
-        ) : mode === 'map' ? (
-          <div className="pt-4">
-            {/* eslint-disable-next-line react-hooks/refs -- deliberate: see the ref's
-                declaration comment above for why a state re-render here would break
-                the animation it's supposed to gate. */}
-            <MapView layout={map} skipEntryAnimation={hasAnimatedMapRef.current} />
-          </div>
         ) : (
-          <div className="px-5 pt-6">
+          <div className="px-5 pt-5">
             {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
               <WaitRow key={`wait-pre-${i}`} row={row} />
             ))}
@@ -202,7 +182,7 @@ export function PlanScreen({
             ))}
 
             {plan.savedMin === 0 && (
-              <p className="pb-4 pt-2 text-[13px] text-ink-3">
+              <p className="pb-4 pt-2 text-[13px] text-home-ink-2">
                 {plan.hasUnattendedWork
                   ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
                   : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
@@ -212,21 +192,43 @@ export function PlanScreen({
         )}
       </div>
 
-      {/* Hidden in Map mode — the mock draws no CTA there. z-20 keeps this fixed footer
-          above the scrolled plan content beneath it. */}
-      {!showingMap && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-rule bg-paper px-5 pb-6 pt-4">
-          {/* Signal, and the label is just "Start Cooking" (DESIGN_SYSTEM.md § PrimaryCTA).
-              M3.4: wired to Cooking Mode. */}
-          <button
-            type="button"
-            onClick={onStartCooking}
-            className="flex h-[52px] w-full items-center justify-center rounded-control bg-signal text-[18px] font-semibold text-paper"
-          >
-            Start Cooking
-          </button>
+      {/* Measures where the bar's tabs start: the top inset plus the 56px title row. Empty
+          and invisible, so it has nothing to paint. */}
+      <div
+        ref={barSpacerRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute left-0 top-0 h-[calc(var(--safe-top)+56px)] w-px"
+      />
+
+      {compact && (
+        <div
+          data-testid="compact-bar"
+          className="absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[var(--safe-top)]"
+        >
+          <div className="flex h-14 items-center gap-1 px-3">
+            <BackButton onClick={onBack} />
+            <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
+              {plan.title}
+            </p>
+          </div>
+          <div className="-mb-px flex items-stretch gap-6 px-5">{tabs}</div>
         </div>
       )}
+
+      {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. The
+          bottom padding is at least the home-indicator inset, so the pill clears Safari's
+          bottom toolbar and the home indicator. */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-4">
+        {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
+            register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
+        <button
+          type="button"
+          onClick={onStartCooking}
+          className="flex h-[52px] w-full items-center justify-center rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground"
+        >
+          Start cooking
+        </button>
+      </div>
     </div>
   )
 }
@@ -244,35 +246,9 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-medium ${
-        active ? 'border-ink text-ink' : 'border-transparent text-ink-3'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-/**
- * `Plan · Map` — same underline idiom as `TabButton`, smaller and inset, so it reads as
- * a mode within the Cooking Plan tab rather than a sibling of it. No pill, no
- * segmented-control chrome (`DESIGN_SYSTEM.md` § Avoid generated-design tells).
- */
-function ModeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`-mb-px border-b-2 pb-1.5 text-[13px] font-medium ${
-        active ? 'border-ink text-ink' : 'border-transparent text-ink-3'
+      aria-pressed={active}
+      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-semibold ${
+        active ? 'border-home-ink text-home-ink' : 'border-transparent text-home-ink-2'
       }`}
     >
       {children}

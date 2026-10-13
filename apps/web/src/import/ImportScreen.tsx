@@ -113,7 +113,7 @@ export function ImportProgress({
 
 /**
  * Paste-a-link import flow (design doc §4.5/§12 step 12): submit a URL, poll the job,
- * and hand a finished plan back to `App` — the same `RenderPlan`/`MapLayout` shape
+ * and hand a finished plan back to `App` — the same `RenderPlan` shape
  * `fetchPlan` produces, so it reaches the existing `PlanScreen` unchanged. A Tier 0
  * (`method_not_grounded`) result renders inline here instead, since there is no plan
  * to hand off.
@@ -144,7 +144,7 @@ export function ImportScreen({
           if (e.key === 'Enter') submit()
         }}
         placeholder="YouTube, Instagram or recipe page link…"
-        className="mt-8 rounded-control border border-rule bg-paper px-3.5 py-3 text-[15px] text-ink outline-none focus:border-ink-3"
+        className="mt-8 rounded-control border border-rule bg-paper px-3.5 py-3 text-[16px] text-ink outline-none focus:border-ink-3"
       />
 
       {phase.kind === 'error' && (
@@ -318,7 +318,7 @@ function PasteScreen({
         value={text}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Recipe text"
-        className="mt-6 min-h-0 flex-1 resize-none rounded-control border border-rule bg-paper px-3.5 py-3 text-[15px] leading-[1.5] text-ink outline-none focus:border-ink-3"
+        className="mt-6 min-h-0 flex-1 resize-none rounded-control border border-rule bg-paper px-3.5 py-3 text-[16px] leading-[1.5] text-ink outline-none focus:border-ink-3"
       />
       {error && <p className="mt-3 text-[13px] text-signal">{error}</p>}
       <button

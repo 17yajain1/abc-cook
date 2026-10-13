@@ -7,9 +7,9 @@ import { taskDurationText } from './StageCard'
  * The signature component — Direction 3, "Two Kinds of Minute" (docs/DESIGN_SYSTEM.md
  * § WaitWindowBlock, § Direction 3). A scheduler wait window renders as a panel nested
  * inside its host's own stage, directly beneath the host's ordinary task row — never in
- * place of it, never full-bleed. The panel sits on `--color-field` (warm, deeper than
- * the stage's own tint ground) with a 2px leading edge in the host stage's own tint.
- * Flat: no radius, no shadow beyond that edge.
+ * place of it, never full-bleed. The panel sits on `--color-field`, with a 12px radius
+ * and no edge mark (R1: the 2px host-tint edge curved into a "(" at rounded corners, and
+ * the white stage card already says which stage hosts it). No shadow.
  *
  * The head states the relationship in words — "Meanwhile, do these" plus a line derived
  * from the host's `attention` — never a numeral; the host's own duration already lives
@@ -18,15 +18,7 @@ import { taskDurationText } from './StageCard'
  *
  * Every value here is the scheduler's or the graph's, looked up by id. Nothing is added.
  */
-export function WaitWindowBlock({
-  window,
-  hostStageIndex,
-}: {
-  window: RenderWindow
-  /** Index in `graph.stages` of the stage hosting this window — its tint leads the
-   *  panel's edge. Distinct from a task's own `homeStageIndex` below. */
-  hostStageIndex: number
-}) {
+export function WaitWindowBlock({ window }: { window: RenderWindow }) {
   const [first, ...rest] = window.tasks
   const ranked = window.tasks.length > 1
   const showTintBar = hasMultiHomeStage(window.tasks)
@@ -44,13 +36,10 @@ export function WaitWindowBlock({
         : 'There is room to spare.'
 
   return (
-    <div
-      className="mt-2 mb-2 bg-field"
-      style={{ borderLeft: `2px solid ${stageColor(hostStageIndex)}` }}
-    >
+    <div className="mt-2 mb-2 rounded-home-mini bg-field">
       <div className="p-3">
-        <p className="text-[15px] font-semibold text-ink">Meanwhile, do these</p>
-        <p className="mt-1 text-[13px] text-ink-2">{attentionText}</p>
+        <p className="text-[15px] font-bold text-home-ink">Meanwhile, do these</p>
+        <p className="mt-1 text-[13px] text-home-ink-2">{attentionText}</p>
 
         <ul className="mt-3">
           {first && <WindowTask task={first} primary={ranked} showTintBar={showTintBar} />}
@@ -59,7 +48,7 @@ export function WaitWindowBlock({
           ))}
         </ul>
 
-        <p className="mt-1 border-t border-rule pt-3 text-[13px] leading-[1.42] text-ink-2">
+        <p className="mt-1 border-t border-home-rule pt-3 text-[13px] leading-[1.42] text-home-ink-2">
           {footer}
         </p>
       </div>
@@ -86,6 +75,12 @@ export function hasMultiHomeStage(tasks: readonly { homeStageIndex: number }[]):
   return new Set(tasks.map((t) => t.homeStageIndex)).size > 1
 }
 
+/**
+ * One borrowed task. The ranked first task (`primary`) sits on its own white card inside
+ * the field, with `Start with this` above its name (R1, as in the recipe-page study):
+ * terracotta text on the field was 4.25:1, under AA at 12px; on white it is 5.8:1. The
+ * row after the card drops its top rule, since the card's own edge already separates them.
+ */
 function WindowTask({
   task,
   primary,
@@ -97,7 +92,11 @@ function WindowTask({
 }) {
   return (
     <li
-      className={`relative flex items-baseline gap-3 border-t border-rule py-3 ${showTintBar ? 'pl-3' : ''}`}
+      className={`relative flex items-baseline gap-3 py-3 ${
+        primary
+          ? 'mb-1 overflow-hidden rounded-home-mini bg-home-surface pr-3 [&+li]:border-t-0'
+          : 'border-t border-home-rule'
+      } ${showTintBar || primary ? 'pl-3' : ''}`}
     >
       {showTintBar && (
         <span
@@ -107,23 +106,23 @@ function WindowTask({
         />
       )}
       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <span
-          className={`block text-[15px] text-ink ${primary ? 'font-semibold' : 'font-medium'}`}
-        >
-          {task.label}
-        </span>
         {primary && (
-          <span className="mt-0.5 block text-[12px] font-medium text-signal">
+          <span className="mb-0.5 block text-[12px] font-semibold text-home-terracotta-text">
             Start with this
           </span>
         )}
+        <span
+          className={`block text-[15px] text-home-ink ${primary ? 'font-semibold' : 'font-medium'}`}
+        >
+          {task.label}
+        </span>
         {task.instruction && (
-          <span className="mt-0.5 block text-[15px] leading-[1.5] text-ink-2">
+          <span className="mt-0.5 block text-[15px] leading-[1.5] text-home-ink-2">
             {task.instruction}
           </span>
         )}
       </span>
-      <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
+      <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
         {taskDurationText(task)}
       </span>
     </li>

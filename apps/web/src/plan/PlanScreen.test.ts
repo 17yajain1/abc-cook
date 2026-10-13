@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
+import type { Ingredient } from '@abc-cook/schema'
+
 import {
-  allStagesExpanded,
-  overviewControlLabel,
+  ingredientCount,
+  isCompactHeader,
   statusLineFor,
   toggleStageSet,
 } from './PlanScreen'
@@ -62,26 +64,50 @@ describe('toggleStageSet (M3.2)', () => {
   })
 })
 
-describe('allStagesExpanded (M3.2)', () => {
-  it('is false for an empty stage list — there is nothing to call "all expanded"', () => {
-    expect(allStagesExpanded([], new Set())).toBe(false)
+describe('ingredientCount (R1 tab label)', () => {
+  const item = (id: string) => ({ id }) as Ingredient
+
+  it('counts every item across groups', () => {
+    expect(
+      ingredientCount([
+        { group: 'For the khichdi', items: [item('a'), item('b'), item('c')] },
+        { group: 'For the chutney', items: [item('d'), item('e')] },
+      ]),
+    ).toBe(5)
   })
 
-  it('is false when at least one stage is missing from the expanded set', () => {
-    expect(allStagesExpanded(['prep', 'cook'], new Set(['prep']))).toBe(false)
+  it('counts an ungrouped list', () => {
+    expect(ingredientCount([{ group: null, items: [item('a'), item('b')] }])).toBe(2)
   })
 
-  it('is true only once every stage id is present', () => {
-    expect(allStagesExpanded(['prep', 'cook'], new Set(['prep', 'cook']))).toBe(true)
+  it('is 0 for a recipe with no ingredients', () => {
+    expect(ingredientCount([])).toBe(0)
   })
 })
 
-describe('overviewControlLabel (M3.2)', () => {
-  it('reads "Show full recipe" when not everything is expanded', () => {
-    expect(overviewControlLabel(false)).toBe('Show full recipe')
+describe('isCompactHeader (R1 sticky bar)', () => {
+  // The page's tab row starts 420px down the scroll area; the bar's copy of the tabs
+  // sits 56px from the top (title row height).
+  it('stays on the full header at the very top', () => {
+    expect(isCompactHeader(0, 420, 56)).toBe(false)
   })
 
-  it('reads "Show overview" once everything is expanded', () => {
-    expect(overviewControlLabel(true)).toBe('Show overview')
+  it('stays on the full header until the page tabs reach the bar', () => {
+    expect(isCompactHeader(363, 420, 56)).toBe(false)
+  })
+
+  it('switches to the compact bar once the page tabs reach it', () => {
+    expect(isCompactHeader(364, 420, 56)).toBe(true)
+    expect(isCompactHeader(900, 420, 56)).toBe(true)
+  })
+
+  it('accounts for a top safe-area inset in the bar offset', () => {
+    // 47px notch inset: the bar's tabs sit at 103px, so it takes over 47px sooner.
+    expect(isCompactHeader(317, 420, 103)).toBe(true)
+    expect(isCompactHeader(316, 420, 103)).toBe(false)
+  })
+
+  it('never shows the bar at scroll 0, even on a page too short to have a header gap', () => {
+    expect(isCompactHeader(0, 40, 56)).toBe(false)
   })
 })

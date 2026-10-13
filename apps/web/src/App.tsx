@@ -12,7 +12,6 @@ import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
 import { canonicalSourceKey } from './library/sourceKey'
 import { createLibrary } from './library/store'
-import { layoutMap, type MapLayout } from './map/layout'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
@@ -47,12 +46,11 @@ type View =
   | {
       kind: 'plan'
       plan: RenderPlan
-      map: MapLayout
       origin: PlanOrigin
       saveState: SaveState
       /** A6: null for a fixture recipe (never went through `/import`). */
       importMeta: ImportMeta | null
-      /** The raw payload `plan`/`map` were derived from — Cooking Mode's
+      /** The raw payload `plan` was derived from — Cooking Mode's
        * `deriveCookingModel` needs the full graph (`depends_on`, `consumes`,
        * `interruptible`…), which `RenderPlan` doesn't retain. */
       payload: RecipePlanResponse
@@ -70,7 +68,6 @@ export default function App() {
         setView({
           kind: 'plan',
           plan: derivePlan(payload),
-          map: layoutMap(payload),
           origin: { kind: 'server', recipeId },
           saveState: { status: 'idle' },
           importMeta: null,
@@ -82,7 +79,7 @@ export default function App() {
 
   // Synchronous: the recipe is already on the device, so there is no loading state and
   // no network request — `PlanScreen` remounts (via its `key`) exactly as it would for
-  // a server open (`PlanScreen.tsx`'s Map-animation ref assumes that).
+  // a server open.
   const openSaved = useCallback((id: string) => {
     const recipe = library.get(id)
     if (!recipe) {
@@ -92,7 +89,6 @@ export default function App() {
     setView({
       kind: 'plan',
       plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
-      map: layoutMap(recipe.payload),
       origin: { kind: 'library', id },
       saveState: { status: 'saved' },
       importMeta: recipe.import_meta ?? null,
@@ -108,7 +104,6 @@ export default function App() {
     setView({
       kind: 'plan',
       plan: derivePlan(payload),
-      map: layoutMap(payload),
       origin: { kind: 'import', payload, importMeta: NO_IMPORT_META },
       saveState: { status: 'idle' },
       importMeta: NO_IMPORT_META,
@@ -116,18 +111,20 @@ export default function App() {
     })
   }, [])
 
+  // Back from a plan: the shell remounts on the tab the person left from (Home or Cookbook).
+  // TODO(R1): a recipe opened from the feed's See all list comes back to Home, not to See
+  // all — the shell's `seeAll` state is lost when it unmounts for the plan.
   const backToHome = useCallback(() => setView({ kind: 'home' }), [])
   const openImport = useCallback(() => setView({ kind: 'import' }), [])
   // Every finished import lands in the library straight away; re-importing the same
   // source replaces its entry (`library.save` dedups by source key). On a failed write
   // the origin stays `import`, so the header's Save control still offers a retry.
   const onImported = useCallback(
-    (plan: RenderPlan, map: MapLayout, payload: RecipePlanResponse, importMeta: ImportMeta) => {
+    (plan: RenderPlan, payload: RecipePlanResponse, importMeta: ImportMeta) => {
       const result = library.save(payload, importMeta)
       setView({
         kind: 'plan',
         plan,
-        map,
         origin: { kind: 'import', payload, importMeta },
         saveState: result.ok ? { status: 'saved' } : { status: 'error', message: result.message },
         importMeta,
@@ -178,7 +175,6 @@ export default function App() {
       const planView: View = {
         kind: 'plan',
         plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
-        map: layoutMap(recipe.payload),
         origin: { kind: 'library', id: target.id },
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,
@@ -195,7 +191,6 @@ export default function App() {
           const planView: View = {
             kind: 'plan',
             plan: derivePlan(payload),
-            map: layoutMap(payload),
             origin: { kind: 'server', recipeId: target.recipeId },
             saveState: { status: 'idle' },
             importMeta: null,
@@ -246,8 +241,7 @@ export default function App() {
         <PlanScreen
           key={planKey(view.origin)}
           plan={view.plan}
-          map={view.map}
-          onPickAnother={backToHome}
+          onBack={backToHome}
           onStartCooking={startCooking}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}

@@ -5,6 +5,15 @@ USP #1. This is the screen the product is judged on.
 `COOKING_GRAPH.md` defines what the graph *is*. This file defines how it is *drawn*,
 and the constraints that make a graph legible on a 390px screen.
 
+> **Status (2026-10-13): the Map is removed from the recipe page.** Owner decision, R1.
+> Reason: on real imports it fails this file's own five-second test (§ 8) — long waits
+> dominate the picture, and the parallel work the Map exists to show is hidden in
+> "+N more". The recipe page now has one tab row, `Plan · Ingredients N`, and no
+> `Plan · Map` switch. `apps/web/src/map/` stays in the repo, unused, until a later
+> clean-up PR. The rest of this file is kept as the record of what the Map was meant to
+> do and why; it does not describe a shipped screen. The structure the Map tried to
+> show (what happens during a wait) is carried on the Plan by the wait-window panel.
+
 ---
 
 ## 1. What this screen has to do
@@ -38,7 +47,7 @@ contact with a phone.
 | View | When | What it optimises for |
 |---|---|---|
 | **Plan** (vertical stages) | Default. Before and during cooking. | Scannability, one thumb, calm |
-| **Map** (the actual graph) | On demand — a `Plan · Map` mode switch inside the Cooking Plan tab | Comprehension of structure. The "oh, I see" view. |
+| **Map** (the actual graph) | **Removed from the recipe page 2026-10-13 (R1)** — was on demand, a `Plan · Map` mode switch inside the Cooking Plan tab | Comprehension of structure. The "oh, I see" view. |
 | **Step** | While cooking | One instruction. Nothing else. |
 
 The Plan view is what people use. **The Map view is what makes them understand the

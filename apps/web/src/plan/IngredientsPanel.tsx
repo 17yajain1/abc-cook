@@ -12,22 +12,22 @@ export function IngredientsPanel({ groups }: { groups: RenderIngredientGroup[] }
       {groups.map((group, i) => (
         <div key={group.group ?? `ungrouped-${i}`} className="mb-6 last:mb-0">
           {group.group && (
-            <h3 className="mb-1 text-[13px] font-semibold text-ink">{group.group}</h3>
+            <h3 className="mb-1 text-[13px] font-semibold text-home-ink">{group.group}</h3>
           )}
           <ul>
             {group.items.map((item) => (
               <li
                 key={item.id}
-                className="flex items-baseline justify-between gap-3 border-b border-rule py-2 text-[15px] last:border-b-0"
+                className="flex items-baseline justify-between gap-3 border-b border-home-rule py-2 text-[15px] last:border-b-0"
               >
-                <span className="text-ink">
+                <span className="text-home-ink">
                   {item.name}
                   {item.optional && (
-                    <span className="ml-2 text-[13px] text-ink-3">optional</span>
+                    <span className="ml-2 text-[13px] text-home-ink-2">optional</span>
                   )}
                 </span>
                 {(item.qty_text != null || item.qty != null || item.unit) && (
-                  <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-3">
+                  <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
                     {[item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()}
                   </span>
                 )}

@@ -93,7 +93,7 @@ export function CopySheet({
             }}
             placeholder={SHEET.urlPlaceholder}
             aria-label={SHEET.urlPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-home-ink outline-none placeholder:text-home-ink-2"
+            className="min-w-0 flex-1 bg-transparent text-[16px] text-home-ink outline-none placeholder:text-home-ink-2"
           />
           <button
             type="button"

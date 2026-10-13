@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
@@ -13,13 +13,13 @@ import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
 import { ImportProgress, isProgressPhase } from '@/import/ImportScreen'
 import { useImportJob } from '@/import/useImportJob'
-import type { MapLayout } from '@/map/layout'
 import { PlannerScreen } from '@/planner/PlannerScreen'
 import type { RenderPlan } from '@/plan/derive'
 import { LibraryScreen } from '@/library/LibraryScreen'
 
 import { BottomNav, type Tab } from './BottomNav'
 import { devToolsEnabled, feedEnabled } from './flags'
+import { useHomeSurface } from './useHomeSurface'
 
 /** Remembered across the shell unmounting (opening a plan replaces it), so leaving a plan
  * returns to the tab the person was on. */
@@ -49,7 +49,6 @@ export function AppShell({
   onImport: () => void
   onImported: (
     plan: RenderPlan,
-    map: MapLayout,
     payload: RecipePlanResponse,
     importMeta: ImportMeta,
   ) => void
@@ -86,14 +85,7 @@ export function AppShell({
   // the root (so the safe-area strip and over-scroll match); Cookbook (Plan register) and the
   // import-progress screens keep the Plan paper. Cleared when the shell unmounts for a plan.
   const progress = isProgressPhase(job.phase)
-  const homeSurface = !progress && tab !== 'cookbook'
-  useEffect(() => {
-    if (!homeSurface) return
-    document.documentElement.dataset.surface = 'home'
-    return () => {
-      delete document.documentElement.dataset.surface
-    }
-  }, [homeSurface])
+  useHomeSurface(!progress && tab !== 'cookbook')
 
   if (progress) return <ImportProgress job={job} onCancel={cancelImport} />
 
