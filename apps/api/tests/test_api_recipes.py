@@ -24,6 +24,7 @@ GOLDEN = [
     "strawberry-shortcake",
     "synthetic-two-windows",
     "synthetic-two-sittings",
+    "sabudana-khichdi",
 ]
 
 

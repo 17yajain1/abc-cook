@@ -28,6 +28,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 # the M2.75 Map layout algorithm generalizes (docs/DESIGN_SYSTEM.md § The Map grammar),
 # plus a seventh (M3.1a) proving the multi-sitting timing summary is generic over any
 # long unattended node, not just pizza's dough rest.
+# plus an eighth (PR-A) pinning the pan-chain withholding rule on a real import (sabudana).
 GOLDEN = [
     "kadai-paneer",
     "maggi-2min",
@@ -36,6 +37,7 @@ GOLDEN = [
     "strawberry-shortcake",
     "synthetic-two-windows",
     "synthetic-two-sittings",
+    "sabudana-khichdi",
 ]
 
 
@@ -508,3 +510,117 @@ def test_freshness_warning_fires_when_consumer_is_delayed() -> None:
     assert plan.warnings == [
         f"fresh_topping: ready {lead:g} min before assemble needs it (max lead 3 min)",
     ]
+
+
+# --- Pan-chain withholding (Â§4.5) ----------------------------------------------------
+
+
+def _chain_graph(nodes: list[tuple[str, str, str, int, list[str]]]) -> CookingGraph:
+    """Inline graph from (id, attention, station, minutes, depends_on) tuples."""
+    src = SourceRef(kind="text", value="pan chain", imported_at=datetime.now(UTC))
+    built = [
+        Node(
+            id=node_id,
+            label=node_id,
+            instruction=node_id,
+            kind="passive" if attention == "unattended" else "active",
+            attention=attention,  # type: ignore[arg-type]
+            duration_min=minutes,
+            duration_typical=minutes,
+            duration_max=minutes,
+            station=station,  # type: ignore[arg-type]
+            depends_on=deps,
+            produces=None,
+            interruptible=False,
+            stage="s",
+            consumes=[],
+            doneness_cue=None,
+            tip=None,
+            max_lead_min=None,
+        )
+        for node_id, attention, station, minutes, deps in nodes
+    ]
+    return CookingGraph(
+        id="chain",
+        title="Chain",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=built,
+    )
+
+
+def _starts(plan: CookingPlan) -> dict[str, float]:
+    return {s.node_id: s.start_min for s in plan.scheduled}
+
+
+def test_pan_chain_tadka_poured_over_off_burner_dal_floats_into_the_window() -> None:
+    graph = _chain_graph(
+        [
+            ("chop_onion", "hands_on", "counter", 3, []),
+            ("cook_dal", "unattended", "none", 25, []),
+            ("make_tadka", "hands_on", "burner", 5, ["chop_onion"]),
+            ("pour_tadka", "hands_on", "counter", 1, ["cook_dal", "make_tadka"]),
+        ]
+    )
+    for capacity in (1, 2):
+        plan = schedule(graph, burner_capacity=capacity)
+        assert plan.total_min == 26
+        assert _starts(plan)["make_tadka"] == 3
+        assert "make_tadka" in plan.windows[0].assigned
+
+
+def test_pan_chain_tadka_then_burner_simmer_is_withheld_until_dal_is_done() -> None:
+    """Pins the known limitation: no pan identity, so this safe overlap is serialised."""
+    graph = _chain_graph(
+        [
+            ("chop_onion", "hands_on", "counter", 3, []),
+            ("cook_dal", "unattended", "none", 25, []),
+            ("make_tadka", "hands_on", "burner", 5, ["chop_onion"]),
+            ("simmer_dal", "hands_on", "burner", 3, ["cook_dal", "make_tadka"]),
+            ("serve", "hands_on", "none", 1, ["simmer_dal"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert _starts(plan)["make_tadka"] == 25
+    assert plan.total_min == 34
+    assert all("make_tadka" not in w.assigned for w in plan.windows)
+
+
+def test_pan_chain_mutual_gate_does_not_stall_and_is_deterministic() -> None:
+    graph = _chain_graph(
+        [
+            ("fry_onion", "hands_on", "burner", 4, []),
+            ("fry_paneer", "hands_on", "burner", 6, []),
+            ("combine", "hands_on", "burner", 2, ["fry_onion", "fry_paneer"]),
+        ]
+    )
+    first = schedule(graph)
+    second = schedule(graph)
+    assert first == second
+    assert first.total_min == 12
+    # Valve releases the gate: the normal Â§4.1.c key (longest first) picks fry_paneer.
+    assert _starts(first)["fry_paneer"] == 0
+    assert _starts(first)["fry_onion"] == 6
+
+
+def test_pan_chain_step_is_not_placed_in_an_unrelated_soak_window() -> None:
+    graph = _chain_graph(
+        [
+            ("soak", "unattended", "none", 120, []),
+            ("heat_ghee", "hands_on", "burner", 5, []),
+            ("add_potato", "hands_on", "burner", 5, ["heat_ghee"]),
+            ("mix", "hands_on", "counter", 3, ["soak"]),
+            ("combine", "hands_on", "burner", 4, ["mix", "add_potato"]),
+        ]
+    )
+    plan = schedule(graph)
+    starts = _starts(plan)
+    assert starts["heat_ghee"] >= 120
+    assert starts["add_potato"] >= 120
+    assert all(
+        not {"heat_ghee", "add_potato"} & set(w.assigned) for w in plan.windows
+    )
