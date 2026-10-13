@@ -11,6 +11,7 @@ import type {
 } from '@abc-cook/schema'
 
 import { executionOrder } from '@/cooking/model'
+import { displayCue } from '@/lib/displayCue'
 import type { ServingsSource } from '@/lib/servings'
 
 /** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
@@ -200,7 +201,7 @@ function toTask(
     label: node.label,
     instruction: node.instruction,
     durationTypical: node.duration_typical,
-    donenessCue: node.doneness_cue ?? null,
+    donenessCue: displayCue(node.doneness_cue ?? null),
     attention: node.attention,
     durationProvenance: provenance?.nodes?.[node.id]?.fields?.duration ?? null,
     homeStageIndex,
@@ -339,7 +340,7 @@ export function derivePlan(
       hostLabel: host.label,
       hostDurationTypical: host.duration_typical,
       hostAttention: host.attention,
-      hostDonenessCue: host.doneness_cue ?? null,
+      hostDonenessCue: displayCue(host.doneness_cue ?? null),
       usedMin: window.used_min,
       slackMin: window.slack_min,
       capacityMin: window.capacity_min,
