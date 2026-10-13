@@ -173,7 +173,7 @@ def main() -> None:
 
     urls: list[str] = list(args.urls)
     if args.urls_file:
-        urls += [ln.strip() for ln in args.urls_file.read_text().splitlines() if ln.strip()]
+        urls += [ln.strip() for ln in args.urls_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
     if not urls:
         parser.error("give at least one URL")
 
@@ -195,7 +195,7 @@ def main() -> None:
 
     _print_table(rows)
     if args.json_out:
-        args.json_out.write_text(json.dumps(rows, indent=2))
+        args.json_out.write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":

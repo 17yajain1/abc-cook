@@ -166,7 +166,7 @@ def test_failed_write_leaves_no_stray_file(tmp_path: Path, monkeypatch: pytest.M
 
 def test_put_oserror_is_swallowed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     blocker = tmp_path / "file-not-dir"
-    blocker.write_text("x")
+    blocker.write_text("x", encoding="utf-8")
     c = DiskResultCache(blocker / "sub", now=_Clock())  # mkdir under a file -> OSError
     c.put("k", _entry())
     assert c.get("k") is None

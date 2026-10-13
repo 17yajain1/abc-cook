@@ -320,7 +320,7 @@
       "id": "step_add_the_coarse_peanut_powder_to",
       "stage": "cook",
       "label": "Coat sabudana",
-      "instruction": "Add the coarse peanut powder to the soaked sabudana and mix by hand until each grain is coated \u2014 this creates a dry layer so the sabudana won't become sticky while cooking.",
+      "instruction": "Add the coarse peanut powder to the soaked sabudana and mix by hand until each grain is coated — this creates a dry layer so the sabudana won't become sticky while cooking.",
       "kind": "combine",
       "attention": "hands_on",
       "duration_min": 2,
@@ -424,7 +424,7 @@
       "produces": "comp_cooked_potatoes",
       "interruptible": true,
       "max_lead_min": null,
-      "doneness_cue": "\u091c\u092c \u0906\u092a\u0915\u094b \u0932\u0917\u0947 \u0915\u093f \u0906\u0932\u0942 \u0905\u091a\u094d\u091b\u0947 \u0938\u0947 \u0915\u0941\u0915 \u0939\u094b \u0917\u092f\u093e \u0939\u0948",
+      "doneness_cue": "जब आपको लगे कि आलू अच्छे से कुक हो गया है",
       "tip": null
     },
     {
@@ -504,7 +504,7 @@
       "produces": null,
       "interruptible": false,
       "max_lead_min": null,
-      "doneness_cue": "\u091f\u094d\u0930\u093e\u0902\u0938\u0932\u0942\u0938\u0947\u0902\u091f \u0939\u094b \u0917\u092f\u093e \u0939\u0948",
+      "doneness_cue": "ट्रांसलूसेंट हो गया है",
       "tip": null
     },
     {

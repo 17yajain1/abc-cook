@@ -47,11 +47,15 @@ def slug(request: pytest.FixtureRequest) -> str:
 
 
 def _graph(slug: str) -> CookingGraph:
-    return CookingGraph.model_validate_json((FIXTURES / f"{slug}.graph.json").read_text())
+    return CookingGraph.model_validate_json(
+        (FIXTURES / f"{slug}.graph.json").read_text(encoding="utf-8")
+    )
 
 
 def _expected_plan(slug: str) -> CookingPlan:
-    return CookingPlan.model_validate_json((FIXTURES / f"{slug}.plan.json").read_text())
+    return CookingPlan.model_validate_json(
+        (FIXTURES / f"{slug}.plan.json").read_text(encoding="utf-8")
+    )
 
 
 def _kitchen(slug: str) -> dict[str, Any]:
@@ -59,7 +63,7 @@ def _kitchen(slug: str) -> dict[str, Any]:
     path = FIXTURES / f"{slug}.kitchen.json"
     if not path.exists():
         return {}
-    loaded: dict[str, Any] = json.loads(path.read_text())
+    loaded: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     return loaded
 
 
@@ -118,7 +122,7 @@ def test_schedule_is_deterministic(slug: str) -> None:
 def test_plan_json_round_trips(slug: str) -> None:
     """The golden file is exactly what `CookingPlan` serializes back to."""
     plan = _expected_plan(slug)
-    on_disk = json.loads((FIXTURES / f"{slug}.plan.json").read_text())
+    on_disk = json.loads((FIXTURES / f"{slug}.plan.json").read_text(encoding="utf-8"))
     assert json.loads(plan.model_dump_json()) == on_disk
 
 

@@ -32,14 +32,16 @@ def slug(request: pytest.FixtureRequest) -> str:
 
 
 def _graph(slug: str) -> CookingGraph:
-    return CookingGraph.model_validate_json((FIXTURES / f"{slug}.graph.json").read_text())
+    return CookingGraph.model_validate_json(
+        (FIXTURES / f"{slug}.graph.json").read_text(encoding="utf-8")
+    )
 
 
 def _kitchen(slug: str) -> dict[str, Any]:
     path = FIXTURES / f"{slug}.kitchen.json"
     if not path.exists():
         return {}
-    loaded: dict[str, Any] = json.loads(path.read_text())
+    loaded: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     return loaded
 
 
