@@ -47,11 +47,14 @@ export function StageCard({
 
   return (
     <div className="mb-3 rounded-home-card border border-home-rule bg-home-surface px-3.5 pb-2.5 pt-3">
+      {/* The ring is for keyboard focus only (`focus-visible`). A tap focuses the button
+       * too, and the browser's default ring on that focus was the black box left behind
+       * on a tapped header. */}
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className="flex w-full items-start gap-2.5 text-left"
+        className="flex w-full items-start gap-2.5 rounded-home-mini text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-home-ink"
       >
         {/* Numerals are white, not the ground colour: 4.55:1 or better on every tint. */}
         <span
