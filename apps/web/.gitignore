@@ -25,3 +25,7 @@ dist-ssr
 
 # Design-review screenshots (local only)
 .shots
+
+# Playwright output
+test-results
+playwright-report
