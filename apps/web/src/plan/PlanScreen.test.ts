@@ -6,6 +6,7 @@ import type { Ingredient } from '@abc-cook/schema'
 
 import {
   ingredientCount,
+  isCompactHeader,
   statusLineFor,
   toggleStageSet,
 } from './PlanScreen'
@@ -81,5 +82,32 @@ describe('ingredientCount (R1 tab label)', () => {
 
   it('is 0 for a recipe with no ingredients', () => {
     expect(ingredientCount([])).toBe(0)
+  })
+})
+
+describe('isCompactHeader (R1 sticky bar)', () => {
+  // The page's tab row starts 420px down the scroll area; the bar's copy of the tabs
+  // sits 56px from the top (title row height).
+  it('stays on the full header at the very top', () => {
+    expect(isCompactHeader(0, 420, 56)).toBe(false)
+  })
+
+  it('stays on the full header until the page tabs reach the bar', () => {
+    expect(isCompactHeader(363, 420, 56)).toBe(false)
+  })
+
+  it('switches to the compact bar once the page tabs reach it', () => {
+    expect(isCompactHeader(364, 420, 56)).toBe(true)
+    expect(isCompactHeader(900, 420, 56)).toBe(true)
+  })
+
+  it('accounts for a top safe-area inset in the bar offset', () => {
+    // 47px notch inset: the bar's tabs sit at 103px, so it takes over 47px sooner.
+    expect(isCompactHeader(317, 420, 103)).toBe(true)
+    expect(isCompactHeader(316, 420, 103)).toBe(false)
+  })
+
+  it('never shows the bar at scroll 0, even on a page too short to have a header gap', () => {
+    expect(isCompactHeader(0, 40, 56)).toBe(false)
   })
 })

@@ -1,9 +1,10 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
+import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
@@ -32,22 +33,41 @@ export function ingredientCount(groups: readonly RenderIngredientGroup[]): numbe
   return groups.reduce((n, g) => n + g.items.length, 0)
 }
 
+/**
+ * R1: whether the compact sticky bar should show. It takes over once the page's own tab
+ * row has scrolled up to where the bar's copy of the tabs sits, so the tabs appear to
+ * stay put while the full header scrolls away. Both offsets are measured from the top of
+ * the scroll area (the bar's offset includes the phone's top safe-area inset).
+ */
+export function isCompactHeader(scrollTop: number, pageTabsTop: number, barTabsTop: number): boolean {
+  return scrollTop > 0 && scrollTop >= pageTabsTop - barTabsTop
+}
+
 type Tab = 'plan' | 'ingredients'
 
 /**
- * The recipe page. One tab row, `Plan · Ingredients N`. The Map mode was removed from
+ * The recipe page (R1, Home register). One scroll area holds the full header, the
+ * `Plan · Ingredients N` tab row and the tab's content. The Map mode was removed from
  * this page on 2026-10-13 (`docs/GRAPH_VIEW.md`); `src/map/` stays, unused, until a
  * later clean-up PR.
+ *
+ * The compact bar (back, title, tabs) is a second, fixed copy laid over the top of the
+ * scroll area. It is always in the layout, so its height can be measured, but stays
+ * invisible (and out of the tab order) until `isCompactHeader` says the page's own tabs
+ * have reached it. Overlaying it rather than making the page's own header sticky means
+ * the content below never jumps when the bar appears.
  */
 export function PlanScreen({
   plan,
-  onPickAnother,
+  onBack,
   onStartCooking,
   save,
   importMeta,
 }: {
   plan: RenderPlan
-  onPickAnother: () => void
+  /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
+   *  the shell, which reopens the tab the person was on. */
+  onBack: () => void
   onStartCooking: () => void
   save?: SaveControl
   importMeta?: ImportMeta | null
@@ -64,7 +84,33 @@ export function PlanScreen({
   const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
   const toggleStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
 
-  const nIngredients = ingredientCount(plan.ingredientGroups)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const pageTabsRef = useRef<HTMLDivElement>(null)
+  const barTabsRef = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(false)
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el || !pageTabsRef.current || !barTabsRef.current) return
+    setCompact(
+      isCompactHeader(el.scrollTop, pageTabsRef.current.offsetTop, barTabsRef.current.offsetTop),
+    )
+  }
+
+  // Switching tabs while the bar is showing keeps the tabs pinned: the new tab's content
+  // starts right under the bar instead of wherever the old tab was scrolled to. Runs
+  // before paint (layout effect), so the old scroll position never flashes.
+  const pinTabsRef = useRef(false)
+  const switchTab = (next: Tab) => {
+    if (next === tab) return
+    pinTabsRef.current = compact
+    setTab(next)
+  }
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || !pinTabsRef.current) return
+    pinTabsRef.current = false
+    el.scrollTop = (pageTabsRef.current?.offsetTop ?? 0) - (barTabsRef.current?.offsetTop ?? 0)
+  }, [tab])
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
   for (const row of plan.waitRows) {
@@ -73,34 +119,36 @@ export function PlanScreen({
     waitRowsAfter.set(row.afterStageIndex, bucket)
   }
 
-  // `relative` matters: the CTA below is absolutely positioned, and without a positioned
-  // ancestor it resolved against the viewport and escaped the 390px column at any wider
-  // width. Invisible at exactly 390px, which is why M2 shipped it.
-  // `overflow-x-clip`: nothing bleeds past the content box any more (the wait-window
-  // panel is fully contained in its stage's own body), but the clip stays as a guard
-  // against a sub-390px viewport.
+  const nIngredients = ingredientCount(plan.ingredientGroups)
+  const tabs = (
+    <>
+      <TabButton active={tab === 'plan'} onClick={() => switchTab('plan')}>
+        Plan
+      </TabButton>
+      <TabButton active={tab === 'ingredients'} onClick={() => switchTab('ingredients')}>
+        Ingredients <span className="tabular">{nIngredients}</span>
+      </TabButton>
+    </>
+  )
+
+  // `relative` matters: the CTA and the compact bar are absolutely positioned, and
+  // without a positioned ancestor they resolved against the viewport and escaped the
+  // 390px column at any wider width.
+  // `overflow-x-clip`: a guard against a sub-390px viewport.
   return (
-    <div className="relative flex h-full flex-col overflow-x-clip bg-home-ground text-home-ink">
-      <RecipeHeader plan={plan} save={save} importMeta={importMeta} />
-      {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
+    <div className="relative h-full overflow-x-clip bg-home-ground text-home-ink">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="no-scrollbar h-full overflow-y-auto pb-56"
+      >
+        <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} />
+        {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 
-      <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-home-rule px-5">
-        <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>
-          Plan
-        </TabButton>
-        <TabButton active={tab === 'ingredients'} onClick={() => setTab('ingredients')}>
-          Ingredients <span className="tabular">{nIngredients}</span>
-        </TabButton>
-        <button
-          type="button"
-          onClick={onPickAnother}
-          className="ml-auto self-center text-[13px] text-home-ink-2 underline underline-offset-4"
-        >
-          change recipe
-        </button>
-      </div>
+        <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
+          {tabs}
+        </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto pb-56">
         {plan.warnings.length > 0 && (
           <div className="mx-5 mt-4 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
             {plan.warnings.map((w) => (
@@ -112,7 +160,7 @@ export function PlanScreen({
         {tab === 'ingredients' ? (
           <IngredientsPanel groups={plan.ingredientGroups} />
         ) : (
-          <div className="px-5 pt-6">
+          <div className="px-5 pt-5">
             {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
               <WaitRow key={`wait-pre-${i}`} row={row} />
             ))}
@@ -138,6 +186,25 @@ export function PlanScreen({
             )}
           </div>
         )}
+      </div>
+
+      {/* The compact bar. `invisible` (visibility: hidden) keeps it measurable but hides
+          it from sight, taps and screen readers until it is needed. */}
+      <div
+        aria-hidden={!compact}
+        className={`absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[env(safe-area-inset-top)] transition-[opacity,visibility] duration-150 ${
+          compact ? 'visible opacity-100' : 'invisible opacity-0'
+        }`}
+      >
+        <div className="flex h-14 items-center gap-1 px-3">
+          <BackButton onClick={onBack} />
+          <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
+            {plan.title}
+          </p>
+        </div>
+        <div ref={barTabsRef} className="-mb-px flex items-stretch gap-6 px-5">
+          {tabs}
+        </div>
       </div>
 
       {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. */}
@@ -169,7 +236,8 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-medium ${
+      aria-pressed={active}
+      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-semibold ${
         active ? 'border-home-ink text-home-ink' : 'border-transparent text-home-ink-2'
       }`}
     >

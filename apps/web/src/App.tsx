@@ -111,6 +111,9 @@ export default function App() {
     })
   }, [])
 
+  // Back from a plan: the shell remounts on the tab the person left from (Home or Cookbook).
+  // TODO(R1): a recipe opened from the feed's See all list comes back to Home, not to See
+  // all — the shell's `seeAll` state is lost when it unmounts for the plan.
   const backToHome = useCallback(() => setView({ kind: 'home' }), [])
   const openImport = useCallback(() => setView({ kind: 'import' }), [])
   // Every finished import lands in the library straight away; re-importing the same
@@ -238,7 +241,7 @@ export default function App() {
         <PlanScreen
           key={planKey(view.origin)}
           plan={view.plan}
-          onPickAnother={backToHome}
+          onBack={backToHome}
           onStartCooking={startCooking}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}
