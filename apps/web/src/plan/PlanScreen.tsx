@@ -3,6 +3,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ImportMeta } from '@abc-cook/schema'
 
 import { MapView } from '@/map/MapView'
+import { useHomeSurface } from '@/shell/useHomeSurface'
 import type { MapLayout } from '@/map/layout'
 
 import type { RenderPlan, RenderWaitRow } from './derive'
@@ -68,6 +69,9 @@ export function PlanScreen({
   const [mode, setMode] = useState<Mode>('plan')
   const showingMap = tab === 'plan' && mode === 'map'
   const statusLine = statusLineFor(importMeta)
+  // R1: the recipe page is a Home-register screen (DESIGN_SYSTEM.md § Register: Home and
+  // browse screens), so the page behind it takes the Home ground too.
+  useHomeSurface(true)
 
   // M3.2: overview-first — every card starts collapsed. This is ordinary component
   // state, not a ref, so it re-renders on toggle like any other UI state; it survives
@@ -123,11 +127,11 @@ export function PlanScreen({
   // panel is fully contained in its stage's own body), but the clip stays as a guard
   // against a sub-390px viewport.
   return (
-    <div className="relative flex h-full flex-col overflow-x-clip bg-paper">
+    <div className="relative flex h-full flex-col overflow-x-clip bg-home-ground text-home-ink">
       <RecipeHeader plan={plan} save={save} importMeta={importMeta} />
-      {statusLine && <p className="px-5 pb-2 text-[13px] text-ink-3">{statusLine}</p>}
+      {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 
-      <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-rule px-5">
+      <div className="flex flex-shrink-0 items-stretch gap-5 border-b border-home-rule px-5">
         <TabButton active={tab === 'plan'} onClick={() => setTab('plan')}>
           Cooking Plan
         </TabButton>
@@ -137,7 +141,7 @@ export function PlanScreen({
         <button
           type="button"
           onClick={onPickAnother}
-          className="ml-auto self-center text-[13px] text-ink-3 underline underline-offset-4"
+          className="ml-auto self-center text-[13px] text-home-ink-2 underline underline-offset-4"
         >
           change recipe
         </button>
@@ -157,7 +161,7 @@ export function PlanScreen({
             <button
               type="button"
               onClick={toggleAllStages}
-              className="pb-1.5 text-[13px] font-medium text-ink-3 underline underline-offset-4"
+              className="pb-1.5 text-[13px] font-medium text-home-ink-2 underline underline-offset-4"
             >
               {overviewControlLabel(allExpanded)}
             </button>
@@ -167,7 +171,7 @@ export function PlanScreen({
 
       <div className={`no-scrollbar flex-1 overflow-y-auto ${showingMap ? '' : 'pb-56'}`}>
         {plan.warnings.length > 0 && (
-          <div className="mx-5 mt-4 border-l-2 border-ink bg-paper-sunk px-3 py-2 text-[13px] text-ink-2">
+          <div className="mx-5 mt-4 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
             {plan.warnings.map((w) => (
               <p key={w}>{sentence(w)}</p>
             ))}
@@ -202,7 +206,7 @@ export function PlanScreen({
             ))}
 
             {plan.savedMin === 0 && (
-              <p className="pb-4 pt-2 text-[13px] text-ink-3">
+              <p className="pb-4 pt-2 text-[13px] text-home-ink-2">
                 {plan.hasUnattendedWork
                   ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
                   : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
@@ -215,15 +219,15 @@ export function PlanScreen({
       {/* Hidden in Map mode — the mock draws no CTA there. z-20 keeps this fixed footer
           above the scrolled plan content beneath it. */}
       {!showingMap && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-rule bg-paper px-5 pb-6 pt-4">
-          {/* Signal, and the label is just "Start Cooking" (DESIGN_SYSTEM.md § PrimaryCTA).
-              M3.4: wired to Cooking Mode. */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-6 pt-4">
+          {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
+              register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
           <button
             type="button"
             onClick={onStartCooking}
-            className="flex h-[52px] w-full items-center justify-center rounded-control bg-signal text-[18px] font-semibold text-paper"
+            className="flex h-[52px] w-full items-center justify-center rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground"
           >
-            Start Cooking
+            Start cooking
           </button>
         </div>
       )}
@@ -245,7 +249,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-medium ${
-        active ? 'border-ink text-ink' : 'border-transparent text-ink-3'
+        active ? 'border-home-ink text-home-ink' : 'border-transparent text-home-ink-2'
       }`}
     >
       {children}
@@ -272,7 +276,7 @@ function ModeButton({
       type="button"
       onClick={onClick}
       className={`-mb-px border-b-2 pb-1.5 text-[13px] font-medium ${
-        active ? 'border-ink text-ink' : 'border-transparent text-ink-3'
+        active ? 'border-home-ink text-home-ink' : 'border-transparent text-home-ink-2'
       }`}
     >
       {children}

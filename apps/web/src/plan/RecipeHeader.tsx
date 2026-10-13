@@ -41,23 +41,23 @@ export function RecipeHeader({
   const servings = servingsLine(plan.servingsSource, importMeta)
 
   return (
-    <header className="flex-shrink-0 px-5 pb-4 pt-7">
+    <header className="flex-shrink-0 px-5 pb-4 pt-[calc(28px+env(safe-area-inset-top))]">
       <div className="flex items-start justify-between gap-3">
-        <h1 className="condensed text-[30px] font-semibold leading-[1.05] text-ink">
+        <h1 className="text-[30px] font-bold leading-[34px] tracking-[-0.5px] text-home-ink">
           {plan.title}
         </h1>
         {save && <SaveButton save={save} />}
       </div>
-      {plan.cuisine && <p className="mt-1 text-[15px] text-ink-2">{plan.cuisine}</p>}
+      {plan.cuisine && <p className="mt-1 text-[15px] text-home-ink-2">{plan.cuisine}</p>}
 
-      <div className="tabular mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px] font-medium text-ink-3">
+      <div className="tabular mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px] font-medium text-home-ink-2">
         {servings && <span>{servings}</span>}
         <span>{timing.primary}</span>
       </div>
-      {timing.secondary && <p className="mt-0.5 text-[13px] text-ink-3">{timing.secondary}</p>}
+      {timing.secondary && <p className="mt-0.5 text-[13px] text-home-ink-2">{timing.secondary}</p>}
 
       {plan.savedMin > 0 && (
-        <p className="mt-4 text-[18px] font-semibold leading-snug text-ink">
+        <p className="mt-4 text-[18px] font-bold leading-snug text-home-ink">
           This plan saves you{' '}
           <span className="tabular">{formatMinutes(plan.savedMin)}</span> by prepping
           while things cook.
@@ -65,7 +65,7 @@ export function RecipeHeader({
       )}
 
       {save?.status === 'error' && save.message && (
-        <p className="mt-3 text-[13px] text-signal">{save.message}</p>
+        <p className="mt-3 text-[13px] text-home-terracotta-text">{save.message}</p>
       )}
     </header>
   )
@@ -74,7 +74,7 @@ export function RecipeHeader({
 function SaveButton({ save }: { save: SaveControl }) {
   if (save.status === 'saved') {
     return (
-      <span className="flex-shrink-0 pt-1 text-[13px] font-medium text-ink-3">Saved</span>
+      <span className="flex-shrink-0 pt-1 text-[13px] font-medium text-home-ink-2">Saved</span>
     )
   }
 
@@ -82,7 +82,7 @@ function SaveButton({ save }: { save: SaveControl }) {
     <button
       type="button"
       onClick={save.onSave}
-      className="flex-shrink-0 rounded-control border border-ink-3 px-3 py-1.5 text-[13px] font-medium text-ink active:bg-paper-sunk"
+      className="flex-shrink-0 rounded-full border border-home-rule bg-home-surface px-4 py-2 text-[13px] font-semibold text-home-ink active:bg-home-thumb"
     >
       {save.existing ? 'Update saved copy' : 'Save'}
     </button>

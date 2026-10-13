@@ -4,20 +4,21 @@ import type { StageSpan } from '@abc-cook/schema'
 
 import { attentionNote } from '@/lib/attention'
 import { formatMinutes } from '@/lib/duration'
-import { stageColor, stageGround } from '@/lib/stageColor'
+import { stageColor } from '@/lib/stageColor'
 
 import type { RenderStage, RenderTask } from './derive'
 import { WaitWindowBlock } from './WaitWindowBlock'
 
 /**
- * One stage in the vertical plan — Direction 3 (docs/DESIGN_SYSTEM.md § Register).
+ * One stage in the vertical plan — Direction 3 (docs/DESIGN_SYSTEM.md § Register), drawn
+ * in the Home register since R1 (§ Resolved in R1).
  *
- * Stage identity is a filled ordinal badge in the stage's own tint, sitting at the head
- * of the stage's 18%-alpha tint ground (§ Stage identity, § Avoid generated-design
- * tells' knowing exception). The ground runs behind everything the stage contains —
- * header, task rows, and any wait-window panel nested inside it. A wait window the stage
- * hosts renders as a panel directly beneath its host's own task row, never in place of
- * it, never full-bleed.
+ * The stage is a white card with a 1px rule and a 16px radius, spanning the full content
+ * width. Stage identity is the filled ordinal badge in the stage's own tint, inside the
+ * header before the stage name, plus the title weight (§ Stage identity). There is no
+ * tinted ground any more: on the warm Home ground the grey tints read cold and muddy, and
+ * the wait-window field barely separated from them. A wait window the stage hosts renders
+ * as a panel directly beneath its host's own task row, never in place of it.
  *
  * M3.2: a controlled component. `PlanScreen` owns which stages are open — the overview
  * starts every stage collapsed, and "Show full recipe" / "Show overview" toggle them
@@ -45,93 +46,83 @@ export function StageCard({
   const showsStageDuration = !stage.repeated && !stage.hasForeignRows && !stage.rowsAbsorbedElsewhere
 
   return (
-    <div className="mb-6 flex gap-3">
-      <div className="flex flex-shrink-0 items-start justify-center pt-0.5" style={{ width: 24 }}>
+    <div className="mb-3 rounded-home-card border border-home-rule bg-home-surface px-3.5 pb-2.5 pt-3">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full items-start gap-2.5 text-left"
+      >
+        {/* Numerals are white, not the ground colour: 4.55:1 or better on every tint. */}
         <span
-          className="tabular flex h-[22px] w-[22px] items-center justify-center rounded-full text-[12px] font-semibold leading-none text-paper"
+          className="tabular mt-px flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full text-[12px] font-semibold leading-none text-home-surface"
           style={{ background: tint }}
         >
           {ordinal}
         </span>
-      </div>
-
-      <div
-        className="min-w-0 flex-1"
-        style={{ background: stageGround(stage.index), padding: '10px 12px 8px' }}
-      >
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 text-left"
-        >
-          {/* flex-auto (basis: auto), not flex-1 (basis: 0%): the flex-wrap decision
-           * below sizes each item by its flex-basis, and a 0%-basis item counts as ~0
-           * width for that check regardless of its actual text. That let a long
-           * duration string fit "on the line" by the wrap algorithm's math while still
-           * crushing the label's box past its own content width during layout — with no
-           * min-w-0 here, the label's unbreakable text then overflowed the crushed box
-           * with no visible gap before the duration. basis: auto makes the label's real
-           * text width count, so wrap correctly moves the duration group to its own
-           * line instead. */}
-          <span className="expanded flex-auto text-[18px] font-semibold text-ink">
+        {/* Row one is badge · name · (collapsed figure) · toggle, and the toggle is always
+         * pinned top-right on it. The expanded figure (the long hands-on / waiting split)
+         * gets its own subline under the name instead of wrapping the row. The figure is
+         * omitted when `showsStageDuration` is false — it's a whole-stage rollup, and a
+         * repeated, foreign-row-absorbing, or rows-absorbed-elsewhere card would either
+         * double-count it or make it wrong for what's actually shown here. */}
+        <span className="min-w-0 flex-1">
+          <span className="block text-[18px] font-bold leading-[24px] text-home-ink">
             {stage.label}
           </span>
-          {/* Duration + toggle travel together as one flex-shrink-0 unit so a long
-           * duration string (e.g. the expanded hands-on/waiting split) wraps whole onto
-           * its own line under the label. Omitted when `showsStageDuration` is false —
-           * it's a whole-stage rollup, and a repeated, foreign-row-absorbing, or
-           * rows-absorbed-elsewhere card would either double-count it or make it wrong
-           * for what's actually shown here (see `showsStageDuration` above). */}
-          <span className="flex flex-shrink-0 items-baseline gap-3">
-            {showsStageDuration && (
-              <span className="tabular text-[13px] font-medium text-ink-2">
-                {expanded
-                  ? expandedStageDurationText(stage.span)
-                  : collapsedStageDurationText(stage.span)}
-              </span>
-            )}
-            <span aria-hidden className="text-[15px] font-medium leading-none text-ink-2">
-              {expanded ? '−' : '+'}
+          {expanded && showsStageDuration && (
+            <span className="tabular mt-0.5 block text-[13px] font-medium text-home-ink-2">
+              {expandedStageDurationText(stage.span)}
             </span>
+          )}
+        </span>
+        {!expanded && showsStageDuration && (
+          <span className="tabular flex-shrink-0 pt-[3px] text-[13px] font-medium leading-[18px] text-home-ink-2">
+            {collapsedStageDurationText(stage.span)}
           </span>
-        </button>
-
-        {!expanded && (
-          <div className="mt-1">
-            {chain && (
-              <p className="line-clamp-2 text-[13px] text-ink-2">{chain}</p>
-            )}
-            {meanwhile.length > 0 && (
-              <p className="mt-1 text-[13px] text-ink-2">
-                <span className="font-medium text-ink">Meanwhile: </span>
-                {meanwhile.join(', ')}
-              </p>
-            )}
-          </div>
         )}
+        <span
+          aria-hidden
+          className="flex h-6 w-4 flex-shrink-0 items-center justify-center text-[15px] font-medium leading-none text-home-ink-2"
+        >
+          {expanded ? '−' : '+'}
+        </span>
+      </button>
 
-        {expanded && (
-          <div className="mt-3">
-            {stage.ingredients.length > 0 && (
-              <p className="mb-3 text-[13px] text-ink-2">
-                <span className="font-medium text-ink">{YOULL_NEED_LABEL}</span>
-                {ingredientNames(stage)}
-              </p>
-            )}
-            {stage.inlineTasks.map((task) => {
-              const win = windowByHost.get(task.nodeId)
-              const foreign = task.homeStageIndex !== stage.index
-              return (
-                <Fragment key={task.nodeId}>
-                  <TaskRow task={task} foreign={foreign} />
-                  {win && <WaitWindowBlock window={win} hostStageIndex={stage.index} />}
-                </Fragment>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      {!expanded && (
+        <div className="mt-1">
+          {chain && (
+            <p className="line-clamp-2 text-[13px] text-home-ink-2">{chain}</p>
+          )}
+          {meanwhile.length > 0 && (
+            <p className="mt-1 text-[13px] text-home-ink-2">
+              <span className="font-medium text-home-ink">Meanwhile: </span>
+              {meanwhile.join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {expanded && (
+        <div className="mt-3">
+          {stage.ingredients.length > 0 && (
+            <p className="mb-3 text-[13px] text-home-ink-2">
+              <span className="font-medium text-home-ink">{YOULL_NEED_LABEL}</span>
+              {ingredientNames(stage)}
+            </p>
+          )}
+          {stage.inlineTasks.map((task) => {
+            const win = windowByHost.get(task.nodeId)
+            const foreign = task.homeStageIndex !== stage.index
+            return (
+              <Fragment key={task.nodeId}>
+                <TaskRow task={task} foreign={foreign} />
+                {win && <WaitWindowBlock window={win} />}
+              </Fragment>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -226,7 +217,7 @@ function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
   const note = attentionNote(task.attention)
   return (
     <div
-      className={`relative flex items-baseline gap-3 border-b border-rule py-3 last:border-b-0 ${foreign ? 'pl-3' : ''}`}
+      className={`relative flex items-baseline gap-3 border-b border-home-rule py-3 last:border-b-0 ${foreign ? 'pl-3' : ''}`}
     >
       {foreign && (
         <span
@@ -236,26 +227,26 @@ function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
         />
       )}
       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <span className="block text-[15px] font-medium text-ink">{task.label}</span>
+        <span className="block text-[15px] font-medium text-home-ink">{task.label}</span>
         {task.instruction && (
-          <span className="mt-0.5 block text-[15px] leading-[1.5] text-ink-2">
+          <span className="mt-0.5 block text-[15px] leading-[1.5] text-home-ink-2">
             {task.instruction}
           </span>
         )}
         {task.donenessCue && (
-          <span className="mt-0.5 block text-[13px] leading-[1.42] text-ink-2">
+          <span className="mt-0.5 block text-[13px] leading-[1.42] text-home-ink-2">
             until {task.donenessCue}
           </span>
         )}
-        {note && <span className="mt-0.5 block text-[13px] text-ink-2">{note}</span>}
+        {note && <span className="mt-0.5 block text-[13px] text-home-ink-2">{note}</span>}
         {task.tip != null && (
-          <span className="mt-0.5 block text-[13px] text-ink-2">
-            <span className="font-medium text-ink">Tip: </span>
+          <span className="mt-0.5 block text-[13px] text-home-ink-2">
+            <span className="font-medium text-home-ink">Tip: </span>
             {task.tip}
           </span>
         )}
       </span>
-      <span className="tabular flex-shrink-0 text-[13px] font-medium text-ink-2">
+      <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
         {taskDurationText(task)}
       </span>
     </div>
