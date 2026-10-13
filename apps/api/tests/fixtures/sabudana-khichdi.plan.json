@@ -1,0 +1,155 @@
+{
+  "graph_id": "sabudana-khichdi",
+  "scheduled": [
+    {
+      "node_id": "step_rinse_the_sabudana_put_it_in",
+      "start_min": 0.0,
+      "end_min": 5.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_cover_and_leave_the_sabudana_to",
+      "start_min": 5.0,
+      "end_min": 125.0,
+      "occupies_cook": false,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_dry_roast_1_cup_raw_peanuts",
+      "start_min": 5.0,
+      "end_min": 10.0,
+      "occupies_cook": true,
+      "window_id": "w1",
+      "rank_in_window": 1
+    },
+    {
+      "node_id": "step_coarsely_grind_about_half_the_roasted",
+      "start_min": 10.0,
+      "end_min": 15.0,
+      "occupies_cook": true,
+      "window_id": "w1",
+      "rank_in_window": 0
+    },
+    {
+      "node_id": "step_for_the_green_chutney_in_a",
+      "start_min": 15.0,
+      "end_min": 18.0,
+      "occupies_cook": true,
+      "window_id": "w1",
+      "rank_in_window": 2
+    },
+    {
+      "node_id": "step_after_one_hour_mix_the_soaked",
+      "start_min": 125.0,
+      "end_min": 128.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_add_the_coarse_peanut_powder_to",
+      "start_min": 128.0,
+      "end_min": 131.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_heat_ghee_or_oil_in_a",
+      "start_min": 131.0,
+      "end_min": 136.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_add_the_raw_small_diced_potatoes",
+      "start_min": 136.0,
+      "end_min": 141.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_add_the_coated_sabudana_and_sendha",
+      "start_min": 141.0,
+      "end_min": 144.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_cover_and_cook_on_low_heat",
+      "start_min": 144.0,
+      "end_min": 147.0,
+      "occupies_cook": false,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_uncover_and_check_the_sabudana_should",
+      "start_min": 147.0,
+      "end_min": 155.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_turn_off_the_gas_and_then",
+      "start_min": 155.0,
+      "end_min": 160.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_serve_the_sabudana_khichdi_you_can",
+      "start_min": 160.0,
+      "end_min": 168.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    },
+    {
+      "node_id": "step_serve_with_green_chutney_and_curd",
+      "start_min": 168.0,
+      "end_min": 170.0,
+      "occupies_cook": true,
+      "window_id": null,
+      "rank_in_window": null
+    }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host_node_id": "step_cover_and_leave_the_sabudana_to",
+      "capacity_min": 108.0,
+      "assigned": [
+        "step_coarsely_grind_about_half_the_roasted",
+        "step_dry_roast_1_cup_raw_peanuts",
+        "step_for_the_green_chutney_in_a"
+      ],
+      "used_min": 13.0,
+      "slack_min": 95.0
+    }
+  ],
+  "total_min": 170.0,
+  "serial_min": 183.0,
+  "saved_min": 13.0,
+  "critical_path": [
+    "step_rinse_the_sabudana_put_it_in",
+    "step_cover_and_leave_the_sabudana_to",
+    "step_after_one_hour_mix_the_soaked",
+    "step_add_the_coarse_peanut_powder_to",
+    "step_add_the_coated_sabudana_and_sendha",
+    "step_cover_and_cook_on_low_heat",
+    "step_uncover_and_check_the_sabudana_should",
+    "step_turn_off_the_gas_and_then",
+    "step_serve_the_sabudana_khichdi_you_can",
+    "step_serve_with_green_chutney_and_curd"
+  ],
+  "warnings": []
+}

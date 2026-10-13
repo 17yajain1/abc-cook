@@ -82,6 +82,73 @@ def _cook_choice(
     return min(candidates, key=out_key)
 
 
+def _pan_chain_gates(
+    nodes: dict[str, Node], consumers: dict[str, list[str]]
+) -> dict[str, frozenset[str]]:
+    """Gate each hot pan step on the rest of its pan chain (§4.1.c, §4.5).
+
+    A hands-on burner step that feeds another burner step is part of a pan chain: its
+    output stays in the pan. Running it early, in an unrelated wait window, would leave
+    the pan sitting for the window's length. Such a step is "flagged" and is withheld
+    until every node in its gate is done — the other inputs of the burner step(s) it
+    feeds, recursively through flagged successors, minus anything downstream of itself.
+    A step whose output leaves the pan (a consumer off the burner that is not a sink) is
+    exempt.
+
+    Known gap: the schema has no pan/vessel identity, so "same pan" is inferred from
+    burner-step adjacency. Some safe overlaps (tadka poured in, then a short simmer) get
+    serialised on purpose. The real fix is pan/vessel identity (PR-D / prompt v8).
+
+    Args:
+        nodes: Every node by id.
+        consumers: For each node id, the ids that depend on it.
+
+    Returns:
+        Gate per flagged node id. Unflagged nodes are absent.
+    """
+    def burner_succ(node_id: str) -> list[str]:
+        return [c for c in consumers.get(node_id, []) if nodes[c].station == "burner"]
+
+    def flagged(node: Node) -> bool:
+        if node.attention != "hands_on" or node.station != "burner":
+            return False
+        if not burner_succ(node.id):
+            return False
+        return not any(
+            nodes[c].station != "burner" and consumers.get(c)
+            for c in consumers.get(node.id, [])
+        )
+
+    def descendants(node_id: str) -> set[str]:
+        seen: set[str] = set()
+        stack = list(consumers.get(node_id, []))
+        while stack:
+            current = stack.pop()
+            if current not in seen:
+                seen.add(current)
+                stack.extend(consumers.get(current, []))
+        return seen
+
+    gates: dict[str, frozenset[str]] = {}
+
+    def gate(node_id: str) -> frozenset[str]:
+        if node_id in gates:
+            return gates[node_id]
+        members: set[str] = set()
+        for succ_id in burner_succ(node_id):
+            members.update(set(nodes[succ_id].depends_on) - {node_id})
+            if flagged(nodes[succ_id]):
+                members.update(gate(succ_id))
+        members -= descendants(node_id) | {node_id}
+        gates[node_id] = frozenset(members)
+        return gates[node_id]
+
+    for node in nodes.values():
+        if flagged(node):
+            gate(node.id)
+    return {k: v for k, v in gates.items() if flagged(nodes[k])}
+
+
 def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
     """Schedule a validated cooking graph into a renderable plan.
 
@@ -106,6 +173,8 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
     for consumer in graph.nodes:
         for dep in consumer.depends_on:
             consumers.setdefault(dep, []).append(consumer.id)
+
+    pan_gates = _pan_chain_gates(nodes, consumers)
 
     start: dict[str, float] = {}
     end: dict[str, float] = {}
@@ -139,6 +208,10 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
             if dep != node.id and nodes[dep].max_lead_min is None
         )
 
+    def pan_ready(node: Node) -> bool:
+        """Withhold a pan-chain step until the rest of its chain's inputs are done."""
+        return all(dep in done for dep in pan_gates.get(node.id, ()))
+
     def begin(node: Node, at: float) -> None:
         start[node.id] = at
         end[node.id] = at + node.duration_typical
@@ -168,13 +241,20 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
 
         # (c) If the cook is free, start one ready hands-on node (§4.1.c). Freshness-
         #     constrained nodes are withheld until they are their consumer's last
-        #     outstanding dependency (§4.5).
+        #     outstanding dependency (§4.5), and pan-chain steps until their chain's
+        #     other inputs are done (`_pan_chain_gates`).
         if not cook_busy:
-            candidates = [
+            eligible = [
                 n
                 for n in ready()
                 if _occupies_cook(n) and station_has_room(n) and freshness_ready(n)
             ]
+            candidates = [n for n in eligible if pan_ready(n)]
+            # Deadlock valve: two pan steps feeding one burner step gate each other. If
+            # the cook is free, nothing is running and only pan-withheld steps remain,
+            # release the gate for this pick.
+            if not candidates and eligible and not any(end[r] > now for r in running):
+                candidates = eligible
             if candidates:
                 begin(_cook_choice(candidates, levels, window_open=window_open), now)
 

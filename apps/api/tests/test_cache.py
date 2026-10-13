@@ -166,7 +166,7 @@ def test_failed_write_leaves_no_stray_file(tmp_path: Path, monkeypatch: pytest.M
 
 def test_put_oserror_is_swallowed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     blocker = tmp_path / "file-not-dir"
-    blocker.write_text("x")
+    blocker.write_text("x", encoding="utf-8")
     c = DiskResultCache(blocker / "sub", now=_Clock())  # mkdir under a file -> OSError
     c.put("k", _entry())
     assert c.get("k") is None
@@ -250,7 +250,7 @@ _ONE_CHANGE: dict[str, dict[str, Any]] = {
     "max_tokens": {"max_tokens": 16_001},
     "escalated_max_tokens": {"escalated_max_tokens": 32_001},
     "repair_max_tokens": {"repair_max_tokens": 8_001},
-    "postprocess_version": {"postprocess_version": 2},
+    "postprocess_version": {"postprocess_version": cache_mod.POSTPROCESS_VERSION + 1},
     "burner_capacity": {"burner_capacity": 2},
     "result_schema": {"result_type": _AlteredResult},
 }
