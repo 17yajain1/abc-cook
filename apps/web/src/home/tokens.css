@@ -43,14 +43,10 @@ html[data-surface='home'] #root {
   background: var(--color-home-ground);
 }
 
-/* Below 600px (every phone) a Home screen fills the whole viewport: no 390px cap, and
-   `body` is the Home ground too, so there are no grey strips and over-scroll matches. From
-   600px up, the centred 390px column on the Plan's grey is kept. */
+/* Below 600px `body` is the Home ground too, so there are no grey strips and over-scroll
+   matches. The width rule itself (full width below 600px, a centred 390px column above) is
+   shared with every screen in index.css; from 600px up the Plan's grey stays. */
 @media (max-width: 599px) {
-  html[data-surface='home'] #root {
-    width: 100%;
-    max-width: none;
-  }
   html[data-surface='home'] body {
     background: var(--color-home-ground);
   }

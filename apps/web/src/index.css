@@ -104,7 +104,9 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-paper-sunk);
+  /* Below 600px the screen's own ground runs to the edges, so body is the Plan paper here
+     (Home overrides it in home/tokens.css). From 600px up it is the grey around the column. */
+  background: var(--color-paper);
   color: var(--color-ink);
   overscroll-behavior: none;
 }
@@ -113,11 +115,23 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  width: 390px;
-  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   background: var(--color-paper);
   box-sizing: border-box;
+}
+
+/* The one width rule for every screen (Home's ground override lives in home/tokens.css).
+   Below 600px (every phone) the app fills the viewport: no grey strips, no width jump
+   between Home and Plan. Screens carry their own 20px side padding. From 600px up it is a
+   centred 390px column on grey. */
+@media (min-width: 600px) {
+  body {
+    background: var(--color-paper-sunk);
+  }
+  #root {
+    width: 390px;
+  }
 }
 
 /* Every duration, clock value and timer digit, or the numbers jitter as they change. */
