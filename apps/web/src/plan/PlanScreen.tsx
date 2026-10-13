@@ -51,11 +51,14 @@ type Tab = 'plan' | 'ingredients'
  * this page on 2026-10-13 (`docs/GRAPH_VIEW.md`); `src/map/` stays, unused, until a
  * later clean-up PR.
  *
- * The compact bar (back, title, tabs) is a second, fixed copy laid over the top of the
- * scroll area. It is always in the layout, so its height can be measured, but stays
- * invisible (and out of the tab order) until `isCompactHeader` says the page's own tabs
- * have reached it. Overlaying it rather than making the page's own header sticky means
- * the content below never jumps when the bar appears.
+ * The compact bar (back, title, tabs) is a second copy laid over the top of the scroll
+ * area, rendered only while `isCompactHeader` says the page's own tabs have reached it.
+ * Overlaying it rather than making the page's own header sticky means the content below
+ * never jumps when the bar appears. It is mounted and unmounted, not faded with
+ * opacity/visibility: on iOS Safari the faded-in bar painted its back arrow but not its
+ * title text (R1, iPhone retest), and a freshly mounted element has nothing to repaint.
+ * An empty, invisible spacer of the same height stays mounted so the threshold can
+ * still be measured while the bar is absent.
  */
 export function PlanScreen({
   plan,
@@ -86,13 +89,13 @@ export function PlanScreen({
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageTabsRef = useRef<HTMLDivElement>(null)
-  const barTabsRef = useRef<HTMLDivElement>(null)
+  const barSpacerRef = useRef<HTMLDivElement>(null)
   const [compact, setCompact] = useState(false)
   const onScroll = () => {
     const el = scrollRef.current
-    if (!el || !pageTabsRef.current || !barTabsRef.current) return
+    if (!el || !pageTabsRef.current || !barSpacerRef.current) return
     setCompact(
-      isCompactHeader(el.scrollTop, pageTabsRef.current.offsetTop, barTabsRef.current.offsetTop),
+      isCompactHeader(el.scrollTop, pageTabsRef.current.offsetTop, barSpacerRef.current.offsetHeight),
     )
   }
 
@@ -109,7 +112,7 @@ export function PlanScreen({
     const el = scrollRef.current
     if (!el || !pinTabsRef.current) return
     pinTabsRef.current = false
-    el.scrollTop = (pageTabsRef.current?.offsetTop ?? 0) - (barTabsRef.current?.offsetTop ?? 0)
+    el.scrollTop = (pageTabsRef.current?.offsetTop ?? 0) - (barSpacerRef.current?.offsetHeight ?? 0)
   }, [tab])
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
@@ -135,12 +138,13 @@ export function PlanScreen({
   // without a positioned ancestor they resolved against the viewport and escaped the
   // 390px column at any wider width.
   // `overflow-x-clip`: a guard against a sub-390px viewport.
+  // `h-screen-dynamic` (index.css): 100dvh, so the page tracks Safari's toolbars.
   return (
-    <div className="relative h-full overflow-x-clip bg-home-ground text-home-ink">
+    <div className="h-screen-dynamic relative overflow-x-clip bg-home-ground text-home-ink">
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        className="no-scrollbar h-full overflow-y-auto pb-56"
+        className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
       >
         <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} />
         {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
@@ -188,27 +192,33 @@ export function PlanScreen({
         )}
       </div>
 
-      {/* The compact bar. `invisible` (visibility: hidden) keeps it measurable but hides
-          it from sight, taps and screen readers until it is needed. */}
+      {/* Measures where the bar's tabs start: the top inset plus the 56px title row. Empty
+          and invisible, so it has nothing to paint. */}
       <div
-        aria-hidden={!compact}
-        className={`absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[env(safe-area-inset-top)] transition-[opacity,visibility] duration-150 ${
-          compact ? 'visible opacity-100' : 'invisible opacity-0'
-        }`}
-      >
-        <div className="flex h-14 items-center gap-1 px-3">
-          <BackButton onClick={onBack} />
-          <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
-            {plan.title}
-          </p>
-        </div>
-        <div ref={barTabsRef} className="-mb-px flex items-stretch gap-6 px-5">
-          {tabs}
-        </div>
-      </div>
+        ref={barSpacerRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute left-0 top-0 h-[calc(var(--safe-top)+56px)] w-px"
+      />
 
-      {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-6 pt-4">
+      {compact && (
+        <div
+          data-testid="compact-bar"
+          className="absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[var(--safe-top)]"
+        >
+          <div className="flex h-14 items-center gap-1 px-3">
+            <BackButton onClick={onBack} />
+            <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
+              {plan.title}
+            </p>
+          </div>
+          <div className="-mb-px flex items-stretch gap-6 px-5">{tabs}</div>
+        </div>
+      )}
+
+      {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. The
+          bottom padding is at least the home-indicator inset, so the pill clears Safari's
+          bottom toolbar and the home indicator. */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-4">
         {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
             register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
         <button

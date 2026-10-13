@@ -45,7 +45,7 @@ export function RecipeHeader({
   const servings = servingsLine(plan.servingsSource, importMeta)
 
   return (
-    <header className="flex-shrink-0 px-5 pb-4 pt-[calc(12px+env(safe-area-inset-top))]">
+    <header className="flex-shrink-0 px-5 pb-4 pt-[calc(12px+var(--safe-top))]">
       {/* Back top-left, Save top-right, so the title below gets the full width. */}
       <div className="-ml-2 mb-3 flex items-center justify-between gap-3">
         <BackButton onClick={onBack} circled />

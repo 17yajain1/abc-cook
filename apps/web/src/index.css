@@ -76,6 +76,32 @@
   --map-card-alpha: 0.28;
 }
 
+/* Safe-area insets as variables, so every screen reads one name and a test can set a
+   notch inset (e.g. 47px) on a desktop browser, where env() is always 0. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Text fields are 16px by default. Below 16px, iOS Safari zooms the page in when the field
+   gets focus and keeps the zoom after it, so the next screen opens cut off on the right.
+   This is a base-layer default, so a text-[…] utility on a field still wins; the e2e
+   overflow check (e2e/overflow.spec.ts) fails if any field renders under 16px. */
+@layer base {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* A full-screen view's height: the dynamic viewport (dvh) where supported, so it tracks
+   Safari's toolbars, with 100% as the fallback for older browsers. */
+.h-screen-dynamic {
+  height: 100%;
+  height: 100dvh;
+}
+
 html,
 body,
 #root {
