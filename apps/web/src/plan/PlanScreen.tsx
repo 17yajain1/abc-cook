@@ -228,6 +228,12 @@ export function PlanScreen({
         >
           Start cooking
         </button>
+        {/* R2: what "Start cooking" begins, in one line. Absent without `summary.phases`. */}
+        {plan.outline && (
+          <p className="mt-2 line-clamp-2 text-balance text-center text-[13px] leading-[1.35] text-home-ink-2">
+            {plan.outline.ctaSubline}
+          </p>
+        )}
       </div>
     </div>
   )

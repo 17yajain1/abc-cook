@@ -1,9 +1,13 @@
 import type { ImportMeta } from '@abc-cook/schema'
 
-import { formatMinutes, headerTiming } from '@/lib/duration'
+import { formatMinutes } from '@/lib/duration'
 import { servingsLine } from '@/lib/servings'
+import { sourceLink } from '@/lib/source'
 
 import { BackButton } from './BackButton'
+import { headerMeta } from './headerMeta'
+import { CookOutlineView } from './CookOutlineView'
+import { PlanAheadCard } from './PlanAheadCard'
 import type { RenderPlan } from './derive'
 
 /** M2.12: Save state for a Plan view opened from an import, or the static mark for one
@@ -41,8 +45,10 @@ export function RecipeHeader({
    * fixture recipe (never went through `/import`), same as `PlanScreen`'s own prop. */
   importMeta?: ImportMeta | null
 }) {
-  const timing = headerTiming(plan.summary, plan.totalMin)
-  const servings = servingsLine(plan.servingsSource, importMeta)
+    const servings = servingsLine(plan.servingsSource, importMeta)
+  const source = sourceLink(plan.sourceUrl)
+  const card = plan.outline?.card ?? null
+  const timing = headerMeta(plan.summary, plan.totalMin, card != null)
 
   return (
     <header className="flex-shrink-0 px-5 pb-4 pt-[calc(12px+var(--safe-top))]">
@@ -54,15 +60,30 @@ export function RecipeHeader({
       <h1 className="text-[30px] font-bold leading-[34px] tracking-[-0.5px] text-home-ink">
         {plan.title}
       </h1>
+      {source && (
+        <a
+          href={source.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block text-[13px] font-medium text-home-ink-2 underline underline-offset-2"
+        >
+          From {source.name} ↗
+        </a>
+      )}
       {plan.cuisine && <p className="mt-1 text-[15px] text-home-ink-2">{plan.cuisine}</p>}
 
       <div className="tabular mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px] font-medium text-home-ink-2">
         {servings && <span>{servings}</span>}
-        <span>{timing.primary}</span>
+        {timing.primary && <span>{timing.primary}</span>}
       </div>
       {timing.secondary && <p className="mt-0.5 text-[13px] text-home-ink-2">{timing.secondary}</p>}
+      {/* R2: the plan-ahead card replaces the multi-sitting "Start about … before you eat". */}
+      {card && <PlanAheadCard card={card} />}
 
-      {plan.savedMin > 0 && (
+      {plan.outline && <CookOutlineView outline={plan.outline} />}
+
+      {/* R2: the outline's pill replaces this sentence; plans without phases keep it. */}
+      {!plan.outline && plan.savedMin > 0 && (
         <p className="mt-4 text-[18px] font-bold leading-snug text-home-ink">
           This plan saves you{' '}
           <span className="tabular">{formatMinutes(plan.savedMin)}</span> by prepping

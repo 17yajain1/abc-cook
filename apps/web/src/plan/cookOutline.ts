@@ -1,0 +1,187 @@
+import type { Node, PlanSummary, ScheduledNode, WaitWindow } from '@abc-cook/schema'
+
+import { attentionLine } from '@/lib/attention'
+import { approxWaitPhrase, formatMinutes, formatRange, startAheadPhrase } from '@/lib/duration'
+
+/**
+ * R2: the "How this cook goes" outline — stretch → wait → stretch … — built from
+ * `PlanSummary.phases` (docs/plans/r2-recipe-header.md).
+ *
+ * Pure, no JSX. Every figure is read from the plan (`phases`, `elapsed_*`, `saved_min`)
+ * and only formatted; nothing here adds, subtracts or compares cooking durations. The one
+ * thing that reads a timestamp is the stretch *title* (decision 9) and the task-line
+ * *order* (decision 8): both pick and order node labels by `scheduled[].start_min`, never
+ * produce a figure. "Phase" and "session" are internal words and never appear in a string.
+ */
+
+export interface OutlineStretch {
+  /** `Now` for the first stretch, `Then` for the rest. */
+  tag: 'Now' | 'Then'
+  /** `first label → last label`, or the single label. */
+  title: string
+  /** `35–50 min`, `~10 min`. `null` for a zero-length stretch (O2: never "~0 min"). */
+  time: string | null
+  /** Proportional share of the broken-axis bar: the stretch's own elapsed minutes. */
+  barWeight: number
+  /** `Meanwhile: A, B +1 more`, one per window with tasks in this stretch. */
+  taskLines: string[]
+}
+
+export interface OutlineWait {
+  /** The row under the preceding stretch: `Hands free for ~1 hr 45 min`. */
+  text: string
+  /** The label beneath the hatched gap in the bar: `~1 hr 45 min`. */
+  barLabel: string
+}
+
+export interface PlanAheadCard {
+  title: string
+  body: string
+}
+
+export interface CookOutline {
+  stretches: OutlineStretch[]
+  /** `waits[i]` sits between `stretches[i]` and `stretches[i + 1]`. */
+  waits: OutlineWait[]
+  /** `Saves 13 min`, or `null` when nothing was saved. */
+  savedPill: string | null
+  /** The plan-ahead card; `null` for a one-stretch recipe (decision 3). */
+  card: PlanAheadCard | null
+  /** The line under Start cooking (decision 12). */
+  ctaSubline: string
+}
+
+export interface OutlineInput {
+  summary: PlanSummary | null | undefined
+  nodes: readonly Pick<Node, 'id' | 'label' | 'attention'>[]
+  scheduled: readonly Pick<ScheduledNode, 'node_id' | 'start_min'>[]
+  windows: readonly Pick<WaitWindow, 'host_node_id' | 'assigned'>[]
+  savedMin: number
+}
+
+const MAX_LISTED_TASKS = 2
+
+/** `formatRange`'s `about N min` collapse reads as `~N min` in the outline. */
+function stretchTime(low: number, high: number): string {
+  return formatRange(low, high).replace(/^about /, '~')
+}
+
+export function deriveCookOutline(input: OutlineInput): CookOutline | null {
+  const { summary } = input
+  const phases = summary?.phases
+  if (!summary || !phases || phases.length === 0) return null
+
+  const nodeById = new Map(input.nodes.map((n) => [n.id, n]))
+  const startOf = new Map(input.scheduled.map((s) => [s.node_id, s.start_min]))
+
+  // Waits first: a later phase without a stated gap can't be described honestly.
+  const waits: OutlineWait[] = []
+  for (const phase of phases.slice(1)) {
+    if (phase.preceded_by_wait_min == null) return null
+    const approx = `~${approxWaitPhrase(phase.preceded_by_wait_min)}`
+    const hostAttentions = phase.preceded_by_host_node_ids.map((id) => nodeById.get(id)?.attention)
+    let text: string
+    if (phase.starts_new_session) text = `Come back ${approx} later`
+    else if (hostAttentions.includes('unattended')) text = `Hands free for ${approx}`
+    else if (hostAttentions.includes('periodic')) text = `Check now and then for ${approx}`
+    else text = `Wait ${approx}`
+    waits.push({ text, barLabel: approx })
+  }
+
+  const stretches: OutlineStretch[] = phases.map((phase, index) => {
+    // Title (decision 9): nodes whose scheduled start lies inside the phase's attended
+    // footprint; if none qualify, every node of the phase.
+    const inside = phase.node_ids.filter((id) => {
+      const start = startOf.get(id)
+      return start != null && start >= phase.start_min && start <= phase.end_min
+    })
+    const titleIds = inside.length > 0 ? inside : phase.node_ids
+    const first = titleIds[0]
+    const last = titleIds[titleIds.length - 1]
+    const labelOf = (id: string) => nodeById.get(id)?.label ?? id
+    const title = first === last ? labelOf(first) : `${labelOf(first)} → ${labelOf(last)}`
+    const inTitle = new Set([first, last])
+
+    // Task lines (decision 8): window tasks that belong to this stretch, in start order.
+    const members = new Set(phase.node_ids)
+    const taskLines: string[] = []
+    for (const window of input.windows) {
+      const labels = window.assigned
+        .map((id, order) => ({ id, order }))
+        .filter(({ id }) => members.has(id) && !inTitle.has(id))
+        .sort(
+          (a, b) =>
+            (startOf.get(a.id) ?? 0) - (startOf.get(b.id) ?? 0) || a.order - b.order,
+        )
+        .map(({ id }) => labelOf(id))
+      if (labels.length === 0) continue
+      const listed = labels.slice(0, MAX_LISTED_TASKS).join(', ')
+      const more = labels.length > MAX_LISTED_TASKS ? ` +${labels.length - MAX_LISTED_TASKS} more` : ''
+      const hostAttention = nodeById.get(window.host_node_id)?.attention
+      const lead =
+        hostAttention === 'periodic' ? `While ${attentionLine('periodic')}:` : 'Meanwhile:'
+      taskLines.push(`${lead} ${listed}${more}`)
+    }
+
+    // A one-stretch recipe uses the plan's own elapsed range (decision 10).
+    const single = phases.length === 1
+    const low = single ? summary.elapsed_min : phase.elapsed_min
+    const high = single ? summary.elapsed_high_min : phase.elapsed_high_min
+    return {
+      tag: index === 0 ? 'Now' : 'Then',
+      title,
+      // A zero-length stretch (an instant, e.g. "take the dough out") has no duration to state.
+      time: low === 0 && high === 0 ? null : stretchTime(low, Math.max(high, low)),
+      barWeight: low,
+      taskLines,
+    }
+  })
+
+  const startAhead = `~${startAheadPhrase(summary.elapsed_high_min)}`
+  const first = stretches[0]
+  const firstLead = first.time ? `First ${first.time}: ${first.title}.` : `First: ${first.title}.`
+
+  let card: PlanAheadCard | null = null
+  let ctaSubline = 'Start to finish in one go.'
+  if (phases.length > 1) {
+    // O1 (approved): the count of sittings is `summary.sessions.length`, a read. Phases
+    // outnumber sittings once a stretch begins mid-gap, so the "spans N sittings" form is
+    // only honest when there really is more than one sitting.
+    const sittings = summary.sessions.length
+    if (phases.length > 2 && sittings > 1) {
+      card = { title: `Plan ahead: this cook spans ${sittings} sittings`, body: '' }
+    } else if (phases.length > 2) {
+      // Several stretches in one sitting: N breaks (a count) and the longest one
+      // (a selection among plan values, not arithmetic).
+      let longest = 1
+      phases.forEach((p, i) => {
+        if ((p.preceded_by_wait_min ?? 0) > (phases[longest].preceded_by_wait_min ?? 0)) longest = i
+      })
+      card = {
+        title: `Plan ahead: ${waits.length} hands-free breaks, the longest ${waits[longest - 1].barLabel}`,
+        body: '',
+      }
+    } else {
+      const w = waits[0].barLabel
+      card = {
+        title: phases[1].starts_new_session
+          ? `Plan ahead: come back ${w} later`
+          : `Plan ahead: ${w} hands free in the middle`,
+        body: '',
+      }
+    }
+    card.body = `Start ${startAhead} before you want to eat.`
+    ctaSubline =
+      phases.length === 2
+        ? `${firstLead} The rest is ${waits[0].barLabel} later.`
+        : `${firstLead} Then ${phases.length - 1} more stretches over ${startAhead}.`
+  }
+
+  return {
+    stretches,
+    waits,
+    savedPill: input.savedMin > 0 ? `Saves ${formatMinutes(input.savedMin)}` : null,
+    card,
+    ctaSubline,
+  }
+}
