@@ -152,6 +152,45 @@ class Session(BaseModel):
     )
 
 
+class Phase(BaseModel):
+    """A stretch of the plan where the cook has to be in the kitchen.
+
+    A new phase starts after a hands-free gap of >= `PHASE_BREAK_MIN`, where hands-free
+    means no `hands_on` and no `periodic` node is running. Measured on the *attended*
+    timeline, independently of `Session`/`LongWait` (which use the cook-occupied one).
+    Internal name -- UI copy is the renderer's job. Provisional threshold.
+    """
+
+    start_min: float = Field(description="Start of this phase's attended footprint.")
+    end_min: float = Field(description="End of this phase's attended footprint.")
+    elapsed_min: float = Field(description="`end_min - start_min`.")
+    elapsed_high_min: float = Field(
+        description="The attended footprint of this phase's own `node_ids` on the slowed-pace "
+        "timeline, clamped to be at least `elapsed_min`. Same construction as "
+        "`Session.elapsed_high_min`.",
+    )
+    active_min: float = Field(
+        description="Σ `duration_typical` over this phase's `hands_on` nodes.",
+    )
+    node_ids: list[str] = Field(
+        description="Every node assigned to this phase, in scheduled order. A node belongs to "
+        "the last phase that had started by its `start_min`.",
+    )
+    preceded_by_wait_min: float | None = Field(
+        default=None,
+        description="Length of the hands-free gap immediately before this phase. `None` for "
+        "the first phase.",
+    )
+    preceded_by_host_node_ids: list[str] = Field(
+        description="The hands-off nodes whose interval overlaps that gap. `[]` for the "
+        "first phase.",
+    )
+    starts_new_session: bool = Field(
+        description="True iff this phase's start is the start of a `Session` other than the "
+        "first. False for the first phase.",
+    )
+
+
 class LongWait(BaseModel):
     """An idle stretch long enough to leave the kitchen.
 
@@ -190,4 +229,10 @@ class PlanSummary(BaseModel):
     )
     long_waits: list[LongWait] = Field(
         description="Idle stretches >= `LONG_WAIT_MIN` that are not session breaks.",
+    )
+    phases: list[Phase] | None = Field(
+        default=None,
+        description="The timeline partitioned at hands-free gaps >= `PHASE_BREAK_MIN`, "
+        "measured on the attended (hands_on or periodic) timeline. `None` only for a plan "
+        "serialized before this field existed; new plans always carry >= 1 phase.",
     )

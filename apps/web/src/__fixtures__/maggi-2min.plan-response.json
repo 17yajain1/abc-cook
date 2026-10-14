@@ -271,6 +271,24 @@
         "preceded_by_host_node_ids": []
       }
     ],
-    "long_waits": []
+    "long_waits": [],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 7.0,
+        "elapsed_min": 7.0,
+        "elapsed_high_min": 9.0,
+        "active_min": 2.0,
+        "node_ids": [
+          "boil_water",
+          "add_noodles_masala",
+          "cook_noodles",
+          "serve"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      }
+    ]
   }
 }

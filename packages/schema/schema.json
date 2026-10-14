@@ -760,6 +760,72 @@
       ],
       "type": "object"
     },
+    "Phase": {
+      "description": "A stretch of the plan where the cook has to be in the kitchen.\n\nA new phase starts after a hands-free gap of >= `PHASE_BREAK_MIN`, where hands-free\nmeans no `hands_on` and no `periodic` node is running. Measured on the *attended*\ntimeline, independently of `Session`/`LongWait` (which use the cook-occupied one).\nInternal name -- UI copy is the renderer's job. Provisional threshold.",
+      "properties": {
+        "active_min": {
+          "description": "\u03a3 `duration_typical` over this phase's `hands_on` nodes.",
+          "type": "number"
+        },
+        "elapsed_high_min": {
+          "description": "The attended footprint of this phase's own `node_ids` on the slowed-pace timeline, clamped to be at least `elapsed_min`. Same construction as `Session.elapsed_high_min`.",
+          "type": "number"
+        },
+        "elapsed_min": {
+          "description": "`end_min - start_min`.",
+          "type": "number"
+        },
+        "end_min": {
+          "description": "End of this phase's attended footprint.",
+          "type": "number"
+        },
+        "node_ids": {
+          "description": "Every node assigned to this phase, in scheduled order. A node belongs to the last phase that had started by its `start_min`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "preceded_by_host_node_ids": {
+          "description": "The hands-off nodes whose interval overlaps that gap. `[]` for the first phase.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "preceded_by_wait_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Length of the hands-free gap immediately before this phase. `None` for the first phase."
+        },
+        "start_min": {
+          "description": "Start of this phase's attended footprint.",
+          "type": "number"
+        },
+        "starts_new_session": {
+          "description": "True iff this phase's start is the start of a `Session` other than the first. False for the first phase.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start_min",
+        "end_min",
+        "elapsed_min",
+        "elapsed_high_min",
+        "active_min",
+        "node_ids",
+        "preceded_by_host_node_ids",
+        "starts_new_session"
+      ],
+      "type": "object"
+    },
     "PlanSummary": {
       "description": "Recipe-level timing, derived from the scheduled plan. See `schedule/summary.py`.\n\nEvery field here is computed, never authored \u2014 the frontend is forbidden from\nderiving any of these numbers itself (`CLAUDE.md`). Optional on `RecipePlanResponse`\nso a plan serialized before this field existed still round-trips.",
       "properties": {
@@ -785,6 +851,21 @@
             "$ref": "#/$defs/LongWait"
           },
           "type": "array"
+        },
+        "phases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Phase"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The timeline partitioned at hands-free gaps >= `PHASE_BREAK_MIN`, measured on the attended (hands_on or periodic) timeline. `None` only for a plan serialized before this field existed; new plans always carry >= 1 phase."
         },
         "sessions": {
           "description": "The timeline partitioned at idle stretches >= `SESSION_BREAK_MIN`.",

@@ -640,6 +640,45 @@
           "first_rise"
         ]
       }
+    ],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 21.0,
+        "elapsed_min": 21.0,
+        "elapsed_high_min": 32.0,
+        "active_min": 21.0,
+        "node_ids": [
+          "bloom_yeast",
+          "mix_dough",
+          "knead_dough",
+          "first_rise",
+          "grease_pan"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      },
+      {
+        "start_min": 78.0,
+        "end_min": 138.0,
+        "elapsed_min": 60.0,
+        "elapsed_high_min": 71.0,
+        "active_min": 21.0,
+        "node_ids": [
+          "shape_and_cut",
+          "heat_oil",
+          "proof_donuts",
+          "fry_donuts",
+          "make_glaze",
+          "glaze_donuts"
+        ],
+        "preceded_by_wait_min": 57.0,
+        "preceded_by_host_node_ids": [
+          "first_rise"
+        ],
+        "starts_new_session": false
+      }
     ]
   }
 }

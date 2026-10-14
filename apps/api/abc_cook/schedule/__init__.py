@@ -13,6 +13,18 @@ See docs/COOKING_GRAPH.md §4.
 
 from abc_cook.schedule.rollup import stage_spans
 from abc_cook.schedule.scheduler import schedule
-from abc_cook.schedule.summary import LONG_WAIT_MIN, SESSION_BREAK_MIN, summarize
+from abc_cook.schedule.summary import (
+    LONG_WAIT_MIN,
+    PHASE_BREAK_MIN,
+    SESSION_BREAK_MIN,
+    summarize,
+)
 
-__all__ = ["LONG_WAIT_MIN", "SESSION_BREAK_MIN", "schedule", "stage_spans", "summarize"]
+__all__ = [
+    "LONG_WAIT_MIN",
+    "PHASE_BREAK_MIN",
+    "SESSION_BREAK_MIN",
+    "schedule",
+    "stage_spans",
+    "summarize",
+]

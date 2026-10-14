@@ -374,6 +374,40 @@
         ]
       }
     ],
-    "long_waits": []
+    "long_waits": [],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 3.0,
+        "elapsed_min": 3.0,
+        "elapsed_high_min": 5.0,
+        "active_min": 3.0,
+        "node_ids": [
+          "rinse_beans",
+          "soak_beans"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      },
+      {
+        "start_min": 483.0,
+        "end_min": 535.0,
+        "elapsed_min": 52.0,
+        "elapsed_high_min": 58.0,
+        "active_min": 12.0,
+        "node_ids": [
+          "saute_and_add_beans",
+          "simmer_beans",
+          "season_beans",
+          "serve_rajma"
+        ],
+        "preceded_by_wait_min": 480.0,
+        "preceded_by_host_node_ids": [
+          "soak_beans"
+        ],
+        "starts_new_session": true
+      }
+    ]
   }
 }
