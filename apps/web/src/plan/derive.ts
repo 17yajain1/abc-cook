@@ -14,6 +14,8 @@ import { executionOrder } from '@/cooking/model'
 import { displayCue } from '@/lib/displayCue'
 import type { ServingsSource } from '@/lib/servings'
 
+import { deriveCookOutline, type CookOutline } from './cookOutline'
+
 /** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
 export type ProvenanceSource = NonNullable<NodeProvenance['fields']>[string]
 
@@ -181,6 +183,11 @@ export interface RenderPlan {
   summary: PlanSummary | null
   /** Sitting-boundary rows to interleave between `stages`, in `stages` order. */
   waitRows: RenderWaitRow[]
+  /** R2: the "How this cook goes" outline. `null` when the plan has no `summary.phases`
+   * (a plan saved before POSTPROCESS_VERSION 3) — the header then renders as in R1. */
+  outline: CookOutline | null
+  /** R2: `graph.source.value` when the source is a URL, else `null` (text imports). */
+  sourceUrl: string | null
 }
 
 function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
@@ -428,6 +435,14 @@ export function derivePlan(
     ingredientGroups: groupIngredients(graph.ingredients),
     summary: payload.summary ?? null,
     waitRows,
+    sourceUrl: graph.source?.kind === 'url' ? graph.source.value : null,
+    outline: deriveCookOutline({
+      summary: payload.summary,
+      nodes: graph.nodes,
+      scheduled: plan.scheduled,
+      windows: plan.windows,
+      savedMin: plan.saved_min,
+    }),
   }
 }
 

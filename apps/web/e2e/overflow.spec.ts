@@ -106,6 +106,9 @@ for (const width of WIDTHS) {
     })
 
     test('recipe page has no horizontal overflow', async ({ page }) => {
+      // Walks every fixture on both tabs: ~20-25 s of a 30 s default on WebKit, so a busy
+      // machine tipped it over. 60 s is headroom, not a loosened check.
+      test.setTimeout(60_000)
       await openHome(page, width)
       for (const title of TITLES) {
         await page.getByRole('button', { name: 'Cookbook', exact: true }).click()
