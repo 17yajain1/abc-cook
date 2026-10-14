@@ -32,6 +32,7 @@ from abc_cook.schema.normalized import (
 from abc_cook.schema.plan import (
     CookingPlan,
     LongWait,
+    Phase,
     PlanSummary,
     ScheduledNode,
     Session,
@@ -61,6 +62,7 @@ __all__ = [
     "NormalizedIngredient",
     "NormalizedRecipe",
     "NormalizedStep",
+    "Phase",
     "PlanSummary",
     "ProvenanceSource",
     "RecipeListResponse",

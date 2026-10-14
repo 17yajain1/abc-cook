@@ -10,12 +10,16 @@ timeline into sittings wherever the cook is idle long enough to leave the kitche
 Pure, like the rest of `abc_cook/schedule/`: no I/O, no network, no clock, no randomness.
 """
 
+from typing import Any
+
 from abc_cook.schedule.scheduler import schedule
 from abc_cook.schedule.windows import MINUTE_DP
 from abc_cook.schema import (
     CookingGraph,
     CookingPlan,
     LongWait,
+    Node,
+    Phase,
     PlanSummary,
     ScheduledNode,
     Session,
@@ -25,6 +29,12 @@ SESSION_BREAK_MIN = 120.0
 """Idle stretch, in minutes, long enough to count as a separate sitting -- "come back
 later" rather than "wait here". Pizza's 4.5-hr rise splits; donuts' 57-min rise does
 not. Product decision, validated at the M3 pre-implementation review (§V5)."""
+
+PHASE_BREAK_MIN = 45.0
+"""Hands-free gap, in minutes (no `hands_on` and no `periodic` node running), after which
+a new phase starts -- "come back later" rather than "wait here". Provisional: equal to
+`LONG_WAIT_MIN` today but deliberately a separate constant, free to move independently.
+No fixture has a gap between 40 and 57 min, so the value is untested by real data there."""
 
 LONG_WAIT_MIN = 45.0
 """Idle stretch, in minutes, long enough that the cook can leave the kitchen but not
@@ -87,6 +97,113 @@ def _host_node_ids(
     ]
 
 
+def _partition(
+    nodes: dict[str, Node],
+    by_start: list[ScheduledNode],
+    slow_plan: CookingPlan,
+    intervals: list[list[float]],
+    threshold: float,
+    *,
+    total_min: float,
+    counted_ids: set[str],
+) -> list[dict[str, Any]]:
+    """Split the timeline into stretches separated by gaps >= `threshold`.
+
+    Shared by sessions (cook-occupied intervals) and phases (attended intervals); the
+    returned dicts hold the fields both models have in common.
+
+    Args:
+        nodes: The graph's nodes by id.
+        by_start: The plan's scheduled nodes, sorted by (start, id).
+        slow_plan: The slowed-pace reschedule (see `_slow_plan`).
+        intervals: Merged, sorted intervals whose gaps are measured.
+        threshold: Minimum gap, in minutes, that starts a new stretch.
+        total_min: The plan's `total_min`; the outer edges widen to `0` and this.
+        counted_ids: Nodes whose interval counts toward a stretch's slow-timeline footprint.
+    """
+    clusters: list[list[float]] = [list(intervals[0])] if intervals else [[0.0, total_min]]
+    for start, end in intervals[1:]:
+        if start - clusters[-1][1] < threshold:
+            clusters[-1][1] = end
+        else:
+            clusters.append([start, end])
+
+    # A recipe rarely opens or closes on a hands-on beat -- pizza's first sitting
+    # includes 5 min of unattended mixing before any chop, and its last includes the
+    # unattended slide-and-rest after the last hands-on step. Widen the outer edges to
+    # the plan's own bounds so a stretch's span matches what the cook actually lived
+    # through, not just its hands-on interior. Interior boundaries are untouched.
+    clusters[0][0] = 0.0
+    clusters[-1][1] = total_min
+
+    def _cluster_index(start_min: float) -> int:
+        """The last cluster whose work had begun by `start_min`.
+
+        A node that starts inside a break gap (the long unattended stretch itself --
+        refrigerating dough, letting an oven preheat) is attributed to the stretch that
+        triggered it, not the one that follows: starting the wait is the last thing the
+        cook did in that stretch.
+        """
+        index = 0
+        for i, cluster in enumerate(clusters):
+            if cluster[0] <= start_min:
+                index = i
+        return index
+
+    node_ids_by_cluster: list[list[str]] = [[] for _ in clusters]
+    for entry in by_start:
+        node_ids_by_cluster[_cluster_index(entry.start_min)].append(entry.node_id)
+
+    slow_by_id = {s.node_id: s for s in slow_plan.scheduled}
+    last_cluster = len(clusters) - 1
+
+    parts: list[dict[str, Any]] = []
+    for i, cluster in enumerate(clusters):
+        node_ids = node_ids_by_cluster[i]
+        active = float(
+            sum(
+                nodes[node_id].duration_typical
+                for node_id in node_ids
+                if nodes[node_id].attention == "hands_on"
+            ),
+        )
+        preceded_by_wait_min = None if i == 0 else _round(cluster[0] - clusters[i - 1][1])
+
+        counted = [slow_by_id[node_id] for node_id in node_ids if node_id in counted_ids]
+        low = min((s.start_min for s in counted), default=0.0)
+        high = max((s.end_min for s in counted), default=slow_plan.total_min)
+        if i == 0:
+            low = 0.0
+        if i == last_cluster:
+            high = slow_plan.total_min
+
+        preceded_by_host_node_ids = (
+            [] if i == 0 else _host_node_ids(by_start, clusters[i - 1][1], cluster[0])
+        )
+
+        elapsed_min = _round(cluster[1] - cluster[0])
+
+        parts.append(
+            {
+                "start_min": _round(cluster[0]),
+                "end_min": _round(cluster[1]),
+                "active_min": _round(active),
+                "node_ids": node_ids,
+                "preceded_by_wait_min": preceded_by_wait_min,
+                "elapsed_min": elapsed_min,
+                # Converging independent chains can pin this stretch's slow-timeline
+                # footprint below its typical-pace span -- a slower cook upstream shifts
+                # this stretch's own nodes later without lengthening them, so the raw
+                # footprint can undershoot `elapsed_min`. Clamped: the field's contract is
+                # "at least what the shown schedule takes", and being slower can never
+                # shrink this stretch.
+                "elapsed_high_min": max(_round(high - low), elapsed_min),
+                "preceded_by_host_node_ids": preceded_by_host_node_ids,
+            },
+        )
+    return parts
+
+
 def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 1) -> PlanSummary:
     """Compute the recipe-level timing summary for a scheduled plan.
 
@@ -125,94 +242,42 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
     # SESSION_BREAK_MIN (a short pause, or a long wait the cook stays near) keeps the
     # two occupied stretches either side of it in the same sitting; a gap at or above
     # it starts a new one.
-    clusters: list[list[float]] = [list(occupied[0])] if occupied else [[0.0, plan.total_min]]
-    for start, end in occupied[1:]:
-        if start - clusters[-1][1] < SESSION_BREAK_MIN:
-            clusters[-1][1] = end
-        else:
-            clusters.append([start, end])
-
-    # A recipe rarely opens or closes on a hands-on beat -- pizza's first sitting
-    # includes 5 min of unattended mixing before any chop, and its last includes the
-    # unattended slide-and-rest after the last hands-on step. Widen the outer edges to
-    # the plan's own bounds so a sitting's span matches what the cook actually lived
-    # through, not just its hands-on interior. Interior boundaries are untouched: those
-    # ARE the sessions' breaks.
-    clusters[0][0] = 0.0
-    clusters[-1][1] = plan.total_min
-
-    def _cluster_index(start_min: float) -> int:
-        """The last cluster whose occupied work had begun by `start_min`.
-
-        A node that starts inside a session-break gap (the long unattended stretch
-        itself -- refrigerating dough, letting an oven preheat) is attributed to the
-        sitting that triggered it, not the one that follows: starting the wait is the
-        last thing the cook did in that sitting.
-        """
-        index = 0
-        for i, cluster in enumerate(clusters):
-            if cluster[0] <= start_min:
-                index = i
-        return index
-
-    node_ids_by_cluster: list[list[str]] = [[] for _ in clusters]
-    for entry in by_start:
-        node_ids_by_cluster[_cluster_index(entry.start_min)].append(entry.node_id)
-
     # The high bound reuses the same slowed-pace timeline as PlanSummary.elapsed_high_min,
     # scheduled once: a session's high is the occupied footprint of ITS OWN node set on
     # that timeline, not a re-clustering of it (see docs/COOKING_GRAPH.md §4 / M3.2 plan
     # §3) -- re-clustering would answer a different question with no way back onto the
     # sittings the app actually schedules.
     slow_plan = _slow_plan(graph, burner_capacity=burner_capacity)
-    slow_by_id = {s.node_id: s for s in slow_plan.scheduled}
-    occupies_cook_by_id = {s.node_id: s.occupies_cook for s in by_start}
-    last_cluster = len(clusters) - 1
+    session_parts = _partition(
+        nodes,
+        by_start,
+        slow_plan,
+        occupied,
+        SESSION_BREAK_MIN,
+        total_min=plan.total_min,
+        counted_ids={s.node_id for s in by_start if s.occupies_cook},
+    )
+    sessions = [Session(**part) for part in session_parts]
 
-    sessions: list[Session] = []
-    for i, cluster in enumerate(clusters):
-        node_ids = node_ids_by_cluster[i]
-        session_active = float(
-            sum(
-                nodes[node_id].duration_typical
-                for node_id in node_ids
-                if nodes[node_id].attention == "hands_on"
-            ),
-        )
-        preceded_by_wait_min = None if i == 0 else _round(cluster[0] - clusters[i - 1][1])
-
-        occ_nodes = [slow_by_id[node_id] for node_id in node_ids if occupies_cook_by_id[node_id]]
-        low = min((s.start_min for s in occ_nodes), default=0.0)
-        high = max((s.end_min for s in occ_nodes), default=slow_plan.total_min)
-        if i == 0:
-            low = 0.0
-        if i == last_cluster:
-            high = slow_plan.total_min
-
-        preceded_by_host_node_ids = (
-            [] if i == 0 else _host_node_ids(by_start, clusters[i - 1][1], cluster[0])
-        )
-
-        session_elapsed_min = _round(cluster[1] - cluster[0])
-
-        sessions.append(
-            Session(
-                start_min=_round(cluster[0]),
-                end_min=_round(cluster[1]),
-                active_min=_round(session_active),
-                node_ids=node_ids,
-                preceded_by_wait_min=preceded_by_wait_min,
-                elapsed_min=session_elapsed_min,
-                # Converging independent chains can pin this sitting's slow-timeline
-                # footprint below its typical-pace span -- a slower cook upstream shifts
-                # this sitting's own nodes later without lengthening them, so the raw
-                # footprint can undershoot `elapsed_min`. Clamped: the field's contract is
-                # "at least what the shown schedule takes", and being slower can never
-                # shrink this sitting.
-                elapsed_high_min=max(_round(high - low), session_elapsed_min),
-                preceded_by_host_node_ids=preceded_by_host_node_ids,
-            ),
-        )
+    # Phases are an independent split on the *attended* timeline: a hands_on or periodic
+    # node is "the cook is here". A stir-every-few-minutes simmer therefore never opens a
+    # "come back later" gap, however long it runs.
+    attended_ids = {s.node_id for s in by_start if nodes[s.node_id].attention != "unattended"}
+    attended = _merge([(s.start_min, s.end_min) for s in by_start if s.node_id in attended_ids])
+    phase_parts = _partition(
+        nodes,
+        by_start,
+        slow_plan,
+        attended,
+        PHASE_BREAK_MIN,
+        total_min=plan.total_min,
+        counted_ids=attended_ids,
+    )
+    session_starts = [p["start_min"] for p in session_parts[1:]]
+    phases = [
+        Phase(**part, starts_new_session=part["start_min"] in session_starts)
+        for part in phase_parts
+    ]
 
     long_waits = [
         LongWait(
@@ -232,4 +297,5 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
         elapsed_high_min=_round(slow_plan.total_min),
         sessions=sessions,
         long_waits=long_waits,
+        phases=phases,
     )
