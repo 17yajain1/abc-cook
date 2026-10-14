@@ -4,6 +4,8 @@ import type { PlanSummary, RecipePlanResponse, Session } from '@abc-cook/schema'
 
 import {
   approxDurationPhrase,
+  approxWaitPhrase,
+  startAheadPhrase,
   formatMinutes,
   formatRange,
   headerTiming,
@@ -270,5 +272,51 @@ describe('headerTiming — every shipped fixture', () => {
 
   it.each(FIXTURES)('%s', (_slug, fixture, expected) => {
     expect(headerTiming(fixture.summary, fixture.plan.total_min)).toEqual(expected)
+  })
+})
+
+describe('approxWaitPhrase', () => {
+  it.each([
+    [57, '55 min'],
+    [59, '55 min'],
+    [60, '1 hr'],
+    [107, '1 hr 45 min'],
+    [119, '1 hr 55 min'],
+    [270, '4 hr 30 min'],
+    [480, '8 hr'],
+    [1150, '19 hr'],
+  ])('%d -> %s', (input, expected) => {
+    expect(approxWaitPhrase(input)).toBe(expected)
+  })
+
+  it('never shows more minutes than the input', () => {
+    for (let m = 45; m <= 3000; m++) {
+      const m2 = approxWaitPhrase(m).match(/^(?:(\d+) hr)? ?(?:(\d+) min)?$/)!
+      const shown = Number(m2[1] ?? 0) * 60 + Number(m2[2] ?? 0)
+      expect(shown, `input ${m}`).toBeLessThanOrEqual(m)
+    }
+  })
+})
+
+describe('startAheadPhrase', () => {
+  it.each([
+    [195, '3 hr 15 min'],
+    [196, '3 hr 30 min'],
+    [197, '3 hr 30 min'],
+    [158, '2 hr 45 min'],
+    [543, '9 hr 15 min'],
+    [600, '10 hr'],
+    [601, '11 hr'],
+    [1493, '25 hr'],
+  ])('%d -> %s', (input, expected) => {
+    expect(startAheadPhrase(input)).toBe(expected)
+  })
+
+  it('never shows fewer minutes than the input', () => {
+    for (let m = 1; m <= 3000; m++) {
+      const m2 = startAheadPhrase(m).match(/^(?:(\d+) hr)? ?(?:(\d+) min)?$/)!
+      const shown = Number(m2[1] ?? 0) * 60 + Number(m2[2] ?? 0)
+      expect(shown, `input ${m}`).toBeGreaterThanOrEqual(m)
+    }
   })
 })

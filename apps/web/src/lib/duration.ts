@@ -138,3 +138,30 @@ export function headerTiming(summary: PlanSummary | null | undefined, totalMin: 
 
   return { primary, secondary: null }
 }
+
+/**
+ * A hands-free gap as the cook reads it: `"55 min"`, `"1 hr 45 min"`, `"19 hr"`. R2.
+ *
+ * Floors, never rounds up: to 5 min below 120 min, to 15 min from 120 min to below 600 min,
+ * to a whole hour from 600 min. Displayed minutes are always <= `min`. The step is fine for
+ * short waits so the number sits next to a card's own figure without contradicting it
+ * (donuts: 57 -> "55 min"). Formatting only; callers add the `~`. A gap under 5 min (not
+ * produced by the scheduler's phase threshold) is shown whole-minute rather than as 0.
+ */
+export function approxWaitPhrase(min: number): string {
+  const step = min < 120 ? 5 : min < 600 ? 15 : 60
+  const floored = Math.floor(min / step) * step
+  return formatMinutes(floored > 0 ? floored : Math.floor(min))
+}
+
+/**
+ * How far ahead of eating the cook should start, as a phrase: `"3 hr 30 min"`, `"25 hr"`. R2.
+ *
+ * Ceils, never rounds down — a head start is never understated: to 15 min below 600 min,
+ * to a whole hour from 600 min. Displayed minutes are always >= `min`. Formatting only;
+ * callers add the `~`.
+ */
+export function startAheadPhrase(min: number): string {
+  const step = min < 600 ? 15 : 60
+  return formatMinutes(Math.ceil(min / step) * step)
+}
