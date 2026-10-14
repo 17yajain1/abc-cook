@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { RecipePlanResponse } from '@abc-cook/schema'
+import type { PlanSummary, RecipePlanResponse, Session } from '@abc-cook/schema'
 
-import { deriveCookOutline } from './cookOutline'
+import { deriveCookOutline, type OutlineInput } from './cookOutline'
 
 const FIXTURES = Object.fromEntries(
   Object.entries(
@@ -73,19 +73,21 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
     expect(o.stretches.map((s) => [s.tag, s.title, s.time])).toEqual([
       ['Now', 'Small bowl stir together → Cover the bowl', '~10 min'],
       ['Then', 'Transfer dough → Cover and refrigerate overnight', '~10 min'],
-      ['Then', 'Lightly flour a pizza → Transfer the pizza', '30–50 min'],
+      ['Then', 'Remove the dough', null],
+      ['Then', 'Place a pizza stone → Transfer the pizza', '40–60 min'],
     ])
     expect(o.waits.map((w) => w.text)).toEqual([
       'Come back ~4 hr 30 min later',
-      'Come back ~19 hr later',
+      'Come back ~18 hr later',
+      'Hands free for ~1 hr',
     ])
-    expect(o.waits.map((w) => w.barLabel)).toEqual(['~4 hr 30 min', '~19 hr'])
+    expect(o.waits.map((w) => w.barLabel)).toEqual(['~4 hr 30 min', '~18 hr', '~1 hr'])
     expect(o.card).toEqual({
       title: 'Plan ahead: this cook spans 3 sittings',
       body: 'Start ~25 hr before you want to eat.',
     })
     expect(o.ctaSubline).toBe(
-      'First ~10 min: Small bowl stir together → Cover the bowl. Then 2 more stretches over ~25 hr.',
+      'First ~10 min: Small bowl stir together → Cover the bowl. Then 3 more stretches over ~25 hr.',
     )
   })
 
@@ -141,7 +143,7 @@ describe('deriveCookOutline — every fixture', () => {
     for (const [name, o] of all) {
       for (const wait of o!.waits) expect(Object.keys(wait).sort(), name).toEqual(['barLabel', 'text'])
       const strings = [
-        ...o!.stretches.flatMap((s) => [s.title, s.time, s.tag, ...s.taskLines]),
+        ...o!.stretches.flatMap((s) => [s.title, s.time ?? '', s.tag, ...s.taskLines]),
         ...o!.waits.flatMap((w) => [w.text, w.barLabel]),
         o!.savedPill ?? '',
         o!.card?.title ?? '',
@@ -150,7 +152,7 @@ describe('deriveCookOutline — every fixture', () => {
       ]
       for (const str of strings) expect(str, name).not.toMatch(/phase|session/i)
       for (const s of o!.stretches) {
-        for (const str of [s.title, s.time, ...s.taskLines]) expect(str, name).not.toMatch(/hands free/i)
+        for (const str of [s.title, s.time ?? '', ...s.taskLines]) expect(str, name).not.toMatch(/hands free/i)
       }
     }
   })
@@ -205,31 +207,71 @@ describe('deriveCookOutline — every fixture', () => {
     expect(o.stretches[1].taskLines).toEqual(['Meanwhile: Roast peanuts'])
   })
 
-  it('O2: a zero-length stretch has no time (never "~0 min")', () => {
-    const base = structuredClone(FIXTURES['pizza-dough'])
-    const mid = base.summary!.phases![1]
-    mid.elapsed_min = 0
-    mid.elapsed_high_min = 0
-    const o = outlineOf(base)!
-    expect(o.stretches[1].time).toBeNull()
-    expect(o.stretches[0].time).toBe('~10 min')
+  it('O2: a zero-length stretch has no time (never "~0 min"); its neighbours keep theirs', () => {
+    const o = deriveCookOutline(
+      synthetic([
+        { lo: 10, hi: 12 },
+        { lo: 0, hi: 0, waitBefore: 60 },
+        { lo: 30, hi: 40, waitBefore: 60 },
+      ]),
+    )!
+    expect(o.stretches.map((s) => s.time)).toEqual(['~10 min', null, '30–40 min'])
     for (const s of o.stretches) expect(s.time ?? '').not.toMatch(/~0|about 0/)
   })
 
   it('O1: N sittings is summary.sessions.length, and only when there is more than one', () => {
-    const base = structuredClone(FIXTURES['pizza-dough'])
-    const phases = base.summary!.phases!
-    // Four stretches in three sittings: the last stretch split in two, no new sitting.
-    const last = phases[2]
-    const tail = { ...last, node_ids: last.node_ids.slice(3), preceded_by_wait_min: 60, preceded_by_host_node_ids: [], starts_new_session: false }
-    last.node_ids = last.node_ids.slice(0, 3)
-    phases.push(tail)
-    expect(phases.length).toBe(4)
-    expect(outlineOf(base)!.card!.title).toBe('Plan ahead: this cook spans 3 sittings')
+    // Four stretches in three sittings: the last gap does not start a new sitting.
+    const input = synthetic([
+      { lo: 10, hi: 12 },
+      { lo: 10, hi: 15, waitBefore: 270, newSitting: true },
+      { lo: 10, hi: 12, waitBefore: 1080, newSitting: true },
+      { lo: 30, hi: 40, waitBefore: 60 },
+    ])
+    expect(input.summary!.phases!.length).toBe(4)
+    expect(input.summary!.sessions.length).toBe(3)
+    expect(deriveCookOutline(input)!.card!.title).toBe('Plan ahead: this cook spans 3 sittings')
 
-    // One sitting: N breaks and the longest, rather than "spans 4 sittings".
-    base.summary!.sessions = base.summary!.sessions.slice(0, 1)
-    for (const p of phases) p.starts_new_session = false
-    expect(outlineOf(base)!.card!.title).toBe('Plan ahead: 3 hands-free breaks, the longest ~19 hr')
+    // One sitting: N breaks and the longest (1080 min = 18 hr), not "spans 4 sittings".
+    input.summary!.sessions = input.summary!.sessions.slice(0, 1)
+    for (const p of input.summary!.phases!) p.starts_new_session = false
+    expect(deriveCookOutline(input)!.card!.title).toBe(
+      'Plan ahead: 3 hands-free breaks, the longest ~18 hr',
+    )
   })
 })
+
+/** A made-up plan: node ids and titles are invented, so a rule test never depends on a recipe. */
+function synthetic(
+  stretches: { lo: number; hi: number; waitBefore?: number; newSitting?: boolean }[],
+): OutlineInput {
+  const nodes = stretches.map((_, i) => ({ id: `n${i}`, label: `Step ${i}`, attention: 'unattended' as const }))
+  const phases = stretches.map((s, i) => ({
+    start_min: i * 100,
+    end_min: i * 100 + s.lo,
+    active_min: s.lo,
+    node_ids: [`n${i}`],
+    preceded_by_wait_min: s.waitBefore ?? null,
+    elapsed_min: s.lo,
+    elapsed_high_min: s.hi,
+    preceded_by_host_node_ids: i === 0 ? [] : [`n${i - 1}`],
+    starts_new_session: s.newSitting ?? false,
+  }))
+  const sessions = stretches.filter((s, i) => i === 0 || s.newSitting).map(() => ({}) as Session)
+  const summary = {
+    active_min: 0,
+    attended_min: 0,
+    elapsed_min: 100,
+    elapsed_high_min: 100,
+    long_waits: [],
+    phases,
+    sessions,
+  } as PlanSummary
+  return {
+    summary,
+    nodes,
+    scheduled: nodes.map((n, i) => ({ node_id: n.id, start_min: i * 100 })),
+    windows: [],
+    savedMin: 0,
+  }
+}
+
