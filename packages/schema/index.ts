@@ -596,6 +596,10 @@ export interface PlanSummary {
    */
   long_waits: LongWait[];
   /**
+   * The timeline partitioned at hands-free gaps >= `PHASE_BREAK_MIN`, measured on the attended (hands_on or periodic) timeline. `None` only for a plan serialized before this field existed; new plans always carry >= 1 phase.
+   */
+  phases?: Phase[] | null;
+  /**
    * The timeline partitioned at idle stretches >= `SESSION_BREAK_MIN`.
    */
   sessions: Session[];
@@ -625,6 +629,55 @@ export interface LongWait {
    * Start of the idle stretch.
    */
   start_min: number;
+}
+/**
+ * A stretch of the plan where the cook has to be in the kitchen.
+ *
+ * A new phase starts after a hands-free gap of >= `PHASE_BREAK_MIN`, where hands-free
+ * means no `hands_on` and no `periodic` node is running. Measured on the *attended*
+ * timeline, independently of `Session`/`LongWait` (which use the cook-occupied one).
+ * Internal name -- UI copy is the renderer's job. Provisional threshold.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "Phase".
+ */
+export interface Phase {
+  /**
+   * Σ `duration_typical` over this phase's `hands_on` nodes.
+   */
+  active_min: number;
+  /**
+   * The attended footprint of this phase's own `node_ids` on the slowed-pace timeline, clamped to be at least `elapsed_min`. Same construction as `Session.elapsed_high_min`.
+   */
+  elapsed_high_min: number;
+  /**
+   * `end_min - start_min`.
+   */
+  elapsed_min: number;
+  /**
+   * End of this phase's attended footprint.
+   */
+  end_min: number;
+  /**
+   * Every node assigned to this phase, in scheduled order. A node belongs to the last phase that had started by its `start_min`.
+   */
+  node_ids: string[];
+  /**
+   * The hands-off nodes whose interval overlaps that gap. `[]` for the first phase.
+   */
+  preceded_by_host_node_ids: string[];
+  /**
+   * Length of the hands-free gap immediately before this phase. `None` for the first phase.
+   */
+  preceded_by_wait_min?: number | null;
+  /**
+   * Start of this phase's attended footprint.
+   */
+  start_min: number;
+  /**
+   * True iff this phase's start is the start of a `Session` other than the first. False for the first phase.
+   */
+  starts_new_session: boolean;
 }
 /**
  * A contiguous sitting: cooking activity uninterrupted by a session-break wait.
