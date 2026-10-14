@@ -572,8 +572,21 @@ work, nor an unattended node running *alongside* hands-on work starts a phase.
 - **Node attribution** is the sessions rule: a node belongs to the last phase that had
   started by its `start_min`, so the soak/rise that *creates* the wait belongs to the phase
   that began it. The outer edges are widened to `0` and `total_min`.
+- **An unattended node that starts inside a gap needs a hand.** Someone has to be there to
+  start it (take the dough out of the fridge, switch the oven on), so an `unattended` node
+  whose `start_min` falls *strictly inside* a hands-free gap makes that start instant
+  attended, in both the session and the phase split. The footprint is zero length: the
+  instant cuts the gap but adds no time, so a stretch can have `elapsed_min` 0, and the node
+  belongs to the stretch its own start creates. A node starting exactly on a stretch edge is
+  unaffected: the cook is already there, and the wait stays with the stretch that began it.
+  For overnight dough this turns one 290→1440 gap into a sitting break (290→1370) plus a
+  1370→1430 long wait. The rule can over-cut: the second node of an unattended chain that
+  needs no hand still counts, so a long gap may split, a pair of short gaps may merge into
+  one phase, or a wait may shorten. Every one of these errs toward "be here", never toward
+  "you can leave".
 - **Relation to sessions and `long_waits`:** an independent split. Sessions and
-  `long_waits` keep measuring on the cook-*occupied* timeline and are unchanged. On every
+  `long_waits` keep measuring on the cook-*occupied* timeline (plus the hand-started
+  instants above). On every
   current fixture each session boundary is also a phase boundary (phases refine sessions);
   they could diverge only where a ≥120-min gap is filled with periodic work. Sessions would
   then say "new sitting" while phases say "stay" — a sign that sessions are the ones

@@ -532,10 +532,12 @@ def test_pizza_is_a_three_sitting_recipe() -> None:
     assert [(s.start_min, s.end_min) for s in summary.sessions] == [
         (0.0, 10.0),
         (280.0, 290.0),
-        (1440.0, 1470.0),
+        (1370.0, 1470.0),
     ]
     assert [s.active_min for s in summary.sessions] == [5.0, 10.0, 20.0]
-    assert [s.preceded_by_wait_min for s in summary.sessions] == [None, 270.0, 1150.0]
+    # PR-B3: "remove the dough" starts at 1370 and needs a hand, so the overnight gap
+    # ends there (1080), not at the first hands-on step (1150).
+    assert [s.preceded_by_wait_min for s in summary.sessions] == [None, 270.0, 1080.0]
 
     # M3.1a: the middle sitting is pizza's only real (non-synthetic) case, and the one
     # the mismatch-graph test can't stand in for -- pin it so a regression in the
@@ -544,18 +546,18 @@ def test_pizza_is_a_three_sitting_recipe() -> None:
     assert [(s.elapsed_min, s.elapsed_high_min) for s in summary.sessions] == [
         (10.0, 12.0),
         (10.0, 15.0),
-        (30.0, 46.0),
+        (100.0, 116.0),
     ]
     assert [s.preceded_by_host_node_ids for s in summary.sessions] == [
         [],
         ["step_cover_the_bowl_with_plastic_wrap"],
-        [
-            "step_cover_and_refrigerate_overnight_18_hours",
-            "step_remove_the_dough_1_hour_before",
-            "step_place_a_pizza_stone_or_inverted",
-        ],
+        ["step_cover_and_refrigerate_overnight_18_hours"],
     ]
-    assert summary.long_waits == []  # both gaps are >= SESSION_BREAK_MIN, not long waits
+    # The 1370-1430 stretch between taking the dough out and the stone going in is a
+    # long wait (60 min < SESSION_BREAK_MIN), hosted by the dough warming up.
+    assert [(w.start_min, w.end_min, w.idle_min, w.host_node_ids) for w in summary.long_waits] == [
+        (1370.0, 1430.0, 60.0, ["step_remove_the_dough_1_hour_before"]),
+    ]
 
     listed = [node_id for session in summary.sessions for node_id in session.node_ids]
     assert sorted(listed) == sorted(n.id for n in graph.nodes)
@@ -611,6 +613,51 @@ def _gap_graph(middle_attention: str, middle_min: int) -> CookingGraph:
 
 def _gap_summary(attention: str, minutes: int) -> PlanSummary:
     graph = _gap_graph(attention, minutes)
+    return summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
+
+
+def _chain_graph(spec: list[tuple[str, str, int]]) -> CookingGraph:
+    """A linear chain of `(id, attention, minutes)` nodes, each depending on the previous."""
+    src = SourceRef(kind="text", value="chain test", imported_at=datetime.now(UTC))
+    nodes = []
+    for i, (node_id, attention, minutes) in enumerate(spec):
+        deps = [spec[i - 1][0]] if i else []
+        nodes.append(
+            Node(
+                id=node_id,
+                label=node_id,
+                instruction=f"Do {node_id}.",
+                kind="prep" if attention == "hands_on" else "passive",
+                attention=attention,  # type: ignore[arg-type]
+                duration_min=minutes,
+                duration_typical=minutes,
+                duration_max=minutes,
+                station="counter" if attention == "hands_on" else "none",
+                depends_on=deps,
+                consumes=[f"comp_{d}" for d in deps],
+                produces=f"comp_{node_id}",
+                interruptible=True,
+                stage="s",
+                doneness_cue=None,
+                tip=None,
+                max_lead_min=None,
+            ),
+        )
+    return CookingGraph(
+        id="chain",
+        title="Chain",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=nodes,
+    )
+
+
+def _chain_summary(spec: list[tuple[str, str, int]]) -> PlanSummary:
+    graph = _chain_graph(spec)
     return summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
 
 
@@ -674,12 +721,29 @@ def test_two_sittings_fixture_phases_equal_sessions() -> None:
     assert summary.phases[1].starts_new_session is True
 
 
-def test_pizza_phases_equal_sessions() -> None:
+def test_pizza_phases_refine_sessions() -> None:
     graph = _pizza_graph()
     summary = summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
-    assert _spans(summary) == [(s.start_min, s.end_min) for s in summary.sessions]
+    assert _spans(summary) == [(0.0, 10.0), (280.0, 290.0), (1370.0, 1370.0), (1430.0, 1470.0)]
     assert summary.phases is not None
-    assert [p.starts_new_session for p in summary.phases] == [False, True, True]
+    assert [p.starts_new_session for p in summary.phases] == [False, True, True, False]
+    # The contract the recipe-page outline relies on: a start-only stretch has no length.
+    assert summary.phases[2].elapsed_min == summary.phases[2].elapsed_high_min == 0.0
+
+
+def test_pizza_unattended_starts_end_the_overnight_gap() -> None:
+    graph = _pizza_graph()
+    summary = summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
+    assert summary.phases is not None
+    assert [s.preceded_by_wait_min for s in summary.sessions][1:] == [270.0, 1080.0]
+    assert [p.preceded_by_wait_min for p in summary.phases][2:] == [1080.0, 60.0]
+    assert summary.sessions[2].preceded_by_host_node_ids == [
+        "step_cover_and_refrigerate_overnight_18_hours",
+    ]
+    assert summary.phases[3].preceded_by_host_node_ids == ["step_remove_the_dough_1_hour_before"]
+    assert _long_waits(summary) == [(1370.0, 1430.0, ["step_remove_the_dough_1_hour_before"])]
+    for node_id in ("step_remove_the_dough_1_hour_before", "step_place_a_pizza_stone_or_inverted"):
+        assert node_id not in summary.sessions[1].node_ids
 
 
 def test_phases_cover_every_node_once_and_are_ordered(any_slug: str) -> None:
@@ -705,3 +769,107 @@ def test_every_session_boundary_is_a_phase_boundary(any_slug: str) -> None:
     phase_starts = {p.start_min for p in summary.phases}
     for session in summary.sessions[1:]:
         assert session.start_min in phase_starts
+
+
+# --- PR-B3: an unattended node that starts inside a gap needs the cook at its start. ---
+
+
+def _long_waits(summary: PlanSummary) -> list[tuple[float, float, list[str]]]:
+    return [(w.start_min, w.end_min, w.host_node_ids) for w in summary.long_waits]
+
+
+def test_unattended_start_on_a_stretch_edge_is_unaffected() -> None:
+    """A wait that starts where the cook already is belongs to the stretch that began it."""
+    summary = _chain_summary(
+        [
+            ("a", "hands_on", 5),
+            ("rise", "unattended", 60),
+            ("b", "hands_on", 5),
+            ("bake", "unattended", 60),
+            ("c", "hands_on", 5),
+        ],
+    )
+    assert summary.phases is not None
+    assert _spans(summary) == [(0.0, 5.0), (65.0, 70.0), (130.0, 135.0)]
+    assert "rise" in summary.phases[0].node_ids
+    assert "bake" in summary.phases[1].node_ids
+    assert _long_waits(summary) == [(5.0, 65.0, ["rise"]), (70.0, 130.0, ["bake"])]
+    assert [(s.start_min, s.end_min) for s in summary.sessions] == [(0.0, 135.0)]
+
+
+def test_unattended_start_inside_a_gap_applies_to_both_partitions() -> None:
+    summary = _chain_summary(
+        [
+            ("a", "hands_on", 5),
+            ("chill", "unattended", 1080),
+            ("out", "unattended", 60),
+            ("b", "hands_on", 5),
+        ],
+    )
+    assert [(s.start_min, s.end_min) for s in summary.sessions] == [(0.0, 5.0), (1085.0, 1150.0)]
+    assert summary.phases is not None
+    assert _spans(summary) == [(0.0, 5.0), (1085.0, 1085.0), (1145.0, 1150.0)]
+    assert [p.starts_new_session for p in summary.phases] == [False, True, False]
+    assert _long_waits(summary) == [(1085.0, 1145.0, ["out"])]
+
+
+def test_spurious_start_point_splits_a_long_gap() -> None:
+    """Accepted risk (§5 Split): the second node of an unattended chain that needs no hand
+    still cuts the gap. The plan errs toward "be here", never toward "you can leave"."""
+    summary = _chain_summary(
+        [
+            ("a", "hands_on", 5),
+            ("bake", "unattended", 60),
+            ("rest", "unattended", 60),
+            ("b", "hands_on", 5),
+        ],
+    )
+    assert _spans(summary) == [(0.0, 5.0), (65.0, 65.0), (125.0, 130.0)]
+    assert [(s.start_min, s.end_min) for s in summary.sessions] == [(0.0, 130.0)]
+    assert _long_waits(summary) == [(5.0, 65.0, ["bake"]), (65.0, 125.0, ["rest"])]
+
+
+def test_spurious_start_point_can_erase_a_phase_break() -> None:
+    """Accepted risk (§5 Erase): two sub-threshold halves merge the phases and drop the
+    "you can leave" callout. Imprecise in the safe direction."""
+    summary = _chain_summary(
+        [
+            ("a", "hands_on", 5),
+            ("bake", "unattended", 30),
+            ("rest", "unattended", 30),
+            ("b", "hands_on", 5),
+        ],
+    )
+    assert _spans(summary) == [(0.0, 70.0)]
+    assert summary.long_waits == []
+
+
+def test_start_inside_a_short_gap_changes_nothing() -> None:
+    """Strawberry shortcake's `cool_shortcakes` starts inside a 23-min occupied gap, below
+    every threshold: the summary is the single-stretch one it always was."""
+    summary = _summary("strawberry-shortcake")
+    assert summary.phases is not None
+    assert len(summary.phases) == 1
+    assert (summary.phases[0].start_min, summary.phases[0].end_min) == (0.0, summary.elapsed_min)
+    assert summary.long_waits == []
+    assert len(summary.sessions) == 1
+
+
+def test_spurious_start_point_can_shift_a_wait() -> None:
+    """Accepted risk (§5 Shift): one half of the gap on each side of the threshold. The
+    earlier stretch extends to the point and the stated wait shortens -- again toward
+    "be here", never toward "you can leave"."""
+    summary = _chain_summary(
+        [
+            ("a", "hands_on", 5),
+            ("bake", "unattended", 30),
+            ("rest", "unattended", 60),
+            ("b", "hands_on", 5),
+        ],
+    )
+    # Without the rule the break was 5-95 (90 min); the point at 35 pulls the earlier
+    # stretch out to it and leaves a 60-min wait.
+    assert _spans(summary) == [(0.0, 35.0), (95.0, 100.0)]
+    assert summary.phases is not None
+    assert summary.phases[1].preceded_by_wait_min == pytest.approx(60.0)
+    assert _long_waits(summary) == [(35.0, 95.0, ["rest"])]

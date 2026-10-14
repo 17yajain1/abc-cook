@@ -7,6 +7,10 @@ the real scheduler twice (once as scheduled, once with every `hands_on` node slo
 its `duration_max`) and read the honest range off the two timelines, then split the
 timeline into sittings wherever the cook is idle long enough to leave the kitchen.
 
+One rule shapes both splits: an `unattended` node that starts strictly inside a gap needs
+the cook at its start instant (start a timer, switch an appliance on), so that instant
+counts as attended even though the node itself needs nobody afterwards.
+
 Pure, like the rest of `abc_cook/schedule/`: no I/O, no network, no clock, no randomness.
 """
 
@@ -97,6 +101,32 @@ def _host_node_ids(
     ]
 
 
+def _hand_started_ids(
+    nodes: dict[str, Node],
+    by_start: list[ScheduledNode],
+    occupied: list[list[float]],
+) -> set[str]:
+    """`unattended` nodes whose start falls strictly inside an interior occupied gap.
+
+    Somebody has to be there to start such a node, so its start instant ends the
+    hands-free gap it sits in. A node starting exactly on a stretch edge is unaffected
+    (the cook is already there), and leading/trailing time is ignored because the outer
+    edges already widen to `0`/`total_min`.
+
+    One set serves both partitions: occupied time is a subset of attended time, so a
+    start inside an attended gap is always inside an occupied gap, and a start inside a
+    periodic run merges into that run and changes nothing. Feeding the same points to
+    both keeps every session boundary a phase boundary.
+    """
+    gaps = [(occupied[i][1], occupied[i + 1][0]) for i in range(len(occupied) - 1)]
+    return {
+        s.node_id
+        for s in by_start
+        if nodes[s.node_id].attention == "unattended"
+        and any(gap_start < s.start_min < gap_end for gap_start, gap_end in gaps)
+    }
+
+
 def _partition(
     nodes: dict[str, Node],
     by_start: list[ScheduledNode],
@@ -106,6 +136,7 @@ def _partition(
     *,
     total_min: float,
     counted_ids: set[str],
+    start_only_ids: set[str],
 ) -> list[dict[str, Any]]:
     """Split the timeline into stretches separated by gaps >= `threshold`.
 
@@ -120,6 +151,8 @@ def _partition(
         threshold: Minimum gap, in minutes, that starts a new stretch.
         total_min: The plan's `total_min`; the outer edges widen to `0` and this.
         counted_ids: Nodes whose interval counts toward a stretch's slow-timeline footprint.
+        start_only_ids: Hand-started `unattended` nodes (see `_hand_started_ids`); only
+            their start instant counts toward the footprint, as a zero-length point.
     """
     clusters: list[list[float]] = [list(intervals[0])] if intervals else [[0.0, total_min]]
     for start, end in intervals[1:]:
@@ -142,7 +175,9 @@ def _partition(
         A node that starts inside a break gap (the long unattended stretch itself --
         refrigerating dough, letting an oven preheat) is attributed to the stretch that
         triggered it, not the one that follows: starting the wait is the last thing the
-        cook did in that stretch.
+        cook did in that stretch. A wait that starts on a stretch edge still belongs to
+        the stretch that began it. A hand-started node (`start_only_ids`) is the
+        exception: its own start creates a stretch, so it belongs to that one.
         """
         index = 0
         for i, cluster in enumerate(clusters):
@@ -169,9 +204,15 @@ def _partition(
         )
         preceded_by_wait_min = None if i == 0 else _round(cluster[0] - clusters[i - 1][1])
 
-        counted = [slow_by_id[node_id] for node_id in node_ids if node_id in counted_ids]
-        low = min((s.start_min for s in counted), default=0.0)
-        high = max((s.end_min for s in counted), default=slow_plan.total_min)
+        footprint = [
+            (slow_by_id[node_id].start_min, slow_by_id[node_id].end_min)
+            if node_id in counted_ids
+            else (slow_by_id[node_id].start_min, slow_by_id[node_id].start_min)
+            for node_id in node_ids
+            if node_id in counted_ids or node_id in start_only_ids
+        ]
+        low = min((start for start, _ in footprint), default=0.0)
+        high = max((end for _, end in footprint), default=slow_plan.total_min)
         if i == 0:
             low = 0.0
         if i == last_cluster:
@@ -207,6 +248,9 @@ def _partition(
 def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 1) -> PlanSummary:
     """Compute the recipe-level timing summary for a scheduled plan.
 
+    An `unattended` node that starts strictly inside a hands-free gap makes its start
+    instant attended in both splits (someone must start it), so that gap is cut there.
+
     Args:
         graph: The graph `plan` was scheduled from.
         plan: The plan to summarise.
@@ -231,7 +275,11 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
         ),
     )
 
-    occupied = _merge([(s.start_min, s.end_min) for s in by_start if s.occupies_cook])
+    cook_intervals = [(s.start_min, s.end_min) for s in by_start if s.occupies_cook]
+    cook_occupied = _merge(cook_intervals)
+    hand_started = _hand_started_ids(nodes, by_start, cook_occupied)
+    start_points = [(s.start_min, s.start_min) for s in by_start if s.node_id in hand_started]
+    occupied = _merge(cook_intervals + start_points)
     idle_gaps = [
         (occupied[i][1], occupied[i + 1][0])
         for i in range(len(occupied) - 1)
@@ -256,6 +304,7 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
         SESSION_BREAK_MIN,
         total_min=plan.total_min,
         counted_ids={s.node_id for s in by_start if s.occupies_cook},
+        start_only_ids=hand_started,
     )
     sessions = [Session(**part) for part in session_parts]
 
@@ -263,7 +312,9 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
     # node is "the cook is here". A stir-every-few-minutes simmer therefore never opens a
     # "come back later" gap, however long it runs.
     attended_ids = {s.node_id for s in by_start if nodes[s.node_id].attention != "unattended"}
-    attended = _merge([(s.start_min, s.end_min) for s in by_start if s.node_id in attended_ids])
+    attended = _merge(
+        [(s.start_min, s.end_min) for s in by_start if s.node_id in attended_ids] + start_points,
+    )
     phase_parts = _partition(
         nodes,
         by_start,
@@ -272,6 +323,7 @@ def summarize(graph: CookingGraph, plan: CookingPlan, *, burner_capacity: int = 
         PHASE_BREAK_MIN,
         total_min=plan.total_min,
         counted_ids=attended_ids,
+        start_only_ids=hand_started,
     )
     session_starts = [p["start_min"] for p in session_parts[1:]]
     phases = [

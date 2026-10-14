@@ -259,7 +259,7 @@ describe('headerTiming — every shipped fixture', () => {
     [
       'pizza-dough',
       pizzaDough as RecipePlanResponse,
-      { primary: '30–50 min', secondary: 'Start about a day before you eat' },
+      { primary: '1 hr 40 min – 2 hr', secondary: 'Start about a day before you eat' },
     ],
     [
       'synthetic-two-sittings',
