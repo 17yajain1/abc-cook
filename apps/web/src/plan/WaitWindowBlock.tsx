@@ -1,7 +1,11 @@
+import { attentionLine } from '@/lib/attention'
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderWindow } from './derive'
 import { taskDurationText } from './StageCard'
+
+// Re-exported: this was `attentionLine`'s home before the pure outline code needed it.
+export { attentionLine }
 
 /**
  * The signature component — Direction 3, "Two Kinds of Minute" (docs/DESIGN_SYSTEM.md
@@ -54,15 +58,6 @@ export function WaitWindowBlock({ window }: { window: RenderWindow }) {
       </div>
     </div>
   )
-}
-
-/**
- * The line under the head. Derived from the host's `attention` — the only field the
- * graph has that speaks to "is the cook free?". Deliberately process-neutral: it does
- * not say "cooks" / "rests" / "proves", because the graph cannot confirm which.
- */
-export function attentionLine(attention: RenderWindow['hostAttention']): string {
-  return attention === 'periodic' ? 'checking the pan now and then' : 'your hands are free'
 }
 
 /**
