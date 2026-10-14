@@ -383,8 +383,9 @@ the case that exercises this).
 
 ### 4.4 Windowed prep — ownership, order, and rank (the post-timeline stage)
 
-This runs on the finished timeline from §4.1. **It never moves a node in time.** One
-ordering key throughout — `duration_typical` descending, then `node_id` ascending:
+This runs on the finished timeline from §4.1. **It never moves a node in time.** Steps 1–2
+use one ordering key — `duration_typical` descending, then `node_id` ascending; step 3
+re-orders what a window claimed by when each task starts:
 
 1. **Pick order (feeds §4.1.c).** While a wait window is open, the list scheduler
    chooses the cook's next `hands_on` task by this key — nothing else.
@@ -414,10 +415,16 @@ ordering key throughout — `duration_typical` descending, then `node_id` ascend
    window, where both gates pass.
 
 3. **Rank.** `rank_in_window` 0 is the task the UI promotes as *"Start with this."*
-   Same key.
+   Rank is **timeline order** — scheduled `start_min` ascending, then `node_id` — so rank 0
+   is the first task the cook actually starts. The timeline is already dependency-correct
+   (a consumer starts at or after its dependency ends, and every duration is positive),
+   so no task is ever ranked before one it depends on, directly or transitively, inside
+   the window or outside it; and a task held back by an outside soak, a freshness hold or
+   station contention is not offered as the one to start with.
 
-Why "longest first": the longest task is the one most at risk of not fitting, and
-"start with the big one" is the right instinct at the stove.
+Why "longest first" (steps 1–2): the longest task is the one most at risk of not fitting,
+and "start with the big one" is the right instinct at the stove. It decides what a window
+claims, not the order it is shown in.
 
 Freshness is not an input here. A task with `max_lead_min` set never reaches an early
 window in the first place — §4.5 withholds it from scheduling until it is its

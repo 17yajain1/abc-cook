@@ -284,7 +284,9 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
 
     # §4.4 — the post-timeline stage. Walk windows in (host start, host id) order; each
     # claims still-unclaimed hands-on nodes that ran fully inside its host's interval,
-    # in §4.4 key order. A window claims a task only if it passes BOTH gates:
+    # in §4.4 key order (longest first). The claimed set is then re-ranked by start_min
+    # so rank 0 is the task the cook actually starts first. A window claims a task only
+    # if it passes BOTH gates:
     #   1. typical packing:      used_typical + task.duration_typical <= capacity_min
     #   2. worst-case eligibility: task.duration_max            <= capacity_min
     # A task failing either gate is left for a later, roomier window. One task, one
@@ -315,7 +317,7 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
                 window.assigned.append(candidate.node_id)
                 claimed.add(candidate.node_id)
                 used += typical
-        window.assigned = rank_window_tasks(graph, window)
+        window.assigned = rank_window_tasks(window, {s.node_id: s.start_min for s in scheduled})
         window.used_min = _round(used)
         window.slack_min = _round(window.capacity_min - used)
 
