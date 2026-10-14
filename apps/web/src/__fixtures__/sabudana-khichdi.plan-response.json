@@ -625,7 +625,7 @@
         "end_min": 10.0,
         "occupies_cook": true,
         "window_id": "w1",
-        "rank_in_window": 1
+        "rank_in_window": 0
       },
       {
         "node_id": "step_coarsely_grind_about_half_the_roasted",
@@ -633,7 +633,7 @@
         "end_min": 15.0,
         "occupies_cook": true,
         "window_id": "w1",
-        "rank_in_window": 0
+        "rank_in_window": 1
       },
       {
         "node_id": "step_for_the_green_chutney_in_a",
@@ -730,8 +730,8 @@
         "host_node_id": "step_cover_and_leave_the_sabudana_to",
         "capacity_min": 108.0,
         "assigned": [
-          "step_coarsely_grind_about_half_the_roasted",
           "step_dry_roast_1_cup_raw_peanuts",
+          "step_coarsely_grind_about_half_the_roasted",
           "step_for_the_green_chutney_in_a"
         ],
         "used_min": 13.0,
