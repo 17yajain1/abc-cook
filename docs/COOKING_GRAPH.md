@@ -560,6 +560,34 @@ idle minutes of mixing before the first chop.
   host predicate as `LongWait.host_node_ids`: a session break and a long wait are both just
   gaps of different lengths, so "what's the dish busy with" is one question asked twice.
 
+**`Phase`** (D6) — a stretch of the plan where the cook has to be in the kitchen.
+`PlanSummary.phases: list[Phase] | None` (`None` only for a plan serialized before the
+field existed; new plans always carry at least one). A new phase starts after a
+**hands-free gap of ≥ `PHASE_BREAK_MIN` (45 min, inclusive)**, where hands-free means no
+`hands_on` **and no `periodic`** node is running. That is the *attended* timeline: a simmer
+you stir every few minutes is the cook being present, so it never counts as "come back
+later", however long it runs. Neither a gap under 45 min, nor a gap filled by periodic
+work, nor an unattended node running *alongside* hands-on work starts a phase.
+
+- **Node attribution** is the sessions rule: a node belongs to the last phase that had
+  started by its `start_min`, so the soak/rise that *creates* the wait belongs to the phase
+  that began it. The outer edges are widened to `0` and `total_min`.
+- **Relation to sessions and `long_waits`:** an independent split. Sessions and
+  `long_waits` keep measuring on the cook-*occupied* timeline and are unchanged. On every
+  current fixture each session boundary is also a phase boundary (phases refine sessions);
+  they could diverge only where a ≥120-min gap is filled with periodic work. Sessions would
+  then say "new sitting" while phases say "stay" — a sign that sessions are the ones
+  giving wrong advice (follow-up, not in scope).
+- `Phase` mirrors `Session`'s fields (`elapsed_min`, `elapsed_high_min` with the same
+  clamp, `active_min`, `node_ids`, `preceded_by_wait_min`, `preceded_by_host_node_ids`) and
+  adds `starts_new_session` — true iff the phase starts a session other than the first.
+  The slow-timeline footprint counts attended nodes rather than occupied ones.
+- **`PHASE_BREAK_MIN` is provisional.** It equals `LONG_WAIT_MIN` today but is a separate
+  constant so either can move. No fixture has a gap between 40 and 57 min, so the value is
+  untested by real data in that range (the unit tests pin 44 vs 45).
+- Example: sabudana-khichdi (170 min) is two phases, 0–18 and 125–170, with a 107-min
+  hands-free soak between them; it is still one sitting (`starts_new_session = false`).
+
 ---
 
 ## 5. Graph invariants — validate every extraction
