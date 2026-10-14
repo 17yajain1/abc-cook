@@ -19,7 +19,13 @@ import pytest
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import render_source_text
-from abc_cook.schedule import LONG_WAIT_MIN, SESSION_BREAK_MIN, schedule, summarize
+from abc_cook.schedule import (
+    LONG_WAIT_MIN,
+    PHASE_BREAK_MIN,
+    SESSION_BREAK_MIN,
+    schedule,
+    summarize,
+)
 from abc_cook.schedule.summary import _slow_plan
 from abc_cook.schema import CookingGraph, CookingPlan, Node, PlanSummary, Stage
 from abc_cook.schema.graph import SourceRef
@@ -553,3 +559,149 @@ def test_pizza_is_a_three_sitting_recipe() -> None:
 
     listed = [node_id for session in summary.sessions for node_id in session.node_ids]
     assert sorted(listed) == sorted(n.id for n in graph.nodes)
+
+
+# --- Phases (PR-B / D6): a split on the attended timeline, independent of sessions. ---
+
+
+def _spans(summary: PlanSummary) -> list[tuple[float, float]]:
+    assert summary.phases is not None
+    return [(p.start_min, p.end_min) for p in summary.phases]
+
+
+def _gap_graph(middle_attention: str, middle_min: int) -> CookingGraph:
+    """hands_on `a` (5 min) -> a `middle` node of the given attention -> hands_on `b`."""
+    src = SourceRef(kind="text", value="phase test", imported_at=datetime.now(UTC))
+    common = {"stage": "s", "doneness_cue": None, "tip": None, "max_lead_min": None}
+
+    def node(node_id: str, attention: str, minutes: int, deps: list[str]) -> Node:
+        return Node(
+            id=node_id,
+            label=node_id,
+            instruction=f"Do {node_id}.",
+            kind="prep" if attention == "hands_on" else "passive",
+            attention=attention,  # type: ignore[arg-type]
+            duration_min=minutes,
+            duration_typical=minutes,
+            duration_max=minutes,
+            station="counter" if attention == "hands_on" else "none",
+            depends_on=deps,
+            consumes=[f"comp_{d}" for d in deps],
+            produces=f"comp_{node_id}",
+            interruptible=True,
+            **common,
+        )
+
+    return CookingGraph(
+        id="phase-gap",
+        title="Phase gap",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=[
+            node("a", "hands_on", 5, []),
+            node("middle", middle_attention, middle_min, ["a"]),
+            node("b", "hands_on", 5, ["middle"]),
+        ],
+    )
+
+
+def _gap_summary(attention: str, minutes: int) -> PlanSummary:
+    graph = _gap_graph(attention, minutes)
+    return summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
+
+
+def test_phase_threshold_is_the_provisional_value() -> None:
+    assert PHASE_BREAK_MIN == 45.0
+
+
+def test_phase_boundary_is_inclusive_at_45() -> None:
+    below = _gap_summary("unattended", 44)
+    assert below.phases is not None
+    assert len(below.phases) == 1
+    at = _gap_summary("unattended", 45)
+    assert at.phases is not None
+    assert len(at.phases) == 2
+    second = at.phases[1]
+    assert second.preceded_by_wait_min == pytest.approx(45.0)
+    assert second.preceded_by_host_node_ids == ["middle"]
+    assert second.starts_new_session is False  # 45 < SESSION_BREAK_MIN: same sitting
+    assert at.phases[0].node_ids == ["a", "middle"]  # the wait belongs to the phase that began it
+
+
+def test_long_periodic_stretch_never_splits_a_phase() -> None:
+    """A simmer you stir every few minutes is not "come back later", however long."""
+    summary = _gap_summary("periodic", 50)
+    assert summary.phases is not None
+    assert len(summary.phases) == 1
+    # Sessions/long_waits keep their own (occupied-timeline) answer: unchanged.
+    assert len(summary.sessions) == 1
+
+
+def test_phases_for_sabudana_split_around_the_soak() -> None:
+    summary = _summary("sabudana-khichdi")
+    assert _spans(summary) == [(0.0, 18.0), (125.0, 170.0)]
+    assert summary.phases is not None
+    assert summary.phases[1].preceded_by_wait_min == pytest.approx(107.0)
+    assert summary.phases[1].starts_new_session is False
+    assert len(summary.sessions) == 1
+
+
+def test_phases_for_single_phase_fixtures() -> None:
+    for slug in ("kadai-paneer", "chicken-biryani", "maggi-2min", "strawberry-shortcake"):
+        summary = _summary(slug)
+        assert summary.phases is not None
+        assert len(summary.phases) == 1, slug
+        assert summary.phases[0].preceded_by_wait_min is None
+        assert summary.phases[0].preceded_by_host_node_ids == []
+
+
+def test_donuts_first_rise_splits_into_two_phases() -> None:
+    summary = _summary("homemade-donuts")
+    assert _spans(summary) == [(0.0, 21.0), (78.0, 138.0)]
+    assert summary.phases is not None
+    assert summary.phases[1].preceded_by_host_node_ids == ["first_rise"]
+
+
+def test_two_sittings_fixture_phases_equal_sessions() -> None:
+    """The 40-min unattended simmer inside the second sitting stays under 45: no split."""
+    summary = _summary(MULTI_SITTING_SLUG)
+    assert summary.phases is not None
+    assert _spans(summary) == [(s.start_min, s.end_min) for s in summary.sessions]
+    assert summary.phases[1].starts_new_session is True
+
+
+def test_pizza_phases_equal_sessions() -> None:
+    graph = _pizza_graph()
+    summary = summarize(graph, schedule(graph, burner_capacity=1), burner_capacity=1)
+    assert _spans(summary) == [(s.start_min, s.end_min) for s in summary.sessions]
+    assert summary.phases is not None
+    assert [p.starts_new_session for p in summary.phases] == [False, True, True]
+
+
+def test_phases_cover_every_node_once_and_are_ordered(any_slug: str) -> None:
+    graph = _graph(any_slug)
+    summary = _summary(any_slug)
+    assert summary.phases is not None
+    assert len(summary.phases) >= 1
+    listed = [node_id for phase in summary.phases for node_id in phase.node_ids]
+    assert sorted(listed) == sorted(n.id for n in graph.nodes)
+    assert summary.phases[0].start_min == pytest.approx(0.0)
+    assert summary.phases[-1].end_min == pytest.approx(summary.elapsed_min)
+    for previous, current in zip(summary.phases, summary.phases[1:], strict=False):
+        assert previous.end_min < current.start_min
+        assert current.preceded_by_wait_min == pytest.approx(current.start_min - previous.end_min)
+    for phase in summary.phases:
+        assert phase.elapsed_high_min >= phase.elapsed_min
+
+
+def test_every_session_boundary_is_a_phase_boundary(any_slug: str) -> None:
+    """Phases refine sessions on every current fixture."""
+    summary = _summary(any_slug)
+    assert summary.phases is not None
+    phase_starts = {p.start_min for p in summary.phases}
+    for session in summary.sessions[1:]:
+        assert session.start_min in phase_starts
