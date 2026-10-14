@@ -62,6 +62,23 @@
     "step_slide_pizza_onto_the_preheated_pizza": null,
     "step_transfer_the_pizza_to_a_cutting": null
   },
+  "sabudana-khichdi.plan-response.json": {
+    "step_rinse_the_sabudana_put_it_in": "1 cup soaked sabudana",
+    "step_cover_and_leave_the_sabudana_to": "1 cup soaked sabudana",
+    "step_after_one_hour_mix_the_soaked": "1 cup soaked sabudana",
+    "step_dry_roast_1_cup_raw_peanuts": "1/4 cup raw peanuts",
+    "step_coarsely_grind_about_half_the_roasted": "1/4 cup roasted peanuts · 4 tbsp roasted peanuts",
+    "step_add_the_coarse_peanut_powder_to": "1 cup soaked sabudana",
+    "step_for_the_green_chutney_in_a": "1/2 cup coriander leaves · 1/4 cup roasted peanuts · 4 tbsp roasted peanuts · 1 tbsp green chilli · 3 green chilli · 1 inch ginger · 1/2 tsp cumin seeds · 1 tsp cumin seeds · to taste sendha namak · sendha namak · 2 tbsp curd · water",
+    "step_heat_ghee_or_oil_in_a": "3 tbsp ghee or cooking oil · 1/2 tsp cumin seeds · 1 tsp cumin seeds · 2 green chillies · 12 curry leaves",
+    "step_add_the_raw_small_diced_potatoes": "2 potatoes",
+    "step_add_the_coated_sabudana_and_sendha": "to taste sendha namak · sendha namak · 1/4 cup roasted peanuts · 4 tbsp roasted peanuts",
+    "step_cover_and_cook_on_low_heat": "2 potatoes",
+    "step_uncover_and_check_the_sabudana_should": "1 cup soaked sabudana",
+    "step_turn_off_the_gas_and_then": "1 tsp lemon juice · 1/2 cup coriander leaves",
+    "step_serve_the_sabudana_khichdi_you_can": null,
+    "step_serve_with_green_chutney_and_curd": "2 tbsp curd"
+  },
   "strawberry-shortcake.plan-response.json": {
     "mix_dough": "300 g flour · 90 g cold butter · 120 g sugar · 12 g baking powder · 180 ml milk · 3 g salt",
     "bake_shortcakes": null,

@@ -37,6 +37,7 @@ SLUGS = [
     "strawberry-shortcake",
     "synthetic-two-windows",
     "synthetic-two-sittings",
+    "sabudana-khichdi",
 ]
 
 # Slugs replayed from a captured import fixture instead of a hand-authored graph —
