@@ -53,18 +53,18 @@ function freshSession(model: CookingModel, planKey: string, now: number): Cookin
 // ---------------------------------------------------------------------------
 
 describe('kadai — current progression and startNode (rows 3-4)', () => {
-  it('row 3: current walks chop_onion -> saute_onion -> chop_tomato -> cook_tomato_base (awaiting start)', () => {
+  it('row 3: current walks chop_onion -> chop_tomato -> saute_onion -> cook_tomato_base (awaiting start)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     expect(current(model, s)).toBe('chop_onion')
 
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    expect(current(model, s)).toBe('saute_onion')
-
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     expect(current(model, s)).toBe('chop_tomato')
 
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    expect(current(model, s)).toBe('saute_onion')
+
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     expect(current(model, s)).toBe('cook_tomato_base')
     expect(model.nodes.cook_tomato_base.occupiesCook).toBe(false)
   })
@@ -73,8 +73,8 @@ describe('kadai — current progression and startNode (rows 3-4)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
 
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(s.nodes.cook_tomato_base).toEqual({ state: 'running', startedAt: T0 + m(10), endsAt: T0 + m(22), extendedMs: 0 })
@@ -87,8 +87,8 @@ describe('kadai — startNode rejections (row 5)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(current(model, s)).toBe('chop_capsicum')
 
@@ -105,8 +105,8 @@ describe('kadai — done gating on a periodic host (row 6)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
 
     expect(engine.markDone(s, model, 'add_veggies', T0 + m(10))).toEqual({ ok: false, reason: 'not_current' })
@@ -166,8 +166,8 @@ describe('extend (rows 16-17)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(handover(model, s, T0 + m(22))?.reason).toBe('must_attend')
 
@@ -225,8 +225,8 @@ describe('skip (rows 21-24)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(current(model, s)).toBe('chop_capsicum')
 
@@ -276,8 +276,8 @@ describe('skip (rows 21-24)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(current(model, s)).toBe('chop_capsicum')
 
@@ -314,7 +314,7 @@ describe('undo (row 25)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
-    expect(current(model, s)).toBe('saute_onion')
+    expect(current(model, s)).toBe('chop_tomato')
 
     s = must(engine.undo(s, model, T0 + m(1)))
     expect(s.nodes.chop_onion).toEqual({ state: 'pending' })
@@ -329,8 +329,8 @@ describe('undo (row 25)', () => {
     // "no startNode has happened since" — demonstrated with the next real hands-off
     // node: startNode clears lastTransition even though the transition it clears was
     // for a different, already-done node.
-    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(s.lastTransition).toBeNull()
     expect(engine.undo(s, model, T0 + m(10))).toEqual({ ok: false, reason: 'nothing_to_undo' })
@@ -609,8 +609,8 @@ describe('open — conflict reports the other plan\'s title/state (CP1a)', () =>
     const biryaniModel = deriveCookingModel(BIRYANI)
     let s = must(engine.start(null, kadaiModel, 'library:kadai', T0, 'Kadai Paneer'))
     s = must(engine.markDone(s, kadaiModel, 'chop_onion', T0))
-    s = must(engine.markDone(s, kadaiModel, 'saute_onion', T0))
     s = must(engine.markDone(s, kadaiModel, 'chop_tomato', T0))
+    s = must(engine.markDone(s, kadaiModel, 'saute_onion', T0))
     s = must(engine.startNode(s, kadaiModel, 'cook_tomato_base', T0))
 
     const muchLater = T0 + m(2 * kadaiModel.totalMin * 60) + m(1)

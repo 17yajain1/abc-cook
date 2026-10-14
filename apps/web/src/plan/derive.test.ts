@@ -49,27 +49,20 @@ describe('derivePlan — Kadai Paneer', () => {
     const prep = plan.stages.find((s) => s.stageId === 'prep')!
     const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
 
-    // Prep keeps the two tasks that must finish before the base starts, plus
-    // `saute_onion` — a genuine one-task Cook Base interleave the scheduler places
-    // between them (P1 #5 checkpoint finding), absorbed here rather than splitting
-    // Prep into two cards (`groupIntoRuns`, plan §D). It keeps its own true home
-    // stage for the foreign-row tint cue.
-    expect(prep.inlineTasks.map((t) => t.nodeId)).toEqual([
-      'chop_onion',
-      'saute_onion',
-      'chop_tomato',
-    ])
-    const sauteOnion = prep.inlineTasks.find((t) => t.nodeId === 'saute_onion')!
-    expect(sauteOnion.homeStageIndex).toBe(cookBase.index)
-    expect(prep.hasForeignRows).toBe(true)
+    // Since the pan-chain rule (PR #46) the scheduler runs chop_tomato before
+    // saute_onion, so Kadai no longer has a one-task Cook Base interleave inside
+    // Prep: it stopped triggering the short-interleave/foreign-row rule. That rule is
+    // covered by the synthetic `groupIntoRuns` short-interleave tests and, on a real
+    // recipe, by the Homemade Donuts tests below.
+    expect(prep.inlineTasks.map((t) => t.nodeId)).toEqual(['chop_onion', 'chop_tomato'])
+    expect(cookBase.inlineTasks.map((t) => t.nodeId)).toEqual(['saute_onion', 'cook_tomato_base'])
+    for (const stage of plan.stages) {
+      expect(stage.hasForeignRows).toBe(false)
+      expect(stage.rowsAbsorbedElsewhere).toBe(false)
+    }
     expect(prep.windows).toHaveLength(0)
 
-    // Cook Base's own card is missing `saute_onion` (it's shown above, inside Prep),
-    // so its whole-stage duration figure would undercount what's visible there.
-    expect(cookBase.inlineTasks.map((t) => t.nodeId)).toEqual(['cook_tomato_base'])
-    expect(cookBase.rowsAbsorbedElsewhere).toBe(true)
-
-    // The relocation — the entire pitch of the product — lands on Cook Base's window.
+    // The relocation â€” the entire pitch of the product â€” lands on Cook Base's window.
     expect(cookBase.windows).toHaveLength(1)
     expect(cookBase.windows[0].tasks.map((t) => t.nodeId)).toEqual([
       'chop_capsicum',
@@ -78,20 +71,44 @@ describe('derivePlan — Kadai Paneer', () => {
     ])
   })
 
-  it("flattening Kadai's own cards reproduces executionOrder filtered to inline tasks — checked on this fixture alone, independent of the all-fixtures loop below, because it's the one where the short-interleave rule actually fires", () => {
-    const scheduledByNode = new Map(KADAI.plan.scheduled.map((s) => [s.node_id, s]))
-    const expected = executionOrder(KADAI.plan.scheduled).filter(
+  it('a real recipe where the short-interleave rule fires: Homemade Donuts absorbs heat_oil into Shape', () => {
+    const donuts = derivePlan(DONUTS)
+    const shape = donuts.stages.find((s) => s.stageId === 'shape')!
+    const fry = donuts.stages.find((s) => s.stageId === 'fry')!
+
+    // `heat_oil` belongs to Fry but the scheduler places it between two Shape tasks,
+    // so it is absorbed into Shape's card (`groupIntoRuns`, plan Â§D) rather than
+    // splitting Shape into two cards. It keeps its own true home stage for the
+    // foreign-row tint cue.
+    expect(shape.inlineTasks.map((t) => t.nodeId)).toEqual(['shape_and_cut', 'heat_oil', 'proof_donuts'])
+    const heatOil = shape.inlineTasks.find((t) => t.nodeId === 'heat_oil')!
+    expect(heatOil.homeStageIndex).toBe(fry.index)
+    expect(shape.hasForeignRows).toBe(true)
+
+    // Fry's own card is missing `heat_oil` (it's shown above, inside Shape), so its
+    // whole-stage duration figure would undercount what's visible there.
+    expect(fry.inlineTasks.map((t) => t.nodeId)).toEqual(['fry_donuts'])
+    expect(fry.rowsAbsorbedElsewhere).toBe(true)
+  })
+
+  it("flattening Homemade Donuts' own cards reproduces executionOrder filtered to inline tasks â€” checked on this fixture alone, independent of the all-fixtures loop below, because it's a real one where the short-interleave rule actually fires", () => {
+    const donuts = derivePlan(DONUTS)
+    const scheduledByNode = new Map(DONUTS.plan.scheduled.map((s) => [s.node_id, s]))
+    const expected = executionOrder(DONUTS.plan.scheduled).filter(
       (id) => scheduledByNode.get(id)?.window_id == null,
     )
-    expect(plan.stages.flatMap((s) => s.inlineTasks.map((t) => t.nodeId))).toEqual(expected)
+    expect(donuts.stages.flatMap((s) => s.inlineTasks.map((t) => t.nodeId))).toEqual(expected)
     expect(expected).toEqual([
-      'chop_onion',
-      'saute_onion',
-      'chop_tomato',
-      'cook_tomato_base',
-      'add_veggies',
-      'add_paneer',
-      'finish',
+      'bloom_yeast',
+      'mix_dough',
+      'knead_dough',
+      'first_rise',
+      'shape_and_cut',
+      'heat_oil',
+      'proof_donuts',
+      'fry_donuts',
+      'make_glaze',
+      'glaze_donuts',
     ])
   })
 

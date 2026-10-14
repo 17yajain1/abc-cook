@@ -62,6 +62,7 @@ describe('CookingShell — F2 ingredient chips', () => {
   it('task with several ingredients: every amount and unit is visible, and the old quantity line is gone', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
+    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 3 * MIN)) // so saute_onion is the current step
     const html = render(view(se, T0 + 3 * MIN))
     expect(chipTexts(chipList(html)!)).toEqual(['3 tbsp oil', '1 tbsp ginger-garlic paste'])
     // The joined " · " quantity line is no longer rendered on the step screen.
@@ -71,8 +72,8 @@ describe('CookingShell — F2 ingredient chips', () => {
   it('handsoff_pending: chips render on the pending hands-off start screen', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     const v = view(se, T0 + 10 * MIN)
     expect(v.screenId).toBe('handsoff_pending')
     expect(chipTexts(chipList(render(v))!)).toEqual(['salt to taste'])
@@ -80,7 +81,7 @@ describe('CookingShell — F2 ingredient chips', () => {
 
   it('a step with no ingredients renders no list at all', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'saute_onion', 'chop_tomato'] as const) se = must(engine.markDone(se, model, id, T0 + 10 * MIN))
+    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) se = must(engine.markDone(se, model, id, T0 + 10 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) se = must(engine.markDone(se, model, id, T0 + 16 * MIN))
     se = must(engine.acknowledge(se, model, T0 + 22 * MIN))
@@ -93,8 +94,8 @@ describe('CookingShell — F2 ingredient chips', () => {
   it('dark handover is unchanged: no chip list, and chips cannot reach it even if set', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
     se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
