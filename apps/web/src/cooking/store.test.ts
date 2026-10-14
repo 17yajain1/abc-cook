@@ -68,7 +68,7 @@ describe('createSessionStore — dispatch/getState/subscribe wiring', () => {
     expect(notifications).toBe(2)
 
     unsubscribe()
-    store.dispatch({ type: 'markDone', model, nodeId: 'saute_onion', now: T0 })
+    store.dispatch({ type: 'markDone', model, nodeId: 'chop_tomato', now: T0 })
     expect(notifications).toBe(2) // no further notification after unsubscribe
 
     // A rejected dispatch does not persist or notify.
@@ -106,8 +106,8 @@ describe('createSessionStore — reopen (row 15)', () => {
     const first = createSessionStore(storage, clock(T0))
     first.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
     first.dispatch({ type: 'markDone', model, nodeId: 'chop_onion', now: T0 })
-    first.dispatch({ type: 'markDone', model, nodeId: 'saute_onion', now: T0 })
     first.dispatch({ type: 'markDone', model, nodeId: 'chop_tomato', now: T0 })
+    first.dispatch({ type: 'markDone', model, nodeId: 'saute_onion', now: T0 })
     first.dispatch({ type: 'startNode', model, nodeId: 'cook_tomato_base', now: T0 + m(10) })
 
     const reopened = createSessionStore(storage, clock(T0 + m(40)))
@@ -263,8 +263,8 @@ describe('CP1b — "Go to <recipe>": opens the existing session, never creates o
     const store = createSessionStore(storage, clock(T0))
     store.dispatch({ type: 'start', model, planKey: 'library:kadai-id', now: T0, recipeTitle: 'Kadai Paneer' })
     store.dispatch({ type: 'markDone', model, nodeId: 'chop_onion', now: T0 })
-    store.dispatch({ type: 'markDone', model, nodeId: 'saute_onion', now: T0 })
     store.dispatch({ type: 'markDone', model, nodeId: 'chop_tomato', now: T0 })
+    store.dispatch({ type: 'markDone', model, nodeId: 'saute_onion', now: T0 })
     store.dispatch({ type: 'startNode', model, nodeId: 'cook_tomato_base', now: T0 + m(10) })
     const runningBefore = store.getState()?.nodes.cook_tomato_base
 

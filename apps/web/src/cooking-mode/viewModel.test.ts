@@ -76,14 +76,14 @@ describe('kadai-paneer', () => {
     expect(v.primary).toEqual({ label: 'Done', solid: true, action: { kind: 'markDone', nodeId: 'chop_onion' } })
     // P1 #6 §C1/§C2: "Step 1 of 10" and a preview of what Done would unblock next.
     expect(v.step).toBe('Step 1 of 10')
-    expect(v.next).toBe('Next: Sauté onion')
+    expect(v.next).toBe('Next: Chop tomato')
   })
 
   it('handsoff_pending: shows the hands-off-pending screen once every hands-on prerequisite is done', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
 
     const v = view(se, T0 + 10 * MIN)
     expect(v.screenId).toBe('handsoff_pending')
@@ -106,8 +106,8 @@ describe('kadai-paneer', () => {
   it('task_window: shows a task inside the wait window with a whisper naming the host', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
 
     const v = view(se, T0 + 10 * MIN + 1000)
@@ -123,8 +123,8 @@ describe('kadai-paneer', () => {
   it('task_window: the last prep in a window previews the step blocked behind the wait, not a node the wait subject blocks', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
     se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
@@ -140,7 +140,7 @@ describe('kadai-paneer', () => {
 
   it('finish: the last step has no preview', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'saute_onion', 'chop_tomato'] as const) {
+    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
       se = must(engine.markDone(se, model, id, T0 + 10 * MIN))
     }
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
@@ -165,8 +165,8 @@ describe('kadai-paneer', () => {
     // separately below on the `bowl` fixture, where `waitSubject` genuinely is null.
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
     se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
@@ -212,8 +212,8 @@ describe('kadai-paneer', () => {
   it('wait: "Give it longer" before expiry moves the end clock by one minute', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
     se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
@@ -231,8 +231,8 @@ describe('kadai-paneer', () => {
   it('handover_late: shows the elapsed/overrun wording once the host node has expired', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
     se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
@@ -260,8 +260,8 @@ describe('kadai-paneer', () => {
   it('sheet: lists the single running host', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
 
     const sheet = buildSheetView(model, se, T0 + 12 * MIN)
@@ -271,7 +271,7 @@ describe('kadai-paneer', () => {
 
   it('done: reports completion only — no total, no saved figure, no ongoing chrome', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'saute_onion', 'chop_tomato'] as const) {
+    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
       se = must(engine.markDone(se, model, id, T0 + 10 * MIN))
     }
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
@@ -401,13 +401,13 @@ describe('undo link — P1 #6 §C3', () => {
     expect(view(T0 + 1 * MIN + 10_000).secondary).toEqual({
       label: 'Skip for now',
       solid: false,
-      action: { kind: 'skip', nodeId: 'saute_onion' },
+      action: { kind: 'skip', nodeId: 'chop_tomato' },
     })
 
     // "I've started it" on the next hands-off step clears lastTransition (engine
     // contract) — the link disappears immediately, well inside the 10 s window.
-    se = must(engine.markDone(se, kadaiModel, 'saute_onion', T0 + 2 * MIN))
     se = must(engine.markDone(se, kadaiModel, 'chop_tomato', T0 + 2 * MIN))
+    se = must(engine.markDone(se, kadaiModel, 'saute_onion', T0 + 2 * MIN))
     se = must(engine.startNode(se, kadaiModel, 'cook_tomato_base', T0 + 2 * MIN))
     // startNode cleared lastTransition — the ordinary Skip control shows, never undo.
     expect(view(T0 + 2 * MIN).secondary?.action.kind).toBe('skip')
@@ -764,8 +764,8 @@ describe('V2.1 running-work strip', () => {
   it('periodic host: no strip; the whisper keeps its "give it a stir" wording', () => {
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
     se = must(engine.markDone(se, kadai, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, kadai, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.markDone(se, kadai, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, kadai, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN)) // periodic, 12-min typical
 
     const v = buildCookingView(kadai, se, T0 + 10 * MIN + 1000, kadaiIngredients, {
@@ -801,7 +801,7 @@ describe('V2.1 running-work strip', () => {
     expect(leavingView.strip).toBeNull()
 
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'saute_onion', 'chop_tomato'] as const) {
+    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
       se = must(engine.markDone(se, kadai, id, T0 + 10 * MIN))
     }
     se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN))

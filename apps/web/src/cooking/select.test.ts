@@ -539,7 +539,7 @@ describe('foreignLifecycle — CP1a (M3.4.5 session-lockout plan)', () => {
 describe('stepPosition — P1 #6 §C1', () => {
   it('kadai: n rises on hands-on Done and startNode, never on a skip, and running->done leaves it unchanged', () => {
     const model = deriveCookingModel(KADAI)
-    // model.order: chop_onion, saute_onion, chop_tomato, cook_tomato_base,
+    // model.order: chop_onion, chop_tomato, saute_onion, cook_tomato_base,
     // chop_capsicum, cube_paneer, make_kadai_masala, add_veggies, add_paneer, finish.
     let s = emptySession(model)
     expect(stepPosition(model, s)).toEqual({ n: 1, total: 10 })

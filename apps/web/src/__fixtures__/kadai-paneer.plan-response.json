@@ -362,16 +362,16 @@
         "rank_in_window": null
       },
       {
-        "node_id": "saute_onion",
+        "node_id": "chop_tomato",
         "start_min": 3.0,
-        "end_min": 8.0,
+        "end_min": 5.0,
         "occupies_cook": true,
         "window_id": null,
         "rank_in_window": null
       },
       {
-        "node_id": "chop_tomato",
-        "start_min": 8.0,
+        "node_id": "saute_onion",
+        "start_min": 5.0,
         "end_min": 10.0,
         "occupies_cook": true,
         "window_id": null,
@@ -482,9 +482,9 @@
     },
     {
       "stage_id": "cook_base",
-      "start_min": 3.0,
+      "start_min": 5.0,
       "end_min": 22.0,
-      "elapsed_min": 19.0,
+      "elapsed_min": 17.0,
       "work_min": 17.0,
       "windowed_work_min": 0.0,
       "inline_work_min": 17.0,
@@ -537,8 +537,8 @@
         "active_min": 31.0,
         "node_ids": [
           "chop_onion",
-          "saute_onion",
           "chop_tomato",
+          "saute_onion",
           "chop_capsicum",
           "cook_tomato_base",
           "cube_paneer",
@@ -553,6 +553,30 @@
         "preceded_by_host_node_ids": []
       }
     ],
-    "long_waits": []
+    "long_waits": [],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 34.0,
+        "elapsed_min": 34.0,
+        "elapsed_high_min": 46.0,
+        "active_min": 31.0,
+        "node_ids": [
+          "chop_onion",
+          "chop_tomato",
+          "saute_onion",
+          "chop_capsicum",
+          "cook_tomato_base",
+          "cube_paneer",
+          "make_kadai_masala",
+          "add_veggies",
+          "add_paneer",
+          "finish"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      }
+    ]
   }
 }
