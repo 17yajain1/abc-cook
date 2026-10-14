@@ -628,3 +628,150 @@ def test_pan_chain_step_is_not_placed_in_an_unrelated_soak_window() -> None:
     assert all(
         not {"heat_ghee", "add_potato"} & set(w.assigned) for w in plan.windows
     )
+
+
+# --- Rank follows the timeline (PR-B4) -------------------------------------------------
+
+
+def _rank_graph(specs: list[tuple[str, str, int, list[str]]]) -> CookingGraph:
+    """Build a graph from `(id, "hands_on" | "unattended", minutes, depends_on)` specs.
+
+    A final hands-on `plate` node depends on every spec, so nothing dangles.
+    """
+    src = SourceRef(kind="text", value="rank test", imported_at=datetime.now(UTC))
+    common = {
+        "stage": "s",
+        "consumes": [],
+        "doneness_cue": None,
+        "tip": None,
+        "max_lead_min": None,
+        "interruptible": True,
+    }
+    nodes = [
+        Node(
+            id=node_id,
+            label=node_id,
+            instruction=f"Do {node_id}.",
+            kind="passive" if attention == "unattended" else "prep",
+            attention=attention,  # type: ignore[arg-type]
+            duration_min=minutes,
+            duration_typical=minutes,
+            duration_max=minutes,
+            station="none" if attention == "unattended" else "counter",
+            depends_on=deps,
+            produces=f"comp_{node_id}",
+            **common,
+        )
+        for node_id, attention, minutes, deps in specs
+    ]
+    nodes.append(
+        Node(
+            id="zz_plate",
+            label="Plate",
+            instruction="Plate it.",
+            kind="finish",
+            attention="hands_on",
+            duration_min=1,
+            duration_typical=1,
+            duration_max=1,
+            station="none",
+            depends_on=[n.id for n in nodes],
+            produces=None,
+            **common,
+        )
+    )
+    return CookingGraph(
+        id="rank",
+        title="Rank",
+        servings=1,
+        cuisine=None,
+        source=src,
+        stated_total_min=None,
+        ingredients=[],
+        stages=[Stage(id="s", label="S", color_key="prep")],
+        nodes=nodes,
+    )
+
+
+def test_rank_puts_a_dependency_before_its_consumer() -> None:
+    """Grind (6) outranks roast (5) on duration, but needs it: roast is rank 0."""
+    plan = schedule(
+        _rank_graph(
+            [
+                ("a_host", "unattended", 30, []),
+                ("roast", "hands_on", 5, []),
+                ("grind", "hands_on", 6, ["roast"]),
+                ("chutney", "hands_on", 3, []),
+            ]
+        )
+    )
+    placed = {s.node_id: s for s in plan.scheduled}
+    (window,) = plan.windows
+
+    assert window.assigned == ["roast", "grind", "chutney"]
+    assert placed["roast"].rank_in_window == 0
+
+
+def test_rank_respects_a_transitive_dependency_through_an_unclaimed_node() -> None:
+    """a -> b (unattended, not claimable) -> c: c cannot be ranked before a."""
+    plan = schedule(
+        _rank_graph(
+            [
+                ("a_host", "unattended", 30, []),
+                ("a", "hands_on", 2, []),
+                ("b", "unattended", 3, ["a"]),
+                ("c", "hands_on", 6, ["b"]),
+                ("d", "hands_on", 4, []),
+            ]
+        )
+    )
+    (window,) = plan.windows
+
+    assert {"a", "c"} <= set(window.assigned)
+    assert window.assigned.index("a") < window.assigned.index("c")
+
+
+def test_rank_zero_is_a_task_that_can_start_now_not_one_waiting_on_an_outside_soak() -> None:
+    """y_long (8) is blocked by an unattended soak that ends mid-window: it ranks last."""
+    plan = schedule(
+        _rank_graph(
+            [
+                ("a_host", "unattended", 30, []),
+                ("x_soak", "unattended", 10, []),
+                ("y_long", "hands_on", 8, ["x_soak"]),
+                ("z_mid", "hands_on", 3, []),
+                ("w_short", "hands_on", 2, []),
+            ]
+        )
+    )
+    window = next(w for w in plan.windows if w.host_node_id == "a_host")
+
+    assert window.assigned == ["z_mid", "w_short", "y_long"]
+
+
+def _ancestors(graph: CookingGraph, node_id: str) -> set[str]:
+    by_id = {n.id: n for n in graph.nodes}
+    seen: set[str] = set()
+    stack = list(by_id[node_id].depends_on)
+    while stack:
+        current = stack.pop()
+        if current not in seen:
+            seen.add(current)
+            stack.extend(by_id[current].depends_on)
+    return seen
+
+
+def test_window_rank_follows_dependencies_and_start_order_on_every_golden(slug: str) -> None:
+    graph = _graph(slug)
+    plan = _scheduled(slug)
+    placed = {s.node_id: s for s in plan.scheduled}
+
+    for window in plan.windows:
+        for index, node_id in enumerate(window.assigned):
+            assert placed[node_id].rank_in_window == index
+            later = set(window.assigned[index + 1 :])
+            assert not (_ancestors(graph, node_id) & later), (
+                f"{window.id}: {node_id} is ranked before a task it depends on"
+            )
+        starts = [placed[n].start_min for n in window.assigned]
+        assert starts == sorted(starts), f"{window.id}: assigned is not in start order"
