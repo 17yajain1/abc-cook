@@ -453,7 +453,20 @@ def test_verify_duration_stays_ungrounded_when_the_value_is_genuinely_absent() -
         duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
     )
     assert stated is False
-    assert any("no duration phrase" in w for w in warnings)
+    assert any("not found in the source text" in w for w in warnings)
+    assert not any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_keeps_the_older_wording_when_the_step_has_no_phrase() -> None:
+    """With no duration phrase in the step at all, "no duration phrase was found in its
+    own text" is the accurate wording, even when the source does state a duration."""
+    *_rest, stated, warnings, _review = _verify(
+        "Cook the dal until soft.",
+        corpus="cook the dal for 30 minutes.",
+        duration_min=30, duration_typical_min=30, duration_max=30, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase was found in its own text" in w for w in warnings)
 
 
 def test_verify_duration_plain_claim_not_grounded_by_a_corpus_ceiling_of_the_same_value() -> None:

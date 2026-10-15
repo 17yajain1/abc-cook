@@ -801,9 +801,13 @@ def _verify_duration(
         dmax = max(dmax, expr.high_min) if dmax is not None else expr.high_min
         stated = True
     elif not plain and stated and not ceilings:
+        if _duration_expressions(text):
+            reason = "but that duration was not found in the source text"
+        else:
+            reason = "but no duration phrase was found in its own text"
         warnings.append(
-            f'Step "{text[:60]}..." claims a stated duration, but no duration phrase '
-            "was found in its own text; treated as an estimate, not a stated fact."
+            f'Step "{text[:60]}..." claims a stated duration, {reason}; '
+            "treated as an estimate, not a stated fact."
         )
         stated = False
     elif not plain and stated and ceilings:
