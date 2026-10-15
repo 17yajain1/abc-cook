@@ -9,6 +9,7 @@ source text independently of whatever the fake "model" claimed.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from abc_cook.extract.graph import (
     _produced_labels,
     _resolve_step_ingredient_ids,
     _stages_for,
+    _verification_corpus,
     _verify_duration,
     _verify_independence,
     build_graph,
@@ -984,6 +986,120 @@ def test_unresolved_component_names_still_collide_by_name(explicit: bool) -> Non
     result = _build(recipe, "Heat the spice paste. Stir the spice paste.")
     assert result.graph is not None
     assert len(result.graph.nodes[1].depends_on) == 1
+
+
+# ---------------------------------------------------------------------------
+# D5 -- Hindi duration units ground durations in the source corpus. Number words
+# ("एक घंटे") are deliberately NOT parsed: with an "after N" start offset that would
+# turn "After one hour, mix..." into a stated 60-minute step.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "low", "high"),
+    [
+        ("2 घंटे के लिए भिगो दें", 120, 120),
+        ("२ घंटे के लिए भिगो दें", 120, 120),
+        ("2 से 3 घंटे", 120, 180),
+        ("4 मिनट", 4, 4),
+        ("30 सेकंड", 0.5, 0.5),
+        ("1 घंटा", 60, 60),
+        ("2 ghante", 120, 120),
+        ("2 ghanta", 120, 120),
+        ("3 to 4 minutes", 3, 4),
+        ("Cook for 5 mins.", 5, 5),
+    ],
+)
+def test_duration_expressions_parse_hindi_and_english_units(
+    text: str, low: float, high: float
+) -> None:
+    exprs = _duration_expressions(text)
+    assert [(e.low_min, e.high_min) for e in exprs] == [(low, high)]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "एक घंटे बाद",  # a number word: not parsed at all
+        "1 घंटे बाद मिलाएं",
+        "5 मिनट पहले",
+        "1 ghante baad",
+        "1 ghanta pehle",
+    ],
+)
+def test_duration_expressions_skip_hindi_offsets(text: str) -> None:
+    assert _duration_expressions(text) == []
+
+
+def test_hindi_offset_guard_only_suppresses_the_adjacent_offset() -> None:
+    exprs = _duration_expressions("2 घंटे के लिए भिगो दें, फिर थोड़ी देर बाद मिलाएं")
+    assert [(e.low_min, e.high_min) for e in exprs] == [(120, 120)]
+
+
+def test_stated_hindi_duration_grounds_an_english_step() -> None:
+    _min, dtyp, _max, stated, warnings, _review = _verify(
+        "Soak for 2 hours.",
+        corpus="2 घंटे के लिए भिगो दें",
+        duration_min=120, duration_typical_min=120, duration_max=120, duration_stated=True,
+    )
+    assert (dtyp, stated, warnings) == (120, True, [])
+
+
+def test_hindi_range_connector_grounds_an_english_range() -> None:
+    dmin, _typ, dmax, stated, warnings, _review = _verify(
+        "Cook 3 to 4 minutes.",
+        corpus="3 से 4 मिनट",
+        duration_min=3, duration_typical_min=3.5, duration_max=4, duration_stated=True,
+    )
+    assert (dmin, dmax, stated, warnings) == (3, 4, True, [])
+
+
+@pytest.mark.parametrize(
+    ("step_text", "corpus", "minutes"),
+    [
+        ("After one hour, mix the sabudana.", "एक घंटे बाद मिलाएं", 60),
+        ("After 1 hour, mix the sabudana.", "1 घंटे बाद मिलाएं", 60),
+        ("Rest for 5 minutes.", "5 मिनट पहले", 5),
+    ],
+)
+def test_hindi_offsets_never_ground_a_stated_duration(
+    step_text: str, corpus: str, minutes: float
+) -> None:
+    *_rest, stated, _warnings, _review = _verify(
+        step_text,
+        corpus=corpus,
+        duration_min=minutes, duration_typical_min=minutes, duration_max=minutes,
+        duration_stated=True,
+    )
+    assert stated is False
+
+
+def test_real_hindi_transcript_grounds_the_soak_and_nothing_it_shouldnt() -> None:
+    raw = RawAcquisition.model_validate(
+        json.loads((_IMPORT_FIXTURES / "captions-auto-hi.raw.json").read_text(encoding="utf-8"))
+    )
+    corpus = _verification_corpus(render_source_text(raw))
+
+    def check(text: str, minutes: float) -> tuple[bool, list[str]]:
+        step = _step(
+            text=text,
+            duration_min=minutes, duration_typical_min=minutes, duration_max=minutes,
+            duration_stated=True,
+        )
+        *_numbers, stated, warnings, _review = _verify_duration(step, corpus)
+        return stated, warnings
+
+    stated, warnings = check("Cover and leave the sabudana to soak for 2 hours.", 120)
+    assert stated is True
+    assert warnings == []
+
+    # The transcript says "तीन से 4" (a number word): stays ungrounded.
+    stated, warnings = check("Cover and cook on low heat for 3 to 4 minutes.", 3.5)
+    assert stated is False
+    assert warnings
+
+    stated, _warnings = check("After one hour, mix the soaked sabudana once.", 60)
+    assert stated is False
 
 
 # ---------------------------------------------------------------------------

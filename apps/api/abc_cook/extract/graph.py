@@ -628,9 +628,15 @@ one."""
 
 _VULGAR_FRACTION_MINUTES = {"¼": 0.25, "½": 0.5, "¾": 0.75}
 
-_DURATION_UNIT_SECONDS = ("sec", "secs", "second", "seconds")
-_DURATION_UNIT_MINUTES = ("min", "mins", "minute", "minutes")
-_DURATION_UNIT_HOURS = ("hr", "hrs", "hour", "hours")
+_DURATION_UNIT_SECONDS = ("sec", "secs", "second", "seconds", "सेकंड")
+_DURATION_UNIT_MINUTES = ("min", "mins", "minute", "minutes", "मिनट")
+_DURATION_UNIT_HOURS = ("hr", "hrs", "hour", "hours", "घंटा", "घंटे", "ghanta", "ghante")
+_DURATION_UNITS_HINDI = ("सेकंड", "मिनट", "घंटा", "घंटे", "ghanta", "ghante")
+"""Units that only occur in Hindi source text (corpus side; step text is English)."""
+
+_HINDI_OFFSET_MARKERS = ("बाद", "baad", "पहले", "pehle")
+"""A Hindi duration followed by one of these ("1 घंटे बाद" = "after 1 hour") is a start
+offset, not how long a step takes, so it must not ground a stated duration."""
 
 _CEILING_PHRASES = ("up to", "at most", "no more than")
 """§4: a ceiling on how long something may sit, never a step's own duration."""
@@ -647,11 +653,14 @@ _DURATION_UNIT_RE = "|".join(
     _DURATION_UNIT_SECONDS + _DURATION_UNIT_MINUTES + _DURATION_UNIT_HOURS
 )
 _DURATION_CEILING_RE = "|".join(_CEILING_PHRASES)
+_HINDI_OFFSET_RE = re.compile(
+    r"\s*(?:" + "|".join(_HINDI_OFFSET_MARKERS) + r")(?!\w)", re.IGNORECASE
+)
 _DURATION_EXPR_RE = re.compile(
     rf"(?:(?P<ceiling>{_DURATION_CEILING_RE})\s+)?"
     rf"(?P<a>{_DURATION_NUMBER_RE})"
-    rf"(?:\s*(?:-|[{_RANGE_DASHES}]|to)\s*(?P<b>{_DURATION_NUMBER_RE}))?"
-    rf"\s*(?P<unit>{_DURATION_UNIT_RE})\b",
+    rf"(?:\s*(?:-|[{_RANGE_DASHES}]|to|से)\s*(?P<b>{_DURATION_NUMBER_RE}))?"
+    rf"\s*(?P<unit>{_DURATION_UNIT_RE})(?!\w)",
     re.IGNORECASE,
 )
 
@@ -694,6 +703,10 @@ def _duration_expressions(text: str) -> list[_DurationExpr]:
     """
     exprs: list[_DurationExpr] = []
     for match in _DURATION_EXPR_RE.finditer(text):
+        if match.group("unit").lower() in _DURATION_UNITS_HINDI and _HINDI_OFFSET_RE.match(
+            text, match.end()
+        ):
+            continue
         factor = _duration_unit_factor(match.group("unit"))
         a = _duration_number(match.group("a")) * factor
         b_token = match.group("b")
