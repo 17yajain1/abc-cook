@@ -973,13 +973,54 @@ def _resolve_step_ingredient_ids(
     return out
 
 
+def _identity_keys(
+    names: list[str],
+    resolved_ids: list[str],
+    name_to_ids: dict[str, list[str]],
+    name_of: dict[str, str],
+) -> dict[str, str]:
+    """What a step's ingredients are, for the independence tests: key -> lowercase name.
+
+    A resolved ingredient is keyed by its id, so two portions of the same name (main
+    list vs a group) are different ingredients. A name that matches no ingredient (a
+    component name) is keyed by the name itself, as it always was.
+    """
+    keys = {ing_id: name_of[ing_id] for ing_id in resolved_ids}
+    for name in names:
+        if _name_candidates(name, name_to_ids) is None:
+            keys[f"name:{name.lower()}"] = name.lower()
+    return keys
+
+
+def _shared_names(
+    a: NormalizedStep,
+    b: NormalizedStep,
+    a_keys: dict[str, str] | None,
+    b_keys: dict[str, str] | None,
+) -> set[str]:
+    """Lowercase names of the ingredients both steps consume.
+
+    With identity keys, "shared" means the same resolved id (or the same unresolved
+    name); without them (a caller that has no ingredient list), the same step name.
+    """
+    if a_keys is None or b_keys is None:
+        return {n.lower() for n in a.consumes_ingredients} & {
+            n.lower() for n in b.consumes_ingredients
+        }
+    return {a_keys[key] for key in a_keys.keys() & b_keys.keys()}
+
+
 def _shares_ingredient(
-    a: NormalizedStep, b: NormalizedStep, produced_labels: frozenset[str]
+    a: NormalizedStep,
+    b: NormalizedStep,
+    produced_labels: frozenset[str],
+    a_keys: dict[str, str] | None = None,
+    b_keys: dict[str, str] | None = None,
 ) -> bool:
     """Whether `a` and `b` name a common ingredient other than a pantry staple."""
-    a_names = {name.lower() for name in a.consumes_ingredients}
-    b_names = {name.lower() for name in b.consumes_ingredients}
-    return any(not _is_staple(name, produced_labels) for name in a_names & b_names)
+    return any(
+        not _is_staple(name, produced_labels) for name in _shared_names(a, b, a_keys, b_keys)
+    )
 
 
 def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
@@ -992,7 +1033,11 @@ def _consumes_others_product(a: NormalizedStep, b: NormalizedStep) -> bool:
 
 
 def _verify_independence(
-    previous: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+    previous: NormalizedStep,
+    current: NormalizedStep,
+    produced_labels: frozenset[str],
+    previous_keys: dict[str, str] | None = None,
+    current_keys: dict[str, str] | None = None,
 ) -> bool:
     """LOCKED DECISION 7 / design doc §4.7.
 
@@ -1002,13 +1047,17 @@ def _verify_independence(
     this test (CP2 decision E); a produced component never counts as a staple, and the
     produces/consumes link is never exempt.
     """
-    if _shares_ingredient(previous, current, produced_labels):
+    if _shares_ingredient(previous, current, produced_labels, previous_keys, current_keys):
         return False
     return not _consumes_others_product(previous, current)
 
 
 def _verify_independence_explicit(
-    earlier: NormalizedStep, current: NormalizedStep, produced_labels: frozenset[str]
+    earlier: NormalizedStep,
+    current: NormalizedStep,
+    produced_labels: frozenset[str],
+    earlier_keys: dict[str, str] | None = None,
+    current_keys: dict[str, str] | None = None,
 ) -> bool:
     """§4.7's test, generalized to any earlier step (CP2 decision A).
 
@@ -1016,11 +1065,9 @@ def _verify_independence_explicit(
     produced-component label (producer->consumer wiring already orders those), or on
     a produces/consumes link between the two -- which is never exempt.
     """
-    a_names = {name.lower() for name in earlier.consumes_ingredients}
-    b_names = {name.lower() for name in current.consumes_ingredients}
     if any(
         name not in produced_labels and not _is_staple(name, produced_labels)
-        for name in a_names & b_names
+        for name in _shared_names(earlier, current, earlier_keys, current_keys)
     ):
         return False
     return not _consumes_others_product(earlier, current)
@@ -1039,7 +1086,10 @@ _HEAT_STATIONS = ("burner", "oven")
 
 
 def _explicit_dependencies(
-    all_steps: list[NormalizedStep], roles: _Roles, warnings: list[str]
+    all_steps: list[NormalizedStep],
+    roles: _Roles,
+    warnings: list[str],
+    identity_keys: list[dict[str, str]] | None = None,
 ) -> tuple[list[list[int]], list[ProvenanceSource], bool]:
     """CP2 decision A: resolve `depends_on_steps` claims over the required steps.
 
@@ -1052,6 +1102,8 @@ def _explicit_dependencies(
         all_steps: Every step, in source order (original positions).
         roles: The role pass's result; claims are remapped from original positions.
         warnings: Appended to for every dropped index and every guard edge.
+        identity_keys: Per required position, the step's ingredient identity (see
+            `_identity_keys`); None compares raw step names.
 
     Returns:
         Per required position: the dependency positions (claimed first, then added
@@ -1157,7 +1209,13 @@ def _explicit_dependencies(
             reach = reach_of(deps)
             new: list[int] = []
             for j in range(i):
-                if j in reach or _verify_independence_explicit(steps[j], step, labels):
+                if j in reach or _verify_independence_explicit(
+                    steps[j],
+                    step,
+                    labels,
+                    identity_keys[j] if identity_keys else None,
+                    identity_keys[i] if identity_keys else None,
+                ):
                     continue
                 new.append(j)
                 reach |= reach_of({j})
@@ -1387,6 +1445,11 @@ def build_graph(
     step_ingredient_ids = _resolve_step_ingredient_ids(
         [step.consumes_ingredients for step in steps], name_to_ids, group_of
     )
+    name_of = {ing.id: ing.name.lower() for ing in ingredients}
+    identity_keys = [
+        _identity_keys(step.consumes_ingredients, step_ingredient_ids[index], name_to_ids, name_of)
+        for index, step in enumerate(steps)
+    ]
 
     # -- Path selection (CP2 decision A) -------------------------------------------
     # Explicit path: at least one required step states `depends_on_steps` (even
@@ -1398,7 +1461,7 @@ def build_graph(
     explicit_sources: list[ProvenanceSource] = []
     if explicit:
         explicit_deps, explicit_sources, explicit_review = _explicit_dependencies(
-            recipe.steps, roles, warnings
+            recipe.steps, roles, warnings, identity_keys
         )
         review_recommended = review_recommended or explicit_review
 
@@ -1452,7 +1515,13 @@ def build_graph(
             sequential = True
             dep_source = _sequential_source(step.text)
         else:
-            honored = _verify_independence(steps[index - 1], step, produced_labels)
+            honored = _verify_independence(
+                steps[index - 1],
+                step,
+                produced_labels,
+                identity_keys[index - 1],
+                identity_keys[index],
+            )
             sequential = not honored
             dep_source = "inferred" if honored else "defaulted"
         depends_on_previous_verified.append(sequential)

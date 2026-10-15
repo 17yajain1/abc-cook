@@ -925,6 +925,67 @@ def test_ingredient_rows_are_never_touched_by_group_resolution() -> None:
     assert rows == [(i.name, i.qty, i.unit, i.group) for i in ingredients]
 
 
+def _two_cumin_steps(*, explicit: bool, same_group: bool) -> list[list[str]]:
+    """Build a two-step recipe whose steps both name cumin; return each node's depends_on."""
+    second_group = None if same_group else "Chutney"
+    ingredients = [_ing("Cumin", None), _ing("Onion", None), _ing("Mint", second_group)]
+    if not same_group:
+        ingredients.insert(1, _ing("Cumin", "Chutney"))
+    claim: dict[str, object] = (
+        {"depends_on_steps": []} if explicit else {"depends_on_previous": False}
+    )
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin.", consumes_ingredients=["Cumin", "Onion"], **claim),
+            _step(text="Blend cumin.", consumes_ingredients=["Cumin", "Mint"], **claim),
+            # A final join, so the finish rule doesn't add its own edge to step 2.
+            _step(text="Serve.", **({"depends_on_steps": [0, 1]} if explicit else {})),
+        ],
+        ingredients=ingredients,  # type: ignore[arg-type]
+    )
+    result = _build(recipe, "Temper cumin. Blend cumin. Serve.")
+    assert result.graph is not None
+    return [node.depends_on for node in result.graph.nodes[:2]]
+
+
+def test_explicit_path_cumin_from_different_groups_is_not_a_shared_ingredient() -> None:
+    first, second = _two_cumin_steps(explicit=True, same_group=False)
+    assert first == []
+    assert second == []
+
+
+def test_explicit_path_cumin_from_the_same_group_still_adds_the_edge() -> None:
+    _first, second = _two_cumin_steps(explicit=True, same_group=True)
+    assert len(second) == 1
+
+
+def test_legacy_path_cumin_from_different_groups_honors_independence() -> None:
+    first, second = _two_cumin_steps(explicit=False, same_group=False)
+    assert first == []
+    assert second == []
+
+
+def test_legacy_path_cumin_from_the_same_group_is_sequential() -> None:
+    _first, second = _two_cumin_steps(explicit=False, same_group=True)
+    assert len(second) == 1
+
+
+@pytest.mark.parametrize("explicit", [True, False])
+def test_unresolved_component_names_still_collide_by_name(explicit: bool) -> None:
+    claim: dict[str, object] = (
+        {"depends_on_steps": []} if explicit else {"depends_on_previous": False}
+    )
+    recipe = _recipe(
+        [
+            _step(text="Heat the spice paste.", consumes_ingredients=["Zz paste"], **claim),
+            _step(text="Stir the spice paste.", consumes_ingredients=["Zz paste"], **claim),
+        ]
+    )
+    result = _build(recipe, "Heat the spice paste. Stir the spice paste.")
+    assert result.graph is not None
+    assert len(result.graph.nodes[1].depends_on) == 1
+
+
 # ---------------------------------------------------------------------------
 # A2 -- mixed fractions, unicode vulgar fractions, ranges. Conservative: never
 # invents a number the source didn't give.
