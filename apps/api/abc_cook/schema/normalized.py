@@ -401,6 +401,23 @@ class ImportOriginal(BaseModel):
     sources: list[ImportSource] = Field(default_factory=list)
 
 
+class ImportMeta(BaseModel):
+    """Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.
+
+    `RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision
+    3); this is a sibling field so a saved-and-reopened recipe can still show that its
+    plan was simplified or its timings estimated (A6) instead of looking like a normal
+    plan. `degraded` is computed once by the client at save time from
+    `"degraded" in warnings` -- not a new server field.
+    """
+
+    warnings: list[str] = Field(default_factory=list)
+    review_recommended: bool = Field(default=False)
+    sources: list[ImportSource] = Field(default_factory=list)
+    provenance: GraphProvenance | None = Field(default=None)
+    degraded: bool = Field(default=False)
+
+
 class ImportResult(BaseModel):
     """The `/import` response payload.
 

@@ -12,14 +12,19 @@ from abc_cook.schema.api import (
     RecipeListResponse,
     RecipePlanResponse,
     RecipeSummary,
+    ReprocessRequest,
+    ReprocessResponse,
+    ServerInfo,
 )
 from abc_cook.schema.graph import CookingGraph, Edge, EdgeKind, SourceKind, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
-from abc_cook.schema.library import ImportMeta, SavedLibrary, SavedRecipe
+from abc_cook.schema.library import SavedLibrary, SavedRecipe
 from abc_cook.schema.node import Attention, Node, NodeKind, Station
 from abc_cook.schema.normalized import (
     Freshness,
     GraphProvenance,
+    ImportMeta,
+    ImportOriginal,
     ImportResult,
     ImportStatus,
     NodeProvenance,
@@ -28,6 +33,8 @@ from abc_cook.schema.normalized import (
     NormalizedRecipe,
     NormalizedStep,
     ProvenanceSource,
+    RepairProposal,
+    StepRepair,
 )
 from abc_cook.schema.plan import (
     CookingPlan,
@@ -50,6 +57,7 @@ __all__ = [
     "GraphProvenance",
     "ImportJobResponse",
     "ImportMeta",
+    "ImportOriginal",
     "ImportResult",
     "ImportStartResponse",
     "ImportStatus",
@@ -68,14 +76,19 @@ __all__ = [
     "RecipeListResponse",
     "RecipePlanResponse",
     "RecipeSummary",
+    "RepairProposal",
+    "ReprocessRequest",
+    "ReprocessResponse",
     "SavedLibrary",
     "SavedRecipe",
     "ScheduledNode",
+    "ServerInfo",
     "Session",
     "SourceKind",
     "SourceRef",
     "Stage",
     "StageSpan",
     "Station",
+    "StepRepair",
     "WaitWindow",
 ]
