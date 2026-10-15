@@ -1,6 +1,6 @@
 # Fix: outline "Meanwhile" lists prerequisites of the main line
 
-**Status:** approved 2026-10-15. **Not implemented.** Branch `fix/outline-meanwhile-prereqs`, created from origin/main 1658ef9.
+**Status:** approved 2026-10-15. **Implemented** (PR on this branch). Branch `fix/outline-meanwhile-prereqs`, created from origin/main 1658ef9.
 
 ## Context
 

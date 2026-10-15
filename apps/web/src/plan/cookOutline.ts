@@ -12,6 +12,11 @@ import { approxWaitPhrase, formatMinutes, formatRange, startAheadPhrase } from '
  * thing that reads a timestamp is the stretch *title* (decision 9) and the task-line
  * *order* (decision 8): both pick and order node labels by `scheduled[].start_min`, never
  * produce a figure. "Phase" and "session" are internal words and never appear in a string.
+ *
+ * Decision 8 note (docs/plans/fix-outline-meanwhile-prereqs.md): Meanwhile never lists a
+ * prerequisite of a title node that is itself a window task. Such prerequisites are folded
+ * into the title ahead of their consumer. This reads only `depends_on`; a title node that is
+ * not a window task (the recipe's sink) is the main line and keeps its inputs under Meanwhile.
  */
 
 export interface OutlineStretch {
@@ -53,7 +58,7 @@ export interface CookOutline {
 
 export interface OutlineInput {
   summary: PlanSummary | null | undefined
-  nodes: readonly Pick<Node, 'id' | 'label' | 'attention'>[]
+  nodes: readonly Pick<Node, 'id' | 'label' | 'attention' | 'depends_on'>[]
   scheduled: readonly Pick<ScheduledNode, 'node_id' | 'start_min'>[]
   windows: readonly Pick<WaitWindow, 'host_node_id' | 'assigned'>[]
   savedMin: number
@@ -73,6 +78,25 @@ export function deriveCookOutline(input: OutlineInput): CookOutline | null {
 
   const nodeById = new Map(input.nodes.map((n) => [n.id, n]))
   const startOf = new Map(input.scheduled.map((s) => [s.node_id, s.start_min]))
+  const windowTaskIds = new Set(input.windows.flatMap((w) => w.assigned))
+
+  // Transitive `depends_on` ancestors, memoised. Graphs are DAGs; `visiting` guards a bad cycle.
+  const ancestorCache = new Map<string, Set<string>>()
+  const visiting = new Set<string>()
+  const ancestorsOf = (id: string): Set<string> => {
+    const cached = ancestorCache.get(id)
+    if (cached) return cached
+    const result = new Set<string>()
+    if (visiting.has(id)) return result
+    visiting.add(id)
+    for (const dep of nodeById.get(id)?.depends_on ?? []) {
+      result.add(dep)
+      for (const up of ancestorsOf(dep)) result.add(up)
+    }
+    visiting.delete(id)
+    ancestorCache.set(id, result)
+    return result
+  }
 
   // Waits first: a later phase without a stated gap can't be described honestly.
   const waits: OutlineWait[] = []
@@ -99,11 +123,29 @@ export function deriveCookOutline(input: OutlineInput): CookOutline | null {
     const first = titleIds[0]
     const last = titleIds[titleIds.length - 1]
     const labelOf = (id: string) => nodeById.get(id)?.label ?? id
-    const title = first === last ? labelOf(first) : `${labelOf(first)} → ${labelOf(last)}`
-    const inTitle = new Set([first, last])
+    const members = new Set(phase.node_ids)
+
+    // A window task in the title is fitted into the same wait as the Meanwhile tasks, so a
+    // prerequisite of it listed "meanwhile" would read as parallel. Fold those into the title.
+    const promotable = (of: string): string[] =>
+      windowTaskIds.has(of)
+        ? [...ancestorsOf(of)].filter(
+            (id) => id !== first && id !== last && members.has(id) && windowTaskIds.has(id),
+          )
+        : []
+    const byStart = (a: string, b: string) =>
+      (startOf.get(a) ?? 0) - (startOf.get(b) ?? 0) ||
+      phase.node_ids.indexOf(a) - phase.node_ids.indexOf(b)
+    const before = promotable(first).sort(byStart)
+    const mid = promotable(last)
+      .filter((id) => !before.includes(id))
+      .sort(byStart)
+    const folded =
+      first === last ? [...before, ...mid, first] : [...before, first, ...mid, last]
+    const title = folded.map(labelOf).join(' → ')
+    const inTitle = new Set(folded)
 
     // Task lines (decision 8): window tasks that belong to this stretch, in start order.
-    const members = new Set(phase.node_ids)
     const taskLines: string[] = []
     for (const window of input.windows) {
       const labels = window.assigned

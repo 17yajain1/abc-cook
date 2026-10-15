@@ -34,7 +34,12 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
     const o = outline('sabudana-khichdi')
     expect(o.savedPill).toBe('Saves 13 min')
     expect(o.stretches.map((s) => [s.tag, s.title, s.time, s.taskLines])).toEqual([
-      ['Now', 'Soak sabudana → Make chutney', '20–30 min', ['Meanwhile: Roast peanuts, Grind peanuts']],
+      [
+        'Now',
+        'Soak sabudana → Roast peanuts → Make chutney',
+        '20–30 min',
+        ['Meanwhile: Grind peanuts'],
+      ],
       ['Then', 'Stir once → Serve with chutney', '45–70 min', []],
     ])
     expect(o.waits).toEqual([{ text: 'Hands free for ~1 hr 45 min', barLabel: '~1 hr 45 min' }])
@@ -44,7 +49,7 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       body: 'Start ~3 hr 30 min before you want to eat.',
     })
     expect(o.ctaSubline).toBe(
-      'First 20–30 min: Soak sabudana → Make chutney. The rest is ~1 hr 45 min later.',
+      'First 20–30 min: Soak sabudana → Roast peanuts → Make chutney. The rest is ~1 hr 45 min later.',
     )
   })
 
@@ -240,11 +245,181 @@ describe('deriveCookOutline — every fixture', () => {
   })
 })
 
+describe('deriveCookOutline — Meanwhile never lists a prerequisite of the title', () => {
+  const first = (i: OutlineInput) => deriveCookOutline(i)!.stretches[0]
+
+  it('chain prerequisite folds into the title; an unrelated task stays under Meanwhile', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C', deps: ['A'] }],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → A → C')
+    expect(s.taskLines).toEqual(['Meanwhile: B'])
+  })
+
+  it('transitive prerequisites fold in dependency order, leaving no task line', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B', deps: ['A'] }, { id: 'C', deps: ['B'] }],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → A → B → C')
+    expect(s.taskLines).toEqual([])
+  })
+
+  it('truly parallel tasks are unchanged', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C' }],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → C')
+    expect(s.taskLines).toEqual(['Meanwhile: A, B'])
+  })
+
+  it('a non-window main-line sink keeps its inputs under Meanwhile', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'Z', deps: ['A', 'B'] }],
+        window: ['A', 'B'],
+      }),
+    )
+    expect(s.title).toBe('S → Z')
+    expect(s.taskLines).toEqual(['Meanwhile: A, B'])
+  })
+
+  it('mixed: the ancestor folds, independent tasks list in start order', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [
+          { id: 'S' },
+          { id: 'X' },
+          { id: 'A' },
+          { id: 'Y' },
+          { id: 'C', deps: ['A'] },
+        ],
+        window: ['X', 'A', 'Y', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → A → C')
+    expect(s.taskLines).toEqual(['Meanwhile: X, Y'])
+  })
+
+  it('all candidates filtered: no task line at all', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C', deps: ['A', 'B'] }],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → A → B → C')
+    expect(s.taskLines).toEqual([])
+  })
+
+  it('the cap counts the post-filter list', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [
+          { id: 'S' },
+          { id: 'A' },
+          { id: 'W' },
+          { id: 'X' },
+          { id: 'Y' },
+          { id: 'Z' },
+          { id: 'C', deps: ['A'] },
+        ],
+        window: ['A', 'W', 'X', 'Y', 'Z', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → A → C')
+    expect(s.taskLines).toEqual(['Meanwhile: W, X +2 more'])
+  })
+
+  it('equal start_min ties break by the window’s assigned order', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [
+          { id: 'S' },
+          { id: 'B', start: 5 },
+          { id: 'A', start: 5 },
+          { id: 'C' },
+        ],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.taskLines).toEqual(['Meanwhile: A, B'])
+  })
+
+  it('a dependent pair under Meanwhile lists the prerequisite first', () => {
+    const s = first(
+      syntheticStretch({
+        nodes: [
+          { id: 'S' },
+          { id: 'B', deps: ['A'], start: 2 },
+          { id: 'A', start: 1 },
+          { id: 'C' },
+        ],
+        window: ['A', 'B', 'C'],
+      }),
+    )
+    expect(s.title).toBe('S → C')
+    expect(s.taskLines).toEqual(['Meanwhile: A, B'])
+  })
+})
+
+/**
+ * One stretch, one window. `nodes` are in phase order: the first is the stretch's first node,
+ * the last its last; `window` lists the window's assigned ids. Labels are the ids.
+ */
+function syntheticStretch(spec: {
+  nodes: { id: string; deps?: string[]; start?: number }[]
+  window: string[]
+}): OutlineInput {
+  const nodes = spec.nodes.map((n) => ({
+    id: n.id,
+    label: n.id,
+    attention: 'unattended' as const,
+    depends_on: n.deps ?? [],
+  }))
+  const summary = {
+    active_min: 0,
+    attended_min: 0,
+    elapsed_min: 50,
+    elapsed_high_min: 50,
+    long_waits: [],
+    phases: [
+      {
+        start_min: 0,
+        end_min: 1000,
+        active_min: 10,
+        node_ids: nodes.map((n) => n.id),
+        preceded_by_wait_min: null,
+        elapsed_min: 50,
+        elapsed_high_min: 50,
+        preceded_by_host_node_ids: [],
+        starts_new_session: false,
+      },
+    ],
+    sessions: [{} as Session],
+  } as PlanSummary
+  return {
+    summary,
+    nodes,
+    scheduled: spec.nodes.map((n, i) => ({ node_id: n.id, start_min: n.start ?? i })),
+    windows: [{ host_node_id: nodes[0].id, assigned: spec.window }],
+    savedMin: 0,
+  }
+}
+
 /** A made-up plan: node ids and titles are invented, so a rule test never depends on a recipe. */
 function synthetic(
   stretches: { lo: number; hi: number; waitBefore?: number; newSitting?: boolean }[],
 ): OutlineInput {
-  const nodes = stretches.map((_, i) => ({ id: `n${i}`, label: `Step ${i}`, attention: 'unattended' as const }))
+  const nodes = stretches.map((_, i) => ({ id: `n${i}`, label: `Step ${i}`, attention: 'unattended' as const, depends_on: [] as string[] }))
   const phases = stretches.map((s, i) => ({
     start_min: i * 100,
     end_min: i * 100 + s.lo,

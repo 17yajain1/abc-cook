@@ -1,6 +1,6 @@
 # Follow-up plan: the outline's "Meanwhile" can list a prerequisite of the main line
 
-**Status:** proposal, written 2026-10-15 during PR-C. **Not implemented.** Needs an owner decision before any code. Flagged as **potential wrong advice**, so it should land before M5.
+**Status:** implemented 2026-10-15 on branch `fix/outline-meanwhile-prereqs`; see `docs/plans/fix-outline-meanwhile-prereqs.md` for the rule actually shipped (narrower than proposed here) and the fold decision. Originally written 2026-10-15 during PR-C and flagged as **potential wrong advice**.
 
 ## 1. Problem
 
