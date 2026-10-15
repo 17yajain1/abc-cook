@@ -1,6 +1,6 @@
 # Follow-up plan: saved recipes keep a stale `summary`
 
-**Status:** proposal, written 2026-10-15 during PR-B3. **Not implemented.** Needs an owner decision before any code.
+**Status:** superseded by `docs/plans/fix-saved-recipe-staleness.md` (2026-10-16). Kept for history; do not implement. Original status: proposal, written 2026-10-15 during PR-B3.
 
 ## 1. Problem
 
