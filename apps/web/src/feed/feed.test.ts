@@ -5,6 +5,8 @@ import { createLibrary, type StorageLike } from '@/library/store'
 
 import { applyFilter } from './filter'
 import { formatAgo, formatSaves, formatSavesAgo } from './format'
+import stamp from '@/__fixtures__/postprocess-version.json'
+
 import { createMockFeedSource, MOCK_FILTERS } from './mock'
 import { isSaved, saveFromFeed } from './saveFromFeed'
 import type { FeedItem } from './types'
@@ -83,6 +85,27 @@ describe('mock source', () => {
   })
 })
 
+describe('findBySourceKey', () => {
+  it('hits for every listed item: payload source key equals the item key, stamp equals the fixture stamp', async () => {
+    for (const item of await source.list('all')) {
+      const hit = await source.findBySourceKey(item.sourceKey)
+      expect(hit).not.toBeNull()
+      expect(canonicalSourceKey(hit!.payload.graph.source)).toBe(item.sourceKey)
+      expect(hit!.postprocessVersion).toBe(stamp.postprocess_version)
+    }
+  })
+  it('misses for an unknown key', async () => {
+    expect(await source.findBySourceKey('url:https://nowhere.test/none')).toBeNull()
+  })
+  it('returns a fresh copy each call, so a caller cannot mutate the fixture', async () => {
+    const item = (await source.list('all'))[0]
+    const a = await source.findBySourceKey(item.sourceKey)
+    a!.payload.graph.title = 'mutated'
+    const b = await source.findBySourceKey(item.sourceKey)
+    expect(b!.payload.graph.title).toBe(item.title)
+  })
+})
+
 describe('saveFromFeed', () => {
   async function firstItem(): Promise<FeedItem> {
     return (await source.list('all'))[0]
@@ -94,6 +117,15 @@ describe('saveFromFeed', () => {
     expect((await saveFromFeed(library, source, item))?.ok).toBe(true)
     expect(await saveFromFeed(library, source, item)).toBeNull()
     expect(library.list()).toHaveLength(1)
+  })
+  it('still saves null import_meta, with no original and no stamp', async () => {
+    const library = createLibrary(memoryStorage())
+    const saved = await saveFromFeed(library, source, await firstItem())
+    expect(saved?.ok).toBe(true)
+    if (!saved?.ok) return
+    expect(saved.recipe.import_meta).toBeNull()
+    expect(saved.recipe.original).toBeNull()
+    expect(saved.recipe.postprocess_version).toBeNull()
   })
   it('derives the saved state from findBySource, not a separate flag', async () => {
     const library = createLibrary(memoryStorage())
