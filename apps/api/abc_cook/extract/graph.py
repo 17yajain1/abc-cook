@@ -33,6 +33,7 @@ caller remembering the gate.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass, field, replace
 
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
@@ -895,6 +896,83 @@ def _produced_labels(steps: list[NormalizedStep]) -> frozenset[str]:
     )
 
 
+def _name_candidates(name: str, name_to_ids: dict[str, list[str]]) -> list[str] | None:
+    """Ingredient ids a step's ingredient `name` may refer to, or None if it matches none.
+
+    Exact lowercase name first, else the first known name that contains or is contained
+    in it (the soft fallback `build_graph` has always used).
+    """
+    lowered = name.lower()
+    matched = name_to_ids.get(lowered)
+    if matched is None:
+        for known_name, known_ids in name_to_ids.items():
+            if lowered in known_name or known_name in lowered:
+                return known_ids
+    return matched
+
+
+def _resolve_step_ingredient_ids(
+    step_names: list[list[str]],
+    name_to_ids: dict[str, list[str]],
+    group_of: dict[str, str | None],
+) -> list[list[str]]:
+    """Resolve each step's ingredient names to ids, choosing a portion by home group.
+
+    A name can legitimately repeat across groups (the main list and a "Chutney" group
+    both list cumin: two real portions). A step's *home group* is the most common group
+    among its names that match exactly one id (ungrouped counts as a group; a tie or no
+    such name means ungrouped). An ambiguous name then resolves to the ids in the home
+    group, else the ungrouped ids, else all of them.
+
+    No-orphan guard: an id that some step could have meant but that no step resolved to
+    is restored to every step that had it as a candidate, so no ingredient is ever left
+    unconsumed by this pass. A recipe without cross-group duplicates is returned
+    unchanged. Quantities are never combined; only which portion a step uses is decided.
+
+    Args:
+        step_names: Per step, the ingredient names it claims to consume.
+        name_to_ids: Lowercase ingredient name -> every id with that name, in list order.
+        group_of: Ingredient id -> its group (None when ungrouped).
+
+    Returns:
+        Per step, the resolved ids in candidate order, de-duplicated.
+    """
+    candidates: list[list[list[str]]] = []
+    resolved: list[list[list[str]]] = []
+    for names in step_names:
+        per_name = [_name_candidates(name, name_to_ids) or [] for name in names]
+        exact_groups = [
+            group_of[ids[0]]
+            for name in dict.fromkeys(n.lower() for n in names)
+            if len(ids := name_to_ids.get(name, [])) == 1
+        ]
+        home: str | None = None
+        counts = Counter(exact_groups).most_common()
+        if counts and (len(counts) == 1 or counts[0][1] > counts[1][1]):
+            home = counts[0][0]
+        step_resolved: list[list[str]] = []
+        for ids in per_name:
+            if len(ids) <= 1:
+                step_resolved.append(list(ids))
+                continue
+            in_home = [i for i in ids if group_of[i] == home]
+            ungrouped = [i for i in ids if group_of[i] is None]
+            step_resolved.append(in_home or ungrouped or list(ids))
+        candidates.append(per_name)
+        resolved.append(step_resolved)
+
+    picked = {i for step in resolved for ids in step for i in ids}
+    orphans = {i for step in candidates for ids in step for i in ids} - picked
+    out: list[list[str]] = []
+    for step_candidates, step_resolved in zip(candidates, resolved, strict=True):
+        keep = {i for ids in step_resolved for i in ids}
+        ids_in_order: list[str] = []
+        for ids in step_candidates:
+            ids_in_order.extend(i for i in ids if i in keep or i in orphans)
+        out.append(list(dict.fromkeys(ids_in_order)))
+    return out
+
+
 def _shares_ingredient(
     a: NormalizedStep, b: NormalizedStep, produced_labels: frozenset[str]
 ) -> bool:
@@ -1266,13 +1344,7 @@ def build_graph(
     def _ingredient_ids(names: list[str], *, warn: bool = True) -> list[str]:
         ids = []
         for name in names:
-            matched = name_to_ids.get(name.lower())
-            if matched is None:
-                # Soft fallback: substring match against known ingredient names.
-                for known_name, known_ids in name_to_ids.items():
-                    if name.lower() in known_name or known_name in name.lower():
-                        matched = known_ids
-                        break
+            matched = _name_candidates(name, name_to_ids)
             if matched is not None:
                 ids.extend(matched)
             elif warn:
@@ -1308,6 +1380,13 @@ def build_graph(
     decisions: list[NodeDecision] = []
     depends_on_previous_verified: list[bool] = []
     produced_labels = _produced_labels(steps)
+
+    # -- Ingredient ids per step, by home group (D3). The "not found" warnings stay in
+    # the node loop below so their order doesn't change.
+    group_of = {ing.id: ing.group for ing in ingredients}
+    step_ingredient_ids = _resolve_step_ingredient_ids(
+        [step.consumes_ingredients for step in steps], name_to_ids, group_of
+    )
 
     # -- Path selection (CP2 decision A) -------------------------------------------
     # Explicit path: at least one required step states `depends_on_steps` (even
@@ -1361,6 +1440,7 @@ def build_graph(
             verified_step, kind, attention
         )
         freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
+        _ingredient_ids(step.consumes_ingredients)  # emits the not-found warnings only
 
         if explicit:
             sequential = True  # unused: the explicit path wires its own edges below
@@ -1409,7 +1489,7 @@ def build_graph(
                 duration_max=dmax,
                 station=step.station,
                 depends_on=[],  # filled below, once every node id is known
-                consumes=_ingredient_ids(step.consumes_ingredients),
+                consumes=step_ingredient_ids[index],
                 produces=(
                     None
                     if force_linear or not step.produces_component

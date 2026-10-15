@@ -25,6 +25,7 @@ from abc_cook.extract.graph import (
     _label,
     _parse_qty,
     _produced_labels,
+    _resolve_step_ingredient_ids,
     _stages_for,
     _verify_duration,
     _verify_independence,
@@ -825,6 +826,103 @@ def test_duplicate_ingredient_names_are_both_consumable() -> None:
     assert consumed_ids == {ing.id for ing in result.graph.ingredients}
     violations = validate(result.graph)
     assert not any(v.rule == "ingredients_consumed" for v in violations)
+
+
+# ---------------------------------------------------------------------------
+# D3 -- ingredient ids resolved by home group, with a no-orphan guard.
+# ---------------------------------------------------------------------------
+
+
+def _ing(name: str, group: str | None = None, qty: str = "1", unit: str | None = "tsp") -> object:
+    return NormalizedIngredient(name=name, qty=qty, unit=unit, prep_note=None, group=group)
+
+
+def _group_recipe_ingredients() -> list[NormalizedIngredient]:
+    return [
+        _ing("Cumin", None),  # type: ignore[list-item]
+        _ing("Cumin", "Chutney"),  # type: ignore[list-item]
+        _ing("Onion", None),  # type: ignore[list-item]
+        _ing("Mint", "Chutney"),  # type: ignore[list-item]
+    ]
+
+
+def test_same_name_in_two_groups_resolves_by_the_steps_home_group() -> None:
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Blend cumin with mint.", consumes_ingredients=["Cumin", "Mint"]),
+        ],
+        ingredients=_group_recipe_ingredients(),
+    )
+    result = _build(recipe, "Temper cumin with onion. Blend cumin with mint.")
+    assert result.graph is not None
+    first, second = result.graph.nodes
+    assert first.consumes == ["ing_cumin", "ing_onion"]
+    assert second.consumes == ["ing_cumin_2", "ing_mint"]
+
+
+def test_resolver_step_with_no_unambiguous_names_gets_the_ungrouped_id() -> None:
+    name_to_ids = {"cumin": ["a", "b"], "mint": ["c"]}
+    group_of: dict[str, str | None] = {"a": None, "b": "Chutney", "c": "Chutney"}
+    # The second step lets the Chutney portion be picked, so the guard has nothing to restore.
+    resolved = _resolve_step_ingredient_ids([["Cumin"], ["Cumin", "Mint"]], name_to_ids, group_of)
+    assert resolved == [["a"], ["b", "c"]]
+
+
+def test_resolver_tie_between_groups_resolves_to_the_ungrouped_id() -> None:
+    name_to_ids = {"cumin": ["a", "b"], "mint": ["c"], "onion": ["d"]}
+    group_of: dict[str, str | None] = {"a": None, "b": "G", "c": "G", "d": None}
+    resolved = _resolve_step_ingredient_ids(
+        [["Cumin", "Mint", "Onion"], ["Cumin", "Mint"]], name_to_ids, group_of
+    )
+    assert resolved == [["a", "c", "d"], ["b", "c"]]
+
+
+def test_resolver_name_only_in_other_groups_keeps_every_id() -> None:
+    name_to_ids = {"salt": ["a", "b"], "onion": ["c"]}
+    group_of: dict[str, str | None] = {"a": "A", "b": "B", "c": None}
+    resolved = _resolve_step_ingredient_ids([["Salt", "Onion"]], name_to_ids, group_of)
+    assert resolved == [["a", "b", "c"]]
+
+
+def test_no_orphan_guard_restores_an_id_no_step_would_pick() -> None:
+    """The Chutney cumin is picked by no step (both name onion, whose home is the main
+    list), so it keeps its original consumer, in its original position."""
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Fry the onion in mint.", consumes_ingredients=["Onion", "Mint"]),
+        ],
+        ingredients=_group_recipe_ingredients(),
+    )
+    result = _build(recipe, "Temper cumin with onion. Fry the onion in mint.")
+    assert result.graph is not None
+    assert result.graph.nodes[0].consumes == ["ing_cumin", "ing_cumin_2", "ing_onion"]
+    assert result.graph.nodes[1].consumes == ["ing_onion", "ing_mint"]
+    assert not any(v.rule == "ingredients_consumed" for v in validate(result.graph))
+
+
+def test_resolver_leaves_a_recipe_without_cross_group_duplicates_untouched() -> None:
+    name_to_ids = {"onion": ["a"], "butter": ["b", "c"]}
+    group_of: dict[str, str | None] = {"a": None, "b": None, "c": None}
+    steps = [["Butter", "Onion"], ["Butter"]]
+    resolved = _resolve_step_ingredient_ids(steps, name_to_ids, group_of)
+    assert resolved == [["b", "c", "a"], ["b", "c"]]
+
+
+def test_ingredient_rows_are_never_touched_by_group_resolution() -> None:
+    ingredients = _group_recipe_ingredients()
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Blend cumin with mint.", consumes_ingredients=["Cumin", "Mint"]),
+        ],
+        ingredients=ingredients,
+    )
+    result = _build(recipe, "Temper cumin with onion. Blend cumin with mint.")
+    assert result.graph is not None
+    rows = [(i.name, i.qty_text, i.unit, i.group) for i in result.graph.ingredients]
+    assert rows == [(i.name, i.qty, i.unit, i.group) for i in ingredients]
 
 
 # ---------------------------------------------------------------------------
