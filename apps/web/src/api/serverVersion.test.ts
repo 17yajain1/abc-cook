@@ -35,6 +35,15 @@ describe('createServerVersion', () => {
     expect(await sv.get()).toBeNull()
   })
 
+  it('peek() is null until a version is learned, and never fetches', async () => {
+    const fetchInfo = vi.fn().mockResolvedValue(info(9))
+    const sv = createServerVersion(fetchInfo)
+    expect(sv.peek()).toBeNull()
+    expect(fetchInfo).not.toHaveBeenCalled()
+    await sv.get()
+    expect(sv.peek()).toBe(9)
+  })
+
   it('note() sets the memo so get() does not fetch', async () => {
     const fetchInfo = vi.fn().mockResolvedValue(info(9))
     const sv = createServerVersion(fetchInfo)

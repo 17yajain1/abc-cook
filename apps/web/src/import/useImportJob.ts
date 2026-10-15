@@ -47,9 +47,9 @@ export type OnImported = (
  * and timer refs make a stale poll chain (previous submit, or one outliving the
  * component) unable to overwrite newer state.
  */
-export function useImportJob(onImported: OnImported) {
+export function useImportJob(onImported: OnImported, initialUrl = '') {
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(initialUrl)
   const [text, setText] = useState('')
 
   // Bumped on every new submit and on unmount, so a stale poll chain (from a previous

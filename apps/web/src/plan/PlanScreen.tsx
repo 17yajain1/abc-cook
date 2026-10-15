@@ -20,6 +20,21 @@ export function statusLineFor(importMeta: ImportMeta | null | undefined): string
   return null
 }
 
+/** What the open path found about a saved plan (`library/openSaved.ts`). `onReimport` is
+ * set only when a URL exists to prefill. */
+export interface StalenessMarker {
+  kind: 'stale' | 'unchecked'
+  onReimport?: () => void
+}
+
+/** The staleness line. It takes the status-line slot, because the A6 line describes the
+ * plan that is about to be replaced; once refreshed, the A6 line shows again. */
+export function stalenessLineFor(kind: StalenessMarker['kind']): string {
+  return kind === 'stale'
+    ? 'This plan may be out of date. Re-import for the latest version.'
+    : "Couldn't check for updates. Showing your saved plan."
+}
+
 /** M3.2: toggles one stage id in an expansion set, leaving every other id untouched. */
 export function toggleStageSet(expanded: ReadonlySet<string>, stageId: string): Set<string> {
   const next = new Set(expanded)
@@ -66,6 +81,7 @@ export function PlanScreen({
   onStartCooking,
   save,
   importMeta,
+  staleness,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -74,6 +90,7 @@ export function PlanScreen({
   onStartCooking: () => void
   save?: SaveControl
   importMeta?: ImportMeta | null
+  staleness?: StalenessMarker
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const statusLine = statusLineFor(importMeta)
@@ -147,7 +164,22 @@ export function PlanScreen({
         className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
       >
         <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} />
-        {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
+        {staleness ? (
+          <div className="px-5 pb-2 text-[13px] text-home-ink-2">
+            <p>{stalenessLineFor(staleness.kind)}</p>
+            {staleness.onReimport && (
+              <button
+                type="button"
+                onClick={staleness.onReimport}
+                className="-mb-1 inline-flex min-h-[44px] items-center font-semibold text-home-ink underline underline-offset-4"
+              >
+                Re-import
+              </button>
+            )}
+          </div>
+        ) : (
+          statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>
+        )}
 
         <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
           {tabs}

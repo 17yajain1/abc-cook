@@ -8,6 +8,7 @@ import {
   ingredientCount,
   isCompactHeader,
   statusLineFor,
+  stalenessLineFor,
   toggleStageSet,
 } from './PlanScreen'
 
@@ -35,6 +36,15 @@ describe('statusLineFor (A6) — priority: degraded > review_recommended > none'
   it('prefers degraded over review_recommended when both are set', () => {
     const meta: ImportMeta = { degraded: true, review_recommended: true }
     expect(statusLineFor(meta)).toBe('Plan simplified — steps run one after another.')
+  })
+})
+
+describe('stalenessLineFor', () => {
+  it('stale', () => {
+    expect(stalenessLineFor('stale')).toBe('This plan may be out of date. Re-import for the latest version.')
+  })
+  it('unchecked', () => {
+    expect(stalenessLineFor('unchecked')).toBe("Couldn't check for updates. Showing your saved plan.")
   })
 })
 

@@ -31,8 +31,9 @@ export const ACTIVE_SESSION_MS = 24 * 60 * 60 * 1000
  * 2. Has `original`: `refreshable`, or `unknown` while the server version is unknown.
  * 3. No `original`, feed has this source: `feed_replaceable` when the feed bundle is at
  *    the server's version, `unknown` while it isn't known, else `needs_reimport`.
- * 4. No `original`, no feed match: `needs_reimport`. Decided offline: a null stamp is
- *    stale by definition and an older stamp with nothing to replay can't be refreshed.
+ * 4. No `original`, no feed match: `needs_reimport`. Decided offline for a null stamp
+ *    (stale by definition); an older stamp with nothing to replay can't be refreshed. A
+ *    set stamp while the server version is unknown is `unknown`, not a guess.
  */
 export function stalenessOf(recipe: SavedRecipe, serverVersion: number | null, feedLookup: FeedLookup): Staleness {
   const stamp = recipe.postprocess_version ?? null
@@ -45,7 +46,9 @@ export function stalenessOf(recipe: SavedRecipe, serverVersion: number | null, f
     if (serverVersion == null) return 'unknown'
     return match.postprocessVersion === serverVersion ? 'feed_replaceable' : 'needs_reimport'
   }
-  return 'needs_reimport'
+  // Nothing to replay and no feed copy. A null stamp is stale whatever the server says;
+  // a set stamp can't be judged without the server's version.
+  return stamp != null && serverVersion == null ? 'unknown' : 'needs_reimport'
 }
 
 /** A recipe saved from the feed: no `import_meta`, or the feed still lists its source

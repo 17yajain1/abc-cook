@@ -18,7 +18,8 @@ import type {
  * `VITE_API_BASE` when the API lives elsewhere.
  */
 const API_BASE: string =
-  import.meta.env.VITE_API_BASE ?? `http://${window.location.hostname}:8000`
+  import.meta.env.VITE_API_BASE ??
+  `http://${typeof window === 'undefined' ? 'localhost' : window.location.hostname}:8000`
 
 /** A non-2xx response, carrying the status so callers can distinguish 404 from 500. */
 export class ApiError extends Error {

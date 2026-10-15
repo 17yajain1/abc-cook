@@ -87,6 +87,10 @@ describe('stalenessOf — rule 4: no original, no feed match', () => {
     expect(stalenessOf(recipe(), 9, noFeed)).toBe('needs_reimport')
   })
 
+  it('a set stamp while the server version is unknown is unknown, not a guess', () => {
+    expect(stalenessOf(recipe({ postprocess_version: 9 }), null, noFeed)).toBe('unknown')
+  })
+
   it('an older stamp with no original cannot be refreshed', () => {
     expect(stalenessOf(recipe({ postprocess_version: 8 }), 9, noFeed)).toBe('needs_reimport')
   })

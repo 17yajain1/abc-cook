@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
-import { ApiError, fetchPlan, fetchServerInfo } from './api/client'
+import { ApiError, fetchPlan, fetchServerInfo, reprocess } from './api/client'
 import { createServerVersion } from './api/serverVersion'
 import { deriveCookingModel } from './cooking/model'
 import { createSessionStore } from './cooking/store'
@@ -13,10 +13,12 @@ import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
 import type { ImportExtras } from './import/importExtras'
 import { canonicalSourceKey } from './library/sourceKey'
+import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
+import { sessionBlocksRefresh } from './library/staleness'
 import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
-import { PlanScreen } from './plan/PlanScreen'
+import { PlanScreen, type StalenessMarker } from './plan/PlanScreen'
 import type { SaveControl } from './plan/RecipeHeader'
 import { NO_IMPORT_META } from './feed/saveFromFeed'
 import { AppShell } from './shell/AppShell'
@@ -43,12 +45,32 @@ const emitCompletion = (event: SessionFinished): void => {
   outbox.append(event)
 }
 
+/** Ends the stored session only when it belongs to library entry `id` (the store holds one
+ * session at most, and `end` clears whichever it has). Emits no metric: ending a stale
+ * session is not a completion (staleness plan A3). */
+const endSessionIfFor = (id: string): void => {
+  if (sessionStore.getState()?.planKey === `library:${id}`) sessionStore.dispatch({ type: 'end', now: Date.now() })
+}
+
+/** Effects the open path needs, bound to the real stores. The feed chunk is loaded lazily,
+ * and only for an entry that has no `original`. */
+const openDeps: OpenDeps = {
+  library,
+  serverVersion,
+  reprocess,
+  findInFeed: (sourceKey) =>
+    import('./feed/source').then((m) => m.loadFeedSource()).then((feed) => feed.findBySourceKey(sourceKey)),
+  getSession: () => sessionStore.getState(),
+  endSessionIfFor,
+  now: () => Date.now(),
+}
+
 type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
 type View =
   | { kind: 'home' }
-  | { kind: 'import' }
-  | { kind: 'loading'; recipeId: string }
+  | { kind: 'import'; initialUrl?: string }
+  | { kind: 'loading'; label: string }
   | {
       kind: 'plan'
       plan: RenderPlan
@@ -60,6 +82,8 @@ type View =
        * `deriveCookingModel` needs the full graph (`depends_on`, `consumes`,
        * `interruptible`…), which `RenderPlan` doesn't retain. */
       payload: RecipePlanResponse
+      /** Set when the open path found the saved plan stale or couldn't check. */
+      staleness?: StalenessMarker
     }
   | { kind: 'cooking'; payload: RecipePlanResponse; planKey: string; returnTo: View }
   | { kind: 'error'; message: string }
@@ -67,8 +91,13 @@ type View =
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'home' })
 
+  // Bumped by every navigation. A late `openSaved` check compares against it, so a slow
+  // response can never overwrite a view the person has since moved to.
+  const navToken = useRef(0)
+
   const openRecipe = useCallback((recipeId: string) => {
-    setView({ kind: 'loading', recipeId })
+    navToken.current += 1
+    setView({ kind: 'loading', label: recipeId })
     fetchPlan(recipeId)
       .then((payload) =>
         setView({
@@ -83,23 +112,38 @@ export default function App() {
       .catch((err: unknown) => setView({ kind: 'error', message: messageFor(err) }))
   }, [])
 
-  // Synchronous: the recipe is already on the device, so there is no loading state and
-  // no network request — `PlanScreen` remounts (via its `key`) exactly as it would for
-  // a server open.
+  // The plan is already on the device, so a recipe whose stamp is known current (or whose
+  // cook is in progress) opens at once with no request. Anything else shows a loading
+  // state for at most `OPEN_BUDGET_MS` while `openSavedChecked` refreshes or marks it.
   const openSaved = useCallback((id: string) => {
-    const recipe = library.get(id)
-    if (!recipe) {
-      setView({ kind: 'error', message: "That recipe isn't in your library any more." })
+    const token = ++navToken.current
+    const show = (outcome: Awaited<ReturnType<typeof openSavedChecked>>) => {
+      if (navToken.current !== token) return
+      if ('missing' in outcome) {
+        setView({ kind: 'error', message: "That recipe isn't in your library any more." })
+        return
+      }
+      const { recipe, marker } = outcome
+      setView({
+        kind: 'plan',
+        plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
+        origin: { kind: 'library', id },
+        saveState: { status: 'saved' },
+        importMeta: recipe.import_meta ?? null,
+        payload: recipe.payload,
+        staleness: stalenessFor(marker, recipe.payload.graph.source.value, () =>
+          setView({ kind: 'import', initialUrl: recipe.payload.graph.source.value }),
+        ),
+      })
+    }
+
+    const now = openSavedNow(openDeps, id)
+    if (now) {
+      show(now)
       return
     }
-    setView({
-      kind: 'plan',
-      plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
-      origin: { kind: 'library', id },
-      saveState: { status: 'saved' },
-      importMeta: recipe.import_meta ?? null,
-      payload: recipe.payload,
-    })
+    setView({ kind: 'loading', label: library.get(id)?.payload.graph.title ?? '' })
+    void openSavedChecked(openDeps, id).then(show)
   }, [])
 
   // A feed recipe opens as an unsaved import, so the header's Save and `saveCurrent` handle
@@ -107,6 +151,7 @@ export default function App() {
   // `plan_key`, so a feed-opened plan reports `import:<graph.id>` (or `library:<id>` once
   // saved) — H2 must decide whether feed opens get their own key.
   const openFeedRecipe = useCallback((payload: RecipePlanResponse) => {
+    navToken.current += 1
     setView({
       kind: 'plan',
       plan: derivePlan(payload),
@@ -120,8 +165,14 @@ export default function App() {
   // Back from a plan: the shell remounts on the tab the person left from (Home or Cookbook).
   // TODO(R1): a recipe opened from the feed's See all list comes back to Home, not to See
   // all — the shell's `seeAll` state is lost when it unmounts for the plan.
-  const backToHome = useCallback(() => setView({ kind: 'home' }), [])
-  const openImport = useCallback(() => setView({ kind: 'import' }), [])
+  const backToHome = useCallback(() => {
+    navToken.current += 1
+    setView({ kind: 'home' })
+  }, [])
+  const openImport = useCallback(() => {
+    navToken.current += 1
+    setView({ kind: 'import' })
+  }, [])
   // Every finished import lands in the library straight away; re-importing the same
   // source replaces its entry (`library.save` dedups by source key). On a failed write
   // the origin stays `import`, so the header's Save control still offers a retry.
@@ -129,6 +180,12 @@ export default function App() {
     (plan: RenderPlan, payload: RecipePlanResponse, importMeta: ImportMeta, extras: ImportExtras) => {
       const result = library.save(payload, importMeta, extras)
       if (extras.postprocess_version != null) serverVersion.note(extras.postprocess_version)
+      // A re-import replaces an existing entry, so a stale session on it goes too, unless
+      // a cook is in progress: that one is left alone and keeps the existing conflict
+      // behaviour.
+      if (result.ok && result.replaced && !sessionBlocksRefresh(sessionStore.getState(), result.recipe.id, Date.now())) {
+        endSessionIfFor(result.recipe.id)
+      }
       setView({
         kind: 'plan',
         plan,
@@ -192,7 +249,8 @@ export default function App() {
     }
 
     if (target.kind === 'server') {
-      setView({ kind: 'loading', recipeId: target.recipeId })
+      navToken.current += 1
+      setView({ kind: 'loading', label: target.recipeId })
       fetchPlan(target.recipeId)
         .then((payload) => {
           const planView: View = {
@@ -230,9 +288,9 @@ export default function App() {
 
   switch (view.kind) {
     case 'import':
-      return <ImportScreen onImported={onImported} onCancel={backToHome} />
+      return <ImportScreen onImported={onImported} onCancel={backToHome} initialUrl={view.initialUrl} />
     case 'loading':
-      return <Centered>Scheduling {view.recipeId}…</Centered>
+      return <Centered>Scheduling {view.label}…</Centered>
     case 'error':
       return (
         <Centered>
@@ -255,6 +313,7 @@ export default function App() {
           onStartCooking={startCooking}
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}
+          staleness={view.staleness}
         />
       )
     case 'cooking':
@@ -285,6 +344,14 @@ export default function App() {
         />
       )
   }
+}
+
+/** Maps the open path's marker to what `PlanScreen` renders. Re-import needs a URL to
+ * prefill, which `openSaved` only allows for a url source. */
+function stalenessFor(marker: Marker, url: string, onReimport: () => void): StalenessMarker | undefined {
+  if (!marker) return undefined
+  if (marker.kind === 'unchecked') return { kind: 'unchecked' }
+  return marker.reimport && url ? { kind: 'stale', onReimport } : { kind: 'stale' }
 }
 
 /** `planKeyFor` (`@/cooking-mode/planKey.ts`, CP1c), bound to the real `library`. Kept

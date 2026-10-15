@@ -114,6 +114,10 @@ for (const width of WIDTHS) {
         await page.getByRole('button', { name: 'Cookbook', exact: true }).click()
         await page.locator('button, a, [role=button]').filter({ hasText: title }).first().click()
         await expect(page.getByRole('button', { name: 'Back' }).first()).toBeVisible()
+        // The seeded v1 entries have no stamp, no original and no feed match, so they get
+        // the staleness line offline, and (no import_meta reads as feed-like) no Re-import.
+        await expect(page.getByText('may be out of date')).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Re-import' })).toHaveCount(0)
 
         await expectNoOverflow(page, `${title} · Plan · top`)
         await page.evaluate(() =>
@@ -140,6 +144,9 @@ for (const width of WIDTHS) {
         await page.evaluate((px) => document.documentElement.style.setProperty('--safe-top', `${px}px`), inset)
         await page.getByRole('button', { name: 'Cookbook', exact: true }).click()
         await page.locator('button, a, [role=button]').filter({ hasText: TITLES[0] }).first().click()
+        // Opening a saved recipe now awaits the staleness check (a lazy chunk), so wait for
+        // the page before scripting against it.
+        await expect(page.getByRole('button', { name: 'Back' }).first()).toBeVisible()
         await page.evaluate(() =>
           document.querySelectorAll<HTMLElement>('button[aria-expanded="false"]').forEach((b) => b.click()),
         )

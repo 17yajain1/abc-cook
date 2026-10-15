@@ -11,6 +11,8 @@ import type { ServerInfo } from '@abc-cook/schema'
 export interface ServerVersion {
   /** The version, or `null` when it couldn't be learned. Never rejects. */
   get(signal?: AbortSignal): Promise<number | null>
+  /** The memoised version, without fetching: `null` until one has been learned. */
+  peek(): number | null
   /** Updates the memo from a response that carries the stamp (import, reprocess). */
   note(version: number): void
 }
@@ -30,6 +32,8 @@ export function createServerVersion(fetchInfo: (signal?: AbortSignal) => Promise
         return null
       }
     },
+
+    peek: () => known,
 
     note(version: number): void {
       known = version
