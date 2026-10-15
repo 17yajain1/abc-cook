@@ -10,6 +10,7 @@ import type {
 
 import { ApiError, pollImport, startImport, startImportText } from '../api/client'
 import { derivePlan, type RenderPlan } from '../plan/derive'
+import { importExtrasFrom, type ImportExtras } from './importExtras'
 
 /** No standalone `ImportStatus` export exists in the generated package (it's inlined
  * as a literal union on `ImportJobResponse.status`) — derive it rather than duplicate
@@ -37,6 +38,7 @@ export type OnImported = (
   plan: RenderPlan,
   payload: RecipePlanResponse,
   importMeta: ImportMeta,
+  extras: ImportExtras,
 ) => void
 
 /**
@@ -79,6 +81,7 @@ export function useImportJob(onImported: OnImported) {
             derivePlan(payload, job.result.provenance ?? null),
             payload,
             importMetaFrom(job.result),
+            importExtrasFrom(job.result),
           )
           return
         }

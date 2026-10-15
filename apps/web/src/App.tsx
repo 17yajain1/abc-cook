@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
-import { ApiError, fetchPlan } from './api/client'
+import { ApiError, fetchPlan, fetchServerInfo } from './api/client'
+import { createServerVersion } from './api/serverVersion'
 import { deriveCookingModel } from './cooking/model'
 import { createSessionStore } from './cooking/store'
 import { canResolveConflictTarget, resolveConflictTarget } from './cooking-mode/conflictResolve'
@@ -10,6 +11,7 @@ import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
 import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
+import type { ImportExtras } from './import/importExtras'
 import { canonicalSourceKey } from './library/sourceKey'
 import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
@@ -23,6 +25,10 @@ import { AppShell } from './shell/AppShell'
  * at module load; every save/read after that goes through this same closure (M2.12
  * design: this becomes M3's Zustand `persist` storage unchanged). */
 const library = createLibrary()
+
+/** The server's `POSTPROCESS_VERSION`, learned lazily from `/health` and from import and
+ * reprocess responses. Same module-scope pattern as `library` and `sessionStore`. */
+const serverVersion = createServerVersion(fetchServerInfo)
 
 /** Same instantiation pattern as `library` above — one `SessionStore` for the app's
  * lifetime, reading `localStorage['abc-cook:session:v1']` once at module load
@@ -104,7 +110,7 @@ export default function App() {
     setView({
       kind: 'plan',
       plan: derivePlan(payload),
-      origin: { kind: 'import', payload, importMeta: NO_IMPORT_META },
+      origin: { kind: 'import', payload, importMeta: NO_IMPORT_META, fromFeed: true },
       saveState: { status: 'idle' },
       importMeta: NO_IMPORT_META,
       payload,
@@ -120,12 +126,13 @@ export default function App() {
   // source replaces its entry (`library.save` dedups by source key). On a failed write
   // the origin stays `import`, so the header's Save control still offers a retry.
   const onImported = useCallback(
-    (plan: RenderPlan, payload: RecipePlanResponse, importMeta: ImportMeta) => {
-      const result = library.save(payload, importMeta)
+    (plan: RenderPlan, payload: RecipePlanResponse, importMeta: ImportMeta, extras: ImportExtras) => {
+      const result = library.save(payload, importMeta, extras)
+      if (extras.postprocess_version != null) serverVersion.note(extras.postprocess_version)
       setView({
         kind: 'plan',
         plan,
-        origin: { kind: 'import', payload, importMeta },
+        origin: { kind: 'import', payload, importMeta, extras },
         saveState: result.ok ? { status: 'saved' } : { status: 'error', message: result.message },
         importMeta,
         payload,
@@ -210,7 +217,10 @@ export default function App() {
   const saveCurrent = useCallback(() => {
     setView((prev) => {
       if (prev.kind !== 'plan' || prev.origin.kind !== 'import') return prev
-      const result = library.save(prev.origin.payload, prev.origin.importMeta)
+      // A feed recipe stores `import_meta: null`, exactly as the card's "Add to cookbook"
+      // does, so the staleness check can tell it from a real import.
+      const { payload, importMeta, extras, fromFeed } = prev.origin
+      const result = library.save(payload, fromFeed ? null : importMeta, extras)
       if (!result.ok) {
         return { ...prev, saveState: { status: 'error', message: result.message } }
       }
