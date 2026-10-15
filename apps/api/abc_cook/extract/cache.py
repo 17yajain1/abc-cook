@@ -205,7 +205,7 @@ class DiskResultCache:
 
 # --- Cache identity ------------------------------------------------------------------
 
-POSTPROCESS_VERSION = 6
+POSTPROCESS_VERSION = 7
 """Version of everything between the model's JSON and the final `ImportResult`: graph
 building, validation, repair, titling, corroboration, provenance, the orchestration in
 `import_pipeline.py`, and the scheduler. Part of the cache identity, so bumping it makes

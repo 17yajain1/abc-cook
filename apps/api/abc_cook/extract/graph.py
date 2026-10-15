@@ -631,12 +631,18 @@ _VULGAR_FRACTION_MINUTES = {"¼": 0.25, "½": 0.5, "¾": 0.75}
 _DURATION_UNIT_SECONDS = ("sec", "secs", "second", "seconds", "सेकंड")
 _DURATION_UNIT_MINUTES = ("min", "mins", "minute", "minutes", "मिनट")
 _DURATION_UNIT_HOURS = ("hr", "hrs", "hour", "hours", "घंटा", "घंटे", "ghanta", "ghante")
-_DURATION_UNITS_HINDI = ("सेकंड", "मिनट", "घंटा", "घंटे", "ghanta", "ghante")
-"""Units that only occur in Hindi source text (corpus side; step text is English)."""
 
-_HINDI_OFFSET_MARKERS = ("बाद", "baad", "पहले", "pehle")
-"""A Hindi duration followed by one of these ("1 घंटे बाद" = "after 1 hour") is a start
-offset, not how long a step takes, so it must not ground a stated duration."""
+_OFFSET_PRECEDING_MARKERS = ("after", "in", "within", "every", "at")
+_OFFSET_HEDGES = (
+    "about", "around", "approximately", "approx.", "approx", "roughly", "nearly",
+    "another", "a further", "some",
+)
+_OFFSET_FOLLOWING_MARKERS = ("later", "after", "into", "baad", "बाद")
+_LEAD_TIME_MARKERS = ("before", "pehle", "पहले")
+"""An offset says WHEN a step starts ("after 1 hour", "5 minutes later", "1 घंटे बाद"),
+never how long it takes, so it is dropped and must not ground a stated duration. A
+"N before" phrase is a lead time: the wait itself on an unattended/periodic step, an
+offset on a hands-on one."""
 
 _CEILING_PHRASES = ("up to", "at most", "no more than")
 """§4: a ceiling on how long something may sit, never a step's own duration."""
@@ -653,8 +659,22 @@ _DURATION_UNIT_RE = "|".join(
     _DURATION_UNIT_SECONDS + _DURATION_UNIT_MINUTES + _DURATION_UNIT_HOURS
 )
 _DURATION_CEILING_RE = "|".join(_CEILING_PHRASES)
-_HINDI_OFFSET_RE = re.compile(
-    r"\s*(?:" + "|".join(_HINDI_OFFSET_MARKERS) + r")(?!\w)", re.IGNORECASE
+_HEDGE_RE = r"(?:(?:" + "|".join(re.escape(h) for h in _OFFSET_HEDGES) + r")\s+)?"
+_OFFSET_BEFORE_RE = re.compile(
+    r"(?<!\w)(?:"
+    # "after|once" + up to 3 words with no clause punctuation: "after soaking for 1 hour".
+    r"(?:after|once)\s+(?:[^\s,.;:!?()]+\s+){0,3}"
+    # "in|within|every|at" [hedge] N.
+    r"|(?:" + "|".join(_OFFSET_PRECEDING_MARKERS) + r")\s+" + _HEDGE_RE
+    + r")$",
+    re.IGNORECASE,
+)
+_FOR_BEFORE_RE = re.compile(r"(?<!\w)for\s+" + _HEDGE_RE + r"$", re.IGNORECASE)
+_OFFSET_AFTER_RE = re.compile(
+    r"\s*(?:" + "|".join(_OFFSET_FOLLOWING_MARKERS) + r")(?!\w)", re.IGNORECASE
+)
+_LEAD_AFTER_RE = re.compile(
+    r"\s*(?:" + "|".join(_LEAD_TIME_MARKERS) + r")(?!\w)", re.IGNORECASE
 )
 _DURATION_EXPR_RE = re.compile(
     rf"(?:(?P<ceiling>{_DURATION_CEILING_RE})\s+)?"
@@ -674,6 +694,9 @@ class _DurationExpr:
     ceiling: bool
     """"Up to N" / "at most N" / "no more than N": a holding limit, never a typical
     duration and never grounds a stated claim on its own."""
+    lead: bool = False
+    """"N before" / "N pehle": a lead time. A duration only on a verified
+    unattended/periodic step; see `_verify_duration`."""
 
 
 def _duration_number(token: str) -> float:
@@ -694,18 +717,43 @@ def _duration_unit_factor(unit: str) -> float:
     return 1.0
 
 
+def _duration_role(text: str, match: re.Match[str]) -> str:
+    """Whether a duration-shaped match is a "duration", a "lead" time or an "offset".
+
+    Checked in order: preceding offset words, `for N` framing, following offset
+    word, following lead-time word. Ambiguous cases fall on the safe side (offset).
+    """
+    before = text[: match.start()]
+    if _OFFSET_BEFORE_RE.search(before):
+        return "offset"
+    if _FOR_BEFORE_RE.search(before):
+        return "duration"
+    if _OFFSET_AFTER_RE.match(text, match.end()):
+        return "offset"
+    if _LEAD_AFTER_RE.match(text, match.end()):
+        return "lead"
+    return "duration"
+
+
+def _has_offset_phrase(text: str) -> bool:
+    """Whether `text` has a duration-shaped phrase that is a start offset."""
+    return any(
+        _duration_role(text, match) == "offset" for match in _DURATION_EXPR_RE.finditer(text)
+    )
+
+
 def _duration_expressions(text: str) -> list[_DurationExpr]:
     """Parse duration-shaped phrases out of `text` (§4).
 
     Pure and ungrounded -- callers cross-check each match's own substring against
     the corpus, the same independent-verification pattern as every other cue in
-    this module.
+    this module. Start offsets ("after 1 hour") are never returned; lead times
+    ("1 hour before") are returned flagged `lead`.
     """
     exprs: list[_DurationExpr] = []
     for match in _DURATION_EXPR_RE.finditer(text):
-        if match.group("unit").lower() in _DURATION_UNITS_HINDI and _HINDI_OFFSET_RE.match(
-            text, match.end()
-        ):
+        role = _duration_role(text, match)
+        if role == "offset":
             continue
         factor = _duration_unit_factor(match.group("unit"))
         a = _duration_number(match.group("a")) * factor
@@ -713,11 +761,15 @@ def _duration_expressions(text: str) -> list[_DurationExpr]:
         b = _duration_number(b_token) * factor if b_token else a
         low, high = (a, b) if a <= b else (b, a)
         ceiling = bool(match.group("ceiling"))
-        exprs.append(_DurationExpr(low_min=low, high_min=high, ceiling=ceiling))
+        exprs.append(
+            _DurationExpr(low_min=low, high_min=high, ceiling=ceiling, lead=role == "lead")
+        )
     return exprs
 
 
-def _grounded_duration_expressions(text: str, corpus: str) -> list[_DurationExpr]:
+def _grounded_duration_expressions(
+    text: str, corpus: str, allow_lead: bool = False
+) -> list[_DurationExpr]:
     """`_duration_expressions`, keeping only candidates grounded in the raw corpus.
 
     Grounded by PARSED VALUE, not literal substring: the corpus is parsed with the
@@ -729,15 +781,20 @@ def _grounded_duration_expressions(text: str, corpus: str) -> list[_DurationExpr
     range only grounds against an at-least-as-wide one. Ceiling-ness must match
     on both sides: a plain claim is never grounded by a corpus "up to N" (a
     holding limit, never a stated duration -- see the ceiling rule below), and a
-    ceiling claim is never grounded by a corpus plain value/range.
+    ceiling claim is never grounded by a corpus plain value/range. Lead-time-ness
+    must match too (a corpus "1 hour before" grounds only a step's lead phrase), and
+    the step's lead phrases are candidates only when `allow_lead`.
     """
-    candidates = _duration_expressions(text)
+    candidates = [
+        expr for expr in _duration_expressions(text) if allow_lead or not expr.lead
+    ]
     corpus_exprs = _duration_expressions(corpus)
     return [
         candidate
         for candidate in candidates
         if any(
             corpus_expr.ceiling == candidate.ceiling
+            and corpus_expr.lead == candidate.lead
             and corpus_expr.low_min <= candidate.low_min
             and candidate.high_min <= corpus_expr.high_min
             for corpus_expr in corpus_exprs
@@ -761,7 +818,7 @@ def _per_unit_floor_multiplier(text: str) -> float | None:
 
 
 def _verify_duration(
-    step: NormalizedStep, corpus: str
+    step: NormalizedStep, corpus: str, attention: Attention = "hands_on"
 ) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
     """§4: independently verify a step's duration claim against its own text.
 
@@ -775,7 +832,9 @@ def _verify_duration(
     review = False
     text = step.text
 
-    grounded = _grounded_duration_expressions(text, corpus)
+    grounded = _grounded_duration_expressions(
+        text, corpus, allow_lead=attention in ("unattended", "periodic")
+    )
     plain = [expr for expr in grounded if not expr.ceiling]
     ceilings = [expr for expr in grounded if expr.ceiling]
 
@@ -801,8 +860,15 @@ def _verify_duration(
         dmax = max(dmax, expr.high_min) if dmax is not None else expr.high_min
         stated = True
     elif not plain and stated and not ceilings:
-        if _duration_expressions(text):
+        usable = [
+            expr
+            for expr in _duration_expressions(text)
+            if not expr.lead or attention in ("unattended", "periodic")
+        ]
+        if usable:
             reason = "but that duration was not found in the source text"
+        elif _has_offset_phrase(text) or _duration_expressions(text):
+            reason = "but its only time phrase says when to start it, not how long it takes"
         else:
             reason = "but no duration phrase was found in its own text"
         warnings.append(
@@ -1504,7 +1570,7 @@ def build_graph(
         # BEFORE the window-host clamp, so the clamp acts on the verified
         # stated-ness rather than the model's raw self-report.
         vmin, vtyp, vmax, vstated, duration_warnings, duration_review = _verify_duration(
-            step, corpus
+            step, corpus, attention
         )
         warnings.extend(duration_warnings)
         review_recommended = review_recommended or duration_review

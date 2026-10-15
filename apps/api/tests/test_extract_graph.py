@@ -37,6 +37,7 @@ from abc_cook.extract.normalize import render_source_text
 from abc_cook.extract.title import clean_title, resolve_title
 from abc_cook.extract.validate import validate
 from abc_cook.schema.graph import SourceRef
+from abc_cook.schema.node import Attention
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
 
 SOURCE = SourceRef(kind="url", value="https://youtu.be/test", imported_at=datetime.now(UTC))
@@ -1035,13 +1036,18 @@ def test_duration_expressions_parse_hindi_and_english_units(
     [
         "एक घंटे बाद",  # a number word: not parsed at all
         "1 घंटे बाद मिलाएं",
-        "5 मिनट पहले",
         "1 ghante baad",
-        "1 ghanta pehle",
+        "5 minute baad",
     ],
 )
 def test_duration_expressions_skip_hindi_offsets(text: str) -> None:
     assert _duration_expressions(text) == []
+
+
+@pytest.mark.parametrize(("text", "minutes"), [("5 मिनट पहले", 5), ("1 ghanta pehle", 60)])
+def test_duration_expressions_flag_hindi_lead_times(text: str, minutes: float) -> None:
+    exprs = _duration_expressions(text)
+    assert [(e.low_min, e.lead) for e in exprs] == [(minutes, True)]
 
 
 def test_hindi_offset_guard_only_suppresses_the_adjacent_offset() -> None:
@@ -1113,6 +1119,164 @@ def test_real_hindi_transcript_grounds_the_soak_and_nothing_it_shouldnt() -> Non
 
     stated, _warnings = check("After one hour, mix the soaked sabudana once.", 60)
     assert stated is False
+
+
+# ---------------------------------------------------------------------------
+# Offsets are not durations. "After one hour, mix" says WHEN to start a step, not
+# how long it takes; "N before" is the wait itself only on an unattended/periodic
+# step. See docs/plans/fix-offset-not-duration.md.
+# ---------------------------------------------------------------------------
+
+
+def _spans(text: str) -> list[tuple[float, float, bool]]:
+    return [(e.low_min, e.high_min, e.lead) for e in _duration_expressions(text)]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "After 1 hour, mix the dough.",
+        "Mix the dough after 1 hour.",
+        "After one hour, mix the dough.",
+        "After 10-15 minutes, stir.",
+        "After 2 to 3 hours, stir.",
+        "Stir after about 10 minutes.",
+        "10 minutes later, add the peas.",
+        "In 5 minutes it thickens.",
+        "Stir every 5 minutes.",
+        "After soaking for 1 hour, drain.",
+        # Known safe-side trade-off (follow-up F7): the after/once window beats `for`.
+        "Once boiling simmer for 10 minutes",
+    ],
+)
+def test_offsets_are_not_durations(text: str) -> None:
+    assert _spans(text) == []
+
+
+def test_offset_next_to_a_real_duration_keeps_only_the_duration() -> None:
+    assert _spans("After 10 minutes, simmer for 5 minutes.") == [(5, 5, False)]
+    assert _spans("Simmer for 30 minutes, stirring every 5 minutes.") == [(30, 30, False)]
+
+
+def test_for_framing_beats_a_following_before() -> None:
+    assert _spans("Refrigerate for 2 hours before serving.") == [(120, 120, False)]
+    assert _spans("Fry for 2 minutes before adding the onions.") == [(2, 2, False)]
+
+
+def test_before_phrase_is_a_lead_time() -> None:
+    assert _spans("Remove the dough 1 hour before using.") == [(60, 60, True)]
+
+
+def test_plain_durations_unchanged_by_the_offset_rule() -> None:
+    assert _spans("Simmer for 5 minutes.") == [(5, 5, False)]
+    assert _spans("Cook 3 to 4 minutes.") == [(3, 4, False)]
+    assert _expr("Keeps for up to 10 minutes.") == (10, 10, True)
+
+
+def _verify_at(
+    text: str,
+    corpus: str | None = None,
+    attention: Attention = "hands_on",
+    **duration_kwargs: object,
+) -> tuple[float | None, float | None, float | None, bool, list[str], bool]:
+    step = _step(text=text, **duration_kwargs)  # type: ignore[arg-type]
+    return _verify_duration(step, (corpus if corpus is not None else text).lower(), attention)
+
+
+def test_offset_only_step_is_not_promoted_to_stated() -> None:
+    """P1: a lone offset used to promote an unstated step to stated 60 min."""
+    dmin, dtyp, dmax, stated, warnings, _review = _verify_at(
+        "After one hour, mix the soaked sabudana once.",
+        duration_min=2, duration_typical_min=3, duration_max=5, duration_stated=False,
+    )
+    assert (dmin, dtyp, dmax, stated, warnings) == (2, 3, 5, False, [])
+
+
+def test_offset_only_stated_claim_is_downgraded_with_the_start_reason() -> None:
+    *_numbers, stated, warnings, _review = _verify_at(
+        "After 1 hour, mix the dough.",
+        duration_min=60, duration_typical_min=60, duration_max=60, duration_stated=True,
+    )
+    assert stated is False
+    assert any("when to start it, not how long it takes" in w for w in warnings)
+
+
+def test_offset_does_not_hijack_a_real_duration_claim() -> None:
+    """P2: the model's 10 (the offset) is corrected to the real 5."""
+    _dmin, dtyp, _dmax, stated, _warnings, _review = _verify_at(
+        "After 10 minutes, simmer for 5 minutes.",
+        duration_min=10, duration_typical_min=10, duration_max=10, duration_stated=True,
+    )
+    assert (dtyp, stated) == (5, True)
+
+
+def test_corpus_offset_does_not_ground_a_step_duration() -> None:
+    """P3."""
+    *_numbers, stated, _warnings, _review = _verify_at(
+        "Cook for 5 minutes.",
+        corpus="After 5 minutes, flip.",
+        duration_min=5, duration_typical_min=5, duration_max=5, duration_stated=True,
+    )
+    assert stated is False
+
+
+def test_lead_time_is_stated_only_on_an_unattended_step() -> None:
+    kwargs = {"duration_min": 60, "duration_typical_min": 60, "duration_max": 60,
+              "duration_stated": True}
+    text = "Remove the dough 1 hour before using."
+    assert _verify_at(text, attention="unattended", **kwargs)[3] is True
+    assert _verify_at(text, attention="periodic", **kwargs)[3] is True
+    assert _verify_at(text, attention="hands_on", **kwargs)[3] is False
+
+
+def test_hands_on_lead_time_is_an_offset() -> None:
+    *_numbers, stated, _warnings, _review = _verify_at(
+        "Add the garlic 2 minutes before the end.",
+        duration_min=2, duration_typical_min=2, duration_max=2, duration_stated=True,
+    )
+    assert stated is False
+
+
+def test_hindi_lead_time_follows_the_same_attention_rule() -> None:
+    kwargs = {"duration_min": 60, "duration_typical_min": 60, "duration_max": 60,
+              "duration_stated": True}
+    soak = "Take the dough out 1 hour before using."
+    assert _verify_at(soak, corpus="आटा 1 घंटे पहले निकाल लें", attention="unattended",
+                      **kwargs)[3] is True
+    assert _verify_at(soak, corpus="आटा 1 घंटे पहले निकाल लें", attention="hands_on",
+                      **kwargs)[3] is False
+    garlic = {"duration_min": 2, "duration_typical_min": 2, "duration_max": 2,
+              "duration_stated": True}
+    assert _verify_at("Add garlic 2 minutes before the end.", corpus="लहसुन 2 मिनट पहले डालें",
+                      attention="hands_on", **garlic)[3] is False
+
+
+def test_neighbouring_lead_time_does_not_ground_a_plain_duration() -> None:
+    corpus = "Remove the dough 1 hour before using. Then it rests."
+    kwargs = {"duration_min": 60, "duration_typical_min": 60, "duration_max": 60,
+              "duration_stated": True}
+    assert _verify_at("Let the dough rest 1 hour.", corpus=corpus, attention="unattended",
+                      **kwargs)[3] is False
+    assert _verify_at("Let it rest.", corpus=corpus, attention="unattended", **kwargs)[3] is False
+
+
+def test_build_graph_lead_time_on_hands_on_step_is_not_extracted() -> None:
+    recipe = _recipe(
+        [
+            _step(
+                text="Take the dough out 1 hour before baking.",
+                duration_min=60, duration_typical_min=60, duration_max=60, duration_stated=True,
+            ),
+            _step(
+                text="Let it rest.", attention="unattended", attention_cue="let it rest",
+                duration_min=60, duration_typical_min=60, duration_max=60, duration_stated=True,
+            ),
+            _step(text="Serve."),
+        ]
+    )
+    result = _build(recipe, "Take the dough out 1 hour before baking. Let it rest. Serve.")
+    assert result.graph is not None
+    assert all(d.duration_source != "extracted" for d in result.node_decisions[:2])
 
 
 # ---------------------------------------------------------------------------
