@@ -1,4 +1,4 @@
-import type { ImportMeta, RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
+import type { ImportMeta, ImportOriginal, RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
 
 import { canonicalSourceKey } from './sourceKey'
 
@@ -20,8 +20,24 @@ export interface StorageLike {
 }
 
 export type SaveResult =
-  | { ok: true; recipe: SavedRecipe; replaced: boolean }
+  | { ok: true; recipe: SavedRecipe; replaced: boolean; withoutOriginal: boolean }
   | { ok: false; message: string }
+
+/** What an import adds beside the payload: the post-processing inputs and the version
+ * stamp of the code that produced the payload. Both optional: a feed save has neither. */
+export interface SaveExtras {
+  original?: ImportOriginal | null
+  postprocess_version?: number | null
+}
+
+/** A re-derived copy of a saved recipe's payload (reprocess, or a feed replacement). */
+export interface RefreshInput {
+  payload: RecipePlanResponse
+  import_meta: ImportMeta | null
+  postprocess_version: number
+}
+
+export type RefreshResult = { ok: true; recipe: SavedRecipe } | { ok: false; message: string }
 
 export interface Library {
   /** Saved entries, newest `updated_at` first. */
@@ -30,8 +46,14 @@ export interface Library {
   findBySource(sourceKey: string): SavedRecipe | undefined
   /** Saves `payload`. Replaces the existing entry in place when its source was already
    * saved (keeps `id`/`saved_at`, bumps `updated_at`); otherwise creates one.
-   * `importMeta` is `null` for a fixture recipe (never went through `/import`). */
-  save(payload: RecipePlanResponse, importMeta?: ImportMeta | null): SaveResult
+   * `importMeta` is `null` for a fixture recipe (never went through `/import`).
+   * If the write fails while `extras.original` is set, retries once without it: the
+   * recipe is worth more than its refresh inputs (`SaveResult.withoutOriginal`). */
+  save(payload: RecipePlanResponse, importMeta?: ImportMeta | null, extras?: SaveExtras): SaveResult
+  /** Replaces the derived copy (payload, import_meta, stamp) of entry `id` in place:
+   * `id`, `source_key`, both timestamps, `original` and `edits` are untouched, so the
+   * Cookbook order doesn't move. Rejects a payload whose source key differs. */
+  refresh(id: string, next: RefreshInput): RefreshResult
 }
 
 /** Builds a `Library` backed by `storage` (`window.localStorage` by default) and reads
@@ -55,29 +77,72 @@ export function createLibrary(
       return recipes.find((r) => r.source_key === sourceKey)
     },
 
-    save(payload: RecipePlanResponse, importMeta: ImportMeta | null = null): SaveResult {
+    save(payload: RecipePlanResponse, importMeta: ImportMeta | null = null, extras?: SaveExtras): SaveResult {
       const sourceKey = canonicalSourceKey(payload.graph.source)
       const existing = recipes.find((r) => r.source_key === sourceKey)
       const timestamp = now().toISOString()
+      const stamp = extras?.postprocess_version ?? null
 
-      const recipe: SavedRecipe = existing
-        ? { ...existing, payload, import_meta: importMeta, updated_at: timestamp }
-        : {
-            id: generateId(),
-            source_key: sourceKey,
-            saved_at: timestamp,
-            updated_at: timestamp,
-            payload,
-            import_meta: importMeta,
-          }
+      const build = (original: ImportOriginal | null): SavedRecipe =>
+        existing
+          ? {
+              ...existing,
+              payload,
+              import_meta: importMeta,
+              original,
+              postprocess_version: stamp,
+              edits: existing.edits ?? [],
+              updated_at: timestamp,
+            }
+          : {
+              id: generateId(),
+              source_key: sourceKey,
+              saved_at: timestamp,
+              updated_at: timestamp,
+              payload,
+              import_meta: importMeta,
+              original,
+              postprocess_version: stamp,
+              edits: [],
+            }
+      const replaceIn = (list: SavedRecipe[], recipe: SavedRecipe) =>
+        existing ? list.map((r) => (r.id === recipe.id ? recipe : r)) : [...list, recipe]
 
-      const next = existing ? recipes.map((r) => (r.id === recipe.id ? recipe : r)) : [...recipes, recipe]
-
-      const written = writeLibrary(storage, next)
+      let recipe = build(extras?.original ?? null)
+      let written = writeLibrary(storage, replaceIn(recipes, recipe))
+      let withoutOriginal = false
+      if (!written.ok && recipe.original != null) {
+        // `original` is the bulky part. Keep the plan the user just paid for; this entry
+        // simply can't be refreshed free later and falls back to Re-import.
+        recipe = build(null)
+        written = writeLibrary(storage, replaceIn(recipes, recipe))
+        withoutOriginal = true
+      }
       if (!written.ok) return written
 
-      recipes = next
-      return { ok: true, recipe, replaced: existing != null }
+      recipes = replaceIn(recipes, recipe)
+      return { ok: true, recipe, replaced: existing != null, withoutOriginal }
+    },
+
+    refresh(id: string, next: RefreshInput): RefreshResult {
+      const existing = recipes.find((r) => r.id === id)
+      if (!existing) return { ok: false, message: 'That recipe is no longer saved.' }
+      if (canonicalSourceKey(next.payload.graph.source) !== existing.source_key) {
+        return { ok: false, message: 'The refreshed recipe is for a different source.' }
+      }
+
+      const recipe: SavedRecipe = {
+        ...existing,
+        payload: next.payload,
+        import_meta: next.import_meta,
+        postprocess_version: next.postprocess_version,
+      }
+      const list = recipes.map((r) => (r.id === id ? recipe : r))
+      const written = writeLibrary(storage, list)
+      if (!written.ok) return written
+
+      recipes = list
+      return { ok: true, recipe }
     },
   }
 }
@@ -96,13 +161,37 @@ function readLibrary(storage: StorageLike, now: () => Date): SavedRecipe[] {
     return []
   }
 
-  return parsed.recipes.filter(isStructurallyValidRecipe)
+  return parsed.recipes.filter(isStructurallyValidRecipe).map(migrateEntry)
+}
+
+/** Normalises one stored entry to the v2 shape. Spreads first, so unknown fields and
+ * every v1 field (including a *missing* `import_meta`) pass through byte-identical; only
+ * the three v2 fields are filled or repaired. A bad `original` never drops the entry. */
+export function migrateEntry(entry: SavedRecipe): SavedRecipe {
+  return {
+    ...entry,
+    postprocess_version: Number.isInteger(entry.postprocess_version) ? entry.postprocess_version : null,
+    original: isImportOriginalShape(entry.original) ? entry.original : null,
+    edits: Array.isArray(entry.edits) ? entry.edits : [],
+  }
+}
+
+/** Structural check only; the server does the real validation (a 422 is handled where
+ * `original` is replayed). */
+function isImportOriginalShape(value: unknown): value is ImportOriginal {
+  return (
+    isPlainObject(value) &&
+    isPlainObject(value.recipe) &&
+    isPlainObject(value.source) &&
+    typeof value.source.value === 'string' &&
+    typeof value.source_text === 'string' &&
+    typeof value.raw_title === 'string' &&
+    typeof value.graph_id === 'string'
+  )
 }
 
 function writeLibrary(storage: StorageLike, recipes: SavedRecipe[]): { ok: true } | { ok: false; message: string } {
-  // Still writes the v1 shape: the generated `SavedLibrary` is v2 now, and the v1 -> v2
-  // migration (and writing `original`) is PR 2. Nothing user-visible changes in PR 1.
-  const body: Omit<SavedLibrary, 'version'> & { version: 1 } = { version: 1, recipes }
+  const body: SavedLibrary = { version: 2, recipes }
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(body))
     return { ok: true }
@@ -147,8 +236,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isSavedLibraryShape(value: unknown): value is SavedLibrary {
-  return isPlainObject(value) && value.version === 1 && Array.isArray(value.recipes)
+function isSavedLibraryShape(value: unknown): value is { version: 1 | 2; recipes: unknown[] } {
+  return isPlainObject(value) && (value.version === 1 || value.version === 2) && Array.isArray(value.recipes)
 }
 
 function isStructurallyValidRecipe(value: unknown): value is SavedRecipe {
