@@ -1457,6 +1457,19 @@ and keeps the Plan register.
 | iOS: page height and insets | The recipe page is `100dvh` (fallback `100%`). Safe-area insets are read through `--safe-top` / `--safe-bottom` (`index.css`); the CTA bar's bottom padding is at least the home-indicator inset. | dvh follows Safari's toolbars; the variables let a desktop test simulate a notch, where `env()` is always 0. |
 | iOS: compact bar | Mounted only while showing, not faded with opacity/visibility. | On iOS Safari the faded-in bar painted the back arrow but not the title. The e2e check now asserts the title's size, text and visibility. |
 
+## Resolved in saved-recipe staleness PR 2 (the marker line, 2026-10-16)
+
+A saved recipe is either current or honestly marked. The marker is one line on the recipe
+page, in the Home register. It adds no new visual grammar: it reuses the A6 status-line slot.
+
+| Question | Resolution | Why |
+|---|---|---|
+| Where | The A6 status-line slot under the header (`text-[13px]`, secondary ink `#6B5A50`, 20px side gutter). **The staleness line takes the slot**; the A6 line ("Plan simplified…", "Some timings are estimates.") shows again once the plan is refreshed. | The A6 line describes the plan that is about to be replaced, so showing both would describe a plan the person shouldn't rely on. |
+| Copy | Stale: "This plan may be out of date. Re-import for the latest version." Could not check: "Couldn't check for updates. Showing your saved plan." Pure strings in `stalenessLineFor`, tested. | Plain and specific; an error says what happened and what is shown instead. |
+| Re-import | An inline text button below the line, semibold ink with an underline, `min-height` 44px. Shown **only** when the source is a URL import (text and image sources get the line alone), and never during a cook in progress, where no marker is shown at all. It opens the import screen with the URL prefilled; the person taps "Get the plan". | A tap target for a wet thumb, and the LLM spend stays an explicit tap. |
+| No marker | A current plan, a refreshed plan, and a plan with a cook in progress show no line. A refresh is silent. | A refresh that works is not news. |
+| Loading | "Scheduling <title>…", for at most 3 seconds. | The existing verb; the title, not an id. |
+
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 
 | # | Item | Class | Note |
