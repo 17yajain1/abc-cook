@@ -660,7 +660,7 @@ def _rank_graph(specs: list[_RankSpec]) -> CookingGraph:
             attention=attention,  # type: ignore[arg-type]
             duration_min=minutes,
             duration_typical=minutes,
-            duration_max=spec[4] if len(spec) == 5 else minutes,  # noqa: PLR2004
+            duration_max=spec[4] if len(spec) == 5 else minutes,
             station="none" if attention == "unattended" else "counter",
             depends_on=deps,
             produces=f"comp_{node_id}",
