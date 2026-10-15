@@ -19,7 +19,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from abc_cook.schema.graph import CookingGraph
+from abc_cook.schema.graph import CookingGraph, SourceRef
 from abc_cook.schema.node import Attention, Station
 from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
@@ -337,6 +337,91 @@ class GraphProvenance(BaseModel):
     nodes: dict[str, NodeProvenance] = Field(default_factory=dict)
 
 
+# NOTE: StepRepair and RepairProposal are sent to the repair model as its output schema,
+# and pydantic copies a class docstring into that schema. Their docstrings are therefore
+# model-facing text: keep them byte-identical to what extract/repair.py had on main, and
+# put any maintainer notes in comments like this one. (`_merge_repair`, named in the
+# docstring below, lives in extract/repair.py.)
+class StepRepair(BaseModel):
+    """The only three fields a repair pass may ever set, for one step.
+
+    Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
+    decision D). A default of True/[] used to *overwrite* extraction: a response that
+    simply omitted `depends_on_previous` reset an extracted, verified independence
+    claim to sequential. See `_merge_repair` for how each field is applied -- repair
+    fixes structure additively; it never resets a semantic decision to a default.
+    """
+
+    consumes_ingredients: list[str] | None = Field(
+        default=None,
+        description="Names to ADD to this step's consumes. Omit to leave unchanged.",
+    )
+    produces_component: str | None = Field(
+        default=None,
+        description="Set only to name a component a later step uses. Omit to leave unchanged.",
+    )
+    depends_on_previous: bool | None = Field(
+        default=None,
+        description=(
+            "true to make this step wait for the previous one. Omit to leave unchanged. "
+            "Repair can add a dependency; it can never remove one."
+        ),
+    )
+
+
+# Lives here (not in extract/repair.py) because a stored proposal rides on
+# `ImportOriginal`, and schema/ never imports from extract/. Docstring: see NOTE above.
+class RepairProposal(BaseModel):
+    """The repair call's entire response shape.
+
+    One `StepRepair` per original step, in the same order. Matched back to the
+    original steps by position — there is no id/index field because the count and
+    order are already fixed by the request.
+    """
+
+    steps: list[StepRepair] = Field(default_factory=list)
+
+
+class ImportOriginal(BaseModel):
+    """Everything post-processing reads, kept so a saved recipe can be re-processed free.
+
+    `extract/postprocess.py::reprocess` rebuilds the graph and plan from this alone:
+    no acquire, no LLM. Immutable after save (staleness plan B1, B5). `recipe` is the
+    extraction model's own output, *before* title resolution and *before* any repair --
+    both of those are post-processing and are re-derived on every refresh.
+    """
+
+    recipe: NormalizedRecipe = Field(description="The extraction output, pre-repair.")
+    repair: RepairProposal | None = Field(
+        default=None,
+        description="The repair proposal the cold import applied, replayed without a call.",
+    )
+    source_text: str = Field(description="`render_source_text(raw)`, the grounding text.")
+    raw_title: str = Field(description="The acquisition's verbatim title (never absent).")
+    blog_name: str | None = Field(default=None, description="The linked blog recipe's name.")
+    source: SourceRef = Field(description="Keeps `imported_at`, so the source key never changes.")
+    graph_id: str = Field(description="Kept so a session's graph id is stable across a refresh.")
+    acquisition_warnings: list[str] = Field(default_factory=list)
+    sources: list[ImportSource] = Field(default_factory=list)
+
+
+class ImportMeta(BaseModel):
+    """Import-status fields from `ImportResult` that `RecipePlanResponse` doesn't carry.
+
+    `RecipePlanResponse` stays the frozen `{graph, plan, stages}` contract (M2.9 decision
+    3); this is a sibling field so a saved-and-reopened recipe can still show that its
+    plan was simplified or its timings estimated (A6) instead of looking like a normal
+    plan. `degraded` is computed once by the client at save time from
+    `"degraded" in warnings` -- not a new server field.
+    """
+
+    warnings: list[str] = Field(default_factory=list)
+    review_recommended: bool = Field(default=False)
+    sources: list[ImportSource] = Field(default_factory=list)
+    provenance: GraphProvenance | None = Field(default=None)
+    degraded: bool = Field(default=False)
+
+
 class ImportResult(BaseModel):
     """The `/import` response payload.
 
@@ -364,4 +449,15 @@ class ImportResult(BaseModel):
             "both Tier 0 and `done` results — a Tier 0 screen can say 'no captions on "
             "this video' without another round trip."
         ),
+    )
+    original: ImportOriginal | None = Field(
+        default=None,
+        description=(
+            "The post-processing inputs, set on `done` so the client can keep them with a "
+            "saved recipe and refresh it without an LLM call (staleness plan B1)."
+        ),
+    )
+    postprocess_version: int | None = Field(
+        default=None,
+        description="`POSTPROCESS_VERSION` of the code that produced this result. Set on `done`.",
     )

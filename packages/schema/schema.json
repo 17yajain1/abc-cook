@@ -269,6 +269,78 @@
       },
       "type": "object"
     },
+    "ImportOriginal": {
+      "description": "Everything post-processing reads, kept so a saved recipe can be re-processed free.\n\n`extract/postprocess.py::reprocess` rebuilds the graph and plan from this alone:\nno acquire, no LLM. Immutable after save (staleness plan B1, B5). `recipe` is the\nextraction model's own output, *before* title resolution and *before* any repair --\nboth of those are post-processing and are re-derived on every refresh.",
+      "properties": {
+        "acquisition_warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "blog_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The linked blog recipe's name."
+        },
+        "graph_id": {
+          "description": "Kept so a session's graph id is stable across a refresh.",
+          "type": "string"
+        },
+        "raw_title": {
+          "description": "The acquisition's verbatim title (never absent).",
+          "type": "string"
+        },
+        "recipe": {
+          "$ref": "#/$defs/NormalizedRecipe"
+        },
+        "repair": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepairProposal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The repair proposal the cold import applied, replayed without a call."
+        },
+        "source": {
+          "$ref": "#/$defs/SourceRef"
+        },
+        "source_text": {
+          "description": "`render_source_text(raw)`, the grounding text.",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "enum": [
+              "description",
+              "blog",
+              "transcript"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "recipe",
+        "source_text",
+        "raw_title",
+        "source",
+        "graph_id"
+      ],
+      "type": "object"
+    },
     "ImportResult": {
       "description": "The `/import` response payload.\n\nA separate envelope from `RecipePlanResponse` (design doc \u00a79 decision 3) \u2014 that\nresponse stays the frozen contract for the fixture path.",
       "properties": {
@@ -290,6 +362,18 @@
           },
           "type": "array"
         },
+        "original": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImportOriginal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The post-processing inputs, set on `done` so the client can keep them with a saved recipe and refresh it without an LLM call (staleness plan B1)."
+        },
         "plan": {
           "anyOf": [
             {
@@ -300,6 +384,18 @@
             }
           ],
           "default": null
+        },
+        "postprocess_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "`POSTPROCESS_VERSION` of the code that produced this result. Set on `done`."
         },
         "provenance": {
           "anyOf": [
@@ -485,6 +581,7 @@
       ],
       "type": "object"
     },
+    "JsonValue": {},
     "LongWait": {
       "description": "An idle stretch long enough to leave the kitchen.\n\nNot long enough to be a separate sitting (`LONG_WAIT_MIN` <= idle < `SESSION_BREAK_MIN`).",
       "properties": {
@@ -699,6 +796,36 @@
       },
       "type": "object"
     },
+    "NormalizedChapter": {
+      "description": "A YouTube chapter marker. Grounded, but stage-level \u2014 never a node duration.\n\nSee design doc \u00a70: a chapter delta measures how long the creator spent on screen,\nnot how long the cook will spend. Used only by `corroborate.py`.",
+      "properties": {
+        "end_sec": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Chapter end, in seconds. Null for the last chapter if unknown."
+        },
+        "label": {
+          "description": "Chapter title, e.g. \"Marination\".",
+          "type": "string"
+        },
+        "start_sec": {
+          "description": "Chapter start, in seconds from video start.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label",
+        "start_sec"
+      ],
+      "type": "object"
+    },
     "NormalizedIngredient": {
       "description": "One ingredient line, structured but not yet graph-ready.\n\n`qty` stays a free-text string, not a float: real sources state quantities as\n\"a little less than 2\", \"1/2\", or ranges, which cannot be honestly forced into a\nsingle number here. `graph.py` does that best-effort conversion, not this model.",
       "properties": {
@@ -757,6 +884,338 @@
         "qty",
         "unit",
         "prep_note"
+      ],
+      "type": "object"
+    },
+    "NormalizedRecipe": {
+      "description": "The real, inspectable value that crosses the normalize -> graph seam.\n\n`method_grounded` is the model's own claim and MUST NOT be trusted as-is\n(\u00a710.C finding 1): `normalize.py`'s Tier 0 gate recomputes it as `bool(steps)`\nbefore any caller acts on it.",
+      "properties": {
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source channel/site name."
+        },
+        "chapters": {
+          "items": {
+            "$ref": "#/$defs/NormalizedChapter"
+          },
+          "type": "array"
+        },
+        "cuisine": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ingredients": {
+          "items": {
+            "$ref": "#/$defs/NormalizedIngredient"
+          },
+          "type": "array"
+        },
+        "method_grounded": {
+          "description": "The model's own claim about whether method text existed. A hint only \u2014 callers must independently verify via `bool(steps)`.",
+          "type": "boolean"
+        },
+        "notes": {
+          "description": "Free-text notes for a human reviewer: ambiguities, translation doubts, etc.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "servings": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many PEOPLE this feeds \u2014 only if the source states that, in those terms. Never the yield count (how many pieces/items the recipe makes) \u2014 that goes in yield_text instead. If the source only gives a piece count (\"makes 14 rasgulla\") with no separate people count, leave this null; do not copy the piece count here."
+        },
+        "servings_source": {
+          "default": "defaulted",
+          "enum": [
+            "stated",
+            "defaulted"
+          ],
+          "type": "string"
+        },
+        "stated_total_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ONLY an explicit stated total-time claim. Never derived from video duration."
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/NormalizedStep"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "A clean dish name (e.g. \"Buttermilk Pancakes\"), NOT the raw source title verbatim -- the source's own title is preserved separately as ImportResult.source_title regardless of what you put here. Never invent a name unrelated to the source: title.py only accepts this claim when every word in it is grounded in the raw title or a linked blog's own name (case-folded, light stemming), and replaces it with a deterministic cleanup of the raw title otherwise -- so an invented word is simply discarded, not shown to the cook.",
+          "type": "string"
+        },
+        "yield_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The source's own stated yield, verbatim or lightly trimmed \u2014 whatever it actually says it makes (\"14 rasgulla\", \"2 loaves\", \"8 people\"), including a unit/item word even when that's just a count of people. Only if a number is stated; null if the source gives no number at all (\"makes a dozen\" has no digit \u2014 leave this null rather than converting words to a number)."
+        }
+      },
+      "required": [
+        "title",
+        "method_grounded"
+      ],
+      "type": "object"
+    },
+    "NormalizedStep": {
+      "description": "One candidate node, before `graph.py` decides how to build it.\n\nMirrors the shape of `Node` closely enough that `graph.py` is mostly a direct\ntranslation, but stays looser where real sources are messy (`duration_*` as\n`float | None` rather than required ints) and adds the hint/verification fields\n\u00a710.C's independent-verification rule needs.",
+      "properties": {
+        "attach_to_step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-based position of the required step this optional/alternative instruction belongs with. Null when role is required."
+        },
+        "attention": {
+          "description": "The model's classification. MUST default to hands_on when no explicit cue is present (design doc \u00a75) \u2014 graph.py re-checks this via attention_cue before trusting periodic/unattended.",
+          "enum": [
+            "hands_on",
+            "periodic",
+            "unattended"
+          ],
+          "type": "string"
+        },
+        "attention_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Verbatim source phrase justifying periodic/unattended. Null when attention is hands_on. graph.py must confirm this string actually appears in the source text before honoring a non-hands_on attention."
+        },
+        "consumes_ingredients": {
+          "description": "Ingredient names (matching NormalizedIngredient.name), OR a produces_component label from an earlier step, when this step uses that earlier step's output.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "depends_on_previous": {
+          "default": true,
+          "description": "LEGACY (prompt v1/v2). Consecutive stated steps default to sequential (\u00a74.7). False only when the model asserts genuine independence; graph.py still applies the two-condition test (no shared ingredient/component, no produces/consumes link) before honoring False. Ignored once depends_on_steps is provided.",
+          "type": "boolean"
+        },
+        "depends_on_steps": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-based positions of the EARLIER steps whose output or pan/vessel state this step directly needs. [] means it genuinely needs nothing earlier. None means not provided -- graph.py then falls back to depends_on_previous. A claim, not a fact: graph.py verifies it."
+        },
+        "doneness_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A qualitative phrase, only if textually present, e.g. \"until golden\"."
+        },
+        "duration_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "duration_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "duration_stated": {
+          "description": "True only if a number was written in the source text; False if this is a plausible estimate from a vague-but-present cue (\"cook until golden\"). graph.py applies the \u00a74.7 low-end clamp (duration_typical = duration_min) to window-host nodes when this is False.",
+          "type": "boolean"
+        },
+        "duration_typical_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "freshness": {
+          "description": "See module docstring: never invent a number for stated_unbounded.",
+          "enum": [
+            "none",
+            "stated_unbounded",
+            "stated_numeric"
+          ],
+          "type": "string"
+        },
+        "freshness_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Verbatim source phrase, when freshness != none. graph.py should require this to carry a genuine immediacy marker (\"immediately\", \"just before serving\") before trusting stated_unbounded \u2014 a bare \"serve\" is not one (\u00a710.C finding 3)."
+        },
+        "interruptible": {
+          "description": "Almost never stated; \u00a74.7 default is prep=true, active/finish=false.",
+          "type": "boolean"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A short (1-4 word) UI heading for this step -- a summary in your own words (e.g. \"Mix marinade\", \"First rise\"), not a truncation of text. Null if you have none. graph.py accepts it only by shape (word count, no leading conditional marker, no trailing preposition/conjunction) and falls back to its own trim of `text` otherwise -- it is never checked against `text` for topical match, so accuracy is still your job."
+        },
+        "max_lead_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ONLY populated for stated_numeric. Never a guessed number."
+        },
+        "produces_component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Freeform label for what this step yields -- set it only when a LATER step will name this exact label in its own consumes_ingredients."
+        },
+        "role": {
+          "default": "required",
+          "description": "required: part of cooking the dish. optional: conditional or nice-to-have (\"If you plan to...\", \"if desired\"). alternative: another way to do an earlier step (\"Microwave method: ...\"). Never drop an optional/alternative instruction; mark it here instead.",
+          "enum": [
+            "required",
+            "optional",
+            "alternative"
+          ],
+          "type": "string"
+        },
+        "role_cue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Verbatim source phrase showing the step is optional/alternative. Null when role is required. graph.py must find it in the source text before honoring a non-required role."
+        },
+        "station": {
+          "description": "Explicit if stated; else the \u00a74.7 verb-based default.",
+          "enum": [
+            "burner",
+            "oven",
+            "counter",
+            "sink",
+            "fridge",
+            "none"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "description": "The step, lightly normalized. Never invented.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "attention",
+        "duration_stated",
+        "station",
+        "interruptible",
+        "freshness"
       ],
       "type": "object"
     },
@@ -913,6 +1372,38 @@
       ],
       "type": "object"
     },
+    "RecipeEdit": {
+      "description": "Placeholder envelope for a user edit (R6 fills in the operation union).\n\nEdits target the *original* (`ImportOriginal.recipe` ingredient and step indices),\nnever graph node ids, which are derived and can change on a reprocess. `anchor` holds\nthe index plus the value expected there; an edit whose anchor no longer matches after\na refresh is kept and marked orphaned, never dropped and never force-applied. Nothing\nwrites these yet: readers preserve them verbatim.",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "description": "Operation name. The union is defined in R6.",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "anchor",
+        "value"
+      ],
+      "type": "object"
+    },
     "RecipeListResponse": {
       "description": "Every recipe the API can currently serve.",
       "properties": {
@@ -1005,6 +1496,51 @@
       ],
       "type": "object"
     },
+    "RepairProposal": {
+      "description": "The repair call's entire response shape.\n\nOne `StepRepair` per original step, in the same order. Matched back to the\noriginal steps by position \u2014 there is no id/index field because the count and\norder are already fixed by the request.",
+      "properties": {
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/StepRepair"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ReprocessRequest": {
+      "description": "`POST /recipes/reprocess` body: the inputs a saved recipe kept (staleness plan B2).",
+      "properties": {
+        "original": {
+          "$ref": "#/$defs/ImportOriginal"
+        }
+      },
+      "required": [
+        "original"
+      ],
+      "type": "object"
+    },
+    "ReprocessResponse": {
+      "description": "`POST /recipes/reprocess` response: the refreshed derived copy.\n\n`payload` and `import_meta` are exactly what a client stores beside `original` in a\n`SavedRecipe`; `postprocess_version` is the stamp it writes with them. Computed with\nno acquire and no LLM call.",
+      "properties": {
+        "import_meta": {
+          "$ref": "#/$defs/ImportMeta"
+        },
+        "payload": {
+          "$ref": "#/$defs/RecipePlanResponse"
+        },
+        "postprocess_version": {
+          "description": "`POSTPROCESS_VERSION` that produced this.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "payload",
+        "import_meta",
+        "postprocess_version"
+      ],
+      "type": "object"
+    },
     "SavedLibrary": {
       "description": "The whole saved-recipe library, as stored under one `localStorage` key.",
       "properties": {
@@ -1016,9 +1552,9 @@
           "type": "array"
         },
         "version": {
-          "const": 1,
-          "default": 1,
-          "description": "Storage format version. Always 1 in v1.",
+          "const": 2,
+          "default": 2,
+          "description": "Storage format version. The web store also reads version 1 (no `original`, `postprocess_version` or `edits`) and migrates it on first write; this model describes v2 only.",
           "type": "integer"
         }
       },
@@ -1030,6 +1566,13 @@
     "SavedRecipe": {
       "description": "One recipe a user has saved on this device.",
       "properties": {
+        "edits": {
+          "description": "Reserved for R6. Always empty for now; readers preserve items verbatim.",
+          "items": {
+            "$ref": "#/$defs/RecipeEdit"
+          },
+          "type": "array"
+        },
         "id": {
           "description": "Stable id for this saved entry, assigned at first save.",
           "type": "string"
@@ -1046,8 +1589,32 @@
           "default": null,
           "description": "Import-status context alongside `payload` (A6). Null for fixture-path recipes, which never went through `/import`."
         },
+        "original": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImportOriginal"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The post-processing inputs from the import, immutable after save. `payload` and `import_meta` are derived from it and can be rebuilt free via `POST /recipes/reprocess`. Null for a feed save or a legacy import."
+        },
         "payload": {
           "$ref": "#/$defs/RecipePlanResponse"
+        },
+        "postprocess_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "`POSTPROCESS_VERSION` of the code that produced `payload`. Null means unknown, which is treated as stale."
         },
         "saved_at": {
           "description": "When this entry was first saved. Never changes.",
@@ -1122,6 +1689,29 @@
         "start_min",
         "end_min",
         "occupies_cook"
+      ],
+      "type": "object"
+    },
+    "ServerInfo": {
+      "description": "`GET /health`: liveness plus the version stamp saved recipes are compared against.",
+      "properties": {
+        "postprocess_version": {
+          "description": "`POSTPROCESS_VERSION`: a saved recipe stamped lower may be out of date.",
+          "type": "integer"
+        },
+        "status": {
+          "description": "Always \"ok\" when the API answers.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The API package version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "version",
+        "postprocess_version"
       ],
       "type": "object"
     },
@@ -1340,6 +1930,51 @@
         "inline_work_min",
         "node_ids"
       ],
+      "type": "object"
+    },
+    "StepRepair": {
+      "description": "The only three fields a repair pass may ever set, for one step.\n\nEvery field defaults to None, meaning \"leave the extracted value unchanged\" (CP2\ndecision D). A default of True/[] used to *overwrite* extraction: a response that\nsimply omitted `depends_on_previous` reset an extracted, verified independence\nclaim to sequential. See `_merge_repair` for how each field is applied -- repair\nfixes structure additively; it never resets a semantic decision to a default.",
+      "properties": {
+        "consumes_ingredients": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Names to ADD to this step's consumes. Omit to leave unchanged."
+        },
+        "depends_on_previous": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "true to make this step wait for the previous one. Omit to leave unchanged. Repair can add a dependency; it can never remove one."
+        },
+        "produces_component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set only to name a component a later step uses. Omit to leave unchanged."
+        }
+      },
       "type": "object"
     },
     "WaitWindow": {

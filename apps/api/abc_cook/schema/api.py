@@ -7,7 +7,13 @@ hand-mirrored in `.ts`.
 from pydantic import BaseModel, Field
 
 from abc_cook.schema.graph import CookingGraph
-from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
+from abc_cook.schema.normalized import (
+    ImportMeta,
+    ImportOriginal,
+    ImportResult,
+    ImportStatus,
+    SourcePreview,
+)
 from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
 
@@ -72,3 +78,33 @@ class ImportJobResponse(BaseModel):
         description="The source's own readable recipe, once acquire has produced one (A2). "
         "Kept on every later status, so a failed or degraded job can still show it.",
     )
+
+
+class ReprocessRequest(BaseModel):
+    """`POST /recipes/reprocess` body: the inputs a saved recipe kept (staleness plan B2)."""
+
+    original: ImportOriginal = Field(description="The post-processing inputs from the import.")
+
+
+class ReprocessResponse(BaseModel):
+    """`POST /recipes/reprocess` response: the refreshed derived copy.
+
+    `payload` and `import_meta` are exactly what a client stores beside `original` in a
+    `SavedRecipe`; `postprocess_version` is the stamp it writes with them. Computed with
+    no acquire and no LLM call.
+    """
+
+    payload: RecipePlanResponse = Field(description="The rebuilt graph, plan and rollups.")
+    import_meta: ImportMeta = Field(description="Import-status context for the rebuilt plan.")
+    postprocess_version: int = Field(description="`POSTPROCESS_VERSION` that produced this.")
+
+
+class ServerInfo(BaseModel):
+    """`GET /health`: liveness plus the version stamp saved recipes are compared against."""
+
+    status: str = Field(description='Always "ok" when the API answers.')
+    version: str = Field(description="The API package version.")
+    postprocess_version: int = Field(
+        description="`POSTPROCESS_VERSION`: a saved recipe stamped lower may be out of date."
+    )
+

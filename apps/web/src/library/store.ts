@@ -100,7 +100,9 @@ function readLibrary(storage: StorageLike, now: () => Date): SavedRecipe[] {
 }
 
 function writeLibrary(storage: StorageLike, recipes: SavedRecipe[]): { ok: true } | { ok: false; message: string } {
-  const body: SavedLibrary = { version: 1, recipes }
+  // Still writes the v1 shape: the generated `SavedLibrary` is v2 now, and the v1 -> v2
+  // migration (and writing `original`) is PR 2. Nothing user-visible changes in PR 1.
+  const body: Omit<SavedLibrary, 'version'> & { version: 1 } = { version: 1, recipes }
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(body))
     return { ok: true }

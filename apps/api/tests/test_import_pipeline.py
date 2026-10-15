@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from abc_cook.extract import import_pipeline
+from abc_cook.extract import postprocess as postprocess_mod
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import CallUsage, ExtractResult
@@ -122,7 +122,7 @@ def test_defensive_build_graph_none_path_source_title_is_raw_title(
     recipe = _grounded_recipe(title="Invented Unrelated Name")
     adapter = _FakeAdapter(results=[ExtractResult(recipe=recipe)])
     monkeypatch.setattr(
-        import_pipeline,
+        postprocess_mod,
         "build_graph",
         lambda *a, **kw: GraphBuildResult(graph=None, warnings=["forced for the test"]),
     )

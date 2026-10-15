@@ -5,20 +5,28 @@ They deliberately assert nothing about scheduling — there is no scheduler yet.
 
 from datetime import UTC, datetime
 
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from abc_cook.api.main import create_app
 from abc_cook.schema import (
     CookingGraph,
     CookingPlan,
     ImportMeta,
+    ImportOriginal,
     Ingredient,
     Node,
+    NormalizedRecipe,
+    RecipeEdit,
     RecipePlanResponse,
+    RepairProposal,
+    SavedLibrary,
     SavedRecipe,
     ScheduledNode,
     SourceRef,
     Stage,
+    StepRepair,
     WaitWindow,
 )
 
@@ -195,3 +203,58 @@ def test_saved_recipe_round_trips_with_import_meta() -> None:
     assert round_tripped == saved
     assert round_tripped.import_meta is not None
     assert round_tripped.import_meta.degraded is True
+
+
+def test_saved_library_is_v2_and_a_saved_recipe_defaults_its_new_fields() -> None:
+    """The three v2 siblings default to 'unknown / none', so a minimal entry is valid."""
+    client = TestClient(create_app())
+    payload = RecipePlanResponse.model_validate(client.get("/recipes/kadai-paneer/plan").json())
+    saved = SavedRecipe(
+        id="s1",
+        source_key="text:x",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+    )
+    assert saved.original is None
+    assert saved.postprocess_version is None  # None = unknown = treated as stale
+    assert saved.edits == []
+
+    library = SavedLibrary(recipes=[saved])
+    assert library.version == 2
+    with pytest.raises(ValidationError):
+        SavedLibrary.model_validate({"version": 1, "recipes": []})
+
+
+def test_saved_recipe_v2_round_trips_original_stamp_and_edits() -> None:
+    """`original` (with a stored repair proposal) and a placeholder edit survive JSON."""
+    client = TestClient(create_app())
+    payload = RecipePlanResponse.model_validate(client.get("/recipes/kadai-paneer/plan").json())
+    original = ImportOriginal(
+        recipe=NormalizedRecipe(title="T", method_grounded=True),
+        repair=RepairProposal(steps=[StepRepair(consumes_ingredients=["x"])]),
+        source_text="text",
+        raw_title="T",
+        source=payload.graph.source,
+        graph_id="g1",
+        sources=["description"],
+    )
+    saved = SavedRecipe(
+        id="s1",
+        source_key="text:x",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+        original=original,
+        postprocess_version=8,
+        edits=[
+            RecipeEdit(
+                id="e1",
+                created_at=datetime.now(UTC),
+                op="set_step_text",
+                anchor={"step": 2, "expected": "old"},
+                value="new",
+            )
+        ],
+    )
+    assert SavedRecipe.model_validate_json(saved.model_dump_json()) == saved

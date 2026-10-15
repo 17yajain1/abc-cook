@@ -15,6 +15,7 @@ from pathlib import Path
 
 from abc_cook.api.routes.recipes import burner_capacity_for, load_graph
 from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.cache import POSTPROCESS_VERSION
 from abc_cook.extract.graph import GraphBuildResult, build_graph
 from abc_cook.extract.normalize import render_source_text
 from abc_cook.schedule import schedule, stage_spans, summarize
@@ -50,6 +51,7 @@ IMPORT_FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "
 
 # Shared test data, not Plan-specific: the M2.75 Map's layout.test.ts reads these too.
 OUT = Path(__file__).resolve().parents[2] / "web" / "src" / "__fixtures__"
+STAMP_FILE = "postprocess-version.json"
 
 
 def replay_import(slug: str) -> CookingGraph:
@@ -175,6 +177,16 @@ def main() -> None:
         encoding="utf-8",
     )
     print("wrote synthetic-defaulted-servings.import-warnings.json")
+
+    # Which post-processing version these fixtures were generated under. The web app
+    # compares this with the server's before replacing a stale feed save with the bundled
+    # entry (staleness plan A5); tests/test_web_fixture_stamp.py forces a re-export on
+    # every POSTPROCESS_VERSION bump.
+    (OUT / STAMP_FILE).write_text(
+        json.dumps({"postprocess_version": POSTPROCESS_VERSION}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"wrote {STAMP_FILE}")
 
 
 if __name__ == "__main__":

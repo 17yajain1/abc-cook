@@ -20,7 +20,10 @@ from abc_cook.schema import (
     ImportStartResponse,
     RecipeListResponse,
     RecipePlanResponse,
+    ReprocessRequest,
+    ReprocessResponse,
     SavedLibrary,
+    ServerInfo,
 )
 
 # Response roots. `RecipePlanResponse` transitively contains CookingGraph,
@@ -41,6 +44,9 @@ ROOTS = [
     ImportJobResponse,
     ImportStartResponse,
     SavedLibrary,
+    ReprocessRequest,
+    ReprocessResponse,
+    ServerInfo,
 ]
 
 OUT = Path(__file__).resolve().parents[3] / "packages" / "schema" / "schema.json"

@@ -10,14 +10,19 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import ValidationError
 
+from abc_cook.extract.postprocess import reprocess
 from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema import (
     CookingGraph,
+    ImportMeta,
     RecipeListResponse,
     RecipePlanResponse,
     RecipeSummary,
+    ReprocessRequest,
+    ReprocessResponse,
 )
 
 router = APIRouter(tags=["recipes"])
@@ -135,4 +140,101 @@ async def get_recipe_plan(recipe_id: str) -> RecipePlanResponse:
         plan=plan,
         stages=stage_spans(graph, plan),
         summary=summarize(graph, plan, burner_capacity=capacity),
+    )
+
+
+MAX_REPROCESS_BODY_BYTES = 512 * 1024
+"""Request-body cap for `POST /recipes/reprocess`. The largest real input is bounded by
+the transcript cap (`TRANSCRIPT_CHAR_CAP`) plus description, blog text and the normalized
+recipe -- far under this; the headroom is for growth, the cap is for abuse."""
+
+MAX_REPROCESS_SOURCE_CHARS = 100_000
+MAX_REPROCESS_STEPS = 200
+MAX_REPROCESS_INGREDIENTS = 300
+
+
+async def _read_capped_body(request: Request) -> bytes:
+    """Read the request body, refusing anything over `MAX_REPROCESS_BODY_BYTES`.
+
+    A declared `Content-Length` over the cap is refused before a byte is read; the stream
+    is also length-limited as it is read, so a missing or lying header cannot get past it.
+
+    Raises:
+        HTTPException: 400 on an unparseable `Content-Length`, 413 over the cap.
+    """
+    too_large = HTTPException(
+        status_code=413, detail=f"Body exceeds {MAX_REPROCESS_BODY_BYTES} bytes."
+    )
+    declared = request.headers.get("content-length")
+    if declared is not None:
+        try:
+            declared_bytes = int(declared)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Bad Content-Length.") from exc
+        if declared_bytes > MAX_REPROCESS_BODY_BYTES:
+            raise too_large
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > MAX_REPROCESS_BODY_BYTES:
+            raise too_large
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@router.post("/recipes/reprocess")
+async def reprocess_recipe(request: Request) -> ReprocessResponse:
+    """Rebuild a saved recipe's graph and plan from its stored import inputs.
+
+    Pure CPU: no acquire, no LLM, no I/O. The body is read by hand (not as a typed
+    parameter) so the size cap applies before any parsing.
+
+    Args:
+        request: A `ReprocessRequest` JSON body.
+
+    Returns:
+        The rebuilt payload, its `ImportMeta`, and the `POSTPROCESS_VERSION` stamp.
+
+    Raises:
+        HTTPException: 413 over the body cap, 422 on a malformed body or a field over
+            its cap (`source_text`, steps, ingredients), or on an original that yields
+            no plan.
+    """
+    body = await _read_capped_body(request)
+    try:
+        original = ReprocessRequest.model_validate_json(body).original
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422, detail=json.loads(exc.json(include_url=False, include_context=False))
+        ) from exc
+
+    if len(original.source_text) > MAX_REPROCESS_SOURCE_CHARS:
+        raise HTTPException(status_code=422, detail="source_text is too long.")
+    if len(original.recipe.steps) > MAX_REPROCESS_STEPS:
+        raise HTTPException(status_code=422, detail="Too many steps.")
+    if len(original.recipe.ingredients) > MAX_REPROCESS_INGREDIENTS:
+        raise HTTPException(status_code=422, detail="Too many ingredients.")
+
+    result = reprocess(original).result
+    if (
+        result.status != "done"
+        or result.graph is None
+        or result.plan is None
+        or result.stages is None
+        or result.postprocess_version is None
+    ):
+        raise HTTPException(status_code=422, detail="This recipe has no plan to rebuild.")
+    return ReprocessResponse(
+        payload=RecipePlanResponse(
+            graph=result.graph, plan=result.plan, stages=result.stages, summary=result.summary
+        ),
+        import_meta=ImportMeta(
+            warnings=result.warnings,
+            review_recommended=result.review_recommended,
+            sources=result.sources,
+            provenance=result.provenance,
+            degraded="degraded" in result.warnings,
+        ),
+        postprocess_version=result.postprocess_version,
     )

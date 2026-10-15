@@ -39,6 +39,7 @@ _EXTRACT_MODULES = (
     "corroborate.py",
     "provenance.py",
     "import_pipeline.py",
+    "postprocess.py",
 )
 
 
