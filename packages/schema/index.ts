@@ -5,6 +5,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "JsonValue".
+ */
+export type JsonValue = unknown;
+
 export interface ABCCookSchema {
   [k: string]: unknown;
 }
@@ -455,7 +461,15 @@ export interface ImportResult {
    * Present even at Tier 0 — a shopping list is real recovered information.
    */
   ingredients?: NormalizedIngredient[];
+  /**
+   * The post-processing inputs, set on `done` so the client can keep them with a saved recipe and refresh it without an LLM call (staleness plan B1).
+   */
+  original?: ImportOriginal | null;
   plan?: CookingPlan | null;
+  /**
+   * `POSTPROCESS_VERSION` of the code that produced this result. Set on `done`.
+   */
+  postprocess_version?: number | null;
   provenance?: GraphProvenance | null;
   review_recommended?: boolean;
   source_title?: string | null;
@@ -507,6 +521,238 @@ export interface NormalizedIngredient {
    * Unit, e.g. "cup", "tsp", "medium".
    */
   unit: string | null;
+}
+/**
+ * Everything post-processing reads, kept so a saved recipe can be re-processed free.
+ *
+ * `extract/postprocess.py::reprocess` rebuilds the graph and plan from this alone:
+ * no acquire, no LLM. Immutable after save (staleness plan B1, B5). `recipe` is the
+ * extraction model's own output, *before* title resolution and *before* any repair --
+ * both of those are post-processing and are re-derived on every refresh.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ImportOriginal".
+ */
+export interface ImportOriginal {
+  acquisition_warnings?: string[];
+  /**
+   * The linked blog recipe's name.
+   */
+  blog_name?: string | null;
+  /**
+   * Kept so a session's graph id is stable across a refresh.
+   */
+  graph_id: string;
+  /**
+   * The acquisition's verbatim title (never absent).
+   */
+  raw_title: string;
+  recipe: NormalizedRecipe;
+  /**
+   * The repair proposal the cold import applied, replayed without a call.
+   */
+  repair?: RepairProposal | null;
+  source: SourceRef;
+  /**
+   * `render_source_text(raw)`, the grounding text.
+   */
+  source_text: string;
+  sources?: ('description' | 'blog' | 'transcript')[];
+}
+/**
+ * The real, inspectable value that crosses the normalize -> graph seam.
+ *
+ * `method_grounded` is the model's own claim and MUST NOT be trusted as-is
+ * (§10.C finding 1): `normalize.py`'s Tier 0 gate recomputes it as `bool(steps)`
+ * before any caller acts on it.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NormalizedRecipe".
+ */
+export interface NormalizedRecipe {
+  /**
+   * Source channel/site name.
+   */
+  channel?: string | null;
+  chapters?: NormalizedChapter[];
+  cuisine?: string | null;
+  ingredients?: NormalizedIngredient[];
+  /**
+   * The model's own claim about whether method text existed. A hint only — callers must independently verify via `bool(steps)`.
+   */
+  method_grounded: boolean;
+  /**
+   * Free-text notes for a human reviewer: ambiguities, translation doubts, etc.
+   */
+  notes?: string[];
+  /**
+   * How many PEOPLE this feeds — only if the source states that, in those terms. Never the yield count (how many pieces/items the recipe makes) — that goes in yield_text instead. If the source only gives a piece count ("makes 14 rasgulla") with no separate people count, leave this null; do not copy the piece count here.
+   */
+  servings?: number | null;
+  servings_source?: 'stated' | 'defaulted';
+  /**
+   * ONLY an explicit stated total-time claim. Never derived from video duration.
+   */
+  stated_total_min?: number | null;
+  steps?: NormalizedStep[];
+  /**
+   * A clean dish name (e.g. "Buttermilk Pancakes"), NOT the raw source title verbatim -- the source's own title is preserved separately as ImportResult.source_title regardless of what you put here. Never invent a name unrelated to the source: title.py only accepts this claim when every word in it is grounded in the raw title or a linked blog's own name (case-folded, light stemming), and replaces it with a deterministic cleanup of the raw title otherwise -- so an invented word is simply discarded, not shown to the cook.
+   */
+  title: string;
+  /**
+   * The source's own stated yield, verbatim or lightly trimmed — whatever it actually says it makes ("14 rasgulla", "2 loaves", "8 people"), including a unit/item word even when that's just a count of people. Only if a number is stated; null if the source gives no number at all ("makes a dozen" has no digit — leave this null rather than converting words to a number).
+   */
+  yield_text?: string | null;
+}
+/**
+ * A YouTube chapter marker. Grounded, but stage-level — never a node duration.
+ *
+ * See design doc §0: a chapter delta measures how long the creator spent on screen,
+ * not how long the cook will spend. Used only by `corroborate.py`.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NormalizedChapter".
+ */
+export interface NormalizedChapter {
+  /**
+   * Chapter end, in seconds. Null for the last chapter if unknown.
+   */
+  end_sec?: number | null;
+  /**
+   * Chapter title, e.g. "Marination".
+   */
+  label: string;
+  /**
+   * Chapter start, in seconds from video start.
+   */
+  start_sec: number;
+}
+/**
+ * One candidate node, before `graph.py` decides how to build it.
+ *
+ * Mirrors the shape of `Node` closely enough that `graph.py` is mostly a direct
+ * translation, but stays looser where real sources are messy (`duration_*` as
+ * `float | None` rather than required ints) and adds the hint/verification fields
+ * §10.C's independent-verification rule needs.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NormalizedStep".
+ */
+export interface NormalizedStep {
+  /**
+   * 0-based position of the required step this optional/alternative instruction belongs with. Null when role is required.
+   */
+  attach_to_step?: number | null;
+  /**
+   * The model's classification. MUST default to hands_on when no explicit cue is present (design doc §5) — graph.py re-checks this via attention_cue before trusting periodic/unattended.
+   */
+  attention: 'hands_on' | 'periodic' | 'unattended';
+  /**
+   * Verbatim source phrase justifying periodic/unattended. Null when attention is hands_on. graph.py must confirm this string actually appears in the source text before honoring a non-hands_on attention.
+   */
+  attention_cue?: string | null;
+  /**
+   * Ingredient names (matching NormalizedIngredient.name), OR a produces_component label from an earlier step, when this step uses that earlier step's output.
+   */
+  consumes_ingredients?: string[];
+  /**
+   * LEGACY (prompt v1/v2). Consecutive stated steps default to sequential (§4.7). False only when the model asserts genuine independence; graph.py still applies the two-condition test (no shared ingredient/component, no produces/consumes link) before honoring False. Ignored once depends_on_steps is provided.
+   */
+  depends_on_previous?: boolean;
+  /**
+   * 0-based positions of the EARLIER steps whose output or pan/vessel state this step directly needs. [] means it genuinely needs nothing earlier. None means not provided -- graph.py then falls back to depends_on_previous. A claim, not a fact: graph.py verifies it.
+   */
+  depends_on_steps?: number[] | null;
+  /**
+   * A qualitative phrase, only if textually present, e.g. "until golden".
+   */
+  doneness_cue?: string | null;
+  duration_max?: number | null;
+  duration_min?: number | null;
+  /**
+   * True only if a number was written in the source text; False if this is a plausible estimate from a vague-but-present cue ("cook until golden"). graph.py applies the §4.7 low-end clamp (duration_typical = duration_min) to window-host nodes when this is False.
+   */
+  duration_stated: boolean;
+  duration_typical_min?: number | null;
+  /**
+   * See module docstring: never invent a number for stated_unbounded.
+   */
+  freshness: 'none' | 'stated_unbounded' | 'stated_numeric';
+  /**
+   * Verbatim source phrase, when freshness != none. graph.py should require this to carry a genuine immediacy marker ("immediately", "just before serving") before trusting stated_unbounded — a bare "serve" is not one (§10.C finding 3).
+   */
+  freshness_cue?: string | null;
+  /**
+   * Almost never stated; §4.7 default is prep=true, active/finish=false.
+   */
+  interruptible: boolean;
+  /**
+   * A short (1-4 word) UI heading for this step -- a summary in your own words (e.g. "Mix marinade", "First rise"), not a truncation of text. Null if you have none. graph.py accepts it only by shape (word count, no leading conditional marker, no trailing preposition/conjunction) and falls back to its own trim of `text` otherwise -- it is never checked against `text` for topical match, so accuracy is still your job.
+   */
+  label?: string | null;
+  /**
+   * ONLY populated for stated_numeric. Never a guessed number.
+   */
+  max_lead_min?: number | null;
+  /**
+   * Freeform label for what this step yields -- set it only when a LATER step will name this exact label in its own consumes_ingredients.
+   */
+  produces_component?: string | null;
+  /**
+   * required: part of cooking the dish. optional: conditional or nice-to-have ("If you plan to...", "if desired"). alternative: another way to do an earlier step ("Microwave method: ..."). Never drop an optional/alternative instruction; mark it here instead.
+   */
+  role?: 'required' | 'optional' | 'alternative';
+  /**
+   * Verbatim source phrase showing the step is optional/alternative. Null when role is required. graph.py must find it in the source text before honoring a non-required role.
+   */
+  role_cue?: string | null;
+  /**
+   * Explicit if stated; else the §4.7 verb-based default.
+   */
+  station: 'burner' | 'oven' | 'counter' | 'sink' | 'fridge' | 'none';
+  /**
+   * The step, lightly normalized. Never invented.
+   */
+  text: string;
+}
+/**
+ * The repair call's entire response shape.
+ *
+ * One `StepRepair` per original step, in the same order. Matched back to the
+ * original steps by position — there is no id/index field because the count and
+ * order are already fixed by the request.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RepairProposal".
+ */
+export interface RepairProposal {
+  steps?: StepRepair[];
+}
+/**
+ * The only three fields a repair pass may ever set, for one step.
+ *
+ * Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
+ * decision D). A default of True/[] used to *overwrite* extraction: a response that
+ * simply omitted `depends_on_previous` reset an extracted, verified independence
+ * claim to sequential. See `_merge_repair` for how each field is applied -- repair
+ * fixes structure additively; it never resets a semantic decision to a default.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "StepRepair".
+ */
+export interface StepRepair {
+  /**
+   * Names to ADD to this step's consumes. Omit to leave unchanged.
+   */
+  consumes_ingredients?: string[] | null;
+  /**
+   * true to make this step wait for the previous one. Omit to leave unchanged. Repair can add a dependency; it can never remove one.
+   */
+  depends_on_previous?: boolean | null;
+  /**
+   * Set only to name a component a later step uses. Omit to leave unchanged.
+   */
+  produces_component?: string | null;
 }
 /**
  * A stage's footprint on the scheduled timeline.
@@ -755,6 +1001,34 @@ export interface ImportStartResponse {
   job_id: string;
 }
 /**
+ * Placeholder envelope for a user edit (R6 fills in the operation union).
+ *
+ * Edits target the *original* (`ImportOriginal.recipe` ingredient and step indices),
+ * never graph node ids, which are derived and can change on a reprocess. `anchor` holds
+ * the index plus the value expected there; an edit whose anchor no longer matches after
+ * a refresh is kept and marked orphaned, never dropped and never force-applied. Nothing
+ * writes these yet: readers preserve them verbatim.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RecipeEdit".
+ */
+export interface RecipeEdit {
+  anchor: JsonValue;
+  /**
+   * When the user made the edit.
+   */
+  created_at: string;
+  /**
+   * Stable id for this edit.
+   */
+  id: string;
+  /**
+   * Operation name. The union is defined in R6.
+   */
+  op: string;
+  value: JsonValue;
+}
+/**
  * Every recipe the API can currently serve.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
@@ -817,6 +1091,33 @@ export interface RecipePlanResponse {
   summary?: PlanSummary | null;
 }
 /**
+ * `POST /recipes/reprocess` body: the inputs a saved recipe kept (staleness plan B2).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ReprocessRequest".
+ */
+export interface ReprocessRequest {
+  original: ImportOriginal;
+}
+/**
+ * `POST /recipes/reprocess` response: the refreshed derived copy.
+ *
+ * `payload` and `import_meta` are exactly what a client stores beside `original` in a
+ * `SavedRecipe`; `postprocess_version` is the stamp it writes with them. Computed with
+ * no acquire and no LLM call.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ReprocessResponse".
+ */
+export interface ReprocessResponse {
+  import_meta: ImportMeta;
+  payload: RecipePlanResponse;
+  /**
+   * `POSTPROCESS_VERSION` that produced this.
+   */
+  postprocess_version: number;
+}
+/**
  * The whole saved-recipe library, as stored under one `localStorage` key.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
@@ -828,9 +1129,9 @@ export interface SavedLibrary {
    */
   recipes: SavedRecipe[];
   /**
-   * Storage format version. Always 1 in v1.
+   * Storage format version. The web store also reads version 1 (no `original`, `postprocess_version` or `edits`) and migrates it on first write; this model describes v2 only.
    */
-  version?: 1;
+  version?: 2;
 }
 /**
  * One recipe a user has saved on this device.
@@ -840,6 +1141,10 @@ export interface SavedLibrary {
  */
 export interface SavedRecipe {
   /**
+   * Reserved for R6. Always empty for now; readers preserve items verbatim.
+   */
+  edits?: RecipeEdit[];
+  /**
    * Stable id for this saved entry, assigned at first save.
    */
   id: string;
@@ -847,7 +1152,15 @@ export interface SavedRecipe {
    * Import-status context alongside `payload` (A6). Null for fixture-path recipes, which never went through `/import`.
    */
   import_meta?: ImportMeta | null;
+  /**
+   * The post-processing inputs from the import, immutable after save. `payload` and `import_meta` are derived from it and can be rebuilt free via `POST /recipes/reprocess`. Null for a feed save or a legacy import.
+   */
+  original?: ImportOriginal | null;
   payload: RecipePlanResponse;
+  /**
+   * `POSTPROCESS_VERSION` of the code that produced `payload`. Null means unknown, which is treated as stale.
+   */
+  postprocess_version?: number | null;
   /**
    * When this entry was first saved. Never changes.
    */
@@ -860,4 +1173,24 @@ export interface SavedRecipe {
    * When this entry's payload was last replaced. Equals saved_at on first save.
    */
   updated_at: string;
+}
+/**
+ * `GET /health`: liveness plus the version stamp saved recipes are compared against.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ServerInfo".
+ */
+export interface ServerInfo {
+  /**
+   * `POSTPROCESS_VERSION`: a saved recipe stamped lower may be out of date.
+   */
+  postprocess_version: number;
+  /**
+   * Always "ok" when the API answers.
+   */
+  status: string;
+  /**
+   * The API package version.
+   */
+  version: string;
 }
