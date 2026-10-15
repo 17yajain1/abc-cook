@@ -193,6 +193,23 @@ def test_reprocess_reproduces_a_repaired_cold_import() -> None:
     assert out.result == cold
 
 
+@pytest.mark.parametrize(
+    "repair_results",
+    [
+        [ExtractResult(recipe=NON_FIXING_PROPOSAL)],
+        [ExtractResult(recipe=None, error="boom"), ExtractResult(recipe=None, error="boom")],
+    ],
+    ids=["proposal-does-not-fix", "repair-call-fails"],
+)
+def test_reprocess_reproduces_a_degraded_cold_import(repair_results: list[ExtractResult]) -> None:
+    original, cold = _cold_import(_unconsumed_ingredient_recipe(), *repair_results)
+    assert original.repair is None  # a proposal that did not fix the graph is never kept
+    assert "degraded" in cold.warnings  # type: ignore[attr-defined]
+    out = reprocess(original)
+    assert out.tier == "degraded"
+    assert out.result == cold
+
+
 def test_reprocess_reproduces_the_captured_pipeline_replay_input() -> None:
     recipe = NormalizedRecipe.model_validate_json(
         (FIXTURES_DIR / "pizza-dough.normalized.json").read_text(encoding="utf-8")
