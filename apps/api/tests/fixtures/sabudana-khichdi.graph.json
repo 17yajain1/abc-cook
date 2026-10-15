@@ -307,7 +307,6 @@
       ],
       "consumes": [
         "ing_roasted_peanuts",
-        "ing_roasted_peanuts_2",
         "comp_roasted_peanuts"
       ],
       "produces": "comp_coarse_peanut_mix",
@@ -358,14 +357,11 @@
       ],
       "consumes": [
         "ing_coriander_leaves",
-        "ing_roasted_peanuts",
         "ing_roasted_peanuts_2",
         "ing_green_chilli",
         "ing_green_chilli_2",
         "ing_ginger",
-        "ing_cumin_seeds",
         "ing_cumin_seeds_2",
-        "ing_sendha_namak",
         "ing_sendha_namak_2",
         "ing_curd",
         "ing_water",
@@ -389,12 +385,11 @@
       "duration_max": 8,
       "station": "burner",
       "depends_on": [
-        "step_for_the_green_chutney_in_a"
+        "step_dry_roast_1_cup_raw_peanuts"
       ],
       "consumes": [
         "ing_ghee_or_cooking",
         "ing_cumin_seeds",
-        "ing_cumin_seeds_2",
         "ing_green_chillies",
         "ing_curry_leaves"
       ],
@@ -445,9 +440,7 @@
       ],
       "consumes": [
         "ing_sendha_namak",
-        "ing_sendha_namak_2",
         "ing_roasted_peanuts",
-        "ing_roasted_peanuts_2",
         "comp_roasted_peanuts",
         "comp_coated_sabudana"
       ],

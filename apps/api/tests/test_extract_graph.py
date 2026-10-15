@@ -9,6 +9,7 @@ source text independently of whatever the fake "model" claimed.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -25,7 +26,9 @@ from abc_cook.extract.graph import (
     _label,
     _parse_qty,
     _produced_labels,
+    _resolve_step_ingredient_ids,
     _stages_for,
+    _verification_corpus,
     _verify_duration,
     _verify_independence,
     build_graph,
@@ -450,7 +453,20 @@ def test_verify_duration_stays_ungrounded_when_the_value_is_genuinely_absent() -
         duration_min=28, duration_typical_min=30, duration_max=32, duration_stated=True,
     )
     assert stated is False
-    assert any("no duration phrase" in w for w in warnings)
+    assert any("not found in the source text" in w for w in warnings)
+    assert not any("no duration phrase" in w for w in warnings)
+
+
+def test_verify_duration_keeps_the_older_wording_when_the_step_has_no_phrase() -> None:
+    """With no duration phrase in the step at all, "no duration phrase was found in its
+    own text" is the accurate wording, even when the source does state a duration."""
+    *_rest, stated, warnings, _review = _verify(
+        "Cook the dal until soft.",
+        corpus="cook the dal for 30 minutes.",
+        duration_min=30, duration_typical_min=30, duration_max=30, duration_stated=True,
+    )
+    assert stated is False
+    assert any("no duration phrase was found in its own text" in w for w in warnings)
 
 
 def test_verify_duration_plain_claim_not_grounded_by_a_corpus_ceiling_of_the_same_value() -> None:
@@ -825,6 +841,278 @@ def test_duplicate_ingredient_names_are_both_consumable() -> None:
     assert consumed_ids == {ing.id for ing in result.graph.ingredients}
     violations = validate(result.graph)
     assert not any(v.rule == "ingredients_consumed" for v in violations)
+
+
+# ---------------------------------------------------------------------------
+# D3 -- ingredient ids resolved by home group, with a no-orphan guard.
+# ---------------------------------------------------------------------------
+
+
+def _ing(name: str, group: str | None = None, qty: str = "1", unit: str | None = "tsp") -> object:
+    return NormalizedIngredient(name=name, qty=qty, unit=unit, prep_note=None, group=group)
+
+
+def _group_recipe_ingredients() -> list[NormalizedIngredient]:
+    return [
+        _ing("Cumin", None),  # type: ignore[list-item]
+        _ing("Cumin", "Chutney"),  # type: ignore[list-item]
+        _ing("Onion", None),  # type: ignore[list-item]
+        _ing("Mint", "Chutney"),  # type: ignore[list-item]
+    ]
+
+
+def test_same_name_in_two_groups_resolves_by_the_steps_home_group() -> None:
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Blend cumin with mint.", consumes_ingredients=["Cumin", "Mint"]),
+        ],
+        ingredients=_group_recipe_ingredients(),
+    )
+    result = _build(recipe, "Temper cumin with onion. Blend cumin with mint.")
+    assert result.graph is not None
+    first, second = result.graph.nodes
+    assert first.consumes == ["ing_cumin", "ing_onion"]
+    assert second.consumes == ["ing_cumin_2", "ing_mint"]
+
+
+def test_resolver_step_with_no_unambiguous_names_gets_the_ungrouped_id() -> None:
+    name_to_ids = {"cumin": ["a", "b"], "mint": ["c"]}
+    group_of: dict[str, str | None] = {"a": None, "b": "Chutney", "c": "Chutney"}
+    # The second step lets the Chutney portion be picked, so the guard has nothing to restore.
+    resolved = _resolve_step_ingredient_ids([["Cumin"], ["Cumin", "Mint"]], name_to_ids, group_of)
+    assert resolved == [["a"], ["b", "c"]]
+
+
+def test_resolver_tie_between_groups_resolves_to_the_ungrouped_id() -> None:
+    name_to_ids = {"cumin": ["a", "b"], "mint": ["c"], "onion": ["d"]}
+    group_of: dict[str, str | None] = {"a": None, "b": "G", "c": "G", "d": None}
+    resolved = _resolve_step_ingredient_ids(
+        [["Cumin", "Mint", "Onion"], ["Cumin", "Mint"]], name_to_ids, group_of
+    )
+    assert resolved == [["a", "c", "d"], ["b", "c"]]
+
+
+def test_resolver_name_only_in_other_groups_keeps_every_id() -> None:
+    name_to_ids = {"salt": ["a", "b"], "onion": ["c"]}
+    group_of: dict[str, str | None] = {"a": "A", "b": "B", "c": None}
+    resolved = _resolve_step_ingredient_ids([["Salt", "Onion"]], name_to_ids, group_of)
+    assert resolved == [["a", "b", "c"]]
+
+
+def test_no_orphan_guard_restores_an_id_no_step_would_pick() -> None:
+    """The Chutney cumin is picked by no step (both name onion, whose home is the main
+    list), so it keeps its original consumer, in its original position."""
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Fry the onion in mint.", consumes_ingredients=["Onion", "Mint"]),
+        ],
+        ingredients=_group_recipe_ingredients(),
+    )
+    result = _build(recipe, "Temper cumin with onion. Fry the onion in mint.")
+    assert result.graph is not None
+    assert result.graph.nodes[0].consumes == ["ing_cumin", "ing_cumin_2", "ing_onion"]
+    assert result.graph.nodes[1].consumes == ["ing_onion", "ing_mint"]
+    assert not any(v.rule == "ingredients_consumed" for v in validate(result.graph))
+
+
+def test_resolver_leaves_a_recipe_without_cross_group_duplicates_untouched() -> None:
+    name_to_ids = {"onion": ["a"], "butter": ["b", "c"]}
+    group_of: dict[str, str | None] = {"a": None, "b": None, "c": None}
+    steps = [["Butter", "Onion"], ["Butter"]]
+    resolved = _resolve_step_ingredient_ids(steps, name_to_ids, group_of)
+    assert resolved == [["b", "c", "a"], ["b", "c"]]
+
+
+def test_ingredient_rows_are_never_touched_by_group_resolution() -> None:
+    ingredients = _group_recipe_ingredients()
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin with onion.", consumes_ingredients=["Cumin", "Onion"]),
+            _step(text="Blend cumin with mint.", consumes_ingredients=["Cumin", "Mint"]),
+        ],
+        ingredients=ingredients,
+    )
+    result = _build(recipe, "Temper cumin with onion. Blend cumin with mint.")
+    assert result.graph is not None
+    rows = [(i.name, i.qty_text, i.unit, i.group) for i in result.graph.ingredients]
+    assert rows == [(i.name, i.qty, i.unit, i.group) for i in ingredients]
+
+
+def _two_cumin_steps(*, explicit: bool, same_group: bool) -> list[list[str]]:
+    """Build a two-step recipe whose steps both name cumin; return each node's depends_on."""
+    second_group = None if same_group else "Chutney"
+    ingredients = [_ing("Cumin", None), _ing("Onion", None), _ing("Mint", second_group)]
+    if not same_group:
+        ingredients.insert(1, _ing("Cumin", "Chutney"))
+    claim: dict[str, object] = (
+        {"depends_on_steps": []} if explicit else {"depends_on_previous": False}
+    )
+    recipe = _recipe(
+        [
+            _step(text="Temper cumin.", consumes_ingredients=["Cumin", "Onion"], **claim),
+            _step(text="Blend cumin.", consumes_ingredients=["Cumin", "Mint"], **claim),
+            # A final join, so the finish rule doesn't add its own edge to step 2.
+            _step(text="Serve.", **({"depends_on_steps": [0, 1]} if explicit else {})),
+        ],
+        ingredients=ingredients,  # type: ignore[arg-type]
+    )
+    result = _build(recipe, "Temper cumin. Blend cumin. Serve.")
+    assert result.graph is not None
+    return [node.depends_on for node in result.graph.nodes[:2]]
+
+
+def test_explicit_path_cumin_from_different_groups_is_not_a_shared_ingredient() -> None:
+    first, second = _two_cumin_steps(explicit=True, same_group=False)
+    assert first == []
+    assert second == []
+
+
+def test_explicit_path_cumin_from_the_same_group_still_adds_the_edge() -> None:
+    _first, second = _two_cumin_steps(explicit=True, same_group=True)
+    assert len(second) == 1
+
+
+def test_legacy_path_cumin_from_different_groups_honors_independence() -> None:
+    first, second = _two_cumin_steps(explicit=False, same_group=False)
+    assert first == []
+    assert second == []
+
+
+def test_legacy_path_cumin_from_the_same_group_is_sequential() -> None:
+    _first, second = _two_cumin_steps(explicit=False, same_group=True)
+    assert len(second) == 1
+
+
+@pytest.mark.parametrize("explicit", [True, False])
+def test_unresolved_component_names_still_collide_by_name(explicit: bool) -> None:
+    claim: dict[str, object] = (
+        {"depends_on_steps": []} if explicit else {"depends_on_previous": False}
+    )
+    recipe = _recipe(
+        [
+            _step(text="Heat the spice paste.", consumes_ingredients=["Zz paste"], **claim),
+            _step(text="Stir the spice paste.", consumes_ingredients=["Zz paste"], **claim),
+        ]
+    )
+    result = _build(recipe, "Heat the spice paste. Stir the spice paste.")
+    assert result.graph is not None
+    assert len(result.graph.nodes[1].depends_on) == 1
+
+
+# ---------------------------------------------------------------------------
+# D5 -- Hindi duration units ground durations in the source corpus. Number words
+# ("एक घंटे") are deliberately NOT parsed: with an "after N" start offset that would
+# turn "After one hour, mix..." into a stated 60-minute step.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "low", "high"),
+    [
+        ("2 घंटे के लिए भिगो दें", 120, 120),
+        ("२ घंटे के लिए भिगो दें", 120, 120),
+        ("2 से 3 घंटे", 120, 180),
+        ("4 मिनट", 4, 4),
+        ("30 सेकंड", 0.5, 0.5),
+        ("1 घंटा", 60, 60),
+        ("2 ghante", 120, 120),
+        ("2 ghanta", 120, 120),
+        ("3 to 4 minutes", 3, 4),
+        ("Cook for 5 mins.", 5, 5),
+    ],
+)
+def test_duration_expressions_parse_hindi_and_english_units(
+    text: str, low: float, high: float
+) -> None:
+    exprs = _duration_expressions(text)
+    assert [(e.low_min, e.high_min) for e in exprs] == [(low, high)]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "एक घंटे बाद",  # a number word: not parsed at all
+        "1 घंटे बाद मिलाएं",
+        "5 मिनट पहले",
+        "1 ghante baad",
+        "1 ghanta pehle",
+    ],
+)
+def test_duration_expressions_skip_hindi_offsets(text: str) -> None:
+    assert _duration_expressions(text) == []
+
+
+def test_hindi_offset_guard_only_suppresses_the_adjacent_offset() -> None:
+    exprs = _duration_expressions("2 घंटे के लिए भिगो दें, फिर थोड़ी देर बाद मिलाएं")
+    assert [(e.low_min, e.high_min) for e in exprs] == [(120, 120)]
+
+
+def test_stated_hindi_duration_grounds_an_english_step() -> None:
+    _min, dtyp, _max, stated, warnings, _review = _verify(
+        "Soak for 2 hours.",
+        corpus="2 घंटे के लिए भिगो दें",
+        duration_min=120, duration_typical_min=120, duration_max=120, duration_stated=True,
+    )
+    assert (dtyp, stated, warnings) == (120, True, [])
+
+
+def test_hindi_range_connector_grounds_an_english_range() -> None:
+    dmin, _typ, dmax, stated, warnings, _review = _verify(
+        "Cook 3 to 4 minutes.",
+        corpus="3 से 4 मिनट",
+        duration_min=3, duration_typical_min=3.5, duration_max=4, duration_stated=True,
+    )
+    assert (dmin, dmax, stated, warnings) == (3, 4, True, [])
+
+
+@pytest.mark.parametrize(
+    ("step_text", "corpus", "minutes"),
+    [
+        ("After one hour, mix the sabudana.", "एक घंटे बाद मिलाएं", 60),
+        ("After 1 hour, mix the sabudana.", "1 घंटे बाद मिलाएं", 60),
+        ("Rest for 5 minutes.", "5 मिनट पहले", 5),
+    ],
+)
+def test_hindi_offsets_never_ground_a_stated_duration(
+    step_text: str, corpus: str, minutes: float
+) -> None:
+    *_rest, stated, _warnings, _review = _verify(
+        step_text,
+        corpus=corpus,
+        duration_min=minutes, duration_typical_min=minutes, duration_max=minutes,
+        duration_stated=True,
+    )
+    assert stated is False
+
+
+def test_real_hindi_transcript_grounds_the_soak_and_nothing_it_shouldnt() -> None:
+    raw = RawAcquisition.model_validate(
+        json.loads((_IMPORT_FIXTURES / "captions-auto-hi.raw.json").read_text(encoding="utf-8"))
+    )
+    corpus = _verification_corpus(render_source_text(raw))
+
+    def check(text: str, minutes: float) -> tuple[bool, list[str]]:
+        step = _step(
+            text=text,
+            duration_min=minutes, duration_typical_min=minutes, duration_max=minutes,
+            duration_stated=True,
+        )
+        *_numbers, stated, warnings, _review = _verify_duration(step, corpus)
+        return stated, warnings
+
+    stated, warnings = check("Cover and leave the sabudana to soak for 2 hours.", 120)
+    assert stated is True
+    assert warnings == []
+
+    # The transcript says "तीन से 4" (a number word): stays ungrounded.
+    stated, warnings = check("Cover and cook on low heat for 3 to 4 minutes.", 3.5)
+    assert stated is False
+    assert warnings
+
+    stated, _warnings = check("After one hour, mix the soaked sabudana once.", 60)
+    assert stated is False
 
 
 # ---------------------------------------------------------------------------

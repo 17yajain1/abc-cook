@@ -4,6 +4,8 @@
 
 Approximate timing is fine; wrong advice is not. When a choice is between a plan that's directionally honest but imprecise and one that's precise-looking but could mislead the cook about what's actually safe or possible to do in parallel, always choose the honest one.
 
+Every fix is generic: no recipe names, node ids or fixture names in logic, only in tests.
+
 ## What this product is
 
 ABC Cook turns any recipe into a **cooking plan**: a dependency graph the app schedules

@@ -3,6 +3,7 @@ import { Fragment } from 'react'
 import type { StageSpan } from '@abc-cook/schema'
 
 import { attentionNote } from '@/lib/attention'
+import { uniqueDisplayNames } from '@/lib/displayNames'
 import { formatMinutes } from '@/lib/duration'
 import { stageColor } from '@/lib/stageColor'
 
@@ -155,7 +156,7 @@ export function meanwhileLabels(stage: RenderStage): string[] {
 const YOULL_NEED_LABEL = "You'll need: "
 
 function ingredientNames(stage: RenderStage): string {
-  return stage.ingredients.map((i) => i.name).join(', ')
+  return uniqueDisplayNames(stage.ingredients.map((i) => i.name)).join(', ')
 }
 
 /**
