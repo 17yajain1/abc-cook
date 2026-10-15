@@ -88,6 +88,11 @@ describe('quantityLine', () => {
 // UNMODIFIED quantity.ts (before the extraction) over every node of every
 // `__fixtures__/*.plan-response.json`, so this compares against the old code's output,
 // not against itself.
+//
+// One deliberate exception: the sabudana entry was regenerated for PR-C (D3). Its four
+// nodes that name an ingredient listed in two groups (roasted peanuts, cumin seeds,
+// sendha namak) now consume only the portion they use, so it reflects group-resolved
+// `consumes` and is no longer the pre-F2 output. Every other entry is still pre-F2.
 // ---------------------------------------------------------------------------
 
 const FIXTURES = fileURLToPath(new URL('../__fixtures__/', import.meta.url))
