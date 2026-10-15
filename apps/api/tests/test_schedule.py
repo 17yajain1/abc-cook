@@ -633,9 +633,13 @@ def test_pan_chain_step_is_not_placed_in_an_unrelated_soak_window() -> None:
 # --- Rank follows the timeline (PR-B4) -------------------------------------------------
 
 
-def _rank_graph(specs: list[tuple[str, str, int, list[str]]]) -> CookingGraph:
-    """Build a graph from `(id, "hands_on" | "unattended", minutes, depends_on)` specs.
+_RankSpec = tuple[str, str, int, list[str]] | tuple[str, str, int, list[str], int]
 
+
+def _rank_graph(specs: list[_RankSpec]) -> CookingGraph:
+    """Build a graph from `(id, "hands_on" | "unattended", minutes, depends_on[, max])` specs.
+
+    The optional fifth element is `duration_max` (default: equal to `minutes`).
     A final hands-on `plate` node depends on every spec, so nothing dangles.
     """
     src = SourceRef(kind="text", value="rank test", imported_at=datetime.now(UTC))
@@ -656,13 +660,14 @@ def _rank_graph(specs: list[tuple[str, str, int, list[str]]]) -> CookingGraph:
             attention=attention,  # type: ignore[arg-type]
             duration_min=minutes,
             duration_typical=minutes,
-            duration_max=minutes,
+            duration_max=spec[4] if len(spec) == 5 else minutes,
             station="none" if attention == "unattended" else "counter",
             depends_on=deps,
             produces=f"comp_{node_id}",
             **common,
         )
-        for node_id, attention, minutes, deps in specs
+        for spec in specs
+        for node_id, attention, minutes, deps in [spec[:4]]
     ]
     nodes.append(
         Node(
@@ -775,3 +780,169 @@ def test_window_rank_follows_dependencies_and_start_order_on_every_golden(slug: 
             )
         starts = [placed[n].start_min for n in window.assigned]
         assert starts == sorted(starts), f"{window.id}: assigned is not in start order"
+
+
+# --- A window never lists a task whose cook prerequisite it left out ---------------------
+
+
+def _assert_windows_closed(graph: CookingGraph, plan: CookingPlan) -> None:
+    """Every cook ancestor that started inside a host's span is in that window too."""
+    by_id = {n.id: n for n in graph.nodes}
+    placed = {s.node_id: s for s in plan.scheduled}
+    for window in plan.windows:
+        host_start = placed[window.host_node_id].start_min
+        for node_id in window.assigned:
+            for anc in _ancestors(graph, node_id):
+                if by_id[anc].attention == "hands_on" and placed[anc].start_min >= host_start:
+                    assert anc in window.assigned, f"{window.id}: {node_id} lists no {anc}"
+
+
+def _windows_of(plan: CookingPlan) -> dict[str, list[str]]:
+    return {w.host_node_id: w.assigned for w in plan.windows}
+
+
+def test_window_keeps_a_claimed_dependency_and_its_consumer() -> None:
+    graph = _rank_graph(
+        [
+            ("host", "unattended", 14, []),
+            ("dep", "hands_on", 5, []),
+            ("cons", "hands_on", 5, ["dep"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"host": ["dep", "cons"]}
+    _assert_windows_closed(graph, plan)
+
+
+def test_window_keeps_a_task_whose_dependency_ran_before_the_host() -> None:
+    graph = _rank_graph(
+        [
+            ("dep", "hands_on", 3, []),
+            ("host", "unattended", 14, ["dep"]),
+            ("cons", "hands_on", 5, ["dep"]),
+        ]
+    )
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+    assert placed["dep"].end_min <= placed["host"].start_min
+    assert _windows_of(plan) == {"host": ["cons"]}
+
+
+def test_window_drops_a_consumer_whose_dependency_fails_the_max_gate() -> None:
+    graph = _rank_graph(
+        [
+            ("host", "unattended", 14, []),
+            ("roast", "hands_on", 5, [], 13),
+            ("grind", "hands_on", 5, ["roast"]),
+            ("chutney", "hands_on", 3, []),
+        ]
+    )
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"host": ["chutney"]}
+    assert next(s for s in plan.scheduled if s.node_id == "grind").window_id is None
+    _assert_windows_closed(graph, plan)
+
+
+def test_window_drops_a_consumer_whose_dependency_fails_typical_packing() -> None:
+    graph = _rank_graph(
+        [
+            ("host", "unattended", 14, []),
+            ("big", "hands_on", 9, []),
+            ("dep", "hands_on", 4, []),
+            ("cons", "hands_on", 1, ["dep"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"host": ["big"]}
+    _assert_windows_closed(graph, plan)
+
+
+def test_window_drops_a_transitive_consumer_of_an_unclaimed_dependency() -> None:
+    graph = _rank_graph(
+        [
+            ("host", "unattended", 14, []),
+            ("a", "hands_on", 2, [], 13),
+            ("b", "hands_on", 2, ["a"]),
+            ("c", "hands_on", 2, ["b"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert plan.windows == []
+    _assert_windows_closed(graph, plan)
+
+
+def test_window_drops_a_consumer_behind_a_soak_of_an_unclaimed_dependency() -> None:
+    graph = _rank_graph(
+        [
+            ("host", "unattended", 14, []),
+            ("a", "hands_on", 2, [], 13),
+            ("soak", "unattended", 2, ["a"]),
+            ("c", "hands_on", 2, ["soak"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert all("c" not in w.assigned for w in plan.windows)
+    _assert_windows_closed(graph, plan)
+
+
+def test_a_dropped_task_can_be_claimed_by_a_later_window_with_its_dependency() -> None:
+    graph = _rank_graph(
+        [
+            ("h1", "unattended", 30, []),
+            ("h2", "unattended", 12, []),
+            ("dep", "hands_on", 4, []),
+            ("cons", "hands_on", 5, ["dep"]),
+            ("big", "hands_on", 20, ["cons"]),
+        ]
+    )
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"h2": ["dep", "cons"]}
+    assert next(s for s in plan.scheduled if s.node_id == "big").window_id is None
+    _assert_windows_closed(graph, plan)
+
+
+def _shared_dep_graph(dep_max: int) -> CookingGraph:
+    return _rank_graph(
+        [
+            ("h1", "unattended", 11, []),
+            ("dep", "hands_on", 3, [], dep_max),
+            ("c1", "hands_on", 3, ["dep"]),
+            ("q", "hands_on", 3, ["c1"]),
+            ("h2", "unattended", 20, ["q"]),
+            ("c2", "hands_on", 3, ["dep", "q"]),
+        ]
+    )
+
+
+def test_two_windows_sharing_a_claimed_dependency_are_unchanged() -> None:
+    graph = _shared_dep_graph(3)
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"h1": ["dep", "c1", "q"], "h2": ["c2"]}
+    _assert_windows_closed(graph, plan)
+
+
+def test_two_windows_sharing_an_unclaimed_dependency_lose_the_first_window() -> None:
+    graph = _shared_dep_graph(10)
+    plan = schedule(graph)
+    assert _windows_of(plan) == {"h2": ["c2"]}
+    assert [w.id for w in plan.windows] == ["w1"]
+    _assert_windows_closed(graph, plan)
+
+
+def test_window_keeps_a_task_whose_dependency_was_in_progress_when_it_opened() -> None:
+    graph = _rank_graph(
+        [
+            ("x", "unattended", 5, []),
+            ("dep", "hands_on", 8, []),
+            ("host", "unattended", 14, ["x"]),
+            ("cons", "hands_on", 3, ["dep"]),
+        ]
+    )
+    plan = schedule(graph)
+    placed = {s.node_id: s for s in plan.scheduled}
+    assert placed["dep"].start_min < placed["host"].start_min < placed["dep"].end_min
+    assert _windows_of(plan)["host"] == ["cons"]
+
+
+def test_every_golden_window_lists_the_cook_prerequisites_it_depends_on(slug: str) -> None:
+    _assert_windows_closed(_graph(slug), _scheduled(slug))

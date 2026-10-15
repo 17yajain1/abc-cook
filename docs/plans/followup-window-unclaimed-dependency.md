@@ -1,6 +1,6 @@
 # Follow-up: a window task whose dependency the window did not claim
 
-**Status:** this is a plan only and is not implemented. I found it while planning PR-B4
+**Status:** DONE. Fixed on branch `fix/window-unclaimed-dependency` (`POSTPROCESS_VERSION` 8); see `docs/plans/fix-window-unclaimed-dependency.md`. The rest of this file is the original proposal. I found the problem while planning PR-B4
 (`docs/plans/pr-b4-implementation.md` §3) on 2026-10-15. B4 doesn't fix it, and doesn't
 make it worse.
 
@@ -60,3 +60,8 @@ Before choosing, look at:
 
 This is a product decision, so it needs the owner's call before any implementation. It
 would be a golden change and a `POSTPROCESS_VERSION` bump.
+
+## Follow-ups logged by the fix
+
+- **F1:** refill a window's capacity after a drop (re-pack with the dropped tasks excluded). The fix deliberately does not: a smaller window is safe, and refill is a separate packing decision.
+- **F2:** if a recipe ever shows a whole window disappearing because of the closure rule, revisit the gates, for example claiming the dependency with a warning. Rejected for now, because the gates exist so the advice stays safe.

@@ -13,6 +13,8 @@ Pure. No I/O, no network, no DB, no clock reads, no randomness: the same graph i
 produces the same plan out, every time.
 """
 
+from collections.abc import Iterable, Mapping
+
 from abc_cook.schedule.levels import compute_levels, critical_path
 from abc_cook.schedule.ranking import rank_window_tasks
 from abc_cook.schedule.safety import check_plan
@@ -47,6 +49,66 @@ def serial_minutes(graph: CookingGraph) -> float:
 def _occupies_cook(node: Node) -> bool:
     """Whether a running node holds the cook. Reads `attention`, never `kind` (§4)."""
     return node.attention == "hands_on"
+
+
+def _cook_ancestors(nodes: Mapping[str, Node]) -> dict[str, frozenset[str]]:
+    """Map each node to every hands-on node it transitively depends on.
+
+    Walks through unattended nodes too: a hands-on step behind a soak is still a
+    prerequisite the cook must do first.
+    """
+    memo: dict[str, frozenset[str]] = {}
+
+    def of(node_id: str) -> frozenset[str]:
+        if node_id not in memo:
+            found: set[str] = set()
+            for dep in nodes[node_id].depends_on:
+                found |= of(dep)
+                if _occupies_cook(nodes[dep]):
+                    found.add(dep)
+            memo[node_id] = frozenset(found)
+        return memo[node_id]
+
+    return {node_id: of(node_id) for node_id in nodes}
+
+
+def _drop_tasks_with_unclaimed_ancestors(
+    assigned: Iterable[str],
+    host_start: float,
+    ancestors: Mapping[str, frozenset[str]],
+    starts: Mapping[str, float],
+) -> list[str]:
+    """Keep only window tasks whose in-window cook prerequisites are also in the window.
+
+    A task is dropped when a hands-on ancestor started at or after the host's start but
+    is not in `assigned` (it failed a gate, or another window owns it). Dropping one task
+    can orphan its consumers, so this repeats to a fixpoint. Ancestors that started
+    before the host are the step the cook is already on and never cause a drop.
+
+    Args:
+        assigned: Node ids the window claimed, in claim order.
+        host_start: Start minute of the window's host.
+        ancestors: Hands-on transitive ancestors per node (`_cook_ancestors`).
+        starts: Start minute per node id.
+
+    Returns:
+        The surviving ids, in their original order.
+    """
+    kept = list(assigned)
+    while True:
+        members = set(kept)
+        survivors = [
+            node_id
+            for node_id in kept
+            if all(
+                anc in members
+                for anc in ancestors[node_id]
+                if starts[anc] >= host_start
+            )
+        ]
+        if len(survivors) == len(kept):
+            return kept
+        kept = survivors
 
 
 def _round(minutes: float) -> float:
@@ -291,7 +353,13 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
     #   2. worst-case eligibility: task.duration_max            <= capacity_min
     # A task failing either gate is left for a later, roomier window. One task, one
     # window. A task no window can safely hold is just a serial step — not a warning.
+    #   3. closure: a window keeps a task only if every hands-on ancestor that started at
+    #      or after the host's start is in the same window (to a fixpoint). Otherwise the
+    #      list would name a task whose prerequisite is not on the card. A dropped task
+    #      is released for later windows; freed capacity is not re-packed.
     windows = derive_windows(graph, scheduled)
+    ancestors = _cook_ancestors(nodes)
+    starts = {s.node_id: s.start_min for s in scheduled}
     claimed: set[str] = set()
     for window in windows:
         host = placed[window.host_node_id]
@@ -317,7 +385,14 @@ def schedule(graph: CookingGraph, *, burner_capacity: int = 1) -> CookingPlan:
                 window.assigned.append(candidate.node_id)
                 claimed.add(candidate.node_id)
                 used += typical
-        window.assigned = rank_window_tasks(window, {s.node_id: s.start_min for s in scheduled})
+        kept = _drop_tasks_with_unclaimed_ancestors(
+            window.assigned, host.start_min, ancestors, starts
+        )
+        for node_id in set(window.assigned) - set(kept):
+            claimed.discard(node_id)
+            used -= float(nodes[node_id].duration_typical)
+        window.assigned = kept
+        window.assigned = rank_window_tasks(window, starts)
         window.used_min = _round(used)
         window.slack_min = _round(window.capacity_min - used)
 

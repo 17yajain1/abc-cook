@@ -408,6 +408,16 @@ re-orders what a window claimed by when each task starts:
    overflowing one could not use (first-fit). The fixed key order keeps this
    deterministic.
 
+   **Closure.** After packing, a window keeps a task only if every `hands_on` ancestor
+   (direct or transitive, through unattended nodes too) that started at or after the
+   host's start is also in this window's list. The check repeats to a fixpoint, because
+   dropping a task can orphan its consumers. A dropped task is released, so a later
+   window may claim it (under the same rule); the room it freed is **not** re-packed.
+   An ancestor that started before the host is the step the cook is already on and never
+   causes a drop. Unattended ancestors are waits, not cook actions, and never cause one.
+   This keeps "Start with this" true: a window never lists a task whose prerequisite
+   runs in the same interval but sits somewhere else (unclaimed, or in another window).
+
    The two gates are different questions. Packing keeps the *expected* workload inside
    the window. The safety gate keeps out a task whose *worst case* would blow the
    window — `chicken-biryani`'s `slice_onions` (typical 4, max 6) packs into the
