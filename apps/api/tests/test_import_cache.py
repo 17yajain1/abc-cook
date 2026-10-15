@@ -24,6 +24,7 @@ from test_import_pipeline import _grounded_recipe, _ingredients_only_recipe, _ra
 from abc_cook.api.main import create_app
 from abc_cook.api.routes import import_ as import_routes
 from abc_cook.extract import import_pipeline
+from abc_cook.extract import postprocess as postprocess_mod
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import ExtractResult
@@ -185,8 +186,12 @@ def test_hit_does_no_work_and_returns_the_stored_result_byte_for_byte(
     def boom(*_a: object, **_k: object) -> None:
         raise AssertionError("pipeline work ran on a cache hit")
 
-    for name in ("build_graph", "schedule", "repair_or_degrade", "normalize", "validate"):
-        monkeypatch.setattr(import_pipeline, name, boom)
+    monkeypatch.setattr(import_pipeline, "normalize", boom)
+    # build/validate/repair/schedule moved into postprocess.py (staleness plan B2).
+    for name in ("build_graph", "schedule", "replay_repair_or_degrade", "validate"):
+        monkeypatch.setattr(postprocess_mod, name, boom)
+    monkeypatch.setattr(import_pipeline, "repair_or_degrade", boom)
+    monkeypatch.setattr(import_pipeline, "postprocess", boom)
 
     statuses: list[str] = []
     previews: list[object] = []
@@ -308,7 +313,7 @@ def test_method_not_grounded_after_normalize_is_never_stored(
     from abc_cook.extract.graph import GraphBuildResult
 
     monkeypatch.setattr(
-        import_pipeline,
+        postprocess_mod,
         "build_graph",
         lambda *a, **k: GraphBuildResult(graph=None, warnings=["refused"]),
     )

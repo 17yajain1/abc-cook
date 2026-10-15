@@ -19,7 +19,6 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Literal
 from urllib.parse import urlparse
 
 from abc_cook.extract.acquire import RawAcquisition
@@ -35,31 +34,27 @@ from abc_cook.extract.cache import (
     is_cacheable,
     is_cacheable_source,
 )
-from abc_cook.extract.corroborate import corroborate
-from abc_cook.extract.graph import build_graph
 from abc_cook.extract.normalize import EXTRACTION_EFFORT, normalize, render_source_text
+from abc_cook.extract.postprocess import (
+    DEFAULT_BURNER_CAPACITY,  # noqa: F401 -- re-exported; cache.py reads it from here
+    Tier,
+    postprocess,
+)
 from abc_cook.extract.pricing import total_cost_inr
-from abc_cook.extract.provenance import compute_provenance
-from abc_cook.extract.repair import repair_or_degrade
+from abc_cook.extract.repair import RepairOutcome, repair_or_degrade
 from abc_cook.extract.source_key import SourceKey, make_source_key
-from abc_cook.extract.title import resolve_title
-from abc_cook.extract.validate import validate
-from abc_cook.schedule import schedule, stage_spans, summarize
+from abc_cook.extract.validate import Violation
 from abc_cook.schema.graph import SourceRef
 from abc_cook.schema.normalized import (
+    ImportOriginal,
     ImportResult,
     ImportSource,
     ImportStatus,
+    NormalizedRecipe,
     SourcePreview,
 )
 
-DEFAULT_BURNER_CAPACITY = 1
-"""Imports carry no kitchen sidecar (unlike `api/routes/recipes.py`'s fixtures) --
-one burner is the safe default (COOKING_GRAPH.md §4.6)."""
-
 _logger = logging.getLogger(__name__)
-
-Tier = Literal["tier0", "clean", "repaired", "degraded"]
 
 
 @dataclass(frozen=True)
@@ -375,39 +370,44 @@ def run_import(
     recipe = outcome.recipe
     assert recipe is not None  # NormalizeOutcome: exactly one of recipe/tier0_result is set
 
-    # P1 #5 Commit 3: resolve `graph.title` once, here, before `build_graph` --
-    # never in graph.py, which only ever copies `recipe.title` through. The model's
-    # own claim is accepted if it's grounded in the raw title or the linked blog's
-    # `name`; otherwise this replaces it with a deterministic cleanup of the raw
-    # title. `source_title` below is deliberately never read from `recipe.title`,
-    # resolved or not -- it is always `raw.title`, verbatim (title.py).
-    blog_name = raw.blog_recipe.get("name") if raw.blog_recipe else None
-    resolved_title = resolve_title(
-        recipe.title,
-        raw.title,
-        blog_name,
-        source_text=raw.description if raw.source_kind == "text" else None,
-    )
-    if resolved_title != recipe.title:
-        recipe = recipe.model_copy(update={"title": resolved_title})
-
     _status("validating")
-    source_text = render_source_text(raw)
     # A pasted text is its own source (`SourceRef` docs: "the pasted text itself").
     source = SourceRef(
         kind=raw.source_kind,
         value=(raw.description or "") if raw.source_kind == "text" else url,
         imported_at=datetime.now(UTC),
     )
-
-    build_result = _timed(
-        "build_graph",
-        lambda: build_graph(recipe, source_text, graph_id=graph_id, source=source),
+    # Title resolution, graph build, validation, repair/degrade and scheduling all live
+    # in `postprocess.py`, shared with the free saved-recipe refresh (`reprocess`).
+    # `original` is what that step reads -- and what a saved recipe keeps.
+    original = ImportOriginal(
+        recipe=recipe,
+        repair=None,
+        source_text=render_source_text(raw),
+        raw_title=raw.title,
+        blog_name=raw.blog_recipe.get("name") if raw.blog_recipe else None,
+        source=source,
+        graph_id=graph_id,
+        acquisition_warnings=list(raw.acquisition_warnings),
+        sources=sources,
     )
-    if build_result.graph is None:
-        # Defensive only -- normalize.py's Tier 0 gate (bool(recipe.steps)) should
-        # already have stopped this above; graph.py's own docstring says never rely
-        # on a caller remembering that (§10.C).
+
+    def _live_repair(
+        recipe: NormalizedRecipe,
+        source_text: str,
+        violations: list[Violation],
+        *,
+        graph_id: str,
+        source: SourceRef,
+    ) -> RepairOutcome:
+        return repair_or_degrade(
+            recipe, source_text, violations, adapter, graph_id=graph_id, source=source
+        )
+
+    post = postprocess(original, repair_fn=_live_repair)
+    stage_s.update(post.stage_s)
+    result = post.result
+    if result.status != "done":
         _telemetry(
             extraction_calls=outcome.calls,
             extraction_escalated=outcome.escalated,
@@ -415,86 +415,25 @@ def run_import(
             repair_calls=[],
             violations_pre_repair=[],
             tier="tier0",
-            step_count=len(recipe.steps),
+            step_count=len(post.recipe.steps),
             windows=0,
             saved_min=0.0,
         )
-        return ImportResult(
-            status="method_not_grounded",
-            source_title=raw.title,
-            ingredients=recipe.ingredients,
-            warnings=[
-                *build_result.warnings,
-                *raw.acquisition_warnings,
-                "graph.py refused after normalize.py passed.",
-            ],
-            sources=sources,
-        )
+        return result
 
-    violations = validate(build_result.graph)
-    repair_calls: list[CallUsage] = []
-    tier: Tier = "clean"
-    repair_attempted: bool | None = None
-    repair_skip_reason: str | None = None
-    if violations:
-        repair_outcome = _timed(
-            "repair",
-            lambda: repair_or_degrade(
-                recipe, source_text, violations, adapter, graph_id=graph_id, source=source
-            ),
-        )
-        build_result = repair_outcome.build_result
-        repair_calls = repair_outcome.calls
-        tier = repair_outcome.tier
-        repair_attempted = repair_outcome.repair_attempted
-        repair_skip_reason = repair_outcome.skip_reason
-
-    graph = build_result.graph
-    assert graph is not None  # both build_graph and repair_or_degrade guarantee this
-
-    # §2.2 of docs/cooking-plan-investigation.md: repair_or_degrade's docstring claims
-    # its output is "guaranteed to pass all ten invariants by construction" (true as
-    # of B2), but this was never actually re-checked here, so a violation of that
-    # guarantee could ship silently -- exactly how a still-invalid degraded plan
-    # reached the client before B2. Never raises: CLAUDE.md's "the app must never
-    # fail to show a recipe just because the graph was malformed" applies here too --
-    # this is a monitoring signal, not a gate.
-    final_violations = validate(graph)
-    if final_violations:
-        _logger.error(
-            "run_import: graph_id=%s shipped a plan despite failing validate() after "
-            "%s -- this should be structurally impossible; violations: %s",
-            graph_id,
-            "repair/degrade" if violations else "build_graph",
-            [v.rule for v in final_violations],
-        )
-
-    plan = _timed("schedule", lambda: schedule(graph, burner_capacity=DEFAULT_BURNER_CAPACITY))
+    assert result.plan is not None  # status "done" always carries a plan
     _telemetry(
         extraction_calls=outcome.calls,
         extraction_escalated=outcome.escalated,
         extraction_truncations=outcome.truncations,
-        repair_calls=repair_calls,
-        violations_pre_repair=[v.rule for v in violations],
-        tier=tier,
-        step_count=len(recipe.steps),
-        windows=len(plan.windows),
-        saved_min=plan.saved_min,
-        repair_attempted=repair_attempted,
-        repair_skip_reason=repair_skip_reason,
-    )
-    result = ImportResult(
-        status="done",
-        source_title=raw.title,
-        ingredients=recipe.ingredients,
-        graph=graph,
-        plan=plan,
-        stages=stage_spans(graph, plan),
-        summary=summarize(graph, plan, burner_capacity=DEFAULT_BURNER_CAPACITY),
-        provenance=compute_provenance(build_result),
-        review_recommended=build_result.review_recommended,
-        warnings=[*build_result.warnings, *raw.acquisition_warnings, *corroborate(recipe, graph)],
-        sources=sources,
+        repair_calls=post.repair.calls if post.repair is not None else [],
+        violations_pre_repair=[v.rule for v in post.violations_pre_repair],
+        tier=post.tier,
+        step_count=len(post.recipe.steps),
+        windows=len(result.plan.windows),
+        saved_min=result.plan.saved_min,
+        repair_attempted=post.repair.repair_attempted if post.repair is not None else None,
+        repair_skip_reason=post.repair.skip_reason if post.repair is not None else None,
     )
     # Second `text:` guard on purpose: `raw.source_kind` is the acquisition's own word
     # for it, independent of whatever `source_key` the caller passed.
@@ -502,8 +441,8 @@ def run_import(
         cache is not None
         and identity is not None
         and raw.source_kind != "text"
-        and tier in ("clean", "repaired")
-        and is_cacheable(result, tier)
+        and post.tier in ("clean", "repaired")
+        and is_cacheable(result, post.tier)
     ):
-        _store(cache, identity, CachedResult(result, tier, len(recipe.steps)))
+        _store(cache, identity, CachedResult(result, post.tier, len(post.recipe.steps)))
     return result

@@ -35,13 +35,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, LLMAdapter
 from abc_cook.extract.graph import GraphBuildResult, build_graph, build_linear_graph
 from abc_cook.extract.validate import Violation, validate
 from abc_cook.schema.graph import SourceRef
-from abc_cook.schema.normalized import NormalizedRecipe
+from abc_cook.schema.normalized import (
+    NormalizedRecipe,
+    RepairProposal,
+    StepRepair,  # noqa: F401 -- re-exported: the model moved to schema/ with RepairProposal
+)
 
 REPAIR_MODEL = "claude-sonnet-5"
 """design doc §6.2: Haiku extracts, Sonnet repairs -- "the right repair-pass model"."""
@@ -78,44 +80,6 @@ Paying ~₹2-8 for a Sonnet call against a violation set outside this set is a
 guaranteed-wasted spend, not a bounded bet -- see `repair_or_degrade`."""
 
 
-class StepRepair(BaseModel):
-    """The only three fields a repair pass may ever set, for one step.
-
-    Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
-    decision D). A default of True/[] used to *overwrite* extraction: a response that
-    simply omitted `depends_on_previous` reset an extracted, verified independence
-    claim to sequential. See `_merge_repair` for how each field is applied -- repair
-    fixes structure additively; it never resets a semantic decision to a default.
-    """
-
-    consumes_ingredients: list[str] | None = Field(
-        default=None,
-        description="Names to ADD to this step's consumes. Omit to leave unchanged.",
-    )
-    produces_component: str | None = Field(
-        default=None,
-        description="Set only to name a component a later step uses. Omit to leave unchanged.",
-    )
-    depends_on_previous: bool | None = Field(
-        default=None,
-        description=(
-            "true to make this step wait for the previous one. Omit to leave unchanged. "
-            "Repair can add a dependency; it can never remove one."
-        ),
-    )
-
-
-class RepairProposal(BaseModel):
-    """The repair call's entire response shape.
-
-    One `StepRepair` per original step, in the same order. Matched back to the
-    original steps by position — there is no id/index field because the count and
-    order are already fixed by the request.
-    """
-
-    steps: list[StepRepair] = Field(default_factory=list)
-
-
 @dataclass(frozen=True)
 class RepairOutcome:
     """Result of `repair_or_degrade`.
@@ -135,6 +99,10 @@ class RepairOutcome:
     calls: list[CallUsage] = field(default_factory=list)
     repair_attempted: bool = True
     skip_reason: str | None = None
+    proposal: RepairProposal | None = None
+    """The proposal that produced a `repaired` graph, so it can be stored on
+    `ImportOriginal` and replayed later without a call. None unless `tier == "repaired"`
+    -- a proposal that did not fix the graph is never kept."""
 
 
 def load_repair_prompt() -> str:
@@ -243,7 +211,7 @@ def _attempt_llm_repair(
     model: str,
     max_tokens: int,
     effort: EffortLevel | None,
-) -> tuple[tuple[NormalizedRecipe, list[str]] | None, list[CallUsage]]:
+) -> tuple[tuple[NormalizedRecipe, list[str]] | None, RepairProposal | None, list[CallUsage]]:
     """One repair call, then merge.
 
     Retried once on a truncated/unparseable response (same truncation-vs-invariant-
@@ -251,7 +219,8 @@ def _attempt_llm_repair(
     repair calls stay bounded the way they already were, not redesigned), then merged
     against `recipe` so only the in-scope fields can differ. Returns `_merge_repair`'s
     result (the merged recipe and its dependency-change notes, or None) alongside
-    every real call's usage telemetry (F5), in order.
+    the proposal it merged (None when no usable response came back) and every real
+    call's usage telemetry (F5), in order.
     """
     prompt = load_repair_prompt()
     source_text = render_repair_source(recipe, violations, raw_source_text)
@@ -279,9 +248,9 @@ def _attempt_llm_repair(
         if result.usage is not None:
             calls.append(result.usage)
     if result.recipe is None:
-        return None, calls
+        return None, None, calls
 
-    return _merge_repair(recipe, result.recipe), calls
+    return _merge_repair(recipe, result.recipe), result.recipe, calls
 
 
 def repair_or_degrade(
@@ -328,37 +297,11 @@ def repair_or_degrade(
     if not violations:
         raise ValueError("repair_or_degrade called with no violations to repair")
 
-    unrepairable_rules = sorted({v.rule for v in violations if v.rule not in REPAIRABLE_RULES})
-    if unrepairable_rules:
-        # Repair-scope triage (M2.10 s18): don't pay for a Sonnet call that cannot
-        # possibly fix this violation set -- skip straight to the guaranteed-safe
-        # linear degrade. Never a partial attempt: even one out-of-scope violation
-        # means the repaired graph would still fail validate() on that rule, so
-        # `repair_or_degrade`'s own re-validation (below, for the attempted path)
-        # would degrade anyway -- this only removes the wasted spend, not the
-        # outcome.
-        skip_reason = (
-            "Skipped repair call: violation(s) outside repair's fixable scope "
-            f"({', '.join(unrepairable_rules)}) -- RepairProposal cannot touch "
-            "duration, attention, stage, or stated-total fields, so a repair call "
-            "here would be a guaranteed-wasted spend."
-        )
-        degraded = build_linear_graph(recipe, raw_source_text, graph_id=graph_id, source=source)
-        degraded_result = GraphBuildResult(
-            graph=degraded.graph,
-            node_decisions=degraded.node_decisions,
-            warnings=[*degraded.warnings, "degraded", skip_reason],
-            review_recommended=True,
-        )
-        return RepairOutcome(
-            build_result=degraded_result,
-            tier="degraded",
-            calls=[],
-            repair_attempted=False,
-            skip_reason=skip_reason,
-        )
+    triaged = _triage_degrade(recipe, raw_source_text, violations, graph_id, source)
+    if triaged is not None:
+        return triaged
 
-    merged, calls = _attempt_llm_repair(
+    merged, proposal, calls = _attempt_llm_repair(
         recipe,
         raw_source_text,
         violations,
@@ -367,7 +310,108 @@ def repair_or_degrade(
         max_tokens=max_tokens,
         effort=effort,
     )
+    return _finish_repair(
+        recipe, raw_source_text, merged, proposal, calls, graph_id=graph_id, source=source
+    )
 
+
+def replay_repair_or_degrade(
+    recipe: NormalizedRecipe,
+    raw_source_text: str,
+    violations: list[Violation],
+    proposal: RepairProposal | None,
+    *,
+    graph_id: str,
+    source: SourceRef,
+) -> RepairOutcome:
+    """`repair_or_degrade` with a stored proposal in place of the LLM call.
+
+    Same triage gate, same merge, same `build_graph` + `validate()` re-check, same
+    degrade -- everything but the call, so replaying a cold import's stored proposal
+    reproduces that import's graph exactly. There is no `adapter` parameter: this path
+    cannot reach a provider. A missing proposal, or one that no longer fixes the graph
+    under the current `build_graph`, ends in the deterministic linear degrade.
+
+    Args:
+        recipe: The extraction output the violations were found against.
+        raw_source_text: The acquisition text, as for `repair_or_degrade`.
+        violations: `validate()`'s findings. Must be non-empty.
+        proposal: The stored `RepairProposal`, or None if the cold import kept none.
+        graph_id: Passed through to the graph builders.
+        source: Passed through to the graph builders.
+
+    Returns:
+        A `RepairOutcome` whose graph always passes `validate()`; `calls` is `[]`.
+
+    Raises:
+        ValueError: `violations` is empty.
+    """
+    if not violations:
+        raise ValueError("replay_repair_or_degrade called with no violations to repair")
+
+    triaged = _triage_degrade(recipe, raw_source_text, violations, graph_id, source)
+    if triaged is not None:
+        return triaged
+
+    merged = _merge_repair(recipe, proposal) if proposal is not None else None
+    return _finish_repair(
+        recipe, raw_source_text, merged, proposal, [], graph_id=graph_id, source=source
+    )
+
+
+def _triage_degrade(
+    recipe: NormalizedRecipe,
+    raw_source_text: str,
+    violations: list[Violation],
+    graph_id: str,
+    source: SourceRef,
+) -> RepairOutcome | None:
+    """The repair-scope triage gate: a degrade outcome, or None if repair may proceed."""
+    unrepairable_rules = sorted({v.rule for v in violations if v.rule not in REPAIRABLE_RULES})
+    if not unrepairable_rules:
+        return None
+    # Repair-scope triage (M2.10 s18): don't pay for a Sonnet call that cannot
+    # possibly fix this violation set -- skip straight to the guaranteed-safe
+    # linear degrade. Never a partial attempt: even one out-of-scope violation
+    # means the repaired graph would still fail validate() on that rule, so
+    # the attempted path's own re-validation would degrade anyway -- this only
+    # removes the wasted spend, not the outcome.
+    skip_reason = (
+        "Skipped repair call: violation(s) outside repair's fixable scope "
+        f"({', '.join(unrepairable_rules)}) -- RepairProposal cannot touch "
+        "duration, attention, stage, or stated-total fields, so a repair call "
+        "here would be a guaranteed-wasted spend."
+    )
+    degraded = build_linear_graph(recipe, raw_source_text, graph_id=graph_id, source=source)
+    degraded_result = GraphBuildResult(
+        graph=degraded.graph,
+        node_decisions=degraded.node_decisions,
+        warnings=[*degraded.warnings, "degraded", skip_reason],
+        review_recommended=True,
+    )
+    return RepairOutcome(
+        build_result=degraded_result,
+        tier="degraded",
+        calls=[],
+        repair_attempted=False,
+        skip_reason=skip_reason,
+    )
+
+
+def _finish_repair(
+    recipe: NormalizedRecipe,
+    raw_source_text: str,
+    merged: tuple[NormalizedRecipe, list[str]] | None,
+    proposal: RepairProposal | None,
+    calls: list[CallUsage],
+    *,
+    graph_id: str,
+    source: SourceRef,
+) -> RepairOutcome:
+    """Build and re-validate the merged recipe; else the linear degrade.
+
+    Shared by the live pass and the stored-proposal replay, so the two cannot drift.
+    """
     if merged is not None:
         repaired_recipe, merge_notes = merged
         candidate = build_graph(repaired_recipe, raw_source_text, graph_id=graph_id, source=source)
@@ -382,7 +426,9 @@ def repair_or_degrade(
                 ],
                 review_recommended=True,
             )
-            return RepairOutcome(build_result=repaired_result, tier="repaired", calls=calls)
+            return RepairOutcome(
+                build_result=repaired_result, tier="repaired", calls=calls, proposal=proposal
+            )
 
     degraded = build_linear_graph(recipe, raw_source_text, graph_id=graph_id, source=source)
     degraded_result = GraphBuildResult(

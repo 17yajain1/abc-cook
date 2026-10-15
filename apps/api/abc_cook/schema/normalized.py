@@ -19,7 +19,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from abc_cook.schema.graph import CookingGraph
+from abc_cook.schema.graph import CookingGraph, SourceRef
 from abc_cook.schema.node import Attention, Station
 from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
 
@@ -337,6 +337,70 @@ class GraphProvenance(BaseModel):
     nodes: dict[str, NodeProvenance] = Field(default_factory=dict)
 
 
+class StepRepair(BaseModel):
+    """The only three fields a repair pass may ever set, for one step.
+
+    Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
+    decision D). A default of True/[] used to *overwrite* extraction: a response that
+    simply omitted `depends_on_previous` reset an extracted, verified independence
+    claim to sequential. See `extract/repair.py::_merge_repair` for how each field is
+    applied -- repair fixes structure additively; it never resets a semantic decision
+    to a default.
+    """
+
+    consumes_ingredients: list[str] | None = Field(
+        default=None,
+        description="Names to ADD to this step's consumes. Omit to leave unchanged.",
+    )
+    produces_component: str | None = Field(
+        default=None,
+        description="Set only to name a component a later step uses. Omit to leave unchanged.",
+    )
+    depends_on_previous: bool | None = Field(
+        default=None,
+        description=(
+            "true to make this step wait for the previous one. Omit to leave unchanged. "
+            "Repair can add a dependency; it can never remove one."
+        ),
+    )
+
+
+class RepairProposal(BaseModel):
+    """The repair call's entire response shape.
+
+    One `StepRepair` per original step, in the same order. Matched back to the
+    original steps by position — there is no id/index field because the count and
+    order are already fixed by the request. Lives here (not in `extract/repair.py`)
+    because a stored proposal rides on `ImportOriginal`, and `schema/` never imports
+    from `extract/`.
+    """
+
+    steps: list[StepRepair] = Field(default_factory=list)
+
+
+class ImportOriginal(BaseModel):
+    """Everything post-processing reads, kept so a saved recipe can be re-processed free.
+
+    `extract/postprocess.py::reprocess` rebuilds the graph and plan from this alone:
+    no acquire, no LLM. Immutable after save (staleness plan B1, B5). `recipe` is the
+    extraction model's own output, *before* title resolution and *before* any repair --
+    both of those are post-processing and are re-derived on every refresh.
+    """
+
+    recipe: NormalizedRecipe = Field(description="The extraction output, pre-repair.")
+    repair: RepairProposal | None = Field(
+        default=None,
+        description="The repair proposal the cold import applied, replayed without a call.",
+    )
+    source_text: str = Field(description="`render_source_text(raw)`, the grounding text.")
+    raw_title: str = Field(description="The acquisition's verbatim title (never absent).")
+    blog_name: str | None = Field(default=None, description="The linked blog recipe's name.")
+    source: SourceRef = Field(description="Keeps `imported_at`, so the source key never changes.")
+    graph_id: str = Field(description="Kept so a session's graph id is stable across a refresh.")
+    acquisition_warnings: list[str] = Field(default_factory=list)
+    sources: list[ImportSource] = Field(default_factory=list)
+
+
 class ImportResult(BaseModel):
     """The `/import` response payload.
 
@@ -364,4 +428,15 @@ class ImportResult(BaseModel):
             "both Tier 0 and `done` results — a Tier 0 screen can say 'no captions on "
             "this video' without another round trip."
         ),
+    )
+    original: ImportOriginal | None = Field(
+        default=None,
+        description=(
+            "The post-processing inputs, set on `done` so the client can keep them with a "
+            "saved recipe and refresh it without an LLM call (staleness plan B1)."
+        ),
+    )
+    postprocess_version: int | None = Field(
+        default=None,
+        description="`POSTPROCESS_VERSION` of the code that produced this result. Set on `done`.",
     )

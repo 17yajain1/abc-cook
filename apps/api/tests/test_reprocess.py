@@ -361,10 +361,9 @@ def test_field_caps_are_422(which: str) -> None:
             update={"recipe": original.recipe.model_copy(update={"steps": [_step()] * 201})}
         )
     elif which == "ingredients":
+        many = [_ingredient("x")] * 301
         original = original.model_copy(
-            update={
-                "recipe": original.recipe.model_copy(update={"ingredients": [_ingredient("x")] * 301})
-            }
+            update={"recipe": original.recipe.model_copy(update={"ingredients": many})}
         )
     else:
         original = original.model_copy(update={"source_text": "x" * 100_001})
