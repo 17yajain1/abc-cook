@@ -19,9 +19,11 @@ import pizzaDough from '@/__fixtures__/pizza-dough.plan-response.json'
 import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
 import syntheticTwoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
 import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
+import sabudanaKhichdi from '@/__fixtures__/sabudana-khichdi.plan-response.json'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 
+const SABUDANA = sabudanaKhichdi as RecipePlanResponse
 const KADAI = kadaiPaneer as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse
 const MAGGI = maggi as RecipePlanResponse
@@ -237,6 +239,18 @@ describe('youllNeedText (M3.2)', () => {
     const plan = derivePlan(KADAI)
     const cookBase = plan.stages.find((s) => s.stageId === 'cook_base')!
     expect(youllNeedText(cookBase)).toBe("You'll need: Ginger-garlic paste, Oil, Salt")
+  })
+
+  it("names each ingredient once on a stage that holds two portions of the same name (D3)", () => {
+    const plan = derivePlan(SABUDANA)
+    const cook = plan.stages.find((s) => s.stageId === 'cook')!
+    expect(youllNeedText(cook)).toBe(
+      "You'll need: Soaked Sabudana, Potatoes, Green chillies, Green chilli, Curry leaves, " +
+        'Cumin seeds, Roasted peanuts, Raw peanuts, Sendha namak, Ghee or cooking oil, ' +
+        'Coriander leaves, Lemon juice, Ginger, Curd, Water',
+    )
+    // Display-only: the stage still carries every portion.
+    expect(cook.ingredients.length).toBe(19)
   })
 
   it('is null exactly when the stage has no ingredients, for every rendered stage in every fixture', () => {
