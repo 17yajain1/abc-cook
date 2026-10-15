@@ -337,15 +337,19 @@ class GraphProvenance(BaseModel):
     nodes: dict[str, NodeProvenance] = Field(default_factory=dict)
 
 
+# NOTE: StepRepair and RepairProposal are sent to the repair model as its output schema,
+# and pydantic copies a class docstring into that schema. Their docstrings are therefore
+# model-facing text: keep them byte-identical to what extract/repair.py had on main, and
+# put any maintainer notes in comments like this one. (`_merge_repair`, named in the
+# docstring below, lives in extract/repair.py.)
 class StepRepair(BaseModel):
     """The only three fields a repair pass may ever set, for one step.
 
     Every field defaults to None, meaning "leave the extracted value unchanged" (CP2
     decision D). A default of True/[] used to *overwrite* extraction: a response that
     simply omitted `depends_on_previous` reset an extracted, verified independence
-    claim to sequential. See `extract/repair.py::_merge_repair` for how each field is
-    applied -- repair fixes structure additively; it never resets a semantic decision
-    to a default.
+    claim to sequential. See `_merge_repair` for how each field is applied -- repair
+    fixes structure additively; it never resets a semantic decision to a default.
     """
 
     consumes_ingredients: list[str] | None = Field(
@@ -365,14 +369,14 @@ class StepRepair(BaseModel):
     )
 
 
+# Lives here (not in extract/repair.py) because a stored proposal rides on
+# `ImportOriginal`, and schema/ never imports from extract/. Docstring: see NOTE above.
 class RepairProposal(BaseModel):
     """The repair call's entire response shape.
 
     One `StepRepair` per original step, in the same order. Matched back to the
     original steps by position — there is no id/index field because the count and
-    order are already fixed by the request. Lives here (not in `extract/repair.py`)
-    because a stored proposal rides on `ImportOriginal`, and `schema/` never imports
-    from `extract/`.
+    order are already fixed by the request.
     """
 
     steps: list[StepRepair] = Field(default_factory=list)
