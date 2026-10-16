@@ -1,0 +1,212 @@
+{
+  "capture_effort": {
+    "pumpkin-pancakes": {
+      "arm": "medium",
+      "effort_sent": "None (provider default; effort_ab.ARM_EFFORT['medium'] is None)",
+      "extract_s": 76.0,
+      "output_tokens": 7222,
+      "reasoning_tokens": 5440,
+      "cost_inr": 1.89,
+      "tier": "repaired",
+      "steps": 7,
+      "truncations": 0,
+      "violations": [
+        "ingredients_consumed"
+      ],
+      "repair_attempted": true,
+      "repair_s": 2.0
+    },
+    "kadhi-pakora": {
+      "arm": "medium",
+      "effort_sent": "None (provider default; effort_ab.ARM_EFFORT['medium'] is None)",
+      "extract_s": 94.3,
+      "output_tokens": 10251,
+      "reasoning_tokens": 7360,
+      "cost_inr": 1.77,
+      "tier": "clean",
+      "steps": 11,
+      "truncations": 0,
+      "violations": [],
+      "repair_attempted": null,
+      "repair_s": 0.0
+    },
+    "croissant": {
+      "arm": "medium",
+      "effort_sent": "None (provider default; effort_ab.ARM_EFFORT['medium'] is None)",
+      "extract_s": 100.0,
+      "output_tokens": 10432,
+      "reasoning_tokens": 7424,
+      "cost_inr": 1.79,
+      "tier": "clean",
+      "steps": 18,
+      "truncations": 0,
+      "violations": [],
+      "repair_attempted": null,
+      "repair_s": 0.0
+    },
+    "vanilla-cupcakes": {
+      "arm": "medium",
+      "effort_sent": "None (provider default; effort_ab.ARM_EFFORT['medium'] is None)",
+      "extract_s": 53.9,
+      "output_tokens": 5110,
+      "reasoning_tokens": 4032,
+      "cost_inr": 0.89,
+      "tier": "clean",
+      "steps": 4,
+      "truncations": 0,
+      "violations": [],
+      "repair_attempted": null,
+      "repair_s": 0.0
+    },
+    "chole-bhature": {
+      "arm": "medium",
+      "effort_sent": "None (provider default; effort_ab.ARM_EFFORT['medium'] is None)",
+      "extract_s": 141.1,
+      "output_tokens": 16000,
+      "reasoning_tokens": 16000,
+      "cost_inr": 2.75,
+      "tier": "tier0",
+      "steps": 0,
+      "truncations": 1,
+      "violations": [],
+      "repair_attempted": null,
+      "repair_s": 0.0
+    },
+    "pizza-dough": {
+      "note": "no committed capture record; smoke runs exist for low and medium",
+      "smoke_vs_golden": {
+        "low": {
+          "identical_to_committed_golden": false,
+          "steps": 10
+        },
+        "medium": {
+          "identical_to_committed_golden": false,
+          "steps": 14
+        }
+      }
+    }
+  },
+  "tokens": {
+    "system_total": 7446,
+    "v7_md": 4423,
+    "schema_and_wrapper": 3023,
+    "v7_md_chars": 17961,
+    "system_chars": 29806,
+    "per_recipe": {
+      "pizza-dough": {
+        "source_chars": 23455,
+        "source_utf8_bytes": 23702,
+        "source_tokens": 6231,
+        "src_tokens_per_char": 0.266,
+        "transcript_chars": 8293,
+        "transcript_utf8_bytes": 8293,
+        "transcript_tokens": 1882,
+        "transcript_tok_per_char": 0.227,
+        "description_chars": 2118,
+        "description_tokens": 833,
+        "blog_json_chars_indent2": 12769,
+        "blog_json_tokens_indent2": 3459,
+        "blog_json_tokens_compact": 3047,
+        "transcript_lang": "en",
+        "predicted_input_tokens": 13685
+      },
+      "pumpkin-pancakes": {
+        "source_chars": 2732,
+        "source_utf8_bytes": 2732,
+        "source_tokens": 698,
+        "src_tokens_per_char": 0.255,
+        "transcript_chars": 2242,
+        "transcript_utf8_bytes": 2242,
+        "transcript_tokens": 563,
+        "transcript_tok_per_char": 0.251,
+        "description_chars": 359,
+        "description_tokens": 109,
+        "blog_json_chars_indent2": 0,
+        "blog_json_tokens_indent2": 0,
+        "blog_json_tokens_compact": 0,
+        "transcript_lang": "en",
+        "predicted_input_tokens": 8152
+      },
+      "kadhi-pakora": {
+        "source_chars": 9155,
+        "source_utf8_bytes": 9780,
+        "source_tokens": 2545,
+        "src_tokens_per_char": 0.278,
+        "transcript_chars": 3202,
+        "transcript_utf8_bytes": 3202,
+        "transcript_tokens": 783,
+        "transcript_tok_per_char": 0.245,
+        "description_chars": 2973,
+        "description_tokens": 858,
+        "blog_json_chars_indent2": 2668,
+        "blog_json_tokens_indent2": 828,
+        "blog_json_tokens_compact": 704,
+        "transcript_lang": "en",
+        "predicted_input_tokens": 9999
+      },
+      "croissant": {
+        "source_chars": 2348,
+        "source_utf8_bytes": 2354,
+        "source_tokens": 605,
+        "src_tokens_per_char": 0.258,
+        "transcript_chars": 1583,
+        "transcript_utf8_bytes": 1585,
+        "transcript_tokens": 404,
+        "transcript_tok_per_char": 0.255,
+        "description_chars": 590,
+        "description_tokens": 165,
+        "blog_json_chars_indent2": 0,
+        "blog_json_tokens_indent2": 0,
+        "blog_json_tokens_compact": 0,
+        "transcript_lang": "en",
+        "predicted_input_tokens": 8059
+      },
+      "vanilla-cupcakes": {
+        "source_chars": 2976,
+        "source_utf8_bytes": 2977,
+        "source_tokens": 782,
+        "src_tokens_per_char": 0.263,
+        "transcript_chars": 0,
+        "transcript_utf8_bytes": 0,
+        "transcript_tokens": 0,
+        "transcript_tok_per_char": null,
+        "description_chars": 2847,
+        "description_tokens": 757,
+        "blog_json_chars_indent2": 0,
+        "blog_json_tokens_indent2": 0,
+        "blog_json_tokens_compact": 0,
+        "transcript_lang": null,
+        "predicted_input_tokens": 8236
+      },
+      "chole-bhature": {
+        "source_chars": 13885,
+        "source_utf8_bytes": 31777,
+        "source_tokens": 4478,
+        "src_tokens_per_char": 0.323,
+        "transcript_chars": 11602,
+        "transcript_utf8_bytes": 29442,
+        "transcript_tokens": 3658,
+        "transcript_tok_per_char": 0.315,
+        "description_chars": 2081,
+        "description_tokens": 767,
+        "blog_json_chars_indent2": 0,
+        "blog_json_tokens_indent2": 0,
+        "blog_json_tokens_compact": 0,
+        "transcript_lang": "hi",
+        "predicted_input_tokens": 11932
+      }
+    }
+  },
+  "models": {
+    "gpt-5-mini": true,
+    "gpt-4.1-mini": true,
+    "gpt-4o-mini": true,
+    "gpt-4.1-nano": true,
+    "gpt-5-nano": true,
+    "gpt-4.1-mini_variants": [
+      "gpt-4.1-mini",
+      "gpt-4.1-mini-2025-04-14"
+    ],
+    "n_models": 133
+  }
+}

@@ -1,0 +1,761 @@
+{
+  "title": "छोले भटूरे",
+  "channel": "CookingShooking Hindi",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": null,
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "Chole",
+      "qty": "1",
+      "unit": "cup",
+      "prep_note": "chote wale best rahenge",
+      "group": null
+    },
+    {
+      "name": "Meetha Soda",
+      "qty": "1/4",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Pani",
+      "qty": "",
+      "unit": "",
+      "prep_note": "Washing aur Soaking ke lie",
+      "group": null
+    },
+    {
+      "name": "Suji",
+      "qty": "1/2",
+      "unit": "cup",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1",
+      "unit": "cup",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Maida",
+      "qty": "2",
+      "unit": "cups",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Namak",
+      "qty": "2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Cheeni",
+      "qty": "2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Baking Soda / Meetha Soda",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Dahi",
+      "qty": "",
+      "unit": "",
+      "prep_note": "Dough banane ke lie",
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "1",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": "belne+frying ke lie",
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Pyaaz",
+      "qty": "2",
+      "unit": "medium size",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Anardana",
+      "qty": "1",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1 1/2",
+      "unit": "cups",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dry / Sukha Amla",
+      "qty": "8-10",
+      "unit": "pieces",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Chaipatti",
+      "qty": "2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "2",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Black Elaichi",
+      "qty": "2",
+      "unit": "",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dalchini",
+      "qty": "1",
+      "unit": "inch",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Cloves",
+      "qty": "3-4",
+      "unit": "",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Green Cardamom",
+      "qty": "1",
+      "unit": "",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Kali Mirch",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Salt",
+      "qty": "",
+      "unit": "",
+      "prep_note": "taste hisab se",
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ginger Garlic Paste",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Tomato",
+      "qty": "2",
+      "unit": "medium size",
+      "prep_note": "mixi me chala kar use karein",
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Chole / Chana Masala",
+      "qty": "2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Yellow Chilli Powder",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Red Chilli Powder",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dhania Powder",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Jeera Powder",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Meetha Soda",
+      "qty": "1/4",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1 1/2 to 2",
+      "unit": "cups",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ghee",
+      "qty": "1",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Adrak",
+      "qty": "1",
+      "unit": "inch",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ajwain",
+      "qty": "1/4",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": "Chole ke lie"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Chole ko do baar achhi tarah dhoye.",
+      "label": "Rinse chole",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Chole",
+        "Pani"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Dhoye hue chole ko meetha soda waale paani me daal kar \"6 घंटे के लिए\" soak karein (transcript: \"6 घंटे के लिए\").",
+      "label": "Soak chole",
+      "attention": "unattended",
+      "attention_cue": "6 घंटे के लिए",
+      "duration_typical_min": 390.0,
+      "duration_min": 360.0,
+      "duration_max": 420.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Chole",
+        "Meetha Soda",
+        "Pani"
+      ],
+      "produces_component": "soaked chole",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Suji ko ek bartan me 1 cup paani dal kar 5 minutes tak bhigo kar rakh dein (\"5 मिनट में\") aur extra paani nikal dein.",
+      "label": "Soak suji",
+      "attention": "unattended",
+      "attention_cue": "5 मिनट में",
+      "duration_typical_min": 5.0,
+      "duration_min": 4.0,
+      "duration_max": 6.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Suji",
+        "Pani"
+      ],
+      "produces_component": "soaked suji",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Maida, suji, namak, cheeni, baking soda/meetha soda ko ek bowl me milayein; beech me kuaan bana kar dahi daal kar dough gundhein aur paani se adjust karke thoda tight lekin smooth dough banayein.",
+      "label": "Make dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 15.0,
+      "duration_min": 10.0,
+      "duration_max": 20.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Maida",
+        "Suji",
+        "Namak",
+        "Cheeni",
+        "Baking Soda / Meetha Soda",
+        "Dahi",
+        "Pani"
+      ],
+      "produces_component": "bhature dough",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "thoda tight lekin smooth"
+    },
+    {
+      "text": "Dough ko 7 minute tak ache se masaj/need kar ke lacheela banayein (transcript: \"7 मिनट\" paused as kneading time).",
+      "label": "Knead dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 7.0,
+      "duration_min": 6.0,
+      "duration_max": 8.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": "kneaded dough",
+      "station": "counter",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "lacheela ban jana"
+    },
+    {
+      "text": "Dough me 1 tbsp oil laga kar bowl me rakhein, kapde se dhak kar \"6 घंटे तक\" ferment/raise karne ke liye rakh dein. (Transcript: \"6 घंटे तक\"; also mentions \"कम से कम आप इसको 30 मिनट में भी बना सकते हो लेकिन पांच घंटे रखते तो और बढ़िया रिजल्ट मिलता है\")",
+      "label": "First rest",
+      "attention": "unattended",
+      "attention_cue": "6 घंटे तक",
+      "duration_typical_min": 390.0,
+      "duration_min": 360.0,
+      "duration_max": 420.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil"
+      ],
+      "produces_component": "rested dough",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "(Optional) Agar aap jaldi banana chahte hain to \"कम से कम आप इसको 30 मिनट में भी बना सकते हो\" — dough ko 30 मिनट rest dena possible hai (transcript phrase).",
+      "label": "Quick rest option",
+      "attention": "unattended",
+      "attention_cue": "कम से कम आप इसको 30 मिनट में भी बना सकते हो लेकिन पांच घंटे रखते तो और बढ़िया रिजल्ट मिलता है",
+      "duration_typical_min": 30.0,
+      "duration_min": 30.0,
+      "duration_max": 45.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "optional",
+      "role_cue": "कम से कम आप इसको 30 मिनट में भी बना सकते हो लेकिन पांच घंटे रखते तो और बढ़िया रिजल्ट मिलता है",
+      "attach_to_step": 5,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Pyaaz aur anardana ko mixi me bina paani ke paste bana kar side me rakhein.",
+      "label": "Make onion paste",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 4.0,
+      "duration_min": 3.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Pyaaz",
+        "Anardana"
+      ],
+      "produces_component": "onion-anardana paste",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "paste banna"
+    },
+    {
+      "text": "Chai-patti, sukhe amla ko paani me ubaal kar strain kar ke rakhein (transcript describes making khatai with \"आंवला\" and \"चाय पत्ती\").",
+      "label": "Make amla tea",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 8.0,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Dry / Sukha Amla",
+        "Chaipatti",
+        "Pani"
+      ],
+      "produces_component": "amla-chai liquid",
+      "station": "burner",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "ubal kar strain karna"
+    },
+    {
+      "text": "Pressure cooker garam kar ke 2 tbsp oil daal kar whole spices (Black Elaichi, Dalchini, Cloves, Green Cardamom, Kali Mirch) tadka lagayein; phir onion-anardana paste daal kar 1 minute bhune (transcript: \"ek minute\") aur ginger garlic paste 1/2 tsp daal kar bhun lein.",
+      "label": "Cook base masala",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6,
+        7
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil",
+        "Black Elaichi",
+        "Dalchini",
+        "Cloves",
+        "Green Cardamom",
+        "Kali Mirch",
+        "Pyaaz",
+        "Anardana",
+        "Ginger Garlic Paste"
+      ],
+      "produces_component": "masala base",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "bhun jana"
+    },
+    {
+      "text": "Tomato ka paste daal kar medium-high par ache se pakayein jab tak kachapan nikal jaye; phir masale (Chole/Chana Masala, Yellow Chilli Powder, Red Chilli Powder, Dhania Powder, Jeera Powder) daal kar 2 minute tak bhune.",
+      "label": "Add tomatoes & spices",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        8
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Tomato",
+        "Chole / Chana Masala",
+        "Yellow Chilli Powder",
+        "Red Chilli Powder",
+        "Dhania Powder",
+        "Jeera Powder"
+      ],
+      "produces_component": "spiced tomato masala",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "kachapan nikal jana"
+    },
+    {
+      "text": "Soaked chole ko masale me daalein, 1/4 tsp meetha soda daal kar acche se mix karein; ek aloo (chhilka wala) daal dein, phir amla-chai liquid ko strain karke daal dein aur 1 1/2 se 2 cups normal pani add karke mix karein.",
+      "label": "Combine chole & water",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 6.0,
+      "duration_min": 5.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1,
+        9,
+        10,
+        7
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "soaked chole",
+        "Meetha Soda",
+        "Adrak",
+        "Pani",
+        "Dry / Sukha Amla",
+        "Chaipatti",
+        "Ghee"
+      ],
+      "produces_component": "chole ready for pressure cook",
+      "station": "burner",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Pressure cooker ka dhakkan lagakar high flame par \"5 से 6 सिटी\" tak pakayein, phir low (sim) par 10 मिनट रखें (transcript: \"5 से 6 सिटी\"; \"10 मिनट तक रखना है\") aur phir gas band karke pressure khud release hone dein.",
+      "label": "Pressure cook chole",
+      "attention": "unattended",
+      "attention_cue": "10 मिनट तक रखना है",
+      "duration_typical_min": 25.0,
+      "duration_min": 20.0,
+      "duration_max": 30.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        11
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "chole ready for pressure cook"
+      ],
+      "produces_component": "cooked chole",
+      "station": "burner",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "5 से 6 सिटी, फिर 10 मिनट sim"
+    },
+    {
+      "text": "Pressure release ke baad agar chole soft ho gaye hon to aloo ko mash kar lein; gravy ko medium-high par thoda bhune agar zarurat ho to (text describes checking softness and mashing).",
+      "label": "Finish chole",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        12
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "cooked chole",
+        "Adrak"
+      ],
+      "produces_component": "ready chole",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "soft ho jana"
+    },
+    {
+      "text": "Tadka ke liye ek pan me ghee/tez garam karke adrak ke lache, ajwain (transcript: \"15 से 20 सेकंड\") 15-20 सेकंड bhune aur is tadka ko chole me daal dein.",
+      "label": "Make tadka",
+      "attention": "hands_on",
+      "attention_cue": "15 से 20 सेकंड",
+      "duration_typical_min": 0.33,
+      "duration_min": 0.25,
+      "duration_max": 0.5,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        13
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Ghee",
+        "Adrak",
+        "Ajwain"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "15 से 20 सेकंड bhun jana"
+    },
+    {
+      "text": "Rested dough ko divide kar ke 10 medium balls banayein, har ball ko halka sa press karke kam se kam \"10 मिनट\" rest karne ke liye rakhein (transcript: \"कम से कम आप इसे 10 मिनट तक रेस्ट करने दीजिएगा\").",
+      "label": "Portion dough",
+      "attention": "unattended",
+      "attention_cue": "10 मिनट",
+      "duration_typical_min": 12.0,
+      "duration_min": 10.0,
+      "duration_max": 15.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "rested dough"
+      ],
+      "produces_component": "dough balls",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Har ball ko halka sa oil lagake dry maida me roll na karte hue belain; garam tel (high flame) me daal kar jab aadha phool jaye to palat dein aur dono taraf golden ho jane tak fry karein (transcript instructions about flipping when half puffed and frying till golden).",
+      "label": "Fry bhature",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        15
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "dough balls",
+        "Oil",
+        "Oil"
+      ],
+      "produces_component": "bhature",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "stated_unbounded",
+      "freshness_cue": "गरमा गरम छोले के साथ सर्व करेंगे",
+      "max_lead_min": null,
+      "doneness_cue": "aadha phool jana; golden hona"
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method is grounded in the provided transcript and description. I preserved ingredient names and quantities exactly as listed in the description.",
+    "Optional short rest (30 मिनट) step is marked optional using the transcript phrase \"कम से कम आप इसको 30 मिनट में भी बना सकते हो लेकिन पांच घंटे रखते तो और बढ़िया रिजल्ट मिलता है\" and attached to the main rest step.",
+    "Soaking cue for chole uses the exact transcript phrase \"6 घंटे के लिए\". Pressure-cooker timing uses transcript phrases \"5 से 6 सिटी\" and \"10 मिनट तक रखना है\" quoted verbatim in steps.",
+    "I inferred a kneading step duration of 7 minutes from the transcript's spoken \"7 मिनट\" and made that a stated duration. No other durations were invented; vague actions have estimated ranges and include the transcript's doneness cues where present."
+  ]
+}

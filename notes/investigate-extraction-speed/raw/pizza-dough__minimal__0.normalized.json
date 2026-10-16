@@ -1,0 +1,406 @@
+{
+  "title": "Overnight Pizza Dough Recipe",
+  "channel": "Natashas Kitchen",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": "8 people (makes 2, 10-12 inch crusts)",
+  "cuisine": "American, Italian",
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "warm water (105-110˚F)",
+      "qty": "1 1/4",
+      "unit": "cups",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "active dry yeast",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "honey",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "fine sea salt",
+      "qty": "1/2",
+      "unit": "Tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "all-purpose flour",
+      "qty": "3 1/3",
+      "unit": "cups",
+      "prep_note": null,
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "In a small bowl, stir together water, honey, and salt then sprinkle the top with 1/2 tsp yeast and let sit 5 minutes then stir.",
+      "label": "Proof yeast",
+      "attention": "unattended",
+      "attention_cue": "let sit 5 minutes",
+      "duration_typical_min": 5.0,
+      "duration_min": 4.0,
+      "duration_max": 6.0,
+      "duration_stated": true,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "warm water (105-110˚F)",
+        "honey",
+        "fine sea salt",
+        "active dry yeast"
+      ],
+      "produces_component": "yeast mixture",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Measure 3 1/3 cups flour in a large mixing bowl and make a well in the center. Pour yeast mixture into the center then stir with a firm spatula until the dough comes together. Knead by hand 2 minutes (dough will be sticky).",
+      "label": "Mix and knead",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 5.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "all-purpose flour",
+        "yeast mixture"
+      ],
+      "produces_component": "raw dough",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until no streaks of flour remain"
+    },
+    {
+      "text": "Cover the bowl with plastic wrap and let rise at room temperature 4-5 hours or until doubled in size.",
+      "label": "First rise",
+      "attention": "unattended",
+      "attention_cue": "let rise at room temperature 4-5 hours",
+      "duration_typical_min": 300.0,
+      "duration_min": 240.0,
+      "duration_max": 300.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "raw dough"
+      ],
+      "produces_component": "risen dough",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until it has doubled in size"
+    },
+    {
+      "text": "Transfer dough to a floured surface, turn to coat lightly in flour so it isn’t sticky then divide in half.",
+      "label": "Divide dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "risen dough"
+      ],
+      "produces_component": "divided dough",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Fold each piece of dough in half 8 times, gently pulling the sides over the center like closing a book, turning the dough each time and repeating for 8 folds. Form a ball in your hands and transfer each piece of dough to a lightly oiled bowl seam-side-down.",
+      "label": "Shape dough balls",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 7.0,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "divided dough"
+      ],
+      "produces_component": "dough balls",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Cover and refrigerate overnight (18 hours) or up to 1 week.",
+      "label": "Cold ferment",
+      "attention": "unattended",
+      "attention_cue": "refrigerate overnight (18 hours) or up to 1 week",
+      "duration_typical_min": 1440.0,
+      "duration_min": 1080.0,
+      "duration_max": 10080.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "dough balls"
+      ],
+      "produces_component": "fermented dough balls",
+      "station": "fridge",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Remove the dough 1 hour before using to let it relax and come to room temperature.",
+      "label": "Bring to room temp",
+      "attention": "unattended",
+      "attention_cue": "Remove the dough 1 hour before using to let it relax and come to room temperature",
+      "duration_typical_min": 60.0,
+      "duration_min": 60.0,
+      "duration_max": 90.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "fermented dough balls"
+      ],
+      "produces_component": "room-temperature dough",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Preheat oven with a pizza stone or inverted baking sheet on the center rack to 550˚F; make sure oven is fully preheated before forming pizza. Lightly flour a pizza peel and prep toppings.",
+      "label": "Preheat oven",
+      "attention": "unattended",
+      "attention_cue": "fully preheat your oven",
+      "duration_typical_min": 30.0,
+      "duration_min": 20.0,
+      "duration_max": 60.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": "preheated oven",
+      "station": "oven",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "oven fully preheated"
+    },
+    {
+      "text": "Transfer 1 piece of dough to a floured surface, pat the center gently with fingertips and DO NOT pop any bubbles present.",
+      "label": "Prep dough for shaping",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6,
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "room-temperature dough"
+      ],
+      "produces_component": "shaped base",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Lift the dough over both knuckles and roll your knuckles under the center, working outward as you rotate the dough to leave a thicker crust at the edge until a 10-12” pizza has formed. Place the dough on a floured pizza peel and shake to ensure it slides.",
+      "label": "Form crust",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        8
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "shaped base"
+      ],
+      "produces_component": "assembled pizza base on peel",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Spread on desired pizza sauce and toppings. Give the pizza another jolt to make sure it slides on the pizza peel.",
+      "label": "Top pizza",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 2.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        9
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "assembled pizza base on peel"
+      ],
+      "produces_component": "topped pizza on peel",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Slide pizza onto the preheated pizza stone and bake at 550˚F for 8-10 minutes or until crust is golden brown and some of the larger bubbles on the crust are lightly scorched.",
+      "label": "Bake pizza",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 9.0,
+      "duration_min": 8.0,
+      "duration_max": 10.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        10,
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "topped pizza on peel",
+        "preheated oven"
+      ],
+      "produces_component": "baked pizza",
+      "station": "oven",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until crust is golden brown and some of the larger bubbles are lightly scorched"
+    },
+    {
+      "text": "Transfer the pizza to a cutting board and let it cool slightly before serving.",
+      "label": "Rest and serve",
+      "attention": "unattended",
+      "attention_cue": "let it cool slightly before serving",
+      "duration_typical_min": 5.0,
+      "duration_min": 2.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        11
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "baked pizza"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method grounded in the linked recipe JSON-LD (HowToStep sections) and corroborated by the video transcript. I preserved ingredient wording exactly as listed. Durations marked duration_stated=true where the source gives explicit numeric times (5 minutes proof, 2 minutes knead, 4-5 hours rise, 18 hours refrigerated, 1 hour to come to room temp, 8-10 minutes bake). Some estimated step durations (e.g., shaping, topping) are provided with duration_stated=false because the source gives no explicit time for those actions.",
+    "The recipeYield contained both '8' and '8 people (makes 2, 10-12 inch crusts)'; I placed the descriptive string in yield_text and left servings null because the source's numeric '8' appears as a yield list item rather than an explicit 'serves 8' phrasing."
+  ]
+}

@@ -1,0 +1,10 @@
+   [spent INR 1.03 / 30]
+done chole-bhature__minimal__0: tier=clean wall=37.2s steps=17 calls=[(0, 4557)] inr=1.028
+   [spent INR 2.06 / 30]
+done chole-bhature__low__0: tier=repair-would-fire wall=34.6s steps=16 calls=[(192, 4580)] inr=1.032
+   [spent INR 2.95 / 30]
+done chole-bhature__low__1: tier=repair-would-fire wall=38.2s steps=17 calls=[(512, 5059)] inr=0.888
+   [spent INR 5.02 / 30]
+done chole-bhature__medium__0: tier=repair-would-fire wall=99.8s steps=22 calls=[(6912, 12014)] inr=2.071
+
+SPENT INR 5.02 of 30.0

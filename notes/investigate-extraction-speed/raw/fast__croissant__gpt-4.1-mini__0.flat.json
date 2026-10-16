@@ -1,0 +1,84 @@
+{
+  "title": "The easiest way to make croissant! Why I didn't know this method before!",
+  "ingredients": [
+    {
+      "group": "Ingredients",
+      "items": [
+        "1/3 cup of warm water (80-90 ml)",
+        "1 tbsp sugar (10g)",
+        "1 tbsp dry yeast or instant yeast (8g)",
+        "1/5 cup of warm milk (50 ml)",
+        "2/3 tsp salt (4g)",
+        "2 cups flour (250g)",
+        "5 tbsp soft butter (50g) for dough",
+        "15 tbsp soft butter for grease (150g)"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "text": "Mix 1/3 cup of warm water, 1 tbsp sugar, and 1 tbsp dry yeast or instant yeast.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Leave the mixture for 5 to 10 minutes.",
+      "stated_minutes": 10
+    },
+    {
+      "text": "Mix 1/5 cup of warm milk, 2/3 tsp salt, and the previous mixture.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add 2 cups flour and 5 tbsp soft butter to the mixture and mix the dough by hand.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Knead the dough by hand for 6 minutes.",
+      "stated_minutes": 6
+    },
+    {
+      "text": "Let the dough rest at room temperature for 1 hour until it doubles in size.",
+      "stated_minutes": 60
+    },
+    {
+      "text": "Transfer the dough to a well-floured surface and divide it into 8 equal portions.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Take one piece and form a ball, then roll out the dough into a circle and transfer it to a well-floured dish.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Grease the dough circle with soft butter, then put on top another circle of dough and grease it with soft butter.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Put on top another circle of dough again with grease, then chill in the fridge for one hour.",
+      "stated_minutes": 60
+    },
+    {
+      "text": "Transfer the dough to a well-floured surface and roll out the dough into a large rectangle.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Trim the edges and slice the large rectangle into 6 triangles.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Cut a small slit at the wide end of each triangle, then tightly roll up each triangle to form croissants.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Transfer the croissants to a baking sheet and let them rest at room temperature for 1 hour.",
+      "stated_minutes": 60
+    },
+    {
+      "text": "Grease the croissants with egg.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Bake the croissants at 190°C (375°F) for 20-25 minutes.",
+      "stated_minutes": 25
+    }
+  ]
+}

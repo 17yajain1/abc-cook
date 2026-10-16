@@ -1,0 +1,26 @@
+   [spent INR 12.04 / 30]
+done fast__pizza-dough__gpt-5-mini__0: wall=7.5s steps=15 out=844 reasoning=0 inr=0.284
+   [spent INR 12.36 / 30]
+done fast__pizza-dough__gpt-4.1-mini__0: wall=5.8s steps=18 out=669 reasoning=0 inr=0.315
+   [spent INR 12.46 / 30]
+done fast__pumpkin-pancakes__gpt-5-mini__0: wall=4.5s steps=9 out=471 reasoning=0 inr=0.103
+   [spent INR 12.54 / 30]
+done fast__pumpkin-pancakes__gpt-4.1-mini__0: wall=3.0s steps=10 out=330 reasoning=0 inr=0.081
+   [spent INR 12.75 / 30]
+done fast__kadhi-pakora__gpt-5-mini__0: wall=7.2s steps=12 out=847 reasoning=0 inr=0.206
+   [spent INR 12.96 / 30]
+done fast__kadhi-pakora__gpt-4.1-mini__0: wall=7.2s steps=13 out=816 reasoning=0 inr=0.21
+   [spent INR 13.11 / 30]
+done fast__croissant__gpt-5-mini__0: wall=6.4s steps=20 out=740 reasoning=0 inr=0.147
+   [spent INR 13.21 / 30]
+done fast__croissant__gpt-4.1-mini__0: wall=4.4s steps=16 out=547 reasoning=0 inr=0.108
+   [spent INR 13.31 / 30]
+done fast__vanilla-cupcakes__gpt-5-mini__0: wall=3.8s steps=7 out=404 reasoning=0 inr=0.093
+   [spent INR 13.38 / 30]
+done fast__vanilla-cupcakes__gpt-4.1-mini__0: wall=2.2s steps=4 out=208 reasoning=0 inr=0.067
+   [spent INR 13.72 / 30]
+done fast__chole-bhature__gpt-5-mini__0: wall=12.4s steps=23 out=1414 reasoning=0 inr=0.343
+   [spent INR 14.10 / 30]
+done fast__chole-bhature__gpt-4.1-mini__0: wall=13.6s steps=23 out=1559 reasoning=0 inr=0.377
+
+SPENT INR 14.10 of 30.0

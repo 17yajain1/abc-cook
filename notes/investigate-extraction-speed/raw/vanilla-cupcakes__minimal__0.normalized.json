@@ -1,0 +1,354 @@
+{
+  "title": "Perfect Vanilla Cupcakes",
+  "channel": "The cookbook",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": "18 -20 standard cupcakes",
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "Sugar",
+      "qty": "1 Cup(200g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Unsalted Butter",
+      "qty": "1/2 cup (125 g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "All Purpose flour",
+      "qty": "1&1/2 cups (190 g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Baking soda",
+      "qty": "1/2 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Baking Powder",
+      "qty": "1 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Salt",
+      "qty": "1/4 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Egg",
+      "qty": "2 Large",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Milk",
+      "qty": "3/4 cup( 185 ml)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Vanilla Essence",
+      "qty": "1& 1/2 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "vegetable oil",
+      "qty": "1/2 cup",
+      "unit": null,
+      "prep_note": "replacement for butter",
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "Preheat the oven to 180 C. Preheat for 10 minutes.",
+      "label": "Preheat oven",
+      "attention": "unattended",
+      "attention_cue": "Preheat for 10 minutes",
+      "duration_typical_min": 10.0,
+      "duration_min": 9.0,
+      "duration_max": 12.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "oven",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "If you like, powder the sugar to make creaming easy.",
+      "label": "Powder sugar (optional)",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "optional",
+      "role_cue": "If you like",
+      "attach_to_step": 0,
+      "consumes_ingredients": [
+        "Sugar"
+      ],
+      "produces_component": "powdered sugar",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Cream the unsalted butter and sugar together until light and fluffy.",
+      "label": "Cream butter and sugar",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 4.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Unsalted Butter",
+        "Sugar"
+      ],
+      "produces_component": "creamed butter and sugar",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until light and fluffy"
+    },
+    {
+      "text": "Add the eggs one at a time, beating after each addition.",
+      "label": "Add eggs",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.5,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Egg"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Stir in the vanilla essence and milk until combined.",
+      "label": "Add liquids",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Vanilla Essence",
+        "Milk"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Sift together the all purpose flour, baking soda, baking powder and salt, then fold into the wet mixture until just combined.",
+      "label": "Combine dry ingredients",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 6.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "All Purpose flour",
+        "Baking soda",
+        "Baking Powder",
+        "Salt"
+      ],
+      "produces_component": "cupcake batter",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until just combined"
+    },
+    {
+      "text": "Fill standard cupcake liners about two-thirds full with batter and place in muffin tray.",
+      "label": "Fill liners",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "cupcake batter"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Bake in the preheated oven at 180 C for about 20-25 minutes.",
+      "label": "Bake cupcakes",
+      "attention": "unattended",
+      "attention_cue": "for about 20-25 minutes",
+      "duration_typical_min": 22.0,
+      "duration_min": 20.0,
+      "duration_max": 25.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0,
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "cupcake batter"
+      ],
+      "produces_component": "baked cupcakes",
+      "station": "oven",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Let the cupcakes cool before serving.",
+      "label": "Cool cupcakes",
+      "attention": "unattended",
+      "attention_cue": "Let the cupcakes cool",
+      "duration_typical_min": 15.0,
+      "duration_min": 10.0,
+      "duration_max": 30.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "baked cupcakes"
+      ],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Alternatively, replace the butter with 1/2 cup vegetable oil.",
+      "label": "Use oil instead",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 0.0,
+      "duration_min": 0.0,
+      "duration_max": 0.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "alternative",
+      "role_cue": "Butter can be replaced with 1/2 cup vegetable oil",
+      "attach_to_step": 2,
+      "consumes_ingredients": [
+        "Unsalted Butter"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method grounded in the video description's instructions and ingredient list. The ingredient line mentioning vegetable oil is a replacement note; included as an ingredient with prep_note to indicate it is a substitute. 'Powdering the sugar' note from description captured as an optional step. Yield taken from description verbatim. Durations: oven preheat 10 minutes and bake 20-25 minutes are from description; preheat duration treated as vague (not explicitly numeric statement of step total) so estimated min/max provided; bake duration stated and marked duration_stated=true."
+  ]
+}

@@ -1,0 +1,24 @@
+   [spent INR 5.29 / 30]
+done pumpkin-pancakes__minimal__0: tier=clean wall=10.7s steps=6 calls=[(0, 1337)] inr=0.268
+   [spent INR 5.63 / 30]
+done pumpkin-pancakes__low__0: tier=repair-would-fire wall=13.8s steps=6 calls=[(320, 1763)] inr=0.341
+   [spent INR 6.14 / 30]
+done kadhi-pakora__minimal__0: tier=clean wall=19.2s steps=9 calls=[(0, 2555)] inr=0.515
+   [spent INR 6.79 / 30]
+done kadhi-pakora__low__0: tier=clean wall=25.4s steps=7 calls=[(1088, 3341)] inr=0.648
+   [spent INR 7.64 / 30]
+done croissant__minimal__0: tier=clean wall=38.6s steps=14 calls=[(0, 2217), (0, 2456)] inr=0.853
+   [spent INR 8.31 / 30]
+done croissant__low__0: tier=clean wall=28.6s steps=16 calls=[(1024, 3700)] inr=0.668
+   [spent INR 8.67 / 30]
+done vanilla-cupcakes__minimal__0: tier=repair-would-fire wall=15.4s steps=10 calls=[(0, 1866)] inr=0.36
+   [spent INR 9.07 / 30]
+done vanilla-cupcakes__low__0: tier=clean wall=16.1s steps=4 calls=[(1088, 2102)] inr=0.4
+   [spent INR 9.66 / 30]
+done pizza-dough__minimal__0: tier=clean wall=23.5s steps=13 calls=[(0, 2552)] inr=0.592
+   [spent INR 11.10 / 30]
+done pizza-dough__low__0: tier=clean wall=54.9s steps=10 calls=[(832, 3125), (1984, 4184)] inr=1.433
+   [spent INR 11.76 / 30]
+done pizza-dough__low__1: tier=clean wall=27.3s steps=10 calls=[(1536, 3724)] inr=0.664
+
+SPENT INR 11.76 of 30.0

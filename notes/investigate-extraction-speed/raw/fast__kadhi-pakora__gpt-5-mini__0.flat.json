@@ -1,0 +1,100 @@
+{
+  "title": "Recipe Of Kadhi Pakora By Chef Kunal Kapur",
+  "ingredients": [
+    {
+      "group": "FOR KADI",
+      "items": [
+        "1 ½cups Curd",
+        "4 tbsp Besan (gram flour)",
+        "½cup Onion sliced",
+        "½tbsp Garlic chopped",
+        "½tbsp Ginger chopped",
+        "3/4 tsp Turmeric",
+        "1tsp Red chilly powder",
+        "1 tbsp Coriander powder",
+        "1 tsp Roasted Cumin Powder",
+        "to taste Salt",
+        "10 cups Water",
+        "3 tbsp Oil",
+        "1 tsp Methi dana (fenugreek)",
+        "1 tsp Cumin",
+        "2 nos Dry red chilly",
+        "½tsp Heeng (asafoetida)"
+      ]
+    },
+    {
+      "group": "FOR PAKORA",
+      "items": [
+        "1cup Besan (gram flour)",
+        "to taste Salt",
+        "1no Green chilly chopped",
+        "½tsp Turmeric",
+        "1 tsp Red chilly powder",
+        "1 tbsp Coriander seeds",
+        " tsp Cumin",
+        "3/4 tsp Baking Powder",
+        "1 cup Spinach chopped",
+        "3/4 cup Water"
+      ]
+    },
+    {
+      "group": "FOR TEMPERING",
+      "items": [
+        "2 tbsp Desi Ghee",
+        "2 tsp Coriander seeds",
+        "1 tsp Cumin",
+        "½tsp Red chilly powder"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "text": "Whisk together curd, besan, sliced onions, garlic, ginger, turmeric, chilly powder, coriander powder, cumin powder, salt and water.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Heat a pan and add oil, then add methi seeds, cumin and dry red chilly and stir and add heeng.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add the curd mixture to the pan and stir continuously till it gets a boil, then lower the heat and let it cook, keeping stirring in between so that it does not stick to the bottom.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Let the kadi cook for half hour, keeping it stirred occasionally.",
+      "stated_minutes": 30
+    },
+    {
+      "text": "Mix together besan, salt, green chilly, turmeric, chilly powder, coriander seeds, cumin, baking powder, spinach and water to make a thick batter.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Heat oil in a deep pan and add small dollops of the batter to make pakora.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Cook the pakoras on slow heat till they are evenly cooked and light brown on the outside, remove and keep aside.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Optionally rest the pakoras after a first fry and then fry again on higher heat to get a nice color on them.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Check for salt in kadi and transfer it to a serving bowl.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Ten minutes before serving add pakora to piping hot kadi.",
+      "stated_minutes": 10
+    },
+    {
+      "text": "In a clean pan heat desi ghee, add coriander and cumin seeds, once they crackle turn off the heat and add chilly powder, stir and immediately add this tempering on top of the kadi pakora.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Serve immediately.",
+      "stated_minutes": null
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+{
+  "stopped": "blog fetch amzn.to: http 503",
+  "fetches_run": {
+    "ytdlp": 3,
+    "caption": 3,
+    "blog": 31
+  },
+  "planned": {
+    "ytdlp_max": 12,
+    "note": "caption + blog counts depend on what each video carries; see per-URL candidate counts"
+  },
+  "results": {
+    "pizza-dough": {
+      "url": "https://www.youtube.com/watch?v=WM1XcYXix0Y",
+      "seq": {
+        "ytdlp_s": 4.25,
+        "caption_s": 1.42,
+        "caption": {
+          "track": "manual/en",
+          "segments": 242
+        },
+        "blog_candidates_total": 28,
+        "blog_fetched": [
+          {
+            "link": "https://amzlink.to/az0vR1N8PiUPw",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.61
+          },
+          {
+            "link": "https://natashaskitchen.com/pizza-dough-recipe/",
+            "host": "natashaskitchen.com",
+            "hit": true,
+            "reason": null,
+            "s": 2.39
+          }
+        ],
+        "blog_s": 4.0,
+        "total_s": 9.67
+      },
+      "par": {
+        "ytdlp_s": 2.97,
+        "caption_s": 11.97,
+        "blog_candidates_total": 28,
+        "blog_fetched": [
+          {
+            "link": "https://amzlink.to/az0vR1N8PiUPw",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.28
+          },
+          {
+            "link": "https://natashaskitchen.com/pizza-dough-recipe/",
+            "host": "natashaskitchen.com",
+            "hit": true,
+            "reason": null,
+            "s": 1.84
+          },
+          {
+            "link": "https://natashaskitchen.com/homemade-pizza-sauce/",
+            "host": "natashaskitchen.com",
+            "hit": true,
+            "reason": null,
+            "s": 1.81
+          },
+          {
+            "link": "https://natashaskitchen.com/white-pizza-sauce/",
+            "host": "natashaskitchen.com",
+            "hit": true,
+            "reason": null,
+            "s": 2.31
+          },
+          {
+            "link": "https://amzlink.to/az0vR1N8PiUPw",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.88
+          },
+          {
+            "link": "https://amzlink.to/az0B62ZqnPy82",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.0
+          },
+          {
+            "link": "https://amzlink.to/az08754788m9W",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.61
+          },
+          {
+            "link": "https://amzlink.to/az0LIJUL8H07N",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.66
+          },
+          {
+            "link": "https://amzlink.to/az0ScYNqhxvLn",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 11.98
+          },
+          {
+            "link": "https://amzlink.to/az02q6fumsmSB",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 7.44
+          },
+          {
+            "link": "https://amzlink.to/az0KKK8gHZ1kO",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.44
+          },
+          {
+            "link": "https://amzlink.to/az0rWuYItLDUd",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 6.64
+          },
+          {
+            "link": "https://amzlink.to/az0jWjIm39jE3",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.81
+          },
+          {
+            "link": "https://amzlink.to/az02JJCheN9OD",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.75
+          },
+          {
+            "link": "https://amzlink.to/az0OuV0cOUsPO",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.66
+          },
+          {
+            "link": "https://amzlink.to/az0EQy7nL5LXk",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.78
+          },
+          {
+            "link": "https://amzlink.to/az0eAEWDMABAC",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.97
+          },
+          {
+            "link": "https://amzlink.to/az0ngl67IOPnt",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 12.38
+          },
+          {
+            "link": "https://amzlink.to/az0Wq8oQ19uRP",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 7.39
+          },
+          {
+            "link": "https://amzlink.to/az0pyXgX6NEaM",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.38
+          },
+          {
+            "link": "https://amzlink.to/az0edeFiMDZ5P",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.66
+          },
+          {
+            "link": "https://amzlink.to/az0VpLsYgbKx5",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.7
+          },
+          {
+            "link": "https://amzlink.to/az0pL0KwmB4yH",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 10.08
+          },
+          {
+            "link": "https://amzlink.to/az0EQbKni8vXb",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 6.91
+          },
+          {
+            "link": "https://amzlink.to/az0Rk76ieqQ1K",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.64
+          },
+          {
+            "link": "https://amzlink.to/az0zfn1h7Nn1u",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.31
+          },
+          {
+            "link": "https://amzlink.to/az0QlUNrpIy94",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 2.69
+          },
+          {
+            "link": "https://amzlink.to/az0faFt8CxaQy",
+            "host": "amzlink.to",
+            "hit": false,
+            "reason": "redirected to excluded host",
+            "s": 1.91
+          }
+        ],
+        "all_done_after_ytdlp_s": 121.91,
+        "effective_after_ytdlp_s": 11.97,
+        "total_s": 14.94,
+        "note": "same-host candidates are paced 5 s apart inside the timed section"
+      },
+      "saves_s": -5.27
+    },
+    "pumpkin-pancakes": {
+      "url": "https://www.youtube.com/watch?v=TYZNzCnNGwA"
+    }
+  }
+}

@@ -1,0 +1,814 @@
+{
+  "title": "छोले भटूरे",
+  "channel": "CookingShooking Hindi",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": null,
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "Chole",
+      "qty": "1 cup (chote wale best rahenge)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Meetha Soda",
+      "qty": "1/4 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Pani",
+      "qty": "Washing aur Soaking ke lie",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Suji",
+      "qty": "1/2 cup",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1 cup",
+      "unit": null,
+      "prep_note": "for suji",
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Maida",
+      "qty": "2 cups",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Namak",
+      "qty": "2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Cheeni",
+      "qty": "2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Baking Soda / Meetha Soda",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Dahi",
+      "qty": "Dough banane ke lie",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "1 tbsp + 1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "belne+frying ke lie",
+      "unit": null,
+      "prep_note": null,
+      "group": "Bhature ke lie"
+    },
+    {
+      "name": "Pyaaz",
+      "qty": "2 medium size",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Anardana",
+      "qty": "1 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1 1/2 cups",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dry / Sukha Amla",
+      "qty": "8-10 pieces",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Chaipatti",
+      "qty": "2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Oil",
+      "qty": "2 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Black Elaichi",
+      "qty": "2",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dalchini",
+      "qty": "1 inch",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Cloves",
+      "qty": "3-4",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Green Cardamom",
+      "qty": "1",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Kali Mirch",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Salt",
+      "qty": "taste hisab se",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ginger Garlic Paste",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Tomato",
+      "qty": "2 medium size, mixi me chala kar use karein",
+      "unit": null,
+      "prep_note": "puree",
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Chole / Chana Masala",
+      "qty": "2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Yellow Chilli Powder",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Red Chilli Powder",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Dhania Powder",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Jeera Powder",
+      "qty": "1/2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Meetha Soda",
+      "qty": "1/4 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Pani",
+      "qty": "1 1/2 to 2 cups",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ghee",
+      "qty": "1 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Adrak",
+      "qty": "1 inch",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    },
+    {
+      "name": "Ajwain",
+      "qty": "1/4 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "Chole ke lie"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Wash the chole twice and soak in water with baking soda (add 1/4 tsp meetha soda to the soaking water).",
+      "label": "Soak chole",
+      "attention": "unattended",
+      "attention_cue": "soak for 6 hours",
+      "duration_typical_min": 360.0,
+      "duration_min": 360.0,
+      "duration_max": 390.0,
+      "duration_stated": true,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Chole",
+        "Meetha Soda",
+        "Pani"
+      ],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Measure and soak suji: add 1/2 cup suji to 1 cup water and let it sit until fully soaked, then squeeze out excess water.",
+      "label": "Soak suji",
+      "attention": "unattended",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 5.0,
+      "duration_max": 7.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Suji",
+        "Pani"
+      ],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Make bhature dough: put 2 cups maida on a board, make a well, add 2 tsp namak, 2 tsp cheeni and 1/2 tsp baking soda. Add the squeezed semolina to the flour and mix.",
+      "label": "Mix dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 7.0,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1,
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Maida",
+        "Namak",
+        "Cheeni",
+        "Baking Soda / Meetha Soda",
+        "Suji"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 1–2 tbsp dahi and knead into a firm dough, adding flour if needed so dough is smooth but slightly firm.",
+      "label": "Knead dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 7.0,
+      "duration_min": 7.0,
+      "duration_max": 7.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2,
+        3
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Dahi",
+        "Maida"
+      ],
+      "produces_component": "bhature dough",
+      "station": "counter",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 1 tbsp oil and massage into the dough for 3–4 minutes until smooth and elastic.",
+      "label": "Oil and smooth",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 4.0,
+      "duration_min": 3.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3,
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil"
+      ],
+      "produces_component": "bhature dough",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Grease a bowl with 1 tbsp oil, place the dough inside, cover with a cloth and plate, and let it rest/ferment.",
+      "label": "Rest dough",
+      "attention": "unattended",
+      "attention_cue": "Let it rest and ferment for 6 hours",
+      "duration_typical_min": 360.0,
+      "duration_min": 180.0,
+      "duration_max": 360.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil"
+      ],
+      "produces_component": "rested dough",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Grind 2 onions and 1 tbsp anardana into a paste (no water). Transfer to a pot and add 1.5 cups water; add dry amla pieces and 2 tsp chaipatti, bring to a boil.",
+      "label": "Make anardana stock",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 7.0,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Pyaaz",
+        "Anardana",
+        "Pani",
+        "Dry / Sukha Amla",
+        "Chaipatti"
+      ],
+      "produces_component": "anardana stock",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Heat 2 tbsp oil in pressure cooker, add whole spices (black elaichi, dalchini, cloves, green cardamom, kali mirch) to crackle, then add the onion-anardana paste and sauté.",
+      "label": "Tadka in cooker",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil",
+        "Black Elaichi",
+        "Dalchini",
+        "Cloves",
+        "Green Cardamom",
+        "Kali Mirch",
+        "Pyaaz",
+        "Anardana"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add salt while sautéing, continue stirring; when cooker starts releasing steam reduce heat and cook until pressure releases, then add 1/2 tsp ginger garlic paste and close to cook onions for 1 minute.",
+      "label": "Cook onions",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        7
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Salt",
+        "Ginger Garlic Paste"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add blended tomato puree and cook on medium-high until rawness is gone.",
+      "label": "Cook tomato",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 8.0,
+      "duration_min": 5.0,
+      "duration_max": 12.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        8
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Tomato"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "remove rawness"
+    },
+    {
+      "text": "Drain the soaked chole (discard soaking water), add to cooker with 2 tsp chole masala, 1/2 tsp red chilli powder, 1 tsp dhania powder, 1/2 tsp jeera powder and 1/2 tsp meetha soda; add 1 peeled potato.",
+      "label": "Add spices and chole",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 3.0,
+      "duration_max": 7.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0,
+        9
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Chole",
+        "Chole / Chana Masala",
+        "Red Chilli Powder",
+        "Dhania Powder",
+        "Jeera Powder",
+        "Meetha Soda",
+        "Pani",
+        "Adrak"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Strain and add the boiled anardana/tea/amla liquid to the cooker, add 1.5–2 cups normal water, mix and close the cooker.",
+      "label": "Add anardana stock",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6,
+        10
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "anardana stock",
+        "Pani"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Cook on high flame until you hear 5 to 6 whistles, then reduce flame to low and cook for 10 minutes on simmer.",
+      "label": "Pressure cook chole",
+      "attention": "unattended",
+      "attention_cue": "cook for 10 more minutes on simmer",
+      "duration_typical_min": 10.0,
+      "duration_min": 10.0,
+      "duration_max": 10.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        11
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Chole",
+        "Pani"
+      ],
+      "produces_component": "cooked chole",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "5 to 6 whistles"
+    },
+    {
+      "text": "Turn off heat and let pressure release naturally, then open cooker and check chickpeas; mash the potato slightly if desired.",
+      "label": "Release pressure",
+      "attention": "unattended",
+      "attention_cue": "let the pressure release by itself",
+      "duration_typical_min": 10.0,
+      "duration_min": 5.0,
+      "duration_max": 15.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        12
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "fully soft and mushy"
+    },
+    {
+      "text": "Bring the cooked chole to a boil on high flame and check doneness by pressing a few beans—they should be soft and mushy.",
+      "label": "Boil and check",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 4.0,
+      "duration_min": 2.0,
+      "duration_max": 6.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        13
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "cooked chole"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "fully soft and mushy"
+    },
+    {
+      "text": "Heat a small pan, add ginger slices then add ajwain and sauté for 15–20 seconds; pour this tadka into the chole.",
+      "label": "Make tadka",
+      "attention": "hands_on",
+      "attention_cue": "Sauté for 15 to 20 seconds",
+      "duration_typical_min": 0.33,
+      "duration_min": 0.25,
+      "duration_max": 0.5,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        13,
+        14
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Adrak",
+        "Ajwain",
+        "Ghee"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Divide rested bhature dough into balls, let balls relax for 10 minutes (apply a little oil/moisture and cover) to release tension.",
+      "label": "Rest dough balls",
+      "attention": "unattended",
+      "attention_cue": "cover them with a cloth for at least 10 minutes",
+      "duration_typical_min": 10.0,
+      "duration_min": 10.0,
+      "duration_max": 20.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "rested dough"
+      ],
+      "produces_component": "dough balls",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Roll each dough ball gently without dusting with dry flour (or shape by hand), heat oil on high until very hot.",
+      "label": "Roll bhaturas",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        15
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "dough balls",
+        "Oil"
+      ],
+      "produces_component": null,
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Fry bhatura in very hot oil: put it gently, when it starts puffing flip quickly to help full puff, fry until golden on both sides, then drain excess oil.",
+      "label": "Fry bhaturas",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        16
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "dough balls",
+        "Oil"
+      ],
+      "produces_component": "fried bhaturas",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "stated_unbounded",
+      "freshness_cue": "Serve hot",
+      "max_lead_min": null,
+      "doneness_cue": "golden brown on both sides"
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method grounded from transcript. Ingredient names/quantities taken verbatim from the video description. Times and cues quoted exactly where present (soak 6 hours, knead 7 minutes, rest 6 hours, simmer 10 minutes, sauté 15 to 20 seconds). 'Serve hot' freshness cue comes from transcript implication to serve hot; quoted as 'Serve hot' for freshness. 'anardana stock' produced as component though not an explicit ingredient name; step uses ingredients listed."
+  ]
+}

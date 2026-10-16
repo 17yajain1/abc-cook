@@ -1,0 +1,478 @@
+{
+  "title": "The easiest way to make croissant",
+  "channel": "Liza’s Delicious recipes",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": null,
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "warm water",
+      "qty": "1/3 cup (80-90 ml)",
+      "unit": "cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "sugar",
+      "qty": "1 tbsp (10g)",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "dry yeast or instant yeast",
+      "qty": "1 tbsp (8g)",
+      "unit": "tbsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "warm milk",
+      "qty": "1/5 cup (50 ml)",
+      "unit": "cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "salt",
+      "qty": "2/3 tsp (4g)",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "flour",
+      "qty": "2 cups (250g)",
+      "unit": "cup",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "soft butter",
+      "qty": "5 tbsp (50g) for dough and 15 tbsp (150g) for grease",
+      "unit": "tbsp",
+      "prep_note": "soft",
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "Combine 1/3 cup warm water (80-90 ml), 1 tbsp sugar (10g) and 1 tbsp dry yeast or instant yeast (8g). Mix the ingredients.",
+      "label": "Activate yeast",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": null,
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "warm water",
+        "sugar",
+        "dry yeast or instant yeast"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Leave for 5 to 10 minutes.",
+      "label": "Bloom yeast",
+      "attention": "unattended",
+      "attention_cue": "Leave for 5 to 10 minutes.",
+      "duration_typical_min": 5.0,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 1/5 cup warm milk (50 ml), 2/3 tsp salt (4g) and mix the ingredients.",
+      "label": "Mix wet ingredients",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "warm milk",
+        "salt"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 2 cups flour (250g). Mixing dough by hands.",
+      "label": "Add flour",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "flour"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 5 tbsp soft butter (50g) and knead the dough by hand.",
+      "label": "Add butter",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "soft butter"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Kneading for 6 minutes by hand.",
+      "label": "Knead dough",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 6.0,
+      "duration_min": 6.0,
+      "duration_max": 6.5,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": "kneaded dough",
+      "station": "counter",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "smooth the dough out"
+    },
+    {
+      "text": "Let the dough rest at room temperature for 1 hour. If it appears to be twice the original size, it's ready.",
+      "label": "First rise",
+      "attention": "unattended",
+      "attention_cue": "Let the dough rest at room temperature for 1 hour.",
+      "duration_typical_min": 60.0,
+      "duration_min": 55.0,
+      "duration_max": 65.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": "risen dough",
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": "If it appears to be twice the original size, it's ready.",
+      "max_lead_min": null,
+      "doneness_cue": "twice the original size"
+    },
+    {
+      "text": "Transfer the dough to a well-floured surface. Divide the dough into 8 equal portions. Take one piece and form a ball. Roll out the dough into a circle.",
+      "label": "Portion and roll",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 10.0,
+      "duration_min": 8.0,
+      "duration_max": 15.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Transfer the one circle to a well-floured dish. Grease with soft butter. Put on top a circle of dough. Grease with soft butter. Put on top a circle of dough again.",
+      "label": "Layer circles with butter",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 4.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        7
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "soft butter"
+      ],
+      "produces_component": "stacked buttered circles",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Chill in fridge for one hour.",
+      "label": "Chill stack",
+      "attention": "unattended",
+      "attention_cue": "Chill in fridge for one hour.",
+      "duration_typical_min": 60.0,
+      "duration_min": 55.0,
+      "duration_max": 65.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        8
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "fridge",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Transfer the dough to a well-floured surface. Roll out the dough into a large rectangle. Trim the edges.",
+      "label": "Roll and trim",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 10.0,
+      "duration_min": 8.0,
+      "duration_max": 15.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        9
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Slice the large rectangle into 6 triangles. Cut a small slit at the wide end of the triangle, then tightly roll up.",
+      "label": "Shape croissants",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 12.0,
+      "duration_min": 8.0,
+      "duration_max": 18.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        10
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Transfer to a baking sheet.",
+      "label": "Arrange on sheet",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 3.0,
+      "duration_min": 2.0,
+      "duration_max": 5.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        11
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Let the dough rest at room temperature for 1 hour.",
+      "label": "Proof",
+      "attention": "unattended",
+      "attention_cue": "Let the dough rest at room temperature for 1 hour.",
+      "duration_typical_min": 60.0,
+      "duration_min": 55.0,
+      "duration_max": 65.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        12
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "none",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Grease with egg.",
+      "label": "Egg wash",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        13
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Bake at 190° (375°F) for 20-25 minutes.",
+      "label": "Bake",
+      "attention": "unattended",
+      "attention_cue": "Bake at 190° (375°F) for 20-25 minutes.",
+      "duration_typical_min": 22.5,
+      "duration_min": 20.0,
+      "duration_max": 25.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        14
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "oven",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "golden, flaky and buttery"
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method grounded from transcript (creator subtitles). I preserved ingredient names and quantities as stated. The butter line in ingredients combined both amounts into one \"soft butter\" ingredient with qty listing both uses because the source gives them on a single line. Several step durations and cues (5–10 minutes bloom, 6 minutes knead, 1 hour rests, 1 hour chill, 20–25 minute bake) are taken verbatim from the transcript."
+  ]
+}

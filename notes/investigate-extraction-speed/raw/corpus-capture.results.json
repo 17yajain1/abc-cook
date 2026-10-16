@@ -1,0 +1,271 @@
+[
+  {
+    "run_id": "https---www-youtube-com-watch-v-TYZNzCnNGwA__medium__0",
+    "input": "https---www-youtube-com-watch-v-TYZNzCnNGwA",
+    "arm": "medium",
+    "rep": 0,
+    "status": "done",
+    "tier": "repaired",
+    "degraded": false,
+    "wall_s": 77.9,
+    "extract_s": 76.0,
+    "repair_s": 2.0,
+    "output_tokens": 7222,
+    "reasoning_tokens": 5440,
+    "cost_inr": 1.8892185000000001,
+    "truncations": 0,
+    "violations": [
+      "ingredients_consumed"
+    ],
+    "repair_attempted": true,
+    "skip_reason": null,
+    "steps": 7,
+    "windows": 0,
+    "parallel_tasks": 0,
+    "warnings": [
+      "Step \"There are two different ways to eat these pancakes. The firs...\" was marked optional, but its cue \"There is two different ways to eat these pancakes.\" is not a grounded optional/alternative phrase; kept as a required step.",
+      "Step \"The other (the creator's favorite) is to top with chocolate ...\" was marked optional, but its cue \"But, then you have to try it my favorite way to eat it, which is with chocolate chips.\" is not a grounded optional/alternative phrase; kept as a required step.",
+      "Step references ingredient \"batter\", not found in the ingredient list.",
+      "Servings not stated in the source; defaulted to 4.",
+      "Graph repaired after one LLM repair pass."
+    ],
+    "violation_messages": [
+      {
+        "rule": "ingredients_consumed",
+        "message": "Ingredient \"ing_baking_soda\" (baking soda) is not consumed by any node."
+      }
+    ],
+    "fingerprint": {
+      "nodes": [
+        "add baking powder",
+        "add spices",
+        "cook pancakes",
+        "make batter",
+        "mix pumpkin",
+        "serve classic",
+        "serve with chips"
+      ],
+      "edges": [
+        "add baking powder -> make batter",
+        "add spices -> add baking powder",
+        "cook pancakes -> serve classic",
+        "cook pancakes -> serve with chips",
+        "make batter -> cook pancakes",
+        "mix pumpkin -> add spices",
+        "serve classic -> serve with chips"
+      ]
+    }
+  },
+  {
+    "run_id": "https---www-youtube-com-watch-v-YP8a6ugKQ6Y__medium__0",
+    "input": "https---www-youtube-com-watch-v-YP8a6ugKQ6Y",
+    "arm": "medium",
+    "rep": 0,
+    "status": "done",
+    "tier": "clean",
+    "degraded": false,
+    "wall_s": 53.9,
+    "extract_s": 53.9,
+    "repair_s": 0.0,
+    "output_tokens": 5110,
+    "reasoning_tokens": 4032,
+    "cost_inr": 0.8895335000000001,
+    "truncations": 0,
+    "violations": [],
+    "repair_attempted": null,
+    "skip_reason": null,
+    "steps": 4,
+    "windows": 1,
+    "parallel_tasks": 1,
+    "warnings": [
+      "Step \"Butter can be replaced with 1/2 cup vegetable oil....\" was marked alternative, but its cue \"Butter can be replaced with 1/2 cup vegetable oil.\" is not a grounded optional/alternative phrase; kept as a required step.",
+      "Step \"Bake it in a preheated oven at 180 C for about 20-25 minutes...\" shares an ingredient or component with earlier step \"Powdering the sugar will make the creaming easy....\"; added that dependency.",
+      "Step \"Butter can be replaced with 1/2 cup vegetable oil....\" shares an ingredient or component with earlier step \"Bake it in a preheated oven at 180 C for about 20-25 minutes...\"; added that dependency.",
+      "Servings not stated in the source; defaulted to 4."
+    ],
+    "fingerprint": {
+      "nodes": [
+        "bake cupcakes",
+        "powder sugar",
+        "preheat oven",
+        "use oil instead"
+      ],
+      "edges": [
+        "bake cupcakes -> use oil instead",
+        "powder sugar -> bake cupcakes",
+        "preheat oven -> bake cupcakes"
+      ]
+    }
+  },
+  {
+    "run_id": "https---www-youtube-com-watch-v-Oa2s0dklrRo__medium__0",
+    "input": "https---www-youtube-com-watch-v-Oa2s0dklrRo",
+    "arm": "medium",
+    "rep": 0,
+    "status": "done",
+    "tier": "clean",
+    "degraded": false,
+    "wall_s": 94.4,
+    "extract_s": 94.3,
+    "repair_s": 0.0,
+    "output_tokens": 10251,
+    "reasoning_tokens": 7360,
+    "cost_inr": 1.76669525,
+    "truncations": 0,
+    "violations": [],
+    "repair_attempted": null,
+    "skip_reason": null,
+    "steps": 11,
+    "windows": 1,
+    "parallel_tasks": 1,
+    "warnings": [
+      "Step \"Heat oil in a deep pan and drop small dollops of the batter ...\" uses the same burner as earlier step \"Add the kadi mixture to the pan, stir continuously till it c...\"; added that dependency.",
+      "Step \"Add the kadi mixture to the pan, stir continuously till it c...\" claims a stated duration, but no duration phrase was found in its own text; treated as an estimate, not a stated fact.",
+      "Step references ingredient \"kadi mixture\", not found in the ingredient list.",
+      "Step \"Add the kadi mixture to the pan, stir continuously till it c...\" duration was inferred (not stated); clamped to its low end (28 min) per the window-host rule.",
+      "Step references ingredient \"pakora batter\", not found in the ingredient list.",
+      "Step references ingredient \"par-fried pakoras\", not found in the ingredient list.",
+      "Step \"Give the partially fried pakoras a little rest so the heat p...\" duration was inferred (not stated); clamped to its low end (3 min) per the window-host rule.",
+      "Step references ingredient \"par-fried pakoras\", not found in the ingredient list.",
+      "Step references ingredient \"cooked kadi\", not found in the ingredient list.",
+      "Step references ingredient \"fried pakoras\", not found in the ingredient list.",
+      "Step references ingredient \"cooked kadi\", not found in the ingredient list.",
+      "Step references ingredient \"cooked kadi\", not found in the ingredient list.",
+      "\"Serve immediately....\" must be done fresh (source: \"Serve immediately.\"); no time limit is stated, so it is scheduled right before it's needed."
+    ],
+    "fingerprint": {
+      "nodes": [
+        "add pakoras",
+        "cook kadi",
+        "finish fry",
+        "finish kadi",
+        "fry pakoras (first)",
+        "make pakora batter",
+        "make tempering",
+        "mix kadi",
+        "rest pakoras",
+        "serve",
+        "temper spices"
+      ],
+      "edges": [
+        "add pakoras -> make tempering",
+        "add pakoras -> serve",
+        "cook kadi -> add pakoras",
+        "cook kadi -> finish kadi",
+        "cook kadi -> fry pakoras (first)",
+        "cook kadi -> serve",
+        "finish fry -> add pakoras",
+        "finish kadi -> add pakoras",
+        "finish kadi -> serve",
+        "fry pakoras (first) -> add pakoras",
+        "fry pakoras (first) -> finish fry",
+        "fry pakoras (first) -> rest pakoras",
+        "make pakora batter -> fry pakoras (first)",
+        "make tempering -> serve",
+        "mix kadi -> cook kadi",
+        "mix kadi -> temper spices",
+        "rest pakoras -> add pakoras",
+        "rest pakoras -> finish fry",
+        "temper spices -> cook kadi"
+      ]
+    }
+  },
+  {
+    "run_id": "https---www-youtube-com-watch-v-OzdqThvpMko__medium__0",
+    "input": "https---www-youtube-com-watch-v-OzdqThvpMko",
+    "arm": "medium",
+    "rep": 0,
+    "status": "done",
+    "tier": "clean",
+    "degraded": false,
+    "wall_s": 100.0,
+    "extract_s": 100.0,
+    "repair_s": 0.0,
+    "output_tokens": 10432,
+    "reasoning_tokens": 7424,
+    "cost_inr": 1.7929602500000001,
+    "truncations": 0,
+    "violations": [],
+    "repair_attempted": null,
+    "skip_reason": null,
+    "steps": 18,
+    "windows": 0,
+    "parallel_tasks": 0,
+    "warnings": [
+      "Step references ingredient \"dough portions\", not found in the ingredient list.",
+      "Step references ingredient \"dough portions\", not found in the ingredient list.",
+      "Step references ingredient \"stacked rounds chilled\", not found in the ingredient list.",
+      "Step \"Take one piece and form a ball. Roll out the dough into a ci...\" was marked as producing \"circle\", but no later step names it; dropped -- every later step already depends on it, so nothing downstream loses ordering information.",
+      "Servings not stated in the source; defaulted to 4."
+    ],
+    "fingerprint": {
+      "nodes": [
+        "add milk and salt",
+        "arrange on sheet",
+        "bake",
+        "chill",
+        "cut triangles",
+        "divide dough",
+        "egg wash",
+        "form circle",
+        "knead dough",
+        "mix yeast",
+        "proof",
+        "proof again",
+        "rest dough",
+        "roll rectangle",
+        "shape croissants",
+        "stack layers",
+        "trim",
+        "turn out dough"
+      ],
+      "edges": [
+        "add milk and salt -> knead dough",
+        "arrange on sheet -> proof again",
+        "chill -> roll rectangle",
+        "cut triangles -> shape croissants",
+        "divide dough -> form circle",
+        "divide dough -> stack layers",
+        "egg wash -> bake",
+        "form circle -> stack layers",
+        "knead dough -> rest dough",
+        "mix yeast -> proof",
+        "proof -> add milk and salt",
+        "proof -> knead dough",
+        "proof again -> egg wash",
+        "rest dough -> turn out dough",
+        "roll rectangle -> trim",
+        "shape croissants -> arrange on sheet",
+        "stack layers -> chill",
+        "stack layers -> roll rectangle",
+        "trim -> cut triangles",
+        "turn out dough -> divide dough"
+      ]
+    }
+  },
+  {
+    "run_id": "https---www-youtube-com-watch-v-FU1ZVLMbWjA__medium__0",
+    "input": "https---www-youtube-com-watch-v-FU1ZVLMbWjA",
+    "arm": "medium",
+    "rep": 0,
+    "status": "method_not_grounded",
+    "tier": "tier0",
+    "degraded": false,
+    "wall_s": 141.1,
+    "extract_s": 141.1,
+    "repair_s": 0.0,
+    "output_tokens": 16000,
+    "reasoning_tokens": 16000,
+    "cost_inr": 2.7483815000000003,
+    "truncations": 1,
+    "violations": [],
+    "repair_attempted": null,
+    "skip_reason": null,
+    "steps": 0,
+    "windows": 0,
+    "parallel_tasks": 0,
+    "warnings": [
+      "Extraction output looked like a runaway generation after truncating at 16000 tokens (repeated or missing steps); stopping rather than escalating."
+    ]
+  }
+]
