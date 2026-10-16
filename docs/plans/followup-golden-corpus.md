@@ -12,21 +12,32 @@ nodes is an expected snapshot diff, regenerated only with
 
 ## Follow-ups
 
-### FGC-1 (P1): a long Hindi transcript exhausts the output budget on reasoning, returns Tier 0, and is misdiagnosed
+### FGC-1 (P1): a long Hindi transcript exhausted the output budget on reasoning at medium, returned Tier 0, and is misdiagnosed
 
 Chole bhature (FU1ZVLMbWjA, 13:14, Hindi auto transcript of 11,602 chars, 3 ingredient groups):
-`reasoning_tokens = 16000`, `output_tokens = 16000`, no visible output, 1 truncation, 141 s,
-INR 2.75. The pipeline stopped without escalating and returned Tier 0 `method_not_grounded` with the
-warning "Extraction output looked like a runaway generation after truncating at 16000 tokens (repeated
-or missing steps)". That wording is wrong: nothing repeated; the whole budget went on reasoning. The
-recipe the product most needs to handle (long, non-English, multi-group) gets no plan at all.
+in the 2026-10-16 capture, `reasoning_tokens = 16000`, `output_tokens = 16000`, no visible output,
+1 truncation, 141 s, INR 2.75. The pipeline stopped without escalating and returned Tier 0
+`method_not_grounded` with the warning "Extraction output looked like a runaway generation after
+truncating at 16000 tokens (repeated or missing steps)". That wording is wrong: nothing repeated; the
+whole budget went on reasoning (`_is_runaway` returns True whenever `"steps"` is absent).
 
-- Evidence: `apps/api/tests/fixtures/import/known-wrong/chole-bhature.raw.json`.
+**Correction (investigation, 2026-10-16):** the capture ran `effort_ab --arms medium`, whose
+`ARM_EFFORT["medium"]` is `None`, i.e. the provider default (medium). Production is `low`
+(`normalize.py:32`), so this did **not** fail at the production setting. It did **not** reproduce:
+chole reached a plan in 5 of 5 new attempts (minimal, low x2, medium, translate-first at low). At low,
+reasoning was 192-512 tokens (3 of 3 low runs reached a plan, counting the translate-first run);
+medium reproduced the large reasoning (6,912 tokens, 99.8 s) but finished. So this is a rare stochastic
+exhaustion at medium (1 failure in 2 medium attempts overall), not a length or language limit. The
+transcript is 11,602 chars (29,442 is its UTF-8 byte length).
+
+- Evidence: `apps/api/tests/fixtures/import/known-wrong/chole-bhature.raw.json`;
+  `notes/investigate-extraction-speed/REPORT.md` (T3).
 - Competitor note: ReciMe imports this same video in ~10 s (owner recording, 2026-10-16), so it is
   achievable.
-- To decide: is the failure length or language? It needs one long English video in the next capture
-  round (see FGC-10). Options to evaluate then: a larger budget or lower reasoning effort for long
-  sources, and a truthful warning when `reasoning_tokens == output_tokens`.
+- Fix: (a) a truthful signal when `reasoning_tokens == output_tokens` and visible output is empty
+  ("the model used its whole budget thinking"), instead of "repeated or missing steps"; (b) a guard so
+  that no retry, escalation or config path can raise extraction effort above `low` (today effort is
+  only `low` unless a caller passes `extraction_effort`; `None` means the provider default, medium).
 
 ### FGC-2 (P1): an LLM auth/infra failure (401) surfaces as `method_not_grounded`
 
@@ -95,6 +106,44 @@ layers and Shape croissants are timed once and hands-on (46 min) is understated.
 Cupcakes: the description states a yield of 18-20 cupcakes; the plan says "Servings not stated in the
 source; defaulted to 4." Also seen on pumpkin pancakes and croissant ("Servings not stated"), where
 the source does give quantities but no count. Input for R3 (scaling).
+
+### FGC-11 (P2): croissant at low states 55 min (x3) where the source says "1 hour"
+
+In the extraction-speed smoke run, croissant at production `low` emitted `duration_min` 55 three times
+(labelled `extracted`, `duration_stated`) for the rests the source gives as "1 hour", "one hour" and
+"1 hour" (`croissant.original.json` source text). The golden and the `minimal` run have 60. This is a
+stated-time violation: a number the source states was changed. It is not FGC-6: FGC-6 is about number
+words the parser cannot read, and two of the three source phrases are the digit form "1 hour". n=1, so
+whether it recurs at `low` is not known; it needs a repeat before a fix is chosen.
+
+- Evidence: `notes/investigate-extraction-speed/REPORT.md` (T7, croissant minimal vs low).
+
+### FGC-12 (P2): run-to-run noise at low is large and the quality comparisons are n=1
+
+Same recipe, same settings, two runs: chole at `low` gave `total_min` 473 vs 909 and stated durations
+[5, 360] vs [6, 10, 360, 360]; pizza at `low` differed in edges (recall 0.33, node recall 0.7). The
+quality cells in the speed investigation are therefore n=1 and cannot certify "edges and stated
+durations unchanged" for any effort level, including today's. Wanted before M5: `minimal` vs `low`
+at n=3 on the corpus, scored on edges, stated durations and tier.
+
+- Evidence: `notes/investigate-extraction-speed/REPORT.md` (T7).
+
+### FGC-13 (P2): about 13% of full calls need an unparseable-response retry
+
+2 of 15 full runs (croissant at minimal, pizza at low) returned unparseable output and were retried:
++18-24 s and about 2x the cost (pizza INR 1.43 vs 0.66). The cause is unknown because `raw_text` is only
+kept on truncations (`openai.py` returns `ExtractResult(recipe=None, error=...)` with no text on a parse
+failure). Fix: capture the raw text (and `finish_reason`) on a parse failure before changing anything.
+
+- Evidence: `notes/investigate-extraction-speed/REPORT.md` (T2, rows with 2 calls).
+
+### Competitor note: ReciMe web (black-box HAR, 2026-10-16)
+
+- Fresh imports take 8.5-13.6 s server-side and 12.6-17.2 s to the recipe page.
+- No cache (`cached: false` x3), no streaming: one blocking POST.
+- Step output is about 230-420 tokens.
+- Hindi ingredients came back with garbled Devanagari.
+- Per-user duplicate detection: a repeat import returns HTTP 208.
 
 ### FGC-9: measurements on this corpus (no action)
 

@@ -1,0 +1,211 @@
+{
+  "stopped": null,
+  "results": {
+    "pumpkin-pancakes": {
+      "reps": [
+        {
+          "ytdlp_s": 3.66,
+          "caption_s": 1.58,
+          "track": "auto/en",
+          "segments": 72
+        },
+        {
+          "ytdlp_s": 3.39,
+          "caption_s": 1.44,
+          "track": "auto/en",
+          "segments": 72
+        }
+      ],
+      "oembed": {
+        "s": 0.22,
+        "code": 200,
+        "fields": [
+          "author_name",
+          "author_url",
+          "height",
+          "html",
+          "provider_name",
+          "provider_url",
+          "thumbnail_height",
+          "thumbnail_url",
+          "thumbnail_width",
+          "title",
+          "type",
+          "version",
+          "width"
+        ],
+        "title": "How To Make Pumpkin Pancakes"
+      },
+      "ytimg": {
+        "s": 0.3,
+        "code": 200,
+        "ctype": "image/jpeg",
+        "bytes": 19564
+      }
+    },
+    "kadhi-pakora": {
+      "reps": [
+        {
+          "ytdlp_s": 2.92,
+          "caption_s": 1.38,
+          "track": "manual/en",
+          "segments": 107
+        },
+        {
+          "ytdlp_s": 3.06,
+          "caption_s": 1.36,
+          "track": "manual/en",
+          "segments": 107
+        }
+      ],
+      "oembed": {
+        "s": 0.16,
+        "code": 200,
+        "fields": [
+          "author_name",
+          "author_url",
+          "height",
+          "html",
+          "provider_name",
+          "provider_url",
+          "thumbnail_height",
+          "thumbnail_url",
+          "thumbnail_width",
+          "title",
+          "type",
+          "version",
+          "width"
+        ],
+        "title": "My Home-Style Kadhi Pakora Recipe | मेरे घर जैसी पंजाबी स्टाईल पकोड़ा कढ़ी | Kunal Kapur Summer Recipe"
+      },
+      "ytimg": {
+        "s": 0.22,
+        "code": 200,
+        "ctype": "image/jpeg",
+        "bytes": 34666
+      }
+    },
+    "croissant": {
+      "reps": [
+        {
+          "ytdlp_s": 1.7,
+          "caption_s": 0.74,
+          "track": "manual/en",
+          "segments": 42
+        },
+        {
+          "ytdlp_s": 1.97,
+          "caption_s": 0.86,
+          "track": "manual/en",
+          "segments": 42
+        }
+      ],
+      "oembed": {
+        "s": 0.12,
+        "code": 200,
+        "fields": [
+          "author_name",
+          "author_url",
+          "height",
+          "html",
+          "provider_name",
+          "provider_url",
+          "thumbnail_height",
+          "thumbnail_url",
+          "thumbnail_width",
+          "title",
+          "type",
+          "version",
+          "width"
+        ],
+        "title": "The easiest way to make croissant! Why I didn't know this method before!"
+      },
+      "ytimg": {
+        "s": 0.25,
+        "code": 200,
+        "ctype": "image/jpeg",
+        "bytes": 35871
+      }
+    },
+    "vanilla-cupcakes": {
+      "reps": [
+        {
+          "ytdlp_s": 1.84,
+          "caption_s": null
+        },
+        {
+          "ytdlp_s": 1.83,
+          "caption_s": null
+        }
+      ],
+      "oembed": {
+        "s": 0.12,
+        "code": 200,
+        "fields": [
+          "author_name",
+          "author_url",
+          "height",
+          "html",
+          "provider_name",
+          "provider_url",
+          "thumbnail_height",
+          "thumbnail_url",
+          "thumbnail_width",
+          "title",
+          "type",
+          "version",
+          "width"
+        ],
+        "title": "Perfect Vanilla Cupcakes/How to make moist vanilla cupcakes/ Classic cupcakes"
+      },
+      "ytimg": {
+        "s": 0.22,
+        "code": 200,
+        "ctype": "image/jpeg",
+        "bytes": 16625
+      }
+    },
+    "chole-bhature": {
+      "reps": [
+        {
+          "ytdlp_s": 2.36,
+          "caption_s": 0.81,
+          "track": "auto/hi",
+          "segments": 306
+        },
+        {
+          "ytdlp_s": 1.88,
+          "caption_s": 0.67,
+          "track": "auto/hi",
+          "segments": 306
+        }
+      ],
+      "oembed": {
+        "s": 0.12,
+        "code": 200,
+        "fields": [
+          "author_name",
+          "author_url",
+          "height",
+          "html",
+          "provider_name",
+          "provider_url",
+          "thumbnail_height",
+          "thumbnail_url",
+          "thumbnail_width",
+          "title",
+          "type",
+          "version",
+          "width"
+        ],
+        "title": "छोले भटूरे बनाने की पूरी रेसिपी - Delhi Wale Chole Bhature 100% fulenge - CookingShooking Recipe"
+      },
+      "ytimg": {
+        "s": 0.23,
+        "code": 200,
+        "ctype": "image/jpeg",
+        "bytes": 33994
+      }
+    }
+  }
+}
