@@ -1,0 +1,270 @@
+{
+  "title": "Pumpkin Pancakes",
+  "channel": "This Crazy Kitchen",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": null,
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "15 oz can pumpkin",
+      "qty": "15 oz",
+      "unit": "can",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "2 eggs",
+      "qty": "2",
+      "unit": "eggs",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1/2 tsp salt",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1/2 tsp pumpkin pie spice",
+      "qty": "1/2",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1 tsp cinnamon",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1/4 cup brown sugar",
+      "qty": "1/4",
+      "unit": "cup",
+      "prep_note": "packed",
+      "group": null
+    },
+    {
+      "name": "1 tsp vanilla",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1 tsp baking powder",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1 tsp baking soda",
+      "qty": "1",
+      "unit": "tsp",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1/4 cup oil",
+      "qty": "1/4",
+      "unit": "cup",
+      "prep_note": "using lard",
+      "group": null
+    },
+    {
+      "name": "2 1/2 cups flour",
+      "qty": "2 1/2",
+      "unit": "cups",
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "1 1/2 cups of milk",
+      "qty": "1 1/2",
+      "unit": "cups",
+      "prep_note": null,
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "Place the 15 oz can pumpkin and 2 eggs in a bowl and mix until nice and fluffy.",
+      "label": "Mix pumpkin and eggs",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.5,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": false,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "15 oz can pumpkin",
+        "2 eggs"
+      ],
+      "produces_component": "pumpkin-egg mixture",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until nice and fluffy"
+    },
+    {
+      "text": "Add 1/2 tsp salt, 1/2 tsp pumpkin pie spice, 1 tsp cinnamon, 1/4 cup packed brown sugar and about 1 tsp vanilla; mix again.",
+      "label": "Add spices and sugar",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 0.5,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "1/2 tsp salt",
+        "1/2 tsp pumpkin pie spice",
+        "1 tsp cinnamon",
+        "1/4 cup brown sugar",
+        "1 tsp vanilla"
+      ],
+      "produces_component": "spiced pumpkin batter",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add 1 tsp baking powder, 1/4 cup oil (video uses lard), 2 1/2 cups flour and 1 1/2 cups milk, then mix until combined without overmixing.",
+      "label": "Make batter",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 4.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "1 tsp baking powder",
+        "1/4 cup oil",
+        "2 1/2 cups flour",
+        "1 1/2 cups of milk"
+      ],
+      "produces_component": "pancake batter",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "until combined; don't overmix"
+    },
+    {
+      "text": "Put butter on a hot pan and cook the pancakes like you would any other pancake until done.",
+      "label": "Cook pancakes",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 10.0,
+      "duration_min": 6.0,
+      "duration_max": 20.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "pancake batter"
+      ],
+      "produces_component": "cooked pancakes",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "There are two different ways to eat these pancakes: the classic way with butter and maple syrup.",
+      "label": "Classic topping",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 0.5,
+      "duration_min": 0.5,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "optional",
+      "role_cue": "There is two different ways to eat these pancakes",
+      "attach_to_step": 3,
+      "consumes_ingredients": [
+        "cooked pancakes"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Alternatively, top with chocolate chips (or chocolate syrup) and some homemade Cool Whip — the creator's favorite.",
+      "label": "Chocolate topping",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 0.5,
+      "duration_min": 0.5,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3
+      ],
+      "role": "optional",
+      "role_cue": "Alternatively",
+      "attach_to_step": 3,
+      "consumes_ingredients": [
+        "cooked pancakes"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method derived from auto-generated transcript; quoted role_cue/phrases are taken verbatim from transcript. Transcript is the source of all method steps and phrasing (auto-generated captions). Baking soda is listed in ingredients but not mentioned in the spoken method; it was kept in ingredients per source."
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "title": "Pumpkin Pancakes",
+  "ingredients": [
+    {
+      "group": "Ingredients",
+      "items": [
+        "15 oz can pumpkin",
+        "2 eggs",
+        "1/2 tsp salt",
+        "1/2 tsp pumpkin pie spice",
+        "1 tsp cinnamon",
+        "1/4 cup brown sugar",
+        "1 tsp vanilla",
+        "1 tsp baking powder",
+        "1 tsp baking soda",
+        "1/4 cup oil",
+        "2 1/2 cups flour",
+        "1 1/2 cups of milk"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "text": "Start with one 15-oz can of pumpkin and add two eggs.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Mix this up until it is nice and fluffy.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add 1/2 a tsp of salt, 1/2 a tsp of pumpkin pie spice, 1 tsp of cinnamon, and 1/4 of a cup of packed brown sugar.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add about a teaspoon or two of vanilla to your liking.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Mix the mixture again.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add 1 tsp of baking powder.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Add 1/4 of a cup of oil, 2 and 1/2 cups of flour, and 1 and 1/2 cups of milk.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Mix everything until combined, being careful not to overmix the batter.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Put some butter on your pan.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Make pancakes on the pan like you would any other pancake.",
+      "stated_minutes": null
+    }
+  ]
+}

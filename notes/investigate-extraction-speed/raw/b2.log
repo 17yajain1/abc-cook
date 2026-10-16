@@ -1,0 +1,12 @@
+pizza-dough seq: yt-dlp 4.2s caption 1.4210000000020955 blog 4.0s (2/28 candidates)
+pizza-dough par: yt-dlp 3.0s then effective 12.0s  -> saves -5.27s vs seq
+
+*** STOPPED: blog fetch amzn.to: http 503
+{
+  "stopped": "blog fetch amzn.to: http 503",
+  "fetches_run": {
+    "ytdlp": 3,
+    "caption": 3,
+    "blog": 31
+  }
+}

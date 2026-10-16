@@ -1,0 +1,189 @@
+{
+  "title": "Perfect Vanilla Cupcakes",
+  "channel": "The cookbook",
+  "method_grounded": true,
+  "servings": null,
+  "servings_source": "defaulted",
+  "yield_text": "This recipe makes 18 -20standard cupcakes.",
+  "cuisine": null,
+  "stated_total_min": null,
+  "ingredients": [
+    {
+      "name": "Sugar",
+      "qty": "1 Cup(200g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Unsalted Butter",
+      "qty": "1/2 cup (125 g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "All Purpose flour",
+      "qty": "1&1/2 cups (190 g)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Baking soda",
+      "qty": "1/2 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Baking Powder",
+      "qty": "1 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Salt",
+      "qty": "1/4 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Egg",
+      "qty": "2 Large",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Milk",
+      "qty": "3/4 cup( 185 ml)",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    },
+    {
+      "name": "Vanilla Essence",
+      "qty": "1& 1/2 teaspoon",
+      "unit": null,
+      "prep_note": null,
+      "group": null
+    }
+  ],
+  "steps": [
+    {
+      "text": "Preheat the oven for 10 minutes at 180 C.",
+      "label": "Preheat oven",
+      "attention": "unattended",
+      "attention_cue": "preheat for 10 minutes",
+      "duration_typical_min": 9.0,
+      "duration_min": 9.0,
+      "duration_max": 12.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [],
+      "produces_component": null,
+      "station": "oven",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Bake it in the preheated oven at 180 C for about 20-25 minutes.",
+      "label": "Bake cupcakes",
+      "attention": "unattended",
+      "attention_cue": "for about 20-25 minutes",
+      "duration_typical_min": 20.0,
+      "duration_min": 20.0,
+      "duration_max": 25.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Sugar",
+        "Unsalted Butter",
+        "All Purpose flour",
+        "Baking soda",
+        "Baking Powder",
+        "Salt",
+        "Egg",
+        "Milk",
+        "Vanilla Essence"
+      ],
+      "produces_component": null,
+      "station": "oven",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Powdering the sugar will make the creaming easy.",
+      "label": "Powder sugar",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "optional",
+      "role_cue": "Powdering the sugar will make the creaming easy.",
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Sugar"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Butter can be replaced with 1/2 cup vegetable oil.",
+      "label": "Use oil instead",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": null,
+      "duration_max": null,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "alternative",
+      "role_cue": "Butter can be replaced with 1/2 cup vegetable oil.",
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Unsalted Butter"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method text in the source is minimal: only oven preheat (preheat for 10 minutes at 180 C) and bake time (about 20-25 minutes) are explicitly given. I did not invent mixing/creaming/assembly steps — only included the explicit bake/preheat instructions and the two notes from the description (powder sugar as an optional prep and butter substitution as an alternative). Ingredients are listed exactly as in the source."
+  ]
+}

@@ -1,0 +1,504 @@
+{
+  "title": "Recipe Of Kadhi Pakora By Chef Kunal Kapur",
+  "channel": "Kunal Kapur",
+  "method_grounded": true,
+  "servings": 4,
+  "servings_source": "stated",
+  "yield_text": null,
+  "cuisine": "Indian",
+  "stated_total_min": 45,
+  "ingredients": [
+    {
+      "name": "Curd",
+      "qty": "1 ½cups",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Besan (gram flour)",
+      "qty": "4 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Onion sliced",
+      "qty": "½cup",
+      "unit": null,
+      "prep_note": "sliced",
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Garlic chopped",
+      "qty": "½tbsp",
+      "unit": null,
+      "prep_note": "chopped",
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Ginger chopped",
+      "qty": "½tbsp",
+      "unit": null,
+      "prep_note": "chopped",
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Turmeric",
+      "qty": "3/4 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Red chilly powder",
+      "qty": "1tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Coriander powder",
+      "qty": "1 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Roasted Cumin Powder",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Salt",
+      "qty": "to taste",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Water",
+      "qty": "10 cups",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Oil",
+      "qty": "3 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Methi dana (fenugreek)",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Cumin",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Dry red chilly",
+      "qty": "2 nos",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Heeng (asafoetida)",
+      "qty": "½tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR KADI"
+    },
+    {
+      "name": "Besan (gram flour)",
+      "qty": "1cup",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Salt",
+      "qty": "to taste",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Green chilly chopped",
+      "qty": "1no",
+      "unit": null,
+      "prep_note": "chopped",
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Turmeric",
+      "qty": "½tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Red chilly powder",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Coriander seeds",
+      "qty": "1 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Cumin",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Baking Powder",
+      "qty": "3/4 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Spinach chopped",
+      "qty": "1 cup",
+      "unit": null,
+      "prep_note": "chopped",
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Water",
+      "qty": "3/4 cup",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR PAKORA"
+    },
+    {
+      "name": "Desi Ghee",
+      "qty": "2 tbsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR TEMPERING"
+    },
+    {
+      "name": "Coriander seeds",
+      "qty": "2 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR TEMPERING"
+    },
+    {
+      "name": "Cumin",
+      "qty": "1 tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR TEMPERING"
+    },
+    {
+      "name": "Red chilly powder",
+      "qty": "½tsp",
+      "unit": null,
+      "prep_note": null,
+      "group": "FOR TEMPERING"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Whisk together curd, besan, sliced onions, garlic, ginger, turmeric, red chilly powder, coriander powder, roasted cumin powder, salt and water.",
+      "label": "Mix kadi base",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": null,
+      "duration_min": 5.0,
+      "duration_max": 10.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Curd",
+        "Besan (gram flour)",
+        "Onion sliced",
+        "Garlic chopped",
+        "Ginger chopped",
+        "Turmeric",
+        "Red chilly powder",
+        "Coriander powder",
+        "Roasted Cumin Powder",
+        "Salt",
+        "Water"
+      ],
+      "produces_component": "kadi mixture",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Heat a pan and add oil. Add methi dana, cumin and dry red chilly, stir and add heeng.\n",
+      "label": "Temper spices",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Oil",
+        "Methi dana (fenugreek)",
+        "Cumin",
+        "Dry red chilly",
+        "Heeng (asafoetida)"
+      ],
+      "produces_component": "tempering",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Add the curd mixture to the pan and stir continuously till it comes to a boil. Lower the heat and let it cook for half hour, keep stirring in between so that it does not stick to the bottom.",
+      "label": "Cook kadi",
+      "attention": "periodic",
+      "attention_cue": "keep stirring in between",
+      "duration_typical_min": 28.0,
+      "duration_min": 28.0,
+      "duration_max": 32.0,
+      "duration_stated": true,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0,
+        1
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "kadi mixture"
+      ],
+      "produces_component": "cooked kadi",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "till it gets a boil / let it cook for half hour"
+    },
+    {
+      "text": "Meanwhile, mix together besan, salt, chopped green chilly, turmeric, red chilly powder, coriander seeds, cumin, baking powder, chopped spinach and water to make a thick batter for pakora.",
+      "label": "Make pakora batter",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 5.0,
+      "duration_min": 4.0,
+      "duration_max": 8.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        0
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Besan (gram flour)",
+        "Salt",
+        "Green chilly chopped",
+        "Turmeric",
+        "Red chilly powder",
+        "Coriander seeds",
+        "Cumin",
+        "Baking Powder",
+        "Spinach chopped",
+        "Water"
+      ],
+      "produces_component": "pakora batter",
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "Heat oil in a deep pan and add small dollops of the batter to make pakora. Fry them on mild flame patiently so they cook through; remove when half done and let rest so heat penetrates inside, then fry again on higher heat until golden and cooked through.",
+      "label": "Fry pakoras",
+      "attention": "hands_on",
+      "attention_cue": "Stir them. On mild flame and patiently",
+      "duration_typical_min": 12.0,
+      "duration_min": 10.0,
+      "duration_max": 20.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        4
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "pakora batter",
+        "Oil"
+      ],
+      "produces_component": "pakoras",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "light brown on the outside / golden and cooked through"
+    },
+    {
+      "text": "Check for salt in kadi and transfer it to a serving bowl.",
+      "label": "Season kadi",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 1.0,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "cooked kadi"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "10 minutes before serving add pakora to piping hot kadi.",
+      "label": "Add pakoras",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 1.0,
+      "duration_min": 1.0,
+      "duration_max": 2.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        3,
+        5
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "pakoras",
+        "cooked kadi"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": true,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": null
+    },
+    {
+      "text": "In a clean pan heat desi ghee, add coriander & cumin seeds. Once they crackle turn off the heat and add red chilly powder, stir and immediately add this tempering on top of the kadi.",
+      "label": "Make tempering",
+      "attention": "hands_on",
+      "attention_cue": "Once they crackle",
+      "duration_typical_min": 1.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        1,
+        2
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "Desi Ghee",
+        "Coriander seeds",
+        "Cumin",
+        "Red chilly powder"
+      ],
+      "produces_component": "final tempering",
+      "station": "burner",
+      "interruptible": false,
+      "freshness": "none",
+      "freshness_cue": null,
+      "max_lead_min": null,
+      "doneness_cue": "once they crackle"
+    },
+    {
+      "text": "Pour the tempering over the kadi, stir lightly and garnish with fresh coriander leaf. Serve immediately.",
+      "label": "Serve",
+      "attention": "hands_on",
+      "attention_cue": null,
+      "duration_typical_min": 2.0,
+      "duration_min": 1.0,
+      "duration_max": 3.0,
+      "duration_stated": false,
+      "depends_on_previous": true,
+      "depends_on_steps": [
+        6
+      ],
+      "role": "required",
+      "role_cue": null,
+      "attach_to_step": null,
+      "consumes_ingredients": [
+        "final tempering",
+        "cooked kadi",
+        "pakoras"
+      ],
+      "produces_component": null,
+      "station": "counter",
+      "interruptible": false,
+      "freshness": "stated_unbounded",
+      "freshness_cue": "Serve immediately",
+      "max_lead_min": null,
+      "doneness_cue": null
+    }
+  ],
+  "chapters": [],
+  "notes": [
+    "Method and ingredient list taken from the linked recipe blog JSON-LD and video transcript; steps follow the blog's recipeInstructions with supporting detail from the transcript.",
+    "I used the blog's stated totalTime and recipeYield. \"Serve immediately\" was taken verbatim as a freshness cue.",
+    "Durations: the 30-minute kadi cook time is stated in the source and marked duration_stated=true; other durations are estimated when not explicitly timed."
+  ]
+}

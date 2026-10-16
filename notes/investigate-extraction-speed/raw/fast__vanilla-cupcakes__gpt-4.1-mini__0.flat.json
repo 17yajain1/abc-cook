@@ -1,0 +1,37 @@
+{
+  "title": "Perfect Vanilla Cupcakes",
+  "ingredients": [
+    {
+      "group": "Ingredients",
+      "items": [
+        "Sugar - 1 Cup (200g)",
+        "Unsalted Butter - 1/2 cup (125 g)",
+        "All Purpose flour - 1 1/2 cups (190 g)",
+        "Baking soda - 1/2 teaspoon",
+        "Baking Powder - 1 teaspoon",
+        "Salt - 1/4 teaspoon",
+        "Egg - 2 Large",
+        "Milk - 3/4 cup (185 ml)",
+        "Vanilla Essence - 1 1/2 teaspoon"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "text": "Preheat the oven for 10 minutes at 180 C.",
+      "stated_minutes": 10
+    },
+    {
+      "text": "Bake the cupcakes in the preheated oven at 180 C for about 20-25 minutes.",
+      "stated_minutes": 20
+    },
+    {
+      "text": "Powder the sugar to make the creaming easy.",
+      "stated_minutes": null
+    },
+    {
+      "text": "Replace butter with 1/2 cup vegetable oil if preferred.",
+      "stated_minutes": null
+    }
+  ]
+}
