@@ -1,6 +1,6 @@
 # Fix 4: saved-recipe staleness
 
-**Status:** plan rev 2, 2026-10-16. Not implemented. Supersedes the proposal in
+**Status:** plan rev 2, 2026-10-16. PR 1 (server) merged as #58. PR 2 (web) implemented on `fix/saved-recipe-staleness-web` per `docs/plans/fix-saved-recipe-staleness-web.md`, pending device validation and review. Supersedes the proposal in
 `docs/plans/followup-saved-recipe-staleness.md` (that proposal only re-ran `schedule()`; Step A shows that cannot fix v6/v7).
 All references are to `origin/main` @ 4c04f20.
 

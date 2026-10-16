@@ -12,6 +12,7 @@ import { CopySheet } from '@/home/CopySheet'
 import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
 import { ImportProgress, isProgressPhase } from '@/import/ImportScreen'
+import type { ImportExtras } from '@/import/importExtras'
 import { useImportJob } from '@/import/useImportJob'
 import { PlannerScreen } from '@/planner/PlannerScreen'
 import type { RenderPlan } from '@/plan/derive'
@@ -51,6 +52,7 @@ export function AppShell({
     plan: RenderPlan,
     payload: RecipePlanResponse,
     importMeta: ImportMeta,
+    extras: ImportExtras,
   ) => void
   onOpenFeedRecipe: (payload: RecipePlanResponse) => void
 }) {

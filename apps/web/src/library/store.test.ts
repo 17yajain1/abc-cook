@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
+import type { ImportMeta, ImportOriginal, RecipePlanResponse } from '@abc-cook/schema'
 
 import { canonicalSourceKey } from './sourceKey'
 import { createLibrary, type StorageLike } from './store'
@@ -226,13 +226,22 @@ describe('createLibrary — compatibility with unreadable data', () => {
     expect(storage.raw(salvageKey!)).toBe('{not valid json')
   })
 
-  it('a wrong version reads as empty and preserves the raw value', () => {
+  it('an unknown version reads as empty and preserves the raw value', () => {
+    const storage = new MemoryStorage()
+    storage.setItem('abc-cook:library:v1', JSON.stringify({ version: 99, recipes: [] }))
+
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    expect(library.list()).toEqual([])
+    expect(storage.keys().some((k) => k.startsWith('abc-cook:library:v1:unreadable-'))).toBe(true)
+  })
+
+  it('a version 2 library loads and is not salvaged', () => {
     const storage = new MemoryStorage()
     storage.setItem('abc-cook:library:v1', JSON.stringify({ version: 2, recipes: [] }))
 
     const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
     expect(library.list()).toEqual([])
-    expect(storage.keys().some((k) => k.startsWith('abc-cook:library:v1:unreadable-'))).toBe(true)
+    expect(storage.keys().some((k) => k.startsWith('abc-cook:library:v1:unreadable-'))).toBe(false)
   })
 
   it('a subsequent save does not clobber the salvaged raw value', () => {
@@ -254,5 +263,286 @@ describe('createLibrary — compatibility with unreadable data', () => {
     expect(saved.ok).toBe(true)
     if (!saved.ok) return
     expect(library.get(saved.recipe.id)?.payload).toEqual(KADAI)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Staleness PR 2 (B1, B6): v1 → v2 migration, save extras, quota fallback, refresh.
+// ---------------------------------------------------------------------------
+
+const ORIGINAL = {
+  recipe: { title: 'x', ingredients: [], steps: [] },
+  repair: null,
+  source_text: 'some grounding text',
+  raw_title: 'Raw title',
+  blog_name: null,
+  source: KADAI.graph.source,
+  graph_id: 'g_1',
+  acquisition_warnings: [],
+  sources: [],
+} as unknown as ImportOriginal
+
+const CLEAN_META: ImportMeta = { warnings: [], review_recommended: false, sources: [], provenance: null, degraded: false }
+const KEY = 'abc-cook:library:v1'
+
+function v1Entry(id: string, payload: RecipePlanResponse, extra: Record<string, unknown> = {}) {
+  return {
+    id,
+    source_key: canonicalSourceKey(payload.graph.source),
+    saved_at: '2026-09-01T10:00:00.000Z',
+    updated_at: '2026-09-01T10:00:00.000Z',
+    payload,
+    ...extra,
+  }
+}
+
+function seed(storage: MemoryStorage, body: unknown) {
+  storage.setItem(KEY, JSON.stringify(body))
+}
+
+describe('createLibrary — v1 → v2 migration (B6)', () => {
+  const v1Body = () => ({
+    version: 1,
+    recipes: [
+      v1Entry('a', KADAI, { import_meta: CLEAN_META }),
+      v1Entry('b', BIRYANI, { import_meta: null }),
+      v1Entry('c', { ...KADAI, graph: { ...KADAI.graph, source: { ...KADAI.graph.source, value: 'other text' } } }),
+    ],
+  })
+
+  it('reads all three v1 entries; every v1 field is deep-equal; a missing import_meta stays missing', () => {
+    const storage = new MemoryStorage()
+    const body = v1Body()
+    seed(storage, body)
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+
+    expect(library.list()).toHaveLength(3)
+    for (const original of body.recipes) {
+      const got = library.get(original.id)! as unknown as Record<string, unknown>
+      for (const [k, v] of Object.entries(original)) expect(got[k]).toEqual(v)
+    }
+    expect('import_meta' in library.get('c')!).toBe(false)
+  })
+
+  it('fills the new fields: postprocess_version null, original null, edits []', () => {
+    const storage = new MemoryStorage()
+    seed(storage, v1Body())
+    const got = createLibrary(storage).get('a')!
+    expect(got.postprocess_version).toBeNull()
+    expect(got.original).toBeNull()
+    expect(got.edits).toEqual([])
+  })
+
+  it('the next save writes version 2 with every entry', () => {
+    const storage = new MemoryStorage()
+    seed(storage, v1Body())
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    expect(library.save(BIRYANI).ok).toBe(true)
+
+    const written = JSON.parse(storage.raw(KEY)!)
+    expect(written.version).toBe(2)
+    expect(written.recipes).toHaveLength(3)
+  })
+
+  it('a v2 reread is the identity', () => {
+    const storage = new MemoryStorage()
+    const first = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    first.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    const raw = storage.raw(KEY)!
+
+    const second = createLibrary(storage, clock('2026-09-15T11:00:00Z'))
+    expect(second.list()).toEqual(first.list())
+    expect(storage.raw(KEY)).toBe(raw)
+  })
+
+  it('unknown fields on an entry survive a migrate + write', () => {
+    const storage = new MemoryStorage()
+    seed(storage, { version: 1, recipes: [v1Entry('a', KADAI, { future_field: { n: 1 } })] })
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    library.save(BIRYANI)
+    const written = JSON.parse(storage.raw(KEY)!)
+    expect(written.recipes.find((r: { id: string }) => r.id === 'a').future_field).toEqual({ n: 1 })
+  })
+
+  it('a malformed original becomes null and the entry is kept', () => {
+    const storage = new MemoryStorage()
+    seed(storage, {
+      version: 2,
+      recipes: [v1Entry('a', KADAI, { original: { recipe: 'nope' }, postprocess_version: 9, edits: [] })],
+    })
+    const got = createLibrary(storage).get('a')!
+    expect(got.original).toBeNull()
+    expect(got.postprocess_version).toBe(9)
+  })
+
+  it('a non-integer stamp becomes null; a non-array edits becomes []', () => {
+    const storage = new MemoryStorage()
+    seed(storage, {
+      version: 2,
+      recipes: [v1Entry('a', KADAI, { postprocess_version: '9', edits: 'x' }), v1Entry('b', BIRYANI, { postprocess_version: 8.5 })],
+    })
+    const library = createLibrary(storage)
+    expect(library.get('a')!.postprocess_version).toBeNull()
+    expect(library.get('a')!.edits).toEqual([])
+    expect(library.get('b')!.postprocess_version).toBeNull()
+  })
+
+  it('a well-formed original and edits are kept verbatim', () => {
+    const storage = new MemoryStorage()
+    const edits = [{ any: 'thing' }]
+    seed(storage, { version: 2, recipes: [v1Entry('a', KADAI, { original: ORIGINAL, postprocess_version: 9, edits })] })
+    const got = createLibrary(storage).get('a')!
+    expect(got.original).toEqual(ORIGINAL)
+    expect(got.edits).toEqual(edits)
+  })
+})
+
+describe('createLibrary — save extras and quota fallback (B1)', () => {
+  it('stores original and postprocess_version from extras', () => {
+    const library = createLibrary(new MemoryStorage(), clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    expect(saved.ok).toBe(true)
+    if (!saved.ok) return
+    expect(saved.recipe.original).toEqual(ORIGINAL)
+    expect(saved.recipe.postprocess_version).toBe(9)
+    expect(saved.withoutOriginal).toBe(false)
+  })
+
+  it('without extras both are null and edits is []', () => {
+    const library = createLibrary(new MemoryStorage(), clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI)
+    if (!saved.ok) throw new Error('save failed')
+    expect(saved.recipe.original).toBeNull()
+    expect(saved.recipe.postprocess_version).toBeNull()
+    expect(saved.recipe.edits).toEqual([])
+  })
+
+  it('a replace keeps the existing edits', () => {
+    const storage = new MemoryStorage()
+    const edits = [{ any: 'thing' }]
+    seed(storage, { version: 2, recipes: [v1Entry('a', KADAI, { original: null, postprocess_version: 8, edits })] })
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    if (!saved.ok) throw new Error('save failed')
+    expect(saved.replaced).toBe(true)
+    expect(saved.recipe.edits).toEqual(edits)
+    expect(saved.recipe.original).toEqual(ORIGINAL)
+  })
+
+  /** A storage that rejects any write whose body contains a non-null `original`. */
+  function quotaOnOriginal(storage: MemoryStorage) {
+    const real = storage.setItem.bind(storage)
+    storage.setItem = (k, v) => {
+      if (k === KEY && /"original":\{/.test(v)) throw new Error('QuotaExceededError')
+      real(k, v)
+    }
+  }
+
+  it('NEW entry: a failed write retries once with original null, keeps the stamp', () => {
+    const storage = new MemoryStorage()
+    quotaOnOriginal(storage)
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    expect(saved.ok).toBe(true)
+    if (!saved.ok) return
+    expect(saved.withoutOriginal).toBe(true)
+    expect(saved.recipe.original).toBeNull()
+    expect(saved.recipe.postprocess_version).toBe(9)
+    expect(JSON.parse(storage.raw(KEY)!).recipes[0].original).toBeNull()
+  })
+
+  it('REPLACED entry: the same retry applies', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    library.save(KADAI)
+    quotaOnOriginal(storage)
+    const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    if (!saved.ok) throw new Error('save failed')
+    expect(saved.replaced).toBe(true)
+    expect(saved.withoutOriginal).toBe(true)
+    expect(saved.recipe.original).toBeNull()
+  })
+
+  it('both writes failing returns {ok:false} and leaves the list unchanged', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    library.save(KADAI)
+    const before = library.list()
+    storage.setItem = () => {
+      throw new Error('QuotaExceededError')
+    }
+    const saved = library.save(BIRYANI, CLEAN_META, { original: ORIGINAL, postprocess_version: 9 })
+    expect(saved.ok).toBe(false)
+    expect(library.list()).toEqual(before)
+  })
+})
+
+describe('createLibrary — refresh in place (B1)', () => {
+  const refreshed: RecipePlanResponse = { ...KADAI, graph: { ...KADAI.graph, title: 'Refreshed title' } }
+
+  it('replaces payload, import_meta and stamp; keeps id, source_key, saved_at, updated_at, original, edits', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, postprocess_version: 8 })
+    if (!saved.ok) throw new Error('save failed')
+    library.save(BIRYANI) // a later entry, so a reorder would be visible
+    const orderBefore = library.list().map((r) => r.id)
+
+    const later = createLibrary(storage, clock('2026-09-20T10:00:00Z'))
+    const result = later.refresh(saved.recipe.id, {
+      payload: refreshed,
+      import_meta: { ...CLEAN_META, degraded: true },
+      postprocess_version: 9,
+    })
+    expect(result.ok).toBe(true)
+    const got = later.get(saved.recipe.id)!
+    expect(got.payload.graph.title).toBe('Refreshed title')
+    expect(got.import_meta?.degraded).toBe(true)
+    expect(got.postprocess_version).toBe(9)
+    expect(got.id).toBe(saved.recipe.id)
+    expect(got.source_key).toBe(saved.recipe.source_key)
+    expect(got.saved_at).toBe(saved.recipe.saved_at)
+    expect(got.updated_at).toBe(saved.recipe.updated_at)
+    expect(got.original).toEqual(ORIGINAL)
+    expect(got.edits).toEqual([])
+    expect(later.list().map((r) => r.id)).toEqual(orderBefore)
+  })
+
+  it('persists across a reload', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI)
+    if (!saved.ok) throw new Error('save failed')
+    library.refresh(saved.recipe.id, { payload: refreshed, import_meta: null, postprocess_version: 9 })
+    expect(createLibrary(storage).get(saved.recipe.id)?.payload.graph.title).toBe('Refreshed title')
+  })
+
+  it('rejects a payload whose source key differs, writing nothing', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI)
+    if (!saved.ok) throw new Error('save failed')
+    const raw = storage.raw(KEY)
+    const result = library.refresh(saved.recipe.id, { payload: BIRYANI, import_meta: null, postprocess_version: 9 })
+    expect(result.ok).toBe(false)
+    expect(storage.raw(KEY)).toBe(raw)
+  })
+
+  it('rejects an unknown id', () => {
+    const library = createLibrary(new MemoryStorage())
+    expect(library.refresh('nope', { payload: KADAI, import_meta: null, postprocess_version: 9 }).ok).toBe(false)
+  })
+
+  it('a failed write returns {ok:false} and leaves the entry unchanged', () => {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-09-15T10:00:00Z'))
+    const saved = library.save(KADAI)
+    if (!saved.ok) throw new Error('save failed')
+    storage.setItem = () => {
+      throw new Error('QuotaExceededError')
+    }
+    const result = library.refresh(saved.recipe.id, { payload: refreshed, import_meta: null, postprocess_version: 9 })
+    expect(result.ok).toBe(false)
+    expect(library.get(saved.recipe.id)?.payload.graph.title).toBe(KADAI.graph.title)
   })
 })

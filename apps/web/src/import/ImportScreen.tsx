@@ -121,11 +121,15 @@ export function ImportProgress({
 export function ImportScreen({
   onImported,
   onCancel,
+  initialUrl,
 }: {
   onImported: OnImported
   onCancel: () => void
+  /** Prefills the field (Re-import). The user still taps "Get the plan": an LLM spend is
+   * never started by a mount. */
+  initialUrl?: string
 }) {
-  const job = useImportJob(onImported)
+  const job = useImportJob(onImported, initialUrl)
   const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
 
   if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />

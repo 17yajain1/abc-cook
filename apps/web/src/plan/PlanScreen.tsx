@@ -8,6 +8,7 @@ import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
+import type { StalenessMarker } from './staleness'
 import { StageCard } from './StageCard'
 import { WaitRow } from './WaitRow'
 
@@ -66,6 +67,7 @@ export function PlanScreen({
   onStartCooking,
   save,
   importMeta,
+  staleness,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -74,6 +76,7 @@ export function PlanScreen({
   onStartCooking: () => void
   save?: SaveControl
   importMeta?: ImportMeta | null
+  staleness?: StalenessMarker
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const statusLine = statusLineFor(importMeta)
@@ -146,8 +149,9 @@ export function PlanScreen({
         onScroll={onScroll}
         className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
       >
-        <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} />
-        {statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
+        <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} staleness={staleness} />
+        {/* A6 stays here, and stays hidden while the staleness line shows under the title. */}
+        {!staleness && statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 
         <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
           {tabs}

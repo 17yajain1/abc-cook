@@ -1,5 +1,7 @@
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
+import type { ImportExtras } from '@/import/importExtras'
+
 import { canonicalSourceKey } from '@/library/sourceKey'
 
 /**
@@ -32,7 +34,15 @@ import { canonicalSourceKey } from '@/library/sourceKey'
  */
 export type PlanOrigin =
   | { kind: 'server'; recipeId: string }
-  | { kind: 'import'; payload: RecipePlanResponse; importMeta: ImportMeta }
+  | {
+      kind: 'import'
+      payload: RecipePlanResponse
+      importMeta: ImportMeta
+      /** The refresh inputs from the import, so a Save retry stores them too. */
+      extras?: ImportExtras
+      /** Opened from the public feed: saved with `import_meta: null`, like the card path. */
+      fromFeed?: boolean
+    }
   | { kind: 'library'; id: string }
 
 /** The library lookup `planKeyFor` needs — `Library['findBySource']`'s own signature,

@@ -9,6 +9,8 @@ import { headerMeta } from './headerMeta'
 import { CookOutlineView } from './CookOutlineView'
 import { PlanAheadCard } from './PlanAheadCard'
 import type { RenderPlan } from './derive'
+import type { StalenessMarker } from './staleness'
+import { StalenessNotice } from './StalenessNotice'
 
 /** M2.12: Save state for a Plan view opened from an import, or the static mark for one
  * opened from the library. Absent entirely for a fixture recipe (nothing to save). */
@@ -36,6 +38,7 @@ export function RecipeHeader({
   save,
   importMeta,
   onBack,
+  staleness,
 }: {
   plan: RenderPlan
   save?: SaveControl
@@ -44,6 +47,8 @@ export function RecipeHeader({
   /** For the legacy-defaulted-servings gap only (`lib/servings.ts`) — absent for a
    * fixture recipe (never went through `/import`), same as `PlanScreen`'s own prop. */
   importMeta?: ImportMeta | null
+  /** The saved plan may be out of date: shown directly under the title. */
+  staleness?: StalenessMarker
 }) {
     const servings = servingsLine(plan.servingsSource, importMeta)
   const source = sourceLink(plan.sourceUrl)
@@ -60,6 +65,7 @@ export function RecipeHeader({
       <h1 className="text-[30px] font-bold leading-[34px] tracking-[-0.5px] text-home-ink">
         {plan.title}
       </h1>
+      {staleness && <StalenessNotice marker={staleness} />}
       {source && (
         <a
           href={source.href}

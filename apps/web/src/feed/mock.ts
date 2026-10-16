@@ -17,6 +17,7 @@ import pizza from '@/__fixtures__/pizza-dough.plan-response.json'
 import shortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
 import twoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
 import twoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
+import stamp from '@/__fixtures__/postprocess-version.json'
 import { canonicalSourceKey } from '@/library/sourceKey'
 
 import { applyFilter } from './filter'
@@ -85,6 +86,14 @@ function toItem(e: Entry, now: number): FeedItem {
   }
 }
 
+/** A fresh copy of the fixture with the entry's fake source written on, so its
+ * `canonicalSourceKey` equals the item's `sourceKey`. */
+function planFor(entry: Entry): RecipePlanResponse {
+  const payload = structuredClone(entry.fixture)
+  payload.graph.source = entry.source
+  return payload
+}
+
 export function createMockFeedSource(now: () => number = Date.now): FeedSource {
   const items = ENTRIES.map((e) => toItem(e, now()))
   return {
@@ -93,9 +102,12 @@ export function createMockFeedSource(now: () => number = Date.now): FeedSource {
     getPlan: (itemId) => {
       const entry = ENTRIES.find((e) => e.id === itemId)
       if (!entry) return Promise.reject(new Error(`No mock feed item ${itemId}`))
-      const payload = structuredClone(entry.fixture)
-      payload.graph.source = entry.source
-      return Promise.resolve(payload)
+      return Promise.resolve(planFor(entry))
+    },
+    findBySourceKey: (sourceKey) => {
+      const entry = ENTRIES.find((e) => canonicalSourceKey(e.source) === sourceKey)
+      if (!entry) return Promise.resolve(null)
+      return Promise.resolve({ payload: planFor(entry), postprocessVersion: stamp.postprocess_version })
     },
   }
 }

@@ -42,4 +42,11 @@ export interface FeedSource {
   list(filterId: string): Promise<FeedItem[]>
   /** The full plan for an item, ready for `PlanScreen`. */
   getPlan(itemId: string): Promise<RecipePlanResponse>
+  /**
+   * The feed's entry for a canonical source key, with the `POSTPROCESS_VERSION` the feed
+   * bundle was built at, or `null` when the feed doesn't list that source. Lets a saved
+   * recipe with no `original` be replaced by a current copy (staleness plan B6). H2
+   * implements it server-side.
+   */
+  findBySourceKey(sourceKey: string): Promise<{ payload: RecipePlanResponse; postprocessVersion: number } | null>
 }
