@@ -1,0 +1,570 @@
+{
+  "recipe": {
+    "title": "Home-Style Kadhi Pakora",
+    "channel": "Kunal Kapur",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": 45,
+    "ingredients": [
+      {
+        "name": "Curd",
+        "qty": "1 ½",
+        "unit": "cups",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Besan (gram flour)",
+        "qty": "4",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Onion",
+        "qty": "½",
+        "unit": "cup",
+        "prep_note": "sliced",
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Garlic",
+        "qty": "½",
+        "unit": "tbsp",
+        "prep_note": "chopped",
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Ginger",
+        "qty": "½",
+        "unit": "tbsp",
+        "prep_note": "chopped",
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Turmeric",
+        "qty": "3/4",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Red chilly powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Coriander powder",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Salt",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Water",
+        "qty": "10",
+        "unit": "cups",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Oil",
+        "qty": "3",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Methi dana (fenugreek)",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Cumin",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Dry red chilly",
+        "qty": "2",
+        "unit": "nos",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Heeng (asafoetida)",
+        "qty": "½",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI"
+      },
+      {
+        "name": "Besan (gram flour)",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Salt",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Green chilly",
+        "qty": "1",
+        "unit": "no",
+        "prep_note": "chopped",
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Turmeric",
+        "qty": "½",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Red chilly powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Coriander seeds",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Cumin",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Baking Powder",
+        "qty": "3/4",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Spinach",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": "chopped",
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Water",
+        "qty": "3/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": "FOR PAKORA"
+      },
+      {
+        "name": "Desi Ghee",
+        "qty": "2",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING"
+      },
+      {
+        "name": "Coriander seeds",
+        "qty": "2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING"
+      },
+      {
+        "name": "Cumin",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING"
+      },
+      {
+        "name": "Red chilly powder",
+        "qty": "½",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING"
+      }
+    ],
+    "steps": [
+      {
+        "text": "Whisk together curd, besan, sliced onions, garlic, ginger, turmeric, chilly powder, coriander powder, cumin powder, salt and water to make the kadi mixture.",
+        "label": "Mix kadi",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Curd",
+          "Besan (gram flour)",
+          "Onion",
+          "Garlic",
+          "Ginger",
+          "Turmeric",
+          "Red chilly powder",
+          "Coriander powder",
+          "Roasted Cumin Powder",
+          "Salt",
+          "Water"
+        ],
+        "produces_component": "kadi mixture",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Heat a pan and add oil. When the oil heats up add methi dana, cumin and dry red chilly; stir and add heeng, give a quick stir.",
+        "label": "Temper spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Oil",
+          "Methi dana (fenugreek)",
+          "Cumin",
+          "Dry red chilly",
+          "Heeng (asafoetida)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Add the kadi mixture to the pan, stir continuously till it comes to a boil. Now lower the heat and let it cook for half hour; keep stirring in between so that it does not stick to the bottom.",
+        "label": "Cook kadi",
+        "attention": "periodic",
+        "attention_cue": "keep stirring in between so that it does not stick to the bottom.",
+        "duration_typical_min": 30.0,
+        "duration_min": 28.0,
+        "duration_max": 32.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "kadi mixture"
+        ],
+        "produces_component": "cooked kadi",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "nicely thickened, rawness of the flour has completely disappeared"
+      },
+      {
+        "text": "Mix together besan, salt, chopped green chilly, turmeric, red chilly powder, coriander seeds, cumin, baking powder, chopped spinach and water to make a thick pakora batter.",
+        "label": "Make pakora batter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Besan (gram flour)",
+          "Salt",
+          "Green chilly",
+          "Turmeric",
+          "Red chilly powder",
+          "Coriander seeds",
+          "Cumin",
+          "Baking Powder",
+          "Spinach",
+          "Water"
+        ],
+        "produces_component": "pakora batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Heat oil in a deep pan and drop small dollops of the batter to make pakoras; fry them on mild flame patiently so they cook through (first fry until partially cooked).",
+        "label": "Fry pakoras (first)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 8.0,
+        "duration_min": 6.0,
+        "duration_max": 12.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "pakora batter"
+        ],
+        "produces_component": "par-fried pakoras",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "half done"
+      },
+      {
+        "text": "Give the partially fried pakoras a little rest so the heat penetrates to the insides.",
+        "label": "Rest pakoras",
+        "attention": "unattended",
+        "attention_cue": "Give it a little rest, So that the heat penetrates to the insides.",
+        "duration_typical_min": 8.0,
+        "duration_min": 3.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "par-fried pakoras"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Heat the oil hotter and fry the rested pakoras again until evenly cooked and light brown on the outside (finish fry).",
+        "label": "Finish fry",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4,
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "par-fried pakoras"
+        ],
+        "produces_component": "fried pakoras",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "light brown on the outside"
+      },
+      {
+        "text": "Check the cooked kadi for salt and transfer it to a serving bowl.",
+        "label": "Finish kadi",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked kadi"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Ten minutes before serving, add the fried pakoras to the piping hot kadi.",
+        "label": "Add pakoras",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "fried pakoras",
+          "cooked kadi"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "In a clean pan heat desi ghee, add coriander and cumin seeds; once they crackle, turn off the heat, add red chilly powder, stir and immediately pour this tempering over the kadi pakora.",
+        "label": "Make tempering",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Desi Ghee",
+          "Coriander seeds",
+          "Cumin",
+          "Red chilly powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Once they crackle"
+      },
+      {
+        "text": "Serve immediately.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8,
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked kadi"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Serve immediately.",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Primary method taken from the linked recipe JSON-LD (recipeInstructions). The creator transcript was used to add the two-stage pakora frying sequence (par-fry → rest → finish fry) and some spoken cues (e.g. resting language). Ingredient groups (FOR KADI / FOR PAKORA / FOR TEMPERING) taken from the video description; ingredient quantities/names taken from the recipe JSON-LD. Several ingredient names repeat across groups (e.g. Besan (gram flour), Turmeric, Cumin, Salt, Water); these are kept as separate ingredient lines with their stated quantities and grouped per the source. Attention/periodic cues and the explicit \"let it cook for half hour, keep stirring in between so that it does not stick to the bottom.\" phrase are quoted verbatim from the recipeInstructions."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: My Home-Style Kadhi Pakora Recipe | मेरे घर जैसी पंजाबी स्टाईल पकोड़ा कढ़ी | Kunal Kapur Summer Recipe\n\nChannel: Kunal Kapur\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@context\": \"http://schema.org/\",\n  \"@type\": \"Recipe\",\n  \"name\": \"Recipe Of Kadhi Pakora By Chef Kunal Kapur\",\n  \"image\": \"https://www.chefkunalkapur.com/wp-content/uploads/2021/03/kadi-pakora-1-1300x867.jpg?v=1620923037\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Chef Kunal Kapur\"\n  },\n  \"datePublished\": \"2021-03-04\",\n  \"description\": \"\",\n  \"recipeCuisine\": \"Indian\",\n  \"recipeCategory\": \"Curries\",\n  \"keywords\": \"curry,dinner,kadhi pakoda banane ki recipe,lunch,Main Course,punjabi,rajasthani,recipe of pakoda kadhi,summer\",\n  \"aggregateRating\": [],\n  \"prepTime\": \"PT15M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT45M\",\n  \"recipeYield\": \"4 Servings\",\n  \"recipeIngredient\": [\n    \"Curd: 1 ½cups\",\n    \"Besan (gram flour): 4 tbsp\",\n    \"Onion sliced: ½cup\",\n    \"Garlic chopped: ½tbsp\",\n    \"Ginger chopped: ½tbsp\",\n    \"Turmeric: 3/4 tsp\",\n    \"Red chilly powder: 1tsp\",\n    \"Coriander powder: 1 tbsp\",\n    \"Roasted Cumin Powder: 1 tsp\",\n    \"Salt: to taste\",\n    \"Water: 10 cups\",\n    \"Oil: 3 tbsp\",\n    \"Methi dana (fenugreek): 1 tsp\",\n    \"Cumin: 1 tsp\",\n    \"Dry red chilly: 2 nos\",\n    \"Heeng (asafoetida): ½tsp\",\n    \"Besan (gram flour): 1cup\",\n    \"Salt: to taste\",\n    \"Green chilly chopped:  1no\",\n    \"Turmeric: ½tsp\",\n    \"Red chilly powder: 1 tsp\",\n    \"Coriander seeds: 1 tbsp\",\n    \"Cumin: 1 tsp\",\n    \"Baking Powder: 3/4 tsp\",\n    \"Spinach chopped: 1 cup\",\n    \"Water: 3/4 cup\",\n    \"Desi Ghee: 2 tbsp\",\n    \"Coriander seeds: 2 tsp\",\n    \"Cumin: 1 tsp\",\n    \"Red chilly powder: ½tsp\"\n  ],\n  \"recipeInstructions\": [\n    \"Whisk together curd, besan, sliced onions, garlic, ginger, turmeric, chilly powder, coriander powder, cumin powder, salt and water. Heat a pan and add oil. Add methi seeds, cumin and dry red chilly. \\n\",\n    \"Stir and add heeng. Give a quick stir and add the curd mixture. Stir continuously till it gets a boil. Now lower the heat and let it cook for half hour, keep stirring in between so that it does not stick to the bottom. In the mean time mix together besan, salt, green chilly, turmeric, chilly powder, coriander seeds, cumin, baking powder, spinach and water to make a thick batter. Heat oil in a deep pan and add small dollops of the batter to make pakora. \\n\",\n    \"Cook them on slow heat till they are evenly cooked and light brown on the outside. Remove and keep aside. Check for salt in kadi and remove it to a serving bowl. 10 minutes before serving add pakora to piping hot kadi. In a clean pan heat desi ghee, add coriander & cumin seeds. Once they crackle turn off the heat and add chilly powder, stir and immediately add this tempering on top of the dadi pakora. \\n\",\n    \"Serve immediately.\\n\"\n  ]\n}\n\nVideo description:\n\nकढ़ी पकोड़ा रेसिपी | पंजाबी कढ़ी रेसिपी | कढ़ी पकोड़े की रेसिपी शायद खट्टी दही और मसालों के साथ बनाई जाने वाली लोकप्रिय उत्तर भारतीय करी रेसिपी में से एक है। यह आमतौर पर चावल व्यंजनों की पसंद के लिए एक साइड डश के रूप में परोसा जाता है, लेकिन रोटी और चपाती के साथ भी परोसा जा सकता है।\n\nKadhi pakora recipe | Punjabi kadhi recipe | recipe for kadhi pakora. perhaps one of the popular north Indian curry recipe made with chickpea flour, sour yogurt, and spices. it is typically served as a side dish to the choice of rice recipes, but can also be served with roti and chapati. It's the weekend then you know it is Kadi Chawal time. Punjabi style Kadi Pakora made just the way my mother makes it at home, esp on Sunday. \n\n#kadhipakora #pakora #kadi #kadhi #lunchrecipe #kunalkapurrecipe #chefkunalkapur #chefkunal #quicklunch #homestylekadhi #punjabikadhipakora #kadhichawal \n\n--------------------------------------------------------------------------------------------\n\nIngredients:\nFOR KADI\n1 ½cups Curd\n4 tbsp Besan (gram flour)\n½cup Onion sliced\n½tbsp Garlic chopped\n½tbsp Ginger chopped\n3/4 tsp Turmeric\n1tsp Red chilly powder\n1 tbsp Coriander powder\n1 tsp Roasted Cumin Powder\nto taste Salt\n10 cups Water\n3 tbsp Oil\n1 tsp Methi dana (fenugreek)\n1 tsp Cumin\n2 nos Dry red chilly\n½tsp Heeng (asafoetida)\n\nFOR PAKORA\n1cup Besan (gram flour)\nto taste Salt\n1no Green chilly chopped\n½tsp Turmeric\n1 tsp Red chilly powder\n1 tbsp Coriander seeds\n tsp Cumin\n3/4 tsp Baking Powder\n1 cup Spinach chopped\n3/4 cup Water\n\nFOR TEMPERING\n2 tbsp Desi Ghee\n2 tsp Coriander seeds\n1 tsp Cumin\n½tsp Red chilly powder\n\nClick for the written recipe - https://www.chefkunalkapur.com/recipe/kadi-pakoda/\n\n--------------------------------------------------------------------------------------------\n\nCheck out other Popular Recipes:\n📌 5 Veg Gravy Recipe: https://www.youtube.com/watch?v=CUccE4U8TCw\n📌 Kala Chana Chaat Recipe: https://youtu.be/xww37_YIxe4\n📌  Crispy Onion Rings: https://youtu.be/VF4L-d5ZsNY\n📌  Chana Dal Namkeen: https://youtu.be/NJDCJ_TlZCI\n📌  Masala Kurkure Pasta Namkeen: https://youtu.be/G2wjLpch8as\n📌  Kaju Namak Pare Recipe: https://youtu.be/6Bn7ki8D0gA\n📌  Samosa Recipe: https://youtu.be/M5pVQGcwBXo\n📌  Bhel Puri Murmura भेल पूरी मुरमुरा: https://youtu.be/RCfyANoCl3Y\n📌  Chana Dal Namkeen: https://youtu.be/NJDCJ_TlZCI\n\n-------------------------------------------------------------------------------------\n\nHi, I am Chef Kunal Kapur and this is my space, my channel. Subscribe & Together let's cook. \n\n👉🏻  Click here to Subscribe:  https://www.youtube.com/c/KunalKapur\n👉🏻  Website: http://www.chefkunalkapur.com/​​​​​​\n\n-------------------------------------------------------------------------------------\n\nFollow Chef Kunal Kapur on your favourite Social Media Channels: \n👥 Facebook: https://www.facebook.com/thekunalkapur​\n📸 Instagram: https://www.instagram.com/chefkunal​​​\n🐦 Twitter: https://twitter.com/ChefKunalKapur​​​​\n📌 Pinterest: https://in.pinterest.com/chefkunal\n\nTranscript (creator subtitles, en):\n\nHello and welcome to the K kitchen. And today in the K kitchen, I am making Kadi Pakoda Kadi is a dish, which from the north to south of India, Almost in every state, Is cooked in a different manner Today's recipe is from my home. So watch carefully. First and foremost, we'll take curd In this, we add Gram Flour At the end of the day, Kadi is the combination of Curd and Gram Flour. Mix this very nicely. Now, in this goes some sliced Onion. Some chopped Garlic. Some chopped Ginger, Very little Turmeric Red Chilli powder. Coriander powder a little Cumin powder Of course Salt. We'll mix this nicely. Now we'll add a lot of water. Which means 6 to 7 times more water than the amount of Curd Now, We'll heat up a cooking pot Put Oil in it. When the oil heats up, the first thing to go in is Fenugreek Seeds, Then we put Cumin, Dry Red Chilli, Very little Asafoetida We'll lightly cook this. To this we add our mixture Now we need to let it cook patiently for half an hour The more you cook the Kadi the better it tastes And remember, Just like Rajma, Kadi also tastes better the next day from cooking. Till this Kadi is cooking. We will shift it here, There, and let's move on to make the Pakodi. We need Gram Flour, Salt, We have Green Chilli We'll finely chop it. There. Goes in. In this, we add a little Turmeric, Little red Chilli powder, We have these Coriander seeds, little Cumin, Very little Baking powder, Finely chopped Spinach. Now we'll add water. Some water. A thick Batter for Pakoda is formed. Now, the oil should be hot. In this hot oil, we will put the Pakodas and fry them. Stir them. On mild flame and patiently, so that they cook nicely from the inside At times the Pakodas looks fried from the outside while the flour inside is still raw So, cook them patiently on slow heat. This is still, just half done I am taking them out in this stage, Give it a little rest, So that the heat penetrates to the insides. And after a while, I'll fry it again to get a nice color on them. Let's repeat this with the rest Okay. We'll again take these out, at half done. Now, we'll heat up the oil towards high, And after that, We fry it completely. In the meantime let's look at the Kadi, This has nicely thickened, Nice and creamy. Simple Punjabi style Kadi And yes, a recipe from my home. Oil is hot. Again put the Pakodas in this. Pakodas are ready. We'll just pull them out and they look so good. I tell you, Pakodas are the world's tastiest snack. They are beautiful and yummy. Our Kadi is ready. It's nicely cooked, due to which it has thickened. The rawness of the flour has completely disappeared. Now, We'll plate it. This is not the end, One special final tempering is still left. Put the Kadi in this. And 10 minutes before serving the Kadi, You have to put these Pakodas in it. Nice. First heat a pan. Put Desi Ghee in it. To this add some Coriander seeds, little Cumin. And we'll roast it nicely. Now, turn off the gas. In this goes red Chilli powder And immediately we will pick up the pan and pour the tempering on the Kadi. There it goes, one swirl and here. We'll just stir it lightly. we will garnish it with a fresh coriander leaf. There. Our Punjabi style Kadi Pakodi, done.",
+  "raw_title": "My Home-Style Kadhi Pakora Recipe | मेरे घर जैसी पंजाबी स्टाईल पकोड़ा कढ़ी | Kunal Kapur Summer Recipe",
+  "blog_name": "Recipe Of Kadhi Pakora By Chef Kunal Kapur",
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=Oa2s0dklrRo",
+    "imported_at": "2026-10-16T08:38:39.718546Z"
+  },
+  "graph_id": "g_https---www-youtube-com-watch-v-Oa2s0dklrRo__medium__0",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "blog",
+    "transcript"
+  ]
+}

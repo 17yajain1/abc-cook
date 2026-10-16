@@ -1,0 +1,213 @@
+{
+  "recipe": {
+    "title": "Perfect Vanilla Cupcakes",
+    "channel": "The cookbook",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "18 -20 standard cupcakes",
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Sugar",
+        "qty": "1",
+        "unit": "Cup (200g)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Unsalted Butter",
+        "qty": "1/2",
+        "unit": "cup (125 g)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "All Purpose flour",
+        "qty": "1&1/2",
+        "unit": "cups (190 g)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Baking soda",
+        "qty": "1/2",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Baking Powder",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": "1/4",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Egg",
+        "qty": "2",
+        "unit": "Large",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Milk",
+        "qty": "3/4",
+        "unit": "cup (185 ml)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Vanilla Essence",
+        "qty": "1& 1/2",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Vegetable oil",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Powdering the sugar will make the creaming easy.",
+        "label": "Powder sugar",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Sugar"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Preheat the oven (preheat for 10 minutes) at 180 C.",
+        "label": "Preheat oven",
+        "attention": "unattended",
+        "attention_cue": "preheat for 10 minutes",
+        "duration_typical_min": 10.0,
+        "duration_min": 9.0,
+        "duration_max": 11.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Bake it in a preheated oven at 180 C for about 20-25 minutes.",
+        "label": "Bake cupcakes",
+        "attention": "unattended",
+        "attention_cue": "for about 20-25 minutes.",
+        "duration_typical_min": 22.5,
+        "duration_min": 20.0,
+        "duration_max": 25.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Sugar",
+          "Unsalted Butter",
+          "All Purpose flour",
+          "Baking soda",
+          "Baking Powder",
+          "Salt",
+          "Egg",
+          "Milk",
+          "Vanilla Essence"
+        ],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "text": "Butter can be replaced with 1/2 cup vegetable oil.",
+        "label": "Use oil instead",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.0,
+        "duration_min": 0.0,
+        "duration_max": 0.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "alternative",
+        "role_cue": "Butter can be replaced with 1/2 cup vegetable oil.",
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Unsalted Butter",
+          "Vegetable oil"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method in the source is minimal: only a preheat (\"preheat for 10 minutes\") and bake time (\"for about 20-25 minutes\") plus a tip about powdering sugar. I did not invent mixing/creaming steps; I used the note text verbatim as a required prep step. The butter->oil line was given as an explicit replacement, so I included vegetable oil as an ingredient and encoded that sentence as an alternative-step with role_cue exactly as written. Could not attach the alternative to a specific butter-usage step because the source does not include an explicit butter-usage step."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Perfect Vanilla Cupcakes/How to make moist vanilla cupcakes/ Classic cupcakes\n\nChannel: The cookbook\n\nVideo description:\n\nVanilla cupcakes are so delicious.This is an easy and no fail recipe for the best moist vanilla cupcakes.\n\nIngredients:\nSugar- 1 Cup(200g) - \nUnsalted Butter-  1/2 cup (125 g)\nAll Purpose flour- 1&1/2 cups (190 g)\nBaking soda- 1/2 teaspoon\nBaking Powder-1 teaspoon\nSalt- 1/4 teaspoon\nEgg- 2 Large\nMilk-3/4 cup( 185 ml)\nVanilla Essence-1& 1/2 teaspoon\n\nNumber of cupcakes:\nThis recipe makes 18 -20standard cupcakes.\n\nNote:\n1. Powdering the sugar will make the creaming easy.\n2. Butter can be replaced with 1/2 cup vegetable oil.\n\n\nBake it in a preheated ( preheat for 10 minutes) oven at 180 C  for about 20-25 minutes.\n------------------------------------------------------------------------------\nVanilla cupcakes without butter\nhttps://www.youtube.com/watch?v=G6gl02i6cMs \n\nCup to grams conversion video\nhttps://youtu.be/pcBkyam5Vbk\n\nOther cupcake recipes:\nEggless cupcakes:\nhttps://youtu.be/LezjhW7HbDw\n\nButterscotch Cupcakes/ Cupcakes\nhttps://www.youtube.com/watch?v=S09LegFrbQM\n\nEggless chocolate cupcakes | Ultimate Chocolate Cupcake Recipe \nhttps://www.youtube.com/watch?v=TKp0mjdKrm0\n\nChocolate Cupcakes/ Easy cupcake recipe\nhttps://www.youtube.com/watch?v=1wqvyYcqOno\n\nEggless Vanilla Cupcakes/ Vanilla Cupcakes\nhttps://www.youtube.com/watch?v=LezjhW7HbDw\n\nOrange cupcakes/ Easy cupcake recipe/Fluffy and Moist orange muffins\nhttps://www.youtube.com/watch?v=E_6UE_-Lm08\n\nButter cake/ Butter pound cake/ Pound Cake recipe\nhttps://www.youtube.com/watch?v=fGIRRS2VpUg\n\nPineapple Cupcakes/ Fluffy and moist pineapple cupcakes\nhttps://www.youtube.com/watch?v=U3rginBAF1k\n\nPerfect Vanilla Cupcakes\nhttps://www.youtube.com/watch?v=YP8a6ugKQ6Y\n\n------------------------------------------------------------------------------\nAmazon links:\nPrestige 57127 Bake Master 2 Non Stick Muffin Tray, Grey, 12 Cup\nhttps://amzn.to/31PNXwa\n\nPrestige 2724296128801 Muffin Pan Grey\nhttps://amzn.to/34AXmti\n\nTripod:\nTripod Stand Holder Adjustable 360° Swivel Phone Pad Lazy Stand Holder Bracket Floor Rack Black for 3.5-12.5 Inch Tablet Phone, IPad(1PC)\nhttps://amzn.to/3jz5ZJ2\n\nTripod, 50 Inch Aluminum Tripod, Video Tripod for Cellphone, Camera, Universal Tripod with Wireless Remote, Compatible with iPhone Xs/Xr/X/8/8 Plus/Samsung Galaxy/Google/GoPro Hero\nhttps://amzn.to/2JfLuob\n------------------------------------------------------------------------------\n#Cupcakes,#Vanillacupcakes,#cupcakerecipe\n\nClassic Vanilla Cupcakes,Cupcake recipe,Vanilla cupcake,Easy cupcake recipe,Perfect Cupcakes,Cupcakes,vanilla cupcake recipe,vanilla cupcakes,how to make cupcakes,how to make vanilla cupcakes,perfect vanilla cupcakes,perfect vanilla cupcake recipe,best cupcake recipe,how to bake cupcakes,easy cupcake recipes,vanilla cupcakes recipe,cupcakes recipe,moist vanilla cupcakes,fluffy cupcakes,fluffy cupcake,moist vanilla cake,how to make cupcakes from scratch",
+  "raw_title": "Perfect Vanilla Cupcakes/How to make moist vanilla cupcakes/ Classic cupcakes",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=YP8a6ugKQ6Y",
+    "imported_at": "2026-10-16T08:37:05.427846Z"
+  },
+  "graph_id": "g_https---www-youtube-com-watch-v-YP8a6ugKQ6Y__medium__0",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}
