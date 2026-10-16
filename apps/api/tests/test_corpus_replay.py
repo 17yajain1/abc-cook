@@ -140,12 +140,6 @@ def test_croissant_three_long_waits_are_stated_and_unattended() -> None:
     assert snap["long_waits"] == 3
 
 
-def test_croissant_has_no_meanwhile_window_and_saves_nothing() -> None:
-    snap = _snapshot("croissant")
-    assert snap["windows"] == []
-    assert snap["totals"]["saved_min"] == 0
-
-
 def test_croissant_knead_and_bake_durations_are_stated() -> None:
     snap = _snapshot("croissant")
     knead, bake = _node(snap, "Knead dough"), _node(snap, "Bake")

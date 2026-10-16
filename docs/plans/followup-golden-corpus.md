@@ -22,6 +22,8 @@ or missing steps)". That wording is wrong: nothing repeated; the whole budget we
 recipe the product most needs to handle (long, non-English, multi-group) gets no plan at all.
 
 - Evidence: `apps/api/tests/fixtures/import/known-wrong/chole-bhature.raw.json`.
+- Competitor note: ReciMe imports this same video in ~10 s (owner recording, 2026-10-16), so it is
+  achievable.
 - To decide: is the failure length or language? It needs one long English video in the next capture
   round (see FGC-10). Options to evaluate then: a larger budget or lower reasoning effort for long
   sources, and a truthful warning when `reasoning_tokens == output_tokens`.
@@ -45,6 +47,9 @@ no step that makes the batter. Every step is grounded (nothing invented); the da
 plan whose Bake step has no batter must be flagged or refused, not scheduled.
 
 - Evidence: `known-wrong/vanilla-cupcakes.{raw,original}.json`.
+- **Owner decision pending:** (a) flag "method incomplete", or (b) fill standard steps, labelled
+  "added by ABC Cook, not in the source". Competitor ref: Copymenu fills gaps silently; ReciMe turned
+  the notes into steps.
 
 ### FGC-4 (P2): notes and alternatives become steps
 
@@ -104,11 +109,11 @@ the source does give quantities but no count. Input for R3 (scaling).
 
 ### FGC-10: market scope and the next corpus round
 
-Market scope (owner, 2026-10-16): India, US, UK and Europe; languages English, Hindi and other common
-ones. What to track:
+Market scope (owner, 2026-10-16): India first, then US, UK and Europe; languages English and Hindi
+first, other common ones later. What to track:
 
 - **FGC-1 length vs language:** the next capture round needs one long English video to tell them apart.
 - **Units:** sources use metric, US customary (cups, oz, degrees F) or both ("1 cup (200 g)"). Quantities
-  and scaling must keep the source's system and never silently convert. Input for R3 and R4.
-- **Next corpus round:** a second Hindi video (after the FGC-1 fix), one long English video, and one
-  non-English European video if in scope.
+  and scaling keep the source's system and never silently convert. Input for R3 and R4.
+- **Next corpus round:** a second Hindi video (after the FGC-1 fix) and one long English video. A
+  European-language video comes later, once Europe is in scope.
