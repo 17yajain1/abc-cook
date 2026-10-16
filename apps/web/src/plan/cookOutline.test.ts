@@ -450,3 +450,44 @@ function synthetic(
   }
 }
 
+
+// Widened golden corpus (docs/plans/golden-corpus-widen.md): real imports, reviewed 2026-10-16.
+// Only lines that are right are pinned. Stretch times, the saved pill and Meanwhile lines are
+// left out where a flagged follow-up (docs/plans/followup-golden-corpus.md: FGC-4, 5, 6, 7) would
+// change them, so a fix to those is not a broken test.
+describe('deriveCookOutline — widened corpus', () => {
+  it('croissant: three stated one-hour waits split four stretches, with a plan-ahead card', () => {
+    const o = outline('croissant')
+    expect(o.stretches.map((s) => [s.tag, s.title])).toEqual([
+      ['Now', 'Mix yeast → Rest dough'],
+      ['Then', 'Turn out dough → Chill'],
+      ['Then', 'Roll rectangle → Proof again'],
+      ['Then', 'Egg wash → Bake'],
+    ])
+    expect(o.waits).toEqual(Array(3).fill({ text: 'Hands free for ~1 hr', barLabel: '~1 hr' }))
+    expect(o.savedPill).toBeNull()
+    expect(o.stretches.flatMap((s) => s.taskLines)).toEqual([])
+    expect(o.card?.title).toBe('Plan ahead: 3 hands-free breaks, the longest ~1 hr')
+    expect(o.card?.body).toMatch(/^Start ~\d+ hr \d+ min before you want to eat\.$/)
+  })
+
+  it('kadhi pakora: one stretch from the base to serving, no wait, no plan-ahead card', () => {
+    const o = outline('kadhi-pakora')
+    expect(o.stretches.map((s) => [s.tag, s.title])).toEqual([['Now', 'Mix kadi → Serve']])
+    expect(o.waits).toEqual([])
+    expect(o.card).toBeNull()
+    expect(o.ctaSubline).toBe('Start to finish in one go.')
+  })
+
+  it('pumpkin pancakes: one stretch that starts with mixing, nothing saved, no card', () => {
+    const o = outline('pumpkin-pancakes')
+    expect(o.stretches).toHaveLength(1)
+    expect(o.stretches[0].tag).toBe('Now')
+    expect(o.stretches[0].title.startsWith('Mix pumpkin → ')).toBe(true)
+    expect(o.stretches[0].taskLines).toEqual([])
+    expect(o.waits).toEqual([])
+    expect(o.savedPill).toBeNull()
+    expect(o.card).toBeNull()
+    expect(o.ctaSubline).toBe('Start to finish in one go.')
+  })
+})

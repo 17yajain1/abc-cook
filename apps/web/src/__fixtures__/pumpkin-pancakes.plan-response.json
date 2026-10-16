@@ -1,0 +1,532 @@
+{
+  "graph": {
+    "id": "g_https---www-youtube-com-watch-v-TYZNzCnNGwA__medium__0",
+    "title": "Pumpkin Pancakes",
+    "servings": 4,
+    "servings_stated": false,
+    "yield_text": null,
+    "cuisine": null,
+    "source": {
+      "kind": "url",
+      "value": "https://www.youtube.com/watch?v=TYZNzCnNGwA",
+      "imported_at": "2026-10-16T08:36:09.543721Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_pumpkin",
+        "name": "pumpkin",
+        "qty": 15.0,
+        "qty_text": "15",
+        "unit": "oz can",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_eggs",
+        "name": "eggs",
+        "qty": 2.0,
+        "qty_text": "2",
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_salt",
+        "name": "salt",
+        "qty": 0.5,
+        "qty_text": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_pumpkin_pie_spice",
+        "name": "pumpkin pie spice",
+        "qty": 0.5,
+        "qty_text": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_cinnamon",
+        "name": "cinnamon",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_brown_sugar",
+        "name": "brown sugar",
+        "qty": 0.25,
+        "qty_text": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_vanilla",
+        "name": "vanilla",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_baking_powder",
+        "name": "baking powder",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_baking_soda",
+        "name": "baking soda",
+        "qty": 1.0,
+        "qty_text": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_oil",
+        "name": "oil",
+        "qty": 0.25,
+        "qty_text": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_flour",
+        "name": "flour",
+        "qty": 2.5,
+        "qty_text": "2 1/2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_milk",
+        "name": "milk",
+        "qty": 1.5,
+        "qty_text": "1 1/2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_butter",
+        "name": "butter",
+        "qty": null,
+        "qty_text": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_maple_syrup",
+        "name": "maple syrup",
+        "qty": null,
+        "qty_text": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_chocolate_chips",
+        "name": "chocolate chips",
+        "qty": null,
+        "qty_text": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_chocolate_syrup",
+        "name": "chocolate syrup",
+        "qty": null,
+        "qty_text": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      },
+      {
+        "id": "ing_homemade_cool_whip",
+        "name": "homemade Cool Whip",
+        "qty": null,
+        "qty_text": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null,
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "step_in_a_bowl_add_15_oz",
+        "stage": "cook",
+        "label": "Mix pumpkin",
+        "instruction": "In a bowl, add 15 oz can pumpkin and 2 eggs; mix this up until it is nice and fluffy.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_pumpkin",
+          "ing_eggs"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "it is nice and fluffy.",
+        "tip": null
+      },
+      {
+        "id": "step_add_1_2_tsp_salt_1",
+        "stage": "cook",
+        "label": "Add spices",
+        "instruction": "Add 1/2 tsp salt, 1/2 tsp pumpkin pie spice, 1 tsp cinnamon, 1/4 cup brown sugar and 1 tsp vanilla; mix this up.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [
+          "step_in_a_bowl_add_15_oz"
+        ],
+        "consumes": [
+          "ing_salt",
+          "ing_pumpkin_pie_spice",
+          "ing_cinnamon",
+          "ing_brown_sugar",
+          "ing_vanilla"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "mix this up.",
+        "tip": null
+      },
+      {
+        "id": "step_add_1_tsp_of_baking_powder",
+        "stage": "cook",
+        "label": "Add baking powder",
+        "instruction": "Add 1 tsp of baking powder.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 1,
+        "station": "counter",
+        "depends_on": [
+          "step_add_1_2_tsp_salt_1"
+        ],
+        "consumes": [
+          "ing_baking_powder",
+          "ing_baking_soda"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_add_1_4_cup_oil_2",
+        "stage": "cook",
+        "label": "Make batter",
+        "instruction": "Add 1/4 cup oil, 2 1/2 cups flour, and 1 1/2 cups of milk; now mix it until combined (don't overmix).",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [
+          "step_add_1_tsp_of_baking_powder"
+        ],
+        "consumes": [
+          "ing_oil",
+          "ing_flour",
+          "ing_milk"
+        ],
+        "produces": "comp_batter",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": "combined.",
+        "tip": null
+      },
+      {
+        "id": "step_put_some_butter_on_a_pan",
+        "stage": "cook",
+        "label": "Cook pancakes",
+        "instruction": "Put some butter on a pan and cook the pancakes like you would any other pancake.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 10,
+        "duration_typical": 15,
+        "duration_max": 20,
+        "station": "burner",
+        "depends_on": [
+          "step_add_1_4_cup_oil_2"
+        ],
+        "consumes": [
+          "ing_butter",
+          "comp_batter"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_there_are_two_different_ways_to",
+        "stage": "cook",
+        "label": "Serve classic",
+        "instruction": "There are two different ways to eat these pancakes. The first is the classic: serve with butter and maple syrup.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "counter",
+        "depends_on": [
+          "step_put_some_butter_on_a_pan"
+        ],
+        "consumes": [
+          "ing_butter",
+          "ing_maple_syrup"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_the_other_the_creator_s_favorite",
+        "stage": "finish",
+        "label": "Serve with chips",
+        "instruction": "The other (the creator's favorite) is to top with chocolate chips (or chocolate syrup) and homemade Cool Whip.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "counter",
+        "depends_on": [
+          "step_put_some_butter_on_a_pan",
+          "step_there_are_two_different_ways_to"
+        ],
+        "consumes": [
+          "ing_chocolate_chips",
+          "ing_chocolate_syrup",
+          "ing_homemade_cool_whip"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "cook",
+        "label": "Cook",
+        "color_key": "cook"
+      },
+      {
+        "id": "finish",
+        "label": "Finish",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": null
+  },
+  "plan": {
+    "graph_id": "g_https---www-youtube-com-watch-v-TYZNzCnNGwA__medium__0",
+    "scheduled": [
+      {
+        "node_id": "step_in_a_bowl_add_15_oz",
+        "start_min": 0.0,
+        "end_min": 2.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_add_1_2_tsp_salt_1",
+        "start_min": 2.0,
+        "end_min": 4.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_add_1_tsp_of_baking_powder",
+        "start_min": 4.0,
+        "end_min": 5.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_add_1_4_cup_oil_2",
+        "start_min": 5.0,
+        "end_min": 7.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_put_some_butter_on_a_pan",
+        "start_min": 7.0,
+        "end_min": 22.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_there_are_two_different_ways_to",
+        "start_min": 22.0,
+        "end_min": 23.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_the_other_the_creator_s_favorite",
+        "start_min": 23.0,
+        "end_min": 24.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [],
+    "total_min": 24.0,
+    "serial_min": 24.0,
+    "saved_min": 0.0,
+    "critical_path": [
+      "step_in_a_bowl_add_15_oz",
+      "step_add_1_2_tsp_salt_1",
+      "step_add_1_tsp_of_baking_powder",
+      "step_add_1_4_cup_oil_2",
+      "step_put_some_butter_on_a_pan",
+      "step_there_are_two_different_ways_to",
+      "step_the_other_the_creator_s_favorite"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "cook",
+      "start_min": 0.0,
+      "end_min": 23.0,
+      "elapsed_min": 23.0,
+      "work_min": 23.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 23.0,
+      "hands_on_min": 23.0,
+      "unattended_min": 0.0,
+      "node_ids": [
+        "step_in_a_bowl_add_15_oz",
+        "step_add_1_2_tsp_salt_1",
+        "step_add_1_tsp_of_baking_powder",
+        "step_add_1_4_cup_oil_2",
+        "step_put_some_butter_on_a_pan",
+        "step_there_are_two_different_ways_to"
+      ]
+    },
+    {
+      "stage_id": "finish",
+      "start_min": 23.0,
+      "end_min": 24.0,
+      "elapsed_min": 1.0,
+      "work_min": 1.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 1.0,
+      "hands_on_min": 1.0,
+      "unattended_min": 0.0,
+      "node_ids": [
+        "step_the_other_the_creator_s_favorite"
+      ]
+    }
+  ],
+  "summary": {
+    "active_min": 24.0,
+    "attended_min": 24.0,
+    "elapsed_min": 24.0,
+    "elapsed_high_min": 34.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 24.0,
+        "active_min": 24.0,
+        "node_ids": [
+          "step_in_a_bowl_add_15_oz",
+          "step_add_1_2_tsp_salt_1",
+          "step_add_1_tsp_of_baking_powder",
+          "step_add_1_4_cup_oil_2",
+          "step_put_some_butter_on_a_pan",
+          "step_there_are_two_different_ways_to",
+          "step_the_other_the_creator_s_favorite"
+        ],
+        "preceded_by_wait_min": null,
+        "elapsed_min": 24.0,
+        "elapsed_high_min": 34.0,
+        "preceded_by_host_node_ids": []
+      }
+    ],
+    "long_waits": [],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 24.0,
+        "elapsed_min": 24.0,
+        "elapsed_high_min": 34.0,
+        "active_min": 24.0,
+        "node_ids": [
+          "step_in_a_bowl_add_15_oz",
+          "step_add_1_2_tsp_salt_1",
+          "step_add_1_tsp_of_baking_powder",
+          "step_add_1_4_cup_oil_2",
+          "step_put_some_butter_on_a_pan",
+          "step_there_are_two_different_ways_to",
+          "step_the_other_the_creator_s_favorite"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      }
+    ]
+  }
+}

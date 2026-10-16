@@ -93,6 +93,10 @@ describe('quantityLine', () => {
 // nodes that name an ingredient listed in two groups (roasted peanuts, cumin seeds,
 // sendha namak) now consume only the portion they use, so it reflects group-resolved
 // `consumes` and is no longer the pre-F2 output. Every other entry is still pre-F2.
+//
+// Second documented exception: the croissant, kadhi-pakora and pumpkin-pancakes entries were
+// added with the widened golden corpus (docs/plans/golden-corpus-widen.md). They are generated from
+// the current quantity.ts over new fixtures, so they only guard against future change.
 // ---------------------------------------------------------------------------
 
 const FIXTURES = fileURLToPath(new URL('../__fixtures__/', import.meta.url))

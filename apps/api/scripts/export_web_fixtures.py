@@ -18,10 +18,16 @@ from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.cache import POSTPROCESS_VERSION
 from abc_cook.extract.graph import GraphBuildResult, build_graph
 from abc_cook.extract.normalize import render_source_text
+from abc_cook.extract.postprocess import reprocess
 from abc_cook.schedule import schedule, stage_spans, summarize
 from abc_cook.schema import CookingGraph, RecipePlanResponse
 from abc_cook.schema.graph import SourceRef
-from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
+from abc_cook.schema.normalized import (
+    ImportOriginal,
+    NormalizedIngredient,
+    NormalizedRecipe,
+    NormalizedStep,
+)
 
 # Straightforward (kadai-paneer), degrades to nothing (maggi-2min), two windows and
 # 4-way concurrency (chicken-biryani), a 60-min clamp case (homemade-donuts),
@@ -45,7 +51,14 @@ SLUGS = [
 # pizza's dough rest is the multi-sitting shape with misaligned (kind-based) stages
 # that M3.2b's source-section stages fix; until then it stays a Vitest fixture only
 # (M3.1a plan §9), not part of the recipe picker `SLUGS` above.
-IMPORT_REPLAYS = ["pizza-dough"]
+IMPORT_REPLAYS = {
+    "pizza-dough": "https://youtu.be/WM1XcYXix0Y",
+    # Widened golden corpus (docs/plans/golden-corpus-widen.md): replayed from the
+    # `ImportOriginal` (`<slug>.original.json`) through `reprocess()`, the production refresh path.
+    "kadhi-pakora": "https://www.youtube.com/watch?v=Oa2s0dklrRo",
+    "croissant": "https://www.youtube.com/watch?v=OzdqThvpMko",
+    "pumpkin-pancakes": "https://www.youtube.com/watch?v=TYZNzCnNGwA",
+}
 
 IMPORT_FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "import"
 
@@ -56,6 +69,10 @@ STAMP_FILE = "postprocess-version.json"
 
 def replay_import(slug: str) -> CookingGraph:
     """Rebuild a graph from a captured import fixture, offline.
+
+    A slug with a `<slug>.original.json` replays through `postprocess.reprocess()`; the
+    original pizza capture (`<slug>.normalized.json`) keeps its `build_graph` path so its
+    fixture stays byte-identical.
 
     Runs the same production path (`render_source_text` -> `build_graph`) that
     `test_summary.py`'s pizza replay and `test_extract_replay.py` already exercise
@@ -72,6 +89,9 @@ def replay_import(slug: str) -> CookingGraph:
     Raises:
         RuntimeError: If extraction degraded instead of producing a graph.
     """
+    original_path = IMPORT_FIXTURES / f"{slug}.original.json"
+    if original_path.exists():
+        return replay_original(slug, original_path)
     recipe = NormalizedRecipe.model_validate_json(
         (IMPORT_FIXTURES / f"{slug}.normalized.json").read_text(encoding="utf-8"),
     )
@@ -81,7 +101,7 @@ def replay_import(slug: str) -> CookingGraph:
     source_text = render_source_text(raw)
     source = SourceRef(
         kind="url",
-        value="https://youtu.be/WM1XcYXix0Y",
+        value=IMPORT_REPLAYS[slug],
         imported_at=datetime(2026, 1, 1, tzinfo=UTC),
     )
     result = build_graph(
@@ -91,6 +111,27 @@ def replay_import(slug: str) -> CookingGraph:
         source=source,
     )
     if result.graph is None:
+        msg = f"replay for {slug!r} degraded instead of producing a graph"
+        raise RuntimeError(msg)
+    return result.graph
+
+
+def replay_original(slug: str, path: Path) -> CookingGraph:
+    """Rebuild a graph from a frozen `ImportOriginal`: no acquire, no LLM, no clock.
+
+    The graph carries the original's own `source` (its `imported_at` was fixed at capture) and
+    `graph_id`, so re-running this script is byte-identical.
+
+    Raises:
+        RuntimeError: If the original's source differs from `IMPORT_REPLAYS`, or the replay
+            degraded instead of producing a graph.
+    """
+    original = ImportOriginal.model_validate_json(path.read_text(encoding="utf-8"))
+    if original.source.value != IMPORT_REPLAYS[slug]:
+        msg = f"{slug!r}: original source {original.source.value!r} != IMPORT_REPLAYS entry"
+        raise RuntimeError(msg)
+    result = reprocess(original).result
+    if result.graph is None or "degraded" in result.warnings:
         msg = f"replay for {slug!r} degraded instead of producing a graph"
         raise RuntimeError(msg)
     return result.graph
@@ -128,9 +169,7 @@ def synthetic_defaulted_servings() -> GraphBuildResult:
         ],
     )
     source_text = "Synthetic Defaulted Servings. Boil the water and serve."
-    source = SourceRef(
-        kind="text", value=source_text, imported_at=datetime(2026, 1, 1, tzinfo=UTC)
-    )
+    source = SourceRef(kind="text", value=source_text, imported_at=datetime(2026, 1, 1, tzinfo=UTC))
     result = build_graph(
         recipe, source_text, graph_id="g_synthetic_defaulted_servings", source=source
     )
