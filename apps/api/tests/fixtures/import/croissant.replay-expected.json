@@ -1,0 +1,318 @@
+{
+  "slug": "croissant",
+  "known_issues": [
+    "FGC-7"
+  ],
+  "repair_applied": false,
+  "nodes": [
+    {
+      "label": "Mix yeast",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [],
+      "start_min": 0.0,
+      "window": null
+    },
+    {
+      "label": "Proof",
+      "kind": "prep",
+      "attention": "unattended",
+      "station": "none",
+      "duration_min": 5,
+      "duration_typical": 8,
+      "duration_max": 10,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Mix yeast"
+      ],
+      "start_min": 1.0,
+      "window": null
+    },
+    {
+      "label": "Add milk and salt",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Proof"
+      ],
+      "start_min": 9.0,
+      "window": null
+    },
+    {
+      "label": "Knead dough",
+      "kind": "prep",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 6,
+      "duration_typical": 6,
+      "duration_max": 6,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Add milk and salt",
+        "Proof"
+      ],
+      "start_min": 10.0,
+      "window": null
+    },
+    {
+      "label": "Rest dough",
+      "kind": "passive",
+      "attention": "unattended",
+      "station": "none",
+      "duration_min": 60,
+      "duration_typical": 60,
+      "duration_max": 60,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Knead dough"
+      ],
+      "start_min": 16.0,
+      "window": null
+    },
+    {
+      "label": "Turn out dough",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Rest dough"
+      ],
+      "start_min": 76.0,
+      "window": null
+    },
+    {
+      "label": "Divide dough",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 2,
+      "duration_typical": 3,
+      "duration_max": 5,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Turn out dough"
+      ],
+      "start_min": 77.0,
+      "window": null
+    },
+    {
+      "label": "Form circle",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 3,
+      "duration_max": 5,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Divide dough"
+      ],
+      "start_min": 80.0,
+      "window": null
+    },
+    {
+      "label": "Stack layers",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 3,
+      "duration_typical": 5,
+      "duration_max": 8,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Form circle",
+        "Divide dough"
+      ],
+      "start_min": 83.0,
+      "window": null
+    },
+    {
+      "label": "Chill",
+      "kind": "passive",
+      "attention": "unattended",
+      "station": "fridge",
+      "duration_min": 60,
+      "duration_typical": 60,
+      "duration_max": 60,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Stack layers"
+      ],
+      "start_min": 88.0,
+      "window": null
+    },
+    {
+      "label": "Roll rectangle",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 3,
+      "duration_typical": 5,
+      "duration_max": 8,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Chill",
+        "Stack layers"
+      ],
+      "start_min": 148.0,
+      "window": null
+    },
+    {
+      "label": "Trim",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 2,
+      "duration_max": 4,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Roll rectangle"
+      ],
+      "start_min": 153.0,
+      "window": null
+    },
+    {
+      "label": "Cut triangles",
+      "kind": "prep",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 2,
+      "duration_typical": 5,
+      "duration_max": 8,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Trim"
+      ],
+      "start_min": 155.0,
+      "window": null
+    },
+    {
+      "label": "Shape croissants",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 5,
+      "duration_typical": 10,
+      "duration_max": 15,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Cut triangles"
+      ],
+      "start_min": 160.0,
+      "window": null
+    },
+    {
+      "label": "Arrange on sheet",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 3,
+      "duration_max": 5,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Shape croissants"
+      ],
+      "start_min": 170.0,
+      "window": null
+    },
+    {
+      "label": "Proof again",
+      "kind": "passive",
+      "attention": "unattended",
+      "station": "none",
+      "duration_min": 60,
+      "duration_typical": 60,
+      "duration_max": 60,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Arrange on sheet"
+      ],
+      "start_min": 173.0,
+      "window": null
+    },
+    {
+      "label": "Egg wash",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Proof again"
+      ],
+      "start_min": 233.0,
+      "window": null
+    },
+    {
+      "label": "Bake",
+      "kind": "finish",
+      "attention": "unattended",
+      "station": "oven",
+      "duration_min": 20,
+      "duration_typical": 22,
+      "duration_max": 25,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Egg wash"
+      ],
+      "start_min": 234.0,
+      "window": null
+    }
+  ],
+  "windows": [],
+  "totals": {
+    "total_min": 256.0,
+    "serial_min": 256.0,
+    "saved_min": 0.0,
+    "active_min": 46.0,
+    "elapsed_min": 256.0,
+    "elapsed_high_min": 282.0
+  },
+  "sessions": [
+    {
+      "start_min": 0.0,
+      "end_min": 256.0,
+      "active_min": 46.0,
+      "preceded_by_wait_min": null,
+      "nodes": [
+        "Mix yeast",
+        "Proof",
+        "Add milk and salt",
+        "Knead dough",
+        "Rest dough",
+        "Turn out dough",
+        "Divide dough",
+        "Form circle",
+        "Stack layers",
+        "Chill",
+        "Roll rectangle",
+        "Trim",
+        "Cut triangles",
+        "Shape croissants",
+        "Arrange on sheet",
+        "Proof again",
+        "Egg wash",
+        "Bake"
+      ]
+    }
+  ],
+  "long_waits": 3
+}

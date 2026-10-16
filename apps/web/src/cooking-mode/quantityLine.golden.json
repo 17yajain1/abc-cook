@@ -15,6 +15,26 @@
     "dum": null,
     "rest_and_serve": null
   },
+  "croissant.plan-response.json": {
+    "step_1_3_cup_of_warm_water": "1/3 cup warm water · 1 tbsp sugar · 1 tbsp dry yeast or instant yeast",
+    "step_leave_for_5_to_10_minutes": null,
+    "step_1_5_cup_of_warm_milk": "1/5 cup warm milk · 2/3 tsp salt",
+    "step_2_cups_flour_250g_mixing_dough": "2 cups flour · 5 tbsp (50g) for dough and 15 tbsp (150g) for grease butter",
+    "step_let_the_dough_rest_at_room": null,
+    "step_transfer_the_dough_to_a_well": null,
+    "step_divide_the_dough_into_8_equal": null,
+    "step_take_one_piece_and_form_a": null,
+    "step_transfer_the_one_circle_to_a": "5 tbsp (50g) for dough and 15 tbsp (150g) for grease butter",
+    "step_chill_in_fridge_for_one_hour": null,
+    "step_transfer_the_dough_to_a_well_2": null,
+    "step_trim_the_edges": null,
+    "step_slice_the_large_rectangle_into_6": null,
+    "step_cut_a_small_slit_at_the": null,
+    "step_transfer_to_a_baking_sheet": null,
+    "step_let_the_dough_rest_at_room_2": null,
+    "step_grease_with_egg": "egg",
+    "step_bake_at_190_375_f_for": null
+  },
   "homemade-donuts.plan-response.json": {
     "bloom_yeast": "7 g active dry yeast · 240 ml warm milk · 50 g sugar",
     "mix_dough": "500 g bread flour · 2 whole egg · 60 g butter · 6 g salt",
@@ -40,6 +60,19 @@
     "add_paneer": null,
     "finish": null
   },
+  "kadhi-pakora.plan-response.json": {
+    "step_whisk_together_curd_besan_sliced_onions": "1 ½ cups curd · 4 tbsp besan (gram flour) · ½ cup onion · ½ tbsp garlic · ½ tbsp ginger · 3/4 tsp turmeric · 1 tsp red chilly powder · 1 tbsp coriander powder · 1 tsp roasted cumin powder · to taste salt · 10 cups water",
+    "step_heat_a_pan_and_add_oil": "3 tbsp oil · 1 tsp methi dana (fenugreek) · 1 tsp cumin · 2 nos dry red chilly · ½ tsp heeng (asafoetida)",
+    "step_add_the_kadi_mixture_to_the": null,
+    "step_mix_together_besan_salt_chopped_green": "1 cup besan (gram flour) · to taste salt · 1 no green chilly · ½ tsp turmeric · 1 tsp red chilly powder · 1 tbsp coriander seeds · 1 tsp cumin · 3/4 tsp baking powder · 1 cup spinach · 3/4 cup water",
+    "step_heat_oil_in_a_deep_pan": null,
+    "step_give_the_partially_fried_pakoras_a": null,
+    "step_heat_the_oil_hotter_and_fry": null,
+    "step_check_the_cooked_kadi_for_salt": null,
+    "step_ten_minutes_before_serving_add_the": null,
+    "step_in_a_clean_pan_heat_desi": "2 tbsp desi ghee · 2 tsp coriander seeds · 1 tsp cumin · ½ tsp red chilly powder",
+    "step_serve_immediately": null
+  },
   "maggi-2min.plan-response.json": {
     "boil_water": "1.5 cup water",
     "add_noodles_masala": "1 cake maggi noodle cake · 1 sachet tastemaker sachet",
@@ -61,6 +94,15 @@
     "step_spread_on_desired_pizza_sauce_and": null,
     "step_slide_pizza_onto_the_preheated_pizza": null,
     "step_transfer_the_pizza_to_a_cutting": null
+  },
+  "pumpkin-pancakes.plan-response.json": {
+    "step_in_a_bowl_add_15_oz": "15 oz can pumpkin · 2 eggs",
+    "step_add_1_2_tsp_salt_1": "1/2 tsp salt · 1/2 tsp pumpkin pie spice · 1 tsp cinnamon · 1/4 cup brown sugar · 1 tsp vanilla",
+    "step_add_1_tsp_of_baking_powder": "1 tsp baking powder · 1 tsp baking soda",
+    "step_add_1_4_cup_oil_2": "1/4 cup oil · 2 1/2 cups flour · 1 1/2 cups milk",
+    "step_put_some_butter_on_a_pan": "butter",
+    "step_there_are_two_different_ways_to": "butter · maple syrup",
+    "step_the_other_the_creator_s_favorite": "chocolate chips · chocolate syrup · homemade cool whip"
   },
   "sabudana-khichdi.plan-response.json": {
     "step_rinse_the_sabudana_put_it_in": "1 cup soaked sabudana",
