@@ -269,3 +269,20 @@ No push and no PR until you approve.
 - `git worktree add C:\Users\ashya\Music\abc-cook-staleness-web -b fix/saved-recipe-staleness-web origin/main`
 - This plan was saved here, uncommitted. It becomes commit 1.
 - `npm ci` was run in `apps/web`.
+
+## Rev 1 changes after review (2026-10-16)
+
+Owner decisions after the first implementation and the browser check of states 1-15.
+
+1. **Copy.** The stale line is "This plan may be out of date." always. The Re-import button follows only when the entry is reimportable. The offline line is unchanged. (Replaces the Q7-era two-sentence copy.)
+2. **Placement.** The staleness line moves from the A6 status slot to directly under the recipe title (`RecipeHeader`, `StalenessNotice`), so it is visible without scrolling at 360px with the longest fixture title and a plan-ahead card. A6 stays in its slot and stays hidden while the staleness line shows. The button stays at least 44px tall. The old placement was below the fold in that case.
+3. **Interpretation calls, accepted.**
+   - `isImportOriginalShape` does not check `start_min`. The generated `ImportOriginal` has no such field (A1 of this plan said it did). Requiring it would have nulled every real `original`.
+   - `stalenessOf` rule 4 returns `unknown` (not `needs_reimport`) for an entry with a stamp, no `original`, no feed match, **and** an unknown server version. A set stamp can't be judged without the server's version, and the old rule showed a false "out of date" line offline for a current plan. A null stamp with no `original` and no feed match is still `needs_reimport` without calling `/health`.
+4. **Other additions during implementation:** `ServerVersion.peek()` (sync current-stamp check); `library/openSaved.ts` (the open-path decision, injected effects, unit-tested); `importExtrasFrom` in its own module; `client.ts` guards `window` so it imports under node tests.
+
+## Follow-ups (not in this PR)
+
+- (a) After deploy, measure `/health` + `/reprocess` on a real Cloud Run cold start. If it misses the 3 s budget often, warm `/health` when the Cookbook opens. The local loopback measurement (225 ms total) says nothing about Cloud Run.
+- (b) Check the marker on iOS Safari.
+- (c) Check a real quota-full device. The browser check simulated quota with a throwing `setItem`.

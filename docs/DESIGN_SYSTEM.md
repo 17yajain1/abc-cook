@@ -1460,12 +1460,12 @@ and keeps the Plan register.
 ## Resolved in saved-recipe staleness PR 2 (the marker line, 2026-10-16)
 
 A saved recipe is either current or honestly marked. The marker is one line on the recipe
-page, in the Home register. It adds no new visual grammar: it reuses the A6 status-line slot.
+page, in the Home register. It adds no new visual grammar: the line is plain secondary-ink text, placed directly under the title.
 
 | Question | Resolution | Why |
 |---|---|---|
-| Where | The A6 status-line slot under the header (`text-[13px]`, secondary ink `#6B5A50`, 20px side gutter). **The staleness line takes the slot**; the A6 line ("Plan simplified…", "Some timings are estimates.") shows again once the plan is refreshed. | The A6 line describes the plan that is about to be replaced, so showing both would describe a plan the person shouldn't rely on. |
-| Copy | Stale: "This plan may be out of date. Re-import for the latest version." Could not check: "Couldn't check for updates. Showing your saved plan." Pure strings in `stalenessLineFor`, tested. | Plain and specific; an error says what happened and what is shown instead. |
+| Where | **Directly under the recipe title**, inside the header (`text-[13px]`, secondary ink `#6B5A50`, 8px below the title). It is on screen without scrolling at 360px with the longest fixture title and a plan-ahead card; the first design put it in the A6 status slot below the header, which was off-screen there. **A6 stays in its slot and stays hidden while the staleness line shows**; it shows again once the plan is refreshed. | The A6 line describes the plan that is about to be replaced, so showing both would describe a plan the person shouldn't rely on. A warning has to be where the eye already is. |
+| Copy | Stale: "This plan may be out of date." (always, with no instruction). Could not check: "Couldn't check for updates. Showing your saved plan." Pure strings in `stalenessLineFor` (`plan/staleness.ts`), tested. | The button carries the action, so the line doesn't repeat it. An error says what happened and what is shown instead. |
 | Re-import | An inline text button below the line, semibold ink with an underline, `min-height` 44px. Shown **only** when the source is a URL import (text and image sources get the line alone), and never during a cook in progress, where no marker is shown at all. It opens the import screen with the URL prefilled; the person taps "Get the plan". | A tap target for a wet thumb, and the LLM spend stays an explicit tap. |
 | No marker | A current plan, a refreshed plan, and a plan with a cook in progress show no line. A refresh is silent. | A refresh that works is not news. |
 | Loading | "Scheduling <title>…", for at most 3 seconds. | The existing verb; the title, not an id. |
