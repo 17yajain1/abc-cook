@@ -1,0 +1,140 @@
+{
+  "slug": "pumpkin-pancakes",
+  "known_issues": [
+    "FGC-4"
+  ],
+  "repair_applied": true,
+  "nodes": [
+    {
+      "label": "Mix pumpkin",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 2,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [],
+      "start_min": 0.0,
+      "window": null
+    },
+    {
+      "label": "Add spices",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 2,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Mix pumpkin"
+      ],
+      "start_min": 2.0,
+      "window": null
+    },
+    {
+      "label": "Add baking powder",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 1,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Add spices"
+      ],
+      "start_min": 4.0,
+      "window": null
+    },
+    {
+      "label": "Make batter",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 2,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Add baking powder"
+      ],
+      "start_min": 5.0,
+      "window": null
+    },
+    {
+      "label": "Cook pancakes",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 10,
+      "duration_typical": 15,
+      "duration_max": 20,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Make batter"
+      ],
+      "start_min": 7.0,
+      "window": null
+    },
+    {
+      "label": "Serve classic",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Cook pancakes"
+      ],
+      "start_min": 22.0,
+      "window": null
+    },
+    {
+      "label": "Serve with chips",
+      "kind": "finish",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Cook pancakes",
+        "Serve classic"
+      ],
+      "start_min": 23.0,
+      "window": null
+    }
+  ],
+  "windows": [],
+  "totals": {
+    "total_min": 24.0,
+    "serial_min": 24.0,
+    "saved_min": 0.0,
+    "active_min": 24.0,
+    "elapsed_min": 24.0,
+    "elapsed_high_min": 34.0
+  },
+  "sessions": [
+    {
+      "start_min": 0.0,
+      "end_min": 24.0,
+      "active_min": 24.0,
+      "preceded_by_wait_min": null,
+      "nodes": [
+        "Mix pumpkin",
+        "Add spices",
+        "Add baking powder",
+        "Make batter",
+        "Cook pancakes",
+        "Serve classic",
+        "Serve with chips"
+      ]
+    }
+  ],
+  "long_waits": 0
+}

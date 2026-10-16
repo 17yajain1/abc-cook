@@ -1,0 +1,223 @@
+{
+  "slug": "kadhi-pakora",
+  "known_issues": [
+    "FGC-5",
+    "FGC-6"
+  ],
+  "repair_applied": false,
+  "nodes": [
+    {
+      "label": "Mix kadi",
+      "kind": "prep",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 3,
+      "duration_typical": 5,
+      "duration_max": 8,
+      "duration_source": "inferred",
+      "depends_on": [],
+      "start_min": 0.0,
+      "window": null
+    },
+    {
+      "label": "Temper spices",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Mix kadi"
+      ],
+      "start_min": 5.0,
+      "window": null
+    },
+    {
+      "label": "Make pakora batter",
+      "kind": "prep",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 3,
+      "duration_typical": 5,
+      "duration_max": 10,
+      "duration_source": "inferred",
+      "depends_on": [],
+      "start_min": 6.0,
+      "window": "w1"
+    },
+    {
+      "label": "Cook kadi",
+      "kind": "combine",
+      "attention": "periodic",
+      "station": "burner",
+      "duration_min": 28,
+      "duration_typical": 28,
+      "duration_max": 32,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Mix kadi",
+        "Temper spices"
+      ],
+      "start_min": 6.0,
+      "window": null
+    },
+    {
+      "label": "Fry pakoras (first)",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 6,
+      "duration_typical": 8,
+      "duration_max": 12,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Make pakora batter",
+        "Cook kadi"
+      ],
+      "start_min": 34.0,
+      "window": null
+    },
+    {
+      "label": "Finish kadi",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Cook kadi"
+      ],
+      "start_min": 42.0,
+      "window": null
+    },
+    {
+      "label": "Rest pakoras",
+      "kind": "passive",
+      "attention": "unattended",
+      "station": "none",
+      "duration_min": 3,
+      "duration_typical": 3,
+      "duration_max": 15,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Fry pakoras (first)"
+      ],
+      "start_min": 42.0,
+      "window": null
+    },
+    {
+      "label": "Finish fry",
+      "kind": "active",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 3,
+      "duration_typical": 5,
+      "duration_max": 8,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Fry pakoras (first)",
+        "Rest pakoras"
+      ],
+      "start_min": 45.0,
+      "window": null
+    },
+    {
+      "label": "Add pakoras",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 3,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Finish fry",
+        "Finish kadi",
+        "Cook kadi",
+        "Fry pakoras (first)",
+        "Rest pakoras"
+      ],
+      "start_min": 50.0,
+      "window": null
+    },
+    {
+      "label": "Make tempering",
+      "kind": "combine",
+      "attention": "hands_on",
+      "station": "burner",
+      "duration_min": 1,
+      "duration_typical": 2,
+      "duration_max": 4,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Add pakoras"
+      ],
+      "start_min": 51.0,
+      "window": null
+    },
+    {
+      "label": "Serve",
+      "kind": "finish",
+      "attention": "hands_on",
+      "station": "counter",
+      "duration_min": 1,
+      "duration_typical": 1,
+      "duration_max": 2,
+      "duration_source": "inferred",
+      "depends_on": [
+        "Add pakoras",
+        "Make tempering",
+        "Cook kadi",
+        "Finish kadi"
+      ],
+      "start_min": 53.0,
+      "window": null
+    }
+  ],
+  "windows": [
+    {
+      "id": "w1",
+      "host": "Cook kadi",
+      "assigned": [
+        "Make pakora batter"
+      ],
+      "capacity_min": 21.0,
+      "used_min": 5.0,
+      "slack_min": 16.0
+    }
+  ],
+  "totals": {
+    "total_min": 54.0,
+    "serial_min": 60.0,
+    "saved_min": 6.0,
+    "active_min": 29.0,
+    "elapsed_min": 54.0,
+    "elapsed_high_min": 71.0
+  },
+  "sessions": [
+    {
+      "start_min": 0.0,
+      "end_min": 54.0,
+      "active_min": 29.0,
+      "preceded_by_wait_min": null,
+      "nodes": [
+        "Mix kadi",
+        "Temper spices",
+        "Cook kadi",
+        "Make pakora batter",
+        "Fry pakoras (first)",
+        "Finish kadi",
+        "Rest pakoras",
+        "Finish fry",
+        "Add pakoras",
+        "Make tempering",
+        "Serve"
+      ]
+    }
+  ],
+  "long_waits": 0
+}
