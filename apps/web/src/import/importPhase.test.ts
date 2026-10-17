@@ -120,8 +120,8 @@ describe('phaseFor — the other statuses are unchanged', () => {
 
 describe('failure copy', () => {
   it('has one sentence per failure kind, and neither offers a retry for incomplete', () => {
-    expect(FAILURE_COPY.unavailable).toBe("We couldn't reach our recipe reader. Try again in a minute.")
-    expect(FAILURE_COPY.incomplete).toBe("We couldn't finish reading this recipe.")
+    expect(FAILURE_COPY.unavailable).toBe('We couldn’t reach our recipe reader. Try again in a minute.')
+    expect(FAILURE_COPY.incomplete).toBe('We couldn’t finish reading this recipe.')
   })
 })
 

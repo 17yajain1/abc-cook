@@ -51,8 +51,8 @@ export type Phase =
 /** The screen's own sentence for each failure kind. The server sends an equivalent one in
  * `job.error` for older web builds; this build reads `failure` and writes its own. */
 export const FAILURE_COPY: Record<ImportFailure, string> = {
-  unavailable: "We couldn't reach our recipe reader. Try again in a minute.",
-  incomplete: "We couldn't finish reading this recipe.",
+  unavailable: 'We couldn’t reach our recipe reader. Try again in a minute.',
+  incomplete: 'We couldn’t finish reading this recipe.',
 }
 
 export type PollDecision =
