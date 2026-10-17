@@ -344,6 +344,22 @@
     "ImportResult": {
       "description": "The `/import` response payload.\n\nA separate envelope from `RecipePlanResponse` (design doc \u00a79 decision 3) \u2014 that\nresponse stays the frozen contract for the fixture path.",
       "properties": {
+        "failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "unavailable",
+                "incomplete"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set only with `status == 'failed'`: whether the provider was unavailable or the extraction came back incomplete. Failed results are never cached or saved."
+        },
         "graph": {
           "anyOf": [
             {

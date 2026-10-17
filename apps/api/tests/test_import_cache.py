@@ -262,6 +262,7 @@ def test_changing_the_extraction_effort_misses(tmp_path: Path) -> None:
         acquire_fn=_Acquire(raw),
         cache=cache,
         extraction_effort="medium",
+        allow_effort_above_ceiling=True,
     )
     assert adapter.calls == 1  # a different effort is a different identity
 

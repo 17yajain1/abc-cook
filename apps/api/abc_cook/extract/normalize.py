@@ -19,13 +19,17 @@ Every LLM call in this module is exactly one, except:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult, LLMAdapter
-from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
+from abc_cook.extract.adapters.prompting import parse_failure_reason
+from abc_cook.schema.normalized import ImportFailure, ImportResult, NormalizedRecipe
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "gpt-5-mini"
 
@@ -36,6 +40,16 @@ nothing, i.e. the provider default (GPT-5-mini: medium) -- the previous producti
 setting and the rollback value. A constant, not an env var, on purpose: it changes only
 when an A/B measured on correctness first says so. `scripts/effort_ab.py` overrides it
 per run."""
+EXTRACTION_EFFORT_CEILING: EffortLevel = "low"
+"""The highest reasoning effort `normalize()` accepts without an explicit bench override.
+
+Order: minimal < low < medium < high < xhigh < max. `None` means the provider default
+(GPT-5-mini: medium), so it counts as above the ceiling. Raising this is a deliberate
+decision (S3 changes it here, in one place), made on an A/B measured on correctness first:
+at `medium` a large share of the output budget goes on hidden reasoning and imports get
+slower and sometimes end `incomplete` (FGC-1). Bench scripts that need another effort pass
+`allow_effort_above_ceiling=True`; the API route never does."""
+_EFFORT_ORDER: tuple[EffortLevel, ...] = ("minimal", "low", "medium", "high", "xhigh", "max")
 """M2.11: extraction moved from Haiku to GPT-5-mini per the M2.10 model bake-offs
 (directional evidence: comparable/better grounding, cheaper, ~4x fewer output tokens
 than Haiku on the same recipes). Repair stays on Sonnet (`repair.REPAIR_MODEL`) --
@@ -180,6 +194,58 @@ def render_source_text(raw: RawAcquisition) -> str:
     return "\n\n".join(parts)
 
 
+def _above_ceiling(effort: EffortLevel | None) -> bool:
+    if effort is None:
+        return True
+    return _EFFORT_ORDER.index(effort) > _EFFORT_ORDER.index(EXTRACTION_EFFORT_CEILING)
+
+
+def _reasoning_exhausted(result: ExtractResult[NormalizedRecipe]) -> bool:
+    """A truncation that produced no visible output at all (FGC-1).
+
+    The whole budget went on hidden reasoning. Escalating would burn the larger budget the
+    same way, so the caller stops. Checked before `_is_runaway`, which would otherwise
+    misread an empty text as "the model never reached the steps" (a repeat loop).
+    """
+    return result.truncated and result.raw_text is not None and result.raw_text.strip() == ""
+
+
+def _failed_result(
+    raw: RawAcquisition, failure: ImportFailure, warnings: list[str]
+) -> ImportResult:
+    """A terminal `failed` result: nothing was extracted, and it is not the recipe's fault.
+
+    Distinct from Tier 0 (`method_not_grounded`), which says the *source* has no method.
+    """
+    return ImportResult(status="failed", failure=failure, source_title=raw.title, warnings=warnings)
+
+
+_LOG_HEAD_CHARS = 2_000
+_LOG_TAIL_CHARS = 500
+
+
+def _log_unparseable(result: ExtractResult[NormalizedRecipe], model: str) -> None:
+    """WARNING-log why a response could not be parsed (FGC-13).
+
+    The API sets no logging config, so INFO from `abc_cook` is dropped on Cloud Run; this
+    must be WARNING to be seen. Carries the response's head and tail, never a header or key.
+    """
+    text = result.raw_text or ""
+    usage = result.usage
+    _logger.warning(
+        "extraction response unparseable: model=%s stop_reason=%s output_tokens=%s "
+        "reasoning_tokens=%s text_len=%d reason=%s head=%r tail=%r",
+        model,
+        usage.stop_reason if usage else None,
+        usage.output_tokens if usage else None,
+        usage.reasoning_tokens if usage else None,
+        len(text),
+        parse_failure_reason(text, NormalizedRecipe),
+        text[:_LOG_HEAD_CHARS],
+        text[-_LOG_TAIL_CHARS:] if len(text) > _LOG_HEAD_CHARS else "",
+    )
+
+
 def _tier0_result(
     raw: RawAcquisition, recipe: NormalizedRecipe | None, warnings: list[str]
 ) -> ImportResult:
@@ -205,6 +271,7 @@ def normalize(
     model: str = DEFAULT_MODEL,
     max_tokens: int = MAX_TOKENS,
     effort: EffortLevel | None = EXTRACTION_EFFORT,
+    allow_effort_above_ceiling: bool = False,
 ) -> NormalizeOutcome:
     """Turn one `RawAcquisition` into a `NormalizeOutcome`.
 
@@ -220,10 +287,26 @@ def normalize(
       paying for more of the same loop. A second truncation after escalating also
       stops — never a third generation call.
 
+    - A provider failure (`error_kind == "infra"`: auth, quota, outage, network, timeout)
+      on any call stops at once with a `failed` result (`failure="unavailable"`). The SDK
+      has already retried once, so a same-input retry would only repeat the wait.
+    - A truncation with no visible output (`_reasoning_exhausted`) stops with no escalation:
+      a `failed` result (`failure="incomplete"`).
+
+    Raises:
+        ValueError: `effort` is above `EXTRACTION_EFFORT_CEILING` (`None` counts as above)
+            and `allow_effort_above_ceiling` is False. Raised before any call is made.
+
     If nothing usable ever comes back, this degrades to a Tier 0 result — there is no
     step list to build even a linear chain from, so treating it as anything other than
     "nothing grounded" would be dishonest.
     """
+    if _above_ceiling(effort) and not allow_effort_above_ceiling:
+        raise ValueError(
+            f"extraction effort {effort!r} is above EXTRACTION_EFFORT_CEILING "
+            f"({EXTRACTION_EFFORT_CEILING!r}); raise the ceiling deliberately, or pass "
+            "allow_effort_above_ceiling=True from a bench script"
+        )
     prompt = load_prompt()
     source_text = render_source_text(raw)
     calls: list[CallUsage] = []
@@ -241,12 +324,38 @@ def normalize(
         )
         if result.usage is not None:
             calls.append(result.usage)
+        if result.error_kind == "unparseable":
+            _log_unparseable(result, model)
         return result
 
+    def _unavailable(result: ExtractResult[NormalizedRecipe]) -> NormalizeOutcome:
+        warning = f"Extraction provider unavailable ({result.error}); not retrying the same input."
+        return NormalizeOutcome(
+            recipe=None,
+            tier0_result=_failed_result(raw, "unavailable", [warning]),
+            calls=calls,
+            escalated=escalated,
+            truncations=truncations,
+        )
+
     result = _call(max_tokens)
+    if result.error_kind == "infra":
+        return _unavailable(result)
 
     if result.truncated:
         truncations += 1
+        if _reasoning_exhausted(result):
+            reasoning = result.usage.reasoning_tokens if result.usage is not None else None
+            warning = (
+                f"Extraction used its whole {max_tokens}-token budget on reasoning "
+                f"(reasoning_tokens={reasoning}) and produced no visible output; stopping."
+            )
+            return NormalizeOutcome(
+                recipe=None,
+                tier0_result=_failed_result(raw, "incomplete", [warning]),
+                calls=calls,
+                truncations=truncations,
+            )
         if result.raw_text is not None and _is_runaway(result.raw_text):
             warning = (
                 f"Extraction output looked like a runaway generation after "
@@ -261,6 +370,8 @@ def normalize(
             )
         escalated = True
         result = _call(ESCALATED_MAX_TOKENS)
+        if result.error_kind == "infra":
+            return _unavailable(result)
         if result.truncated:
             truncations += 1
             warning = (
@@ -277,6 +388,8 @@ def normalize(
             )
     elif result.recipe is None:
         result = _call(max_tokens)
+        if result.error_kind == "infra":
+            return _unavailable(result)
 
     if result.recipe is None:
         warning = f"Extraction failed twice; treating as ungrounded (error: {result.error})."

@@ -15,6 +15,7 @@ network or an LLM (docs/M2.9-youtube-import-design.md §8.2).
 
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from collections.abc import Callable
@@ -37,6 +38,17 @@ from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
 router = APIRouter(tags=["import"])
+_logger = logging.getLogger(__name__)
+
+_FAILURE_SENTENCES: dict[str, str] = {
+    "unavailable": "We couldn't reach our recipe reader. Try again in a minute.",
+    "incomplete": "We couldn't finish reading this recipe.",
+}
+"""What an older web build shows for a `failed` job (`JobState.error`); a current build
+reads `result.failure` and writes its own copy."""
+
+_LAST_RESORT_SENTENCE = "Something went wrong while reading this recipe. Please try again."
+"""The unexpected-exception case. Never `str(exc)`: that can carry a URL, a path or a key."""
 
 
 class ImportRequest(BaseModel):
@@ -182,10 +194,12 @@ def _run_job(
             fresh=fresh,
             source_key=source_key,
         )
-    except Exception as exc:  # last-resort boundary, see docstring
-        store.put(job_id, JobState(status="failed", error=str(exc), preview=preview))
+    except Exception:  # last-resort boundary, see docstring
+        _logger.exception("import job %s failed unexpectedly", job_id)
+        store.put(job_id, JobState(status="failed", error=_LAST_RESORT_SENTENCE, preview=preview))
         return
-    store.put(job_id, JobState(status=result.status, result=result, preview=preview))
+    error = _FAILURE_SENTENCES.get(result.failure or "") if result.status == "failed" else None
+    store.put(job_id, JobState(status=result.status, result=result, error=error, preview=preview))
 
 
 @router.post("/import", status_code=202)

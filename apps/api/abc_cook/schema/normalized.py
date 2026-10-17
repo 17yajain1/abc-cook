@@ -422,6 +422,16 @@ class ImportMeta(BaseModel):
     degraded: bool = Field(default=False)
 
 
+ImportFailure = Literal["unavailable", "incomplete"]
+"""Why a `failed` import result failed, when the pipeline knows (PR-S1).
+
+`unavailable`: the extraction provider could not be used (auth, quota, outage, network,
+timeout) -- nothing to do with the recipe, so trying again later is reasonable.
+`incomplete`: the model spent its whole output budget on reasoning and produced nothing
+readable -- the same input would most likely fail the same way, so retrying is not offered.
+"""
+
+
 class ImportResult(BaseModel):
     """The `/import` response payload.
 
@@ -430,6 +440,13 @@ class ImportResult(BaseModel):
     """
 
     status: ImportStatus
+    failure: ImportFailure | None = Field(
+        default=None,
+        description=(
+            "Set only with `status == 'failed'`: whether the provider was unavailable or "
+            "the extraction came back incomplete. Failed results are never cached or saved."
+        ),
+    )
     source_title: str | None = Field(default=None)
     ingredients: list[NormalizedIngredient] = Field(
         default_factory=list,

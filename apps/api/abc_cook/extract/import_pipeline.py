@@ -184,6 +184,7 @@ def run_import(
     cache: ResultCache | None = None,
     fresh: bool = False,
     source_key: SourceKey | None = None,
+    allow_effort_above_ceiling: bool = False,
 ) -> ImportResult:
     """Run the full pipeline for one URL.
 
@@ -216,6 +217,8 @@ def run_import(
             (`make_source_key("url", url)`); the route passes a `text` key for pasted
             text. Text and fallback-derived keys (`SourceKey.is_fallback`) are never
             cached (no get, no put).
+        allow_effort_above_ceiling: Bench scripts only: lets `extraction_effort` exceed
+            `normalize.EXTRACTION_EFFORT_CEILING`. The route never sets it.
 
     Returns:
         An `ImportResult`. Always one of the three tiers (§4.2): Tier 0 refusal,
@@ -348,7 +351,15 @@ def run_import(
             on_preview(preview)
 
     _status("extracting")
-    outcome = _timed("extract", lambda: normalize(raw, adapter, effort=extraction_effort))
+    outcome = _timed(
+        "extract",
+        lambda: normalize(
+            raw,
+            adapter,
+            effort=extraction_effort,
+            allow_effort_above_ceiling=allow_effort_above_ceiling,
+        ),
+    )
     if outcome.tier0_result is not None:
         _telemetry(
             extraction_calls=outcome.calls,

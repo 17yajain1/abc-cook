@@ -456,6 +456,10 @@ export interface PreviewSection {
  * via the `definition` "ImportResult".
  */
 export interface ImportResult {
+  /**
+   * Set only with `status == 'failed'`: whether the provider was unavailable or the extraction came back incomplete. Failed results are never cached or saved.
+   */
+  failure?: ('unavailable' | 'incomplete') | null;
   graph?: CookingGraph | null;
   /**
    * Present even at Tier 0 — a shopping list is real recovered information.
