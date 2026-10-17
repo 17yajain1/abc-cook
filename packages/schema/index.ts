@@ -15,6 +15,30 @@ export interface ABCCookSchema {
   [k: string]: unknown;
 }
 /**
+ * What acquisition found about the source, before any LLM call.
+ *
+ * Lets the import screen show a title, channel and description a few seconds after submit,
+ * well before the plan arrives. Not model input and not persisted: `RawAcquisition` stays
+ * internal, and this carries only its three display fields.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "AcquiredSource".
+ */
+export interface AcquiredSource {
+  /**
+   * Channel or site name.
+   */
+  channel?: string | null;
+  /**
+   * The source's own description or caption, verbatim.
+   */
+  description?: string | null;
+  /**
+   * Video or page title, as the source gives it.
+   */
+  title: string;
+}
+/**
  * The internal DAG of a recipe: what the LLM extracts, what the scheduler consumes.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
@@ -376,6 +400,10 @@ export interface NodeProvenance {
  * via the `definition` "ImportJobResponse".
  */
 export interface ImportJobResponse {
+  /**
+   * Title, channel and description once acquire has returned (not for pasted text). Kept on every later status, like `preview`.
+   */
+  acquired?: AcquiredSource | null;
   /**
    * Set when status is failed.
    */

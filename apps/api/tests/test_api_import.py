@@ -543,3 +543,103 @@ def test_route_never_sends_an_effort_above_the_ceiling() -> None:
             assert order.index(effort) <= ceiling, (label, effort)
         if label == "repair":
             assert [name for name, _ in seen].count("RepairProposal") >= 1
+
+
+# ---------------------------------------------------------------------------
+# PR-S1 A5: acquisition metadata on job status.
+# ---------------------------------------------------------------------------
+
+
+class _RecordingStore:
+    """An `InMemoryJobStore` that remembers every write, in order."""
+
+    def __init__(self) -> None:
+        self.inner = import_routes.InMemoryJobStore()
+        self.writes: list[import_routes.JobState] = []
+
+    def get(self, job_id: str) -> import_routes.JobState | None:
+        return self.inner.get(job_id)
+
+    def put(self, job_id: str, state: import_routes.JobState) -> None:
+        if state.status != "acquiring" or state.acquired is not None:
+            self.writes.append(state)
+        self.inner.put(job_id, state)
+
+
+def _store_client(store: _RecordingStore, adapter: object, acquire: object) -> TestClient:
+    app = create_app()
+    app.dependency_overrides[import_routes.get_job_store] = lambda: store
+    app.dependency_overrides[import_routes.get_acquire] = lambda: acquire
+    app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
+    return TestClient(app)
+
+
+def test_acquired_is_set_right_after_acquire_and_kept_on_every_later_status() -> None:
+    def acquire(url: str) -> RawAcquisition:
+        return _raw(
+            source_url=url, title="Kadhi Pakora", channel="Some Kitchen", description="Dahi, besan."
+        )
+
+    store = _RecordingStore()
+    client = _store_client(
+        store, _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())]), acquire
+    )
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+
+    # The first status write after acquire (`extracting`) already carries it, and so does
+    # every one after, including the terminal `done`.
+    assert store.writes, "no status write was recorded"
+    assert store.writes[0].status == "extracting"
+    for state in store.writes:
+        assert state.acquired is not None
+        assert state.acquired.title == "Kadhi Pakora"
+        assert state.acquired.channel == "Some Kitchen"
+        assert state.acquired.description == "Dahi, besan."
+    assert store.writes[-1].status == "done"
+
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+    assert job.acquired is not None
+    assert job.acquired.title == "Kadhi Pakora"
+
+
+def test_acquired_survives_a_failed_job() -> None:
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(recipe=None, error="AuthenticationError (HTTP 401)", error_kind="infra")
+        ]
+    )
+    job = _post_and_poll(_client_with(adapter))
+    assert job.status == "failed"
+    assert job.acquired is not None
+    assert job.acquired.title == "Test Recipe"
+
+
+def test_acquired_survives_the_last_resort_failure() -> None:
+    class _BoomAdapter:
+        def extract(self, **_: object) -> ExtractResult:
+            raise RuntimeError("provider exploded")
+
+    job = _post_and_poll(_client_with(_BoomAdapter()))
+    assert job.status == "failed"
+    assert job.error == _LAST_RESORT_SENTENCE
+    assert job.acquired is not None  # acquire had already succeeded
+
+
+def test_pasted_text_has_no_acquired_block() -> None:
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
+    app = create_app()
+    app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
+    app.dependency_overrides[import_routes.get_result_cache] = lambda: None
+    client = TestClient(app)
+    text = "Onion Dal\n\n1 onion\n\nHeat oil, add onion, cook until golden. Serve hot."
+    job_id = client.post("/import", json={"text": text}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+    assert job.status == "done"
+    assert job.acquired is None
+
+
+def test_a_job_before_acquire_finishes_has_no_acquired_block() -> None:
+    state = import_routes.JobState(status="acquiring")
+    assert state.acquired is None
+    response = ImportJobResponse(job_id="j", status=state.status, acquired=state.acquired)
+    assert response.acquired is None
