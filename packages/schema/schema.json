@@ -1,5 +1,42 @@
 {
   "$defs": {
+    "AcquiredSource": {
+      "description": "What acquisition found about the source, before any LLM call.\n\nLets the import screen show a title, channel and description a few seconds after submit,\nwell before the plan arrives. Not model input and not persisted: `RawAcquisition` stays\ninternal, and this carries only its three display fields.",
+      "properties": {
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Channel or site name."
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The source's own description or caption, verbatim."
+        },
+        "title": {
+          "description": "Video or page title, as the source gives it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "type": "object"
+    },
     "CookingGraph": {
       "description": "The internal DAG of a recipe: what the LLM extracts, what the scheduler consumes.",
       "properties": {
@@ -166,6 +203,18 @@
     "ImportJobResponse": {
       "description": "`GET /import/{job_id}` \u2014 the client polls this (design doc \u00a74.5).\n\nA separate envelope from `RecipePlanResponse`, which stays the frozen contract for\nthe fixture path (design doc \u00a79 decision 3).",
       "properties": {
+        "acquired": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AcquiredSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Title, channel and description once acquire has returned (not for pasted text). Kept on every later status, like `preview`."
+        },
         "error": {
           "anyOf": [
             {
@@ -344,6 +393,22 @@
     "ImportResult": {
       "description": "The `/import` response payload.\n\nA separate envelope from `RecipePlanResponse` (design doc \u00a79 decision 3) \u2014 that\nresponse stays the frozen contract for the fixture path.",
       "properties": {
+        "failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "unavailable",
+                "incomplete"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set only with `status == 'failed'`: whether the provider was unavailable or the extraction came back incomplete. Failed results are never cached or saved."
+        },
         "graph": {
           "anyOf": [
             {

@@ -25,6 +25,10 @@ repair pass). Optional and provider-dependent — an adapter that has no such co
 simply ignores it."""
 
 
+ErrorKind = Literal["infra", "request", "unparseable", "truncated"]
+"""See `ExtractResult.error_kind`."""
+
+
 MAX_RETRIES = 1
 """SDK-level retries per call. The SDK defaults (OpenAI/Anthropic: 2) multiply a
 timed-out call's wait; one retry still covers a transient 429/5xx."""
@@ -38,6 +42,17 @@ def request_timeout_s(max_tokens: int) -> float:
     stuck call ends the import job as `failed` instead of leaving it mid-status.
     """
     return 60.0 + max_tokens / 50
+
+
+def exception_summary(exc: BaseException) -> str:
+    """`"<ClassName> (HTTP <status>)"`, or just the class name when there is no status.
+
+    Deliberately omits the exception message: OpenAI's 401 message echoes a masked key,
+    and this string ends up in `ImportResult.warnings`, which the client receives.
+    """
+    status = getattr(exc, "status_code", None)
+    name = type(exc).__name__
+    return f"{name} (HTTP {status})" if isinstance(status, int) else name
 
 
 @dataclass(frozen=True)
@@ -74,8 +89,15 @@ class ExtractResult[T: pydantic.BaseModel]:
     retried with an identical cap (M2.10 s18 F2) — only escalated or stopped. `error`
     carries a short diagnostic for logs; never shown to the end user. `usage` is the
     measured per-call cost/latency data (F5), when a message actually came back.
-    `raw_text` carries the partial response text, but only when `truncated=True` — it
-    exists solely for the caller's runaway-generation check, never for parsing.
+    `raw_text` carries the response text when `truncated=True` (the caller's
+    runaway-generation check) and when the response was unparseable (so the caller can
+    log why; FGC-13). It is never parsed again.
+
+    `error_kind` says what sort of failure `error` describes, so the caller can tell a
+    provider outage from a bad answer: `infra` (auth, permission, rate limit, 5xx,
+    connection or timeout: nothing to do with the input, so same-input retries are
+    pointless), `request` (any other 4xx), `unparseable`, or `truncated`. `None` on
+    success.
     """
 
     recipe: T | None
@@ -83,6 +105,7 @@ class ExtractResult[T: pydantic.BaseModel]:
     error: str | None = None
     usage: CallUsage | None = None
     raw_text: str | None = None
+    error_kind: ErrorKind | None = None
 
 
 class LLMAdapter(Protocol):

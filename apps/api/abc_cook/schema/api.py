@@ -59,6 +59,21 @@ class ImportStartResponse(BaseModel):
     job_id: str = Field(description="Poll `GET /import/{job_id}` with this.")
 
 
+class AcquiredSource(BaseModel):
+    """What acquisition found about the source, before any LLM call.
+
+    Lets the import screen show a title, channel and description a few seconds after submit,
+    well before the plan arrives. Not model input and not persisted: `RawAcquisition` stays
+    internal, and this carries only its three display fields.
+    """
+
+    title: str = Field(description="Video or page title, as the source gives it.")
+    channel: str | None = Field(default=None, description="Channel or site name.")
+    description: str | None = Field(
+        default=None, description="The source's own description or caption, verbatim."
+    )
+
+
 class ImportJobResponse(BaseModel):
     """`GET /import/{job_id}` — the client polls this (design doc §4.5).
 
@@ -77,6 +92,11 @@ class ImportJobResponse(BaseModel):
         default=None,
         description="The source's own readable recipe, once acquire has produced one (A2). "
         "Kept on every later status, so a failed or degraded job can still show it.",
+    )
+    acquired: AcquiredSource | None = Field(
+        default=None,
+        description="Title, channel and description once acquire has returned (not for pasted "
+        "text). Kept on every later status, like `preview`.",
     )
 
 

@@ -1,5 +1,6 @@
 import { formatQty } from '../lib/quantity'
 import type { RenderIngredientGroup } from './derive'
+import { IngredientRow } from './IngredientRow'
 
 /**
  * The Ingredients tab. A plain grouped list — a dead tab is worse than a quiet one.
@@ -16,22 +17,22 @@ export function IngredientsPanel({ groups }: { groups: RenderIngredientGroup[] }
           )}
           <ul>
             {group.items.map((item) => (
-              <li
+              <IngredientRow
                 key={item.id}
-                className="flex items-baseline justify-between gap-3 border-b border-home-rule py-2 text-[15px] last:border-b-0"
-              >
-                <span className="text-home-ink">
-                  {item.name}
-                  {item.optional && (
-                    <span className="ml-2 text-[13px] text-home-ink-2">optional</span>
-                  )}
-                </span>
-                {(item.qty_text != null || item.qty != null || item.unit) && (
-                  <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
-                    {[item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()}
-                  </span>
-                )}
-              </li>
+                primary={
+                  <>
+                    {item.name}
+                    {item.optional && (
+                      <span className="ml-2 text-[13px] text-home-ink-2">optional</span>
+                    )}
+                  </>
+                }
+                trailing={
+                  item.qty_text != null || item.qty != null || item.unit
+                    ? [item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()
+                    : null
+                }
+              />
             ))}
           </ul>
         </div>

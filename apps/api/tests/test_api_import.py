@@ -14,8 +14,10 @@ default run (`make test` -> `-m "not llm and not network"`).
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,6 +27,8 @@ from abc_cook.api.routes import import_ as import_routes
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import ExtractResult
+from abc_cook.extract.cache import DiskResultCache
+from abc_cook.extract.normalize import EXTRACTION_EFFORT_CEILING
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
 
@@ -260,7 +264,7 @@ def test_acquire_failure_reports_as_a_failed_job() -> None:
     assert job.status == "failed"
     assert job.result is None
     assert job.error is not None
-    assert "network is down" in job.error
+    assert "network is down" not in job.error  # never the raw exception text
 
 
 def test_unknown_job_is_404() -> None:
@@ -272,6 +276,7 @@ def test_unknown_job_is_404() -> None:
 # ---------------------------------------------------------------------------
 # Real end-to-end: real acquisition, real LLM. Excluded from the default run.
 # ---------------------------------------------------------------------------
+
 
 def _blog_acquire(url: str) -> RawAcquisition:
     recipe = {
@@ -353,3 +358,288 @@ def test_real_import_reaches_a_terminal_status() -> None:
     print(f"warnings: {job.result.warnings}")
     if job.result.plan is not None:
         print(f"plan total_min: {job.result.plan.total_min}")
+
+
+# ---------------------------------------------------------------------------
+# PR-S1: truthful failures, the effort ceiling, and what the client may be told.
+# ---------------------------------------------------------------------------
+
+_UNAVAILABLE_SENTENCE = "We couldn't reach our recipe reader. Try again in a minute."
+_INCOMPLETE_SENTENCE = "We couldn't finish reading this recipe."
+_LAST_RESORT_SENTENCE = "Something went wrong while reading this recipe. Please try again."
+_SECRET = "sk-test-SECRET"
+
+
+def _client_with(
+    adapter: object, acquire: object = _fake_acquire, cache: object = None
+) -> TestClient:
+    app = create_app()
+    app.dependency_overrides[import_routes.get_acquire] = lambda: acquire
+    app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
+    app.dependency_overrides[import_routes.get_result_cache] = lambda: cache
+    return TestClient(app)
+
+
+def _post_and_poll(client: TestClient, **body: object) -> ImportJobResponse:
+    job_id = client.post("/import", json={"url": "https://youtu.be/test", **body}).json()["job_id"]
+    return ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+
+
+def test_provider_auth_failure_is_unavailable_not_cached(tmp_path: Path) -> None:
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(recipe=None, error="AuthenticationError (HTTP 401)", error_kind="infra")
+        ]
+    )
+    cache = DiskResultCache(tmp_path)
+    job = _post_and_poll(_client_with(adapter, cache=cache))
+
+    assert job.status == "failed"
+    assert job.result is not None
+    assert job.result.status == "failed"
+    assert job.result.failure == "unavailable"
+    assert job.error == _UNAVAILABLE_SENTENCE
+    assert adapter.calls == 1
+    assert list(tmp_path.rglob("*.json")) == []  # a failure is never cached
+    assert _SECRET not in job.model_dump_json()
+
+
+def test_reasoning_exhausted_truncation_is_incomplete() -> None:
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(
+                recipe=None,
+                truncated=True,
+                error="max_tokens",
+                error_kind="truncated",
+                raw_text="",
+            )
+        ]
+    )
+    job = _post_and_poll(_client_with(adapter))
+
+    assert job.status == "failed"
+    assert job.result is not None
+    assert job.result.failure == "incomplete"
+    assert job.error == _INCOMPLETE_SENTENCE
+    assert adapter.calls == 1
+
+
+def test_healthy_failure_free_jobs_have_no_failure_field() -> None:
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
+    job = _post_and_poll(_client_with(adapter))
+    assert job.status == "done"
+    assert job.result is not None
+    assert job.result.failure is None
+
+
+def test_last_resort_error_is_a_fixed_sentence_and_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def boom(url: str) -> RawAcquisition:
+        raise RuntimeError(f"network is down {_SECRET}")
+
+    with caplog.at_level(logging.ERROR, logger=import_routes.__name__):
+        job = _post_and_poll(_client_with(_FakeAdapter(results=[]), acquire=boom))
+
+    assert job.status == "failed"
+    assert job.result is None
+    assert job.error == _LAST_RESORT_SENTENCE
+    assert _SECRET not in job.model_dump_json()
+    assert any("network is down" in (r.exc_text or "") for r in caplog.records)
+
+
+@dataclass
+class _RecordingAdapter:
+    """Scripted per output type; records the effort of every call."""
+
+    script: list[ExtractResult]
+    repair_results: list[ExtractResult]
+    seen: list[tuple[str, str | None]]
+
+    def extract(
+        self,
+        *,
+        prompt: str,
+        source_text: str,
+        model: str,
+        max_tokens: int,
+        output_type: type,
+        effort: str | None = None,
+    ) -> ExtractResult:
+        self.seen.append((output_type.__name__, effort))
+        queue = self.repair_results if output_type.__name__ == "RepairProposal" else self.script
+        return queue.pop(0)
+
+
+def _broken_recipe() -> NormalizedRecipe:
+    """Fails exactly one repairable rule (`ingredients_consumed`): Salt is never used."""
+
+    def step(text: str, consumes: list[str], *, independent: bool = False) -> NormalizedStep:
+        return NormalizedStep(
+            text=text,
+            attention="hands_on",
+            duration_stated=True,
+            duration_min=2,
+            duration_typical_min=3,
+            duration_max=5,
+            consumes_ingredients=consumes,
+            depends_on_previous=not independent,
+            station="counter",
+            interruptible=True,
+            freshness="none",
+        )
+
+    return NormalizedRecipe(
+        title="Test",
+        method_grounded=True,
+        ingredients=[
+            NormalizedIngredient(name="Onion", qty="1", unit=None, prep_note=None),
+            NormalizedIngredient(name="Butter", qty="1", unit="tbsp", prep_note=None),
+            NormalizedIngredient(name="Salt", qty="1", unit="tsp", prep_note=None),
+        ],
+        steps=[
+            step("Chop the onion.", ["Onion"]),
+            step("Melt the butter in a pan.", ["Butter"], independent=True),
+            step("Serve hot.", []),
+        ],
+    )
+
+
+def test_route_never_sends_an_effort_above_the_ceiling() -> None:
+    """Clean, unparseable-retry, escalation and repair paths, all through `POST /import`."""
+    unparseable = ExtractResult(recipe=None, error="bad", error_kind="unparseable", raw_text="{")
+    truncated = ExtractResult(
+        recipe=None, truncated=True, error="max_tokens", raw_text='{"steps":[{"text":"a"}'
+    )
+    repair_fail = ExtractResult(recipe=None, error="bad", error_kind="unparseable", raw_text="{")
+    scenarios: list[tuple[list[ExtractResult], list[ExtractResult], str]] = [
+        ([ExtractResult(recipe=_grounded_recipe())], [], "clean"),
+        ([unparseable, ExtractResult(recipe=_grounded_recipe())], [], "retry"),
+        ([truncated, ExtractResult(recipe=_grounded_recipe())], [], "escalation"),
+        ([ExtractResult(recipe=_broken_recipe())], [repair_fail, repair_fail], "repair"),
+    ]
+    order = ("minimal", "low", "medium", "high", "xhigh", "max")
+    ceiling = order.index(EXTRACTION_EFFORT_CEILING)
+    for script, repair_results, label in scenarios:
+        seen: list[tuple[str, str | None]] = []
+        adapter = _RecordingAdapter(script=list(script), repair_results=repair_results, seen=seen)
+
+        def acquire(url: str) -> RawAcquisition:
+            return _raw(
+                source_url=url,
+                description="Chop the onion. Melt the butter in a pan. Serve hot.",
+            )
+
+        # The body tries to set an effort; unknown fields are ignored, never forwarded.
+        job = _post_and_poll(
+            _client_with(adapter, acquire=acquire), extraction_effort="max", effort="max"
+        )
+        assert job.status == "done", label
+        extraction = [effort for name, effort in seen if name == "NormalizedRecipe"]
+        assert extraction, label
+        for effort in extraction:
+            assert effort is not None, label  # None would mean the provider default (medium)
+            assert order.index(effort) <= ceiling, (label, effort)
+        if label == "repair":
+            assert [name for name, _ in seen].count("RepairProposal") >= 1
+
+
+# ---------------------------------------------------------------------------
+# PR-S1 A5: acquisition metadata on job status.
+# ---------------------------------------------------------------------------
+
+
+class _RecordingStore:
+    """An `InMemoryJobStore` that remembers every write, in order."""
+
+    def __init__(self) -> None:
+        self.inner = import_routes.InMemoryJobStore()
+        self.writes: list[import_routes.JobState] = []
+
+    def get(self, job_id: str) -> import_routes.JobState | None:
+        return self.inner.get(job_id)
+
+    def put(self, job_id: str, state: import_routes.JobState) -> None:
+        if state.status != "acquiring" or state.acquired is not None:
+            self.writes.append(state)
+        self.inner.put(job_id, state)
+
+
+def _store_client(store: _RecordingStore, adapter: object, acquire: object) -> TestClient:
+    app = create_app()
+    app.dependency_overrides[import_routes.get_job_store] = lambda: store
+    app.dependency_overrides[import_routes.get_acquire] = lambda: acquire
+    app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
+    return TestClient(app)
+
+
+def test_acquired_is_set_right_after_acquire_and_kept_on_every_later_status() -> None:
+    def acquire(url: str) -> RawAcquisition:
+        return _raw(
+            source_url=url, title="Kadhi Pakora", channel="Some Kitchen", description="Dahi, besan."
+        )
+
+    store = _RecordingStore()
+    client = _store_client(
+        store, _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())]), acquire
+    )
+    job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
+
+    # The first status write after acquire (`extracting`) already carries it, and so does
+    # every one after, including the terminal `done`.
+    assert store.writes, "no status write was recorded"
+    assert store.writes[0].status == "extracting"
+    for state in store.writes:
+        assert state.acquired is not None
+        assert state.acquired.title == "Kadhi Pakora"
+        assert state.acquired.channel == "Some Kitchen"
+        assert state.acquired.description == "Dahi, besan."
+    assert store.writes[-1].status == "done"
+
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+    assert job.acquired is not None
+    assert job.acquired.title == "Kadhi Pakora"
+
+
+def test_acquired_survives_a_failed_job() -> None:
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(recipe=None, error="AuthenticationError (HTTP 401)", error_kind="infra")
+        ]
+    )
+    job = _post_and_poll(_client_with(adapter))
+    assert job.status == "failed"
+    assert job.acquired is not None
+    assert job.acquired.title == "Test Recipe"
+
+
+def test_acquired_survives_the_last_resort_failure() -> None:
+    class _BoomAdapter:
+        def extract(self, **_: object) -> ExtractResult:
+            raise RuntimeError("provider exploded")
+
+    job = _post_and_poll(_client_with(_BoomAdapter()))
+    assert job.status == "failed"
+    assert job.error == _LAST_RESORT_SENTENCE
+    assert job.acquired is not None  # acquire had already succeeded
+
+
+def test_pasted_text_has_no_acquired_block() -> None:
+    adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
+    app = create_app()
+    app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
+    app.dependency_overrides[import_routes.get_result_cache] = lambda: None
+    client = TestClient(app)
+    text = "Onion Dal\n\n1 onion\n\nHeat oil, add onion, cook until golden. Serve hot."
+    job_id = client.post("/import", json={"text": text}).json()["job_id"]
+    job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
+    assert job.status == "done"
+    assert job.acquired is None
+
+
+def test_a_job_before_acquire_finishes_has_no_acquired_block() -> None:
+    state = import_routes.JobState(status="acquiring")
+    assert state.acquired is None
+    response = ImportJobResponse(job_id="j", status=state.status, acquired=state.acquired)
+    assert response.acquired is None

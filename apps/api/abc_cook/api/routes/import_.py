@@ -15,6 +15,7 @@ network or an LLM (docs/M2.9-youtube-import-design.md §8.2).
 
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from collections.abc import Callable
@@ -33,10 +34,21 @@ from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.cache import DiskResultCache, ResultCache
 from abc_cook.extract.import_pipeline import run_import
 from abc_cook.extract.source_key import SourceKey, make_source_key
-from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
+from abc_cook.schema.api import AcquiredSource, ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
 router = APIRouter(tags=["import"])
+_logger = logging.getLogger(__name__)
+
+_FAILURE_SENTENCES: dict[str, str] = {
+    "unavailable": "We couldn't reach our recipe reader. Try again in a minute.",
+    "incomplete": "We couldn't finish reading this recipe.",
+}
+"""What an older web build shows for a `failed` job (`JobState.error`); a current build
+reads `result.failure` and writes its own copy."""
+
+_LAST_RESORT_SENTENCE = "Something went wrong while reading this recipe. Please try again."
+"""The unexpected-exception case. Never `str(exc)`: that can carry a URL, a path or a key."""
 
 
 class ImportRequest(BaseModel):
@@ -67,6 +79,7 @@ class JobState:
     result: ImportResult | None = None
     error: str | None = None
     preview: SourcePreview | None = None
+    acquired: AcquiredSource | None = None
 
 
 class JobStore(Protocol):
@@ -159,9 +172,21 @@ def _run_job(
     doc's status enum for exactly this.
     """
     preview: SourcePreview | None = None
+    acquired: AcquiredSource | None = None
 
     def on_status(status: ImportStatus) -> None:
-        store.put(job_id, JobState(status=status, preview=preview))
+        store.put(job_id, JobState(status=status, preview=preview, acquired=acquired))
+
+    def recording_acquire(source_url: str) -> RawAcquisition:
+        # Records the display fields and hands the result back unchanged; every later
+        # `store.put` carries them, like `preview`. Pasted text is the user's own, so skipped.
+        nonlocal acquired
+        raw = acquire_fn(source_url)
+        if raw.source_kind != "text":
+            acquired = AcquiredSource(
+                title=raw.title, channel=raw.channel, description=raw.description
+            )
+        return raw
 
     def on_preview(value: SourcePreview) -> None:
         # Fires between `acquiring` and `plan_building`; the next `on_status` write
@@ -175,17 +200,29 @@ def _run_job(
             url,
             adapter,
             graph_id=job_id,
-            acquire_fn=acquire_fn,
+            acquire_fn=recording_acquire,
             on_status=on_status,
             on_preview=on_preview,
             cache=cache,
             fresh=fresh,
             source_key=source_key,
         )
-    except Exception as exc:  # last-resort boundary, see docstring
-        store.put(job_id, JobState(status="failed", error=str(exc), preview=preview))
+    except Exception:  # last-resort boundary, see docstring
+        _logger.exception("import job %s failed unexpectedly", job_id)
+        store.put(
+            job_id,
+            JobState(
+                status="failed", error=_LAST_RESORT_SENTENCE, preview=preview, acquired=acquired
+            ),
+        )
         return
-    store.put(job_id, JobState(status=result.status, result=result, preview=preview))
+    error = _FAILURE_SENTENCES.get(result.failure or "") if result.status == "failed" else None
+    store.put(
+        job_id,
+        JobState(
+            status=result.status, result=result, error=error, preview=preview, acquired=acquired
+        ),
+    )
 
 
 @router.post("/import", status_code=202)
@@ -250,4 +287,5 @@ async def get_import(job_id: str, store: JobStore = Depends(get_job_store)) -> I
         result=job.result,
         error=job.error,
         preview=job.preview,
+        acquired=job.acquired,
     )

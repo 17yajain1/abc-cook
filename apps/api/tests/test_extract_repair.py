@@ -8,6 +8,7 @@ recipe that failed validation at the M2.9 s15 checkpoint is a separate
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -622,3 +623,43 @@ def test_real_multibranch_failure_repairs_or_degrades_safely() -> None:
     print(f"warnings: {outcome.build_result.warnings}")
     for node in outcome.build_result.graph.nodes:
         print(f"  {node.id} <- {node.depends_on}")
+
+
+def test_repair_infra_failure_skips_the_identical_retry_and_flags_it(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    recipe = _broken_two_branch_recipe()
+    violations = _build_and_validate(recipe, _source_text())
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(recipe=None, error="RateLimitError (HTTP 429)", error_kind="infra"),
+            ExtractResult(recipe=None, error="should never be asked", error_kind="infra"),
+        ]
+    )
+    with caplog.at_level(logging.WARNING, logger="abc_cook.extract.repair"):
+        outcome = repair_or_degrade(
+            recipe, _source_text(), violations, adapter, graph_id="g", source=SOURCE
+        )
+    assert adapter.calls == 1  # not 2: the same call would fail the same way
+    assert outcome.tier == "degraded"
+    warnings = outcome.build_result.warnings
+    assert "degraded" in warnings
+    assert "repair_unavailable" in warnings
+    assert validate(outcome.build_result.graph) == []
+    assert any(r.levelno == logging.WARNING for r in caplog.records)
+
+
+def test_repair_non_infra_failure_does_not_claim_the_repair_was_unavailable() -> None:
+    recipe = _broken_two_branch_recipe()
+    violations = _build_and_validate(recipe, _source_text())
+    adapter = _FakeAdapter(
+        results=[
+            ExtractResult(recipe=None, error="bad", error_kind="unparseable"),
+            ExtractResult(recipe=None, error="bad", error_kind="unparseable"),
+        ]
+    )
+    outcome = repair_or_degrade(
+        recipe, _source_text(), violations, adapter, graph_id="g", source=SOURCE
+    )
+    assert adapter.calls == 2
+    assert "repair_unavailable" not in outcome.build_result.warnings

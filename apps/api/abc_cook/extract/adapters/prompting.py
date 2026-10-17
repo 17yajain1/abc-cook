@@ -49,6 +49,29 @@ def strip_code_fences(text: str) -> str:
     return CODE_FENCE.sub("", text.strip()).strip()
 
 
+def parse_failure_reason(text: str, output_type: type[pydantic.BaseModel]) -> str:
+    """Why `parse(text, output_type)` returned None, for logs (FGC-13).
+
+    The JSON error with its line/column, or the first three failing field locations. Never
+    includes the offending values, so a log line can't carry source text or a key.
+    """
+    try:
+        data = json.loads(strip_code_fences(text))
+    except json.JSONDecodeError as exc:
+        return f"invalid JSON: {exc.msg} (line {exc.lineno} column {exc.colno}, char {exc.pos})"
+    try:
+        output_type.model_validate(data)
+    except pydantic.ValidationError as exc:
+        errors = exc.errors()
+        shown = "; ".join(
+            f"{'.'.join(str(part) for part in e['loc']) or '<root>'}: {e['type']}"
+            for e in errors[:3]
+        )
+        more = f" (+{len(errors) - 3} more)" if len(errors) > 3 else ""
+        return f"schema mismatch: {shown}{more}"
+    return "parsed cleanly"
+
+
 def parse[T: pydantic.BaseModel](text: str, output_type: type[T]) -> T | None:
     """`json.loads` + `model_validate`, or None on either failure."""
     try:

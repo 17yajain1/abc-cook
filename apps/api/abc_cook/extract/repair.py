@@ -31,6 +31,7 @@ guaranteed to pass all ten invariants by construction (see `graph.build_graph`'s
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -44,6 +45,8 @@ from abc_cook.schema.normalized import (
     RepairProposal,
     StepRepair,  # noqa: F401 -- re-exported: the model moved to schema/ with RepairProposal
 )
+
+_logger = logging.getLogger(__name__)
 
 REPAIR_MODEL = "claude-sonnet-5"
 """design doc §6.2: Haiku extracts, Sonnet repairs -- "the right repair-pass model"."""
@@ -211,7 +214,7 @@ def _attempt_llm_repair(
     model: str,
     max_tokens: int,
     effort: EffortLevel | None,
-) -> tuple[tuple[NormalizedRecipe, list[str]] | None, RepairProposal | None, list[CallUsage]]:
+) -> tuple[tuple[NormalizedRecipe, list[str]] | None, RepairProposal | None, list[CallUsage], bool]:
     """One repair call, then merge.
 
     Retried once on a truncated/unparseable response (same truncation-vs-invariant-
@@ -220,7 +223,9 @@ def _attempt_llm_repair(
     against `recipe` so only the in-scope fields can differ. Returns `_merge_repair`'s
     result (the merged recipe and its dependency-change notes, or None) alongside
     the proposal it merged (None when no usable response came back) and every real
-    call's usage telemetry (F5), in order.
+    call's usage telemetry (F5), in order, and whether a provider failure (`infra`) cut
+    the pass short -- in which case the identical second call is skipped, since it would
+    fail the same way.
     """
     prompt = load_repair_prompt()
     source_text = render_repair_source(recipe, violations, raw_source_text)
@@ -236,6 +241,9 @@ def _attempt_llm_repair(
     )
     if result.usage is not None:
         calls.append(result.usage)
+    if result.recipe is None and result.error_kind == "infra":
+        _logger.warning("repair pass skipped its retry: provider unavailable (%s)", result.error)
+        return None, None, calls, True
     if result.recipe is None:
         result = adapter.extract(
             prompt=prompt,
@@ -248,9 +256,9 @@ def _attempt_llm_repair(
         if result.usage is not None:
             calls.append(result.usage)
     if result.recipe is None:
-        return None, None, calls
+        return None, None, calls, result.error_kind == "infra"
 
-    return _merge_repair(recipe, result.recipe), result.recipe, calls
+    return _merge_repair(recipe, result.recipe), result.recipe, calls, False
 
 
 def repair_or_degrade(
@@ -301,7 +309,7 @@ def repair_or_degrade(
     if triaged is not None:
         return triaged
 
-    merged, proposal, calls = _attempt_llm_repair(
+    merged, proposal, calls, unavailable = _attempt_llm_repair(
         recipe,
         raw_source_text,
         violations,
@@ -311,7 +319,14 @@ def repair_or_degrade(
         effort=effort,
     )
     return _finish_repair(
-        recipe, raw_source_text, merged, proposal, calls, graph_id=graph_id, source=source
+        recipe,
+        raw_source_text,
+        merged,
+        proposal,
+        calls,
+        graph_id=graph_id,
+        source=source,
+        repair_unavailable=unavailable,
     )
 
 
@@ -407,10 +422,13 @@ def _finish_repair(
     *,
     graph_id: str,
     source: SourceRef,
+    repair_unavailable: bool = False,
 ) -> RepairOutcome:
     """Build and re-validate the merged recipe; else the linear degrade.
 
     Shared by the live pass and the stored-proposal replay, so the two cannot drift.
+    `repair_unavailable` (live pass only) adds the `repair_unavailable` warning beside
+    `degraded` when a provider failure, not a bad proposal, ended the repair.
     """
     if merged is not None:
         repaired_recipe, merge_notes = merged
@@ -434,7 +452,11 @@ def _finish_repair(
     degraded_result = GraphBuildResult(
         graph=degraded.graph,
         node_decisions=degraded.node_decisions,
-        warnings=[*degraded.warnings, "degraded"],
+        warnings=[
+            *degraded.warnings,
+            "degraded",
+            *(["repair_unavailable"] if repair_unavailable else []),
+        ],
         review_recommended=True,
     )
     return RepairOutcome(build_result=degraded_result, tier="degraded", calls=calls)

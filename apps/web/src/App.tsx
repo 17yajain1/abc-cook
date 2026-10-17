@@ -20,6 +20,7 @@ import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
 import type { StalenessMarker } from './plan/staleness'
+import type { AlreadySaved } from './plan/AlreadySavedNotice'
 import type { SaveControl } from './plan/RecipeHeader'
 import { NO_IMPORT_META } from './feed/saveFromFeed'
 import { AppShell } from './shell/AppShell'
@@ -70,7 +71,7 @@ type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
 type View =
   | { kind: 'home' }
-  | { kind: 'import'; initialUrl?: string }
+  | { kind: 'import'; initialUrl?: string; skipDuplicateCheck?: boolean }
   | { kind: 'loading'; label: string }
   | {
       kind: 'plan'
@@ -85,6 +86,8 @@ type View =
       payload: RecipePlanResponse
       /** Set when the open path found the saved plan stale or couldn't check. */
       staleness?: StalenessMarker
+      /** Set only when a pasted URL matched this saved entry (the duplicate path). */
+      alreadySaved?: AlreadySaved
     }
   | { kind: 'cooking'; payload: RecipePlanResponse; planKey: string; returnTo: View }
   | { kind: 'error'; message: string }
@@ -116,7 +119,7 @@ export default function App() {
   // The plan is already on the device, so a recipe whose stamp is known current (or whose
   // cook is in progress) opens at once with no request. Anything else shows a loading
   // state for at most `OPEN_BUDGET_MS` while `openSavedChecked` refreshes or marks it.
-  const openSaved = useCallback((id: string) => {
+  const openSaved = useCallback((id: string, opts?: { alreadySaved?: boolean }) => {
     const token = ++navToken.current
     const show = (outcome: Awaited<ReturnType<typeof openSavedChecked>>) => {
       if (navToken.current !== token) return
@@ -133,8 +136,24 @@ export default function App() {
         importMeta: recipe.import_meta ?? null,
         payload: recipe.payload,
         staleness: stalenessFor(marker, recipe.payload.graph.source.value, () =>
-          setView({ kind: 'import', initialUrl: recipe.payload.graph.source.value }),
+          setView({
+            kind: 'import',
+            initialUrl: recipe.payload.graph.source.value,
+            skipDuplicateCheck: true,
+          }),
         ),
+        // Only the duplicate path sets it. The Cookbook, the feed and a conflict "Go to" never do.
+        alreadySaved:
+          opts?.alreadySaved && recipe.payload.graph.source.kind === 'url'
+            ? {
+                onImportAgain: () =>
+                  setView({
+                    kind: 'import',
+                    initialUrl: recipe.payload.graph.source.value,
+                    skipDuplicateCheck: true,
+                  }),
+              }
+            : undefined,
       })
     }
 
@@ -289,7 +308,16 @@ export default function App() {
 
   switch (view.kind) {
     case 'import':
-      return <ImportScreen onImported={onImported} onCancel={backToHome} initialUrl={view.initialUrl} />
+      return (
+        <ImportScreen
+          onImported={onImported}
+          onCancel={backToHome}
+          initialUrl={view.initialUrl}
+          findSaved={(key) => library.findBySource(key)}
+          onDuplicate={(saved) => openSaved(saved.id, { alreadySaved: true })}
+          skipDuplicateCheck={view.skipDuplicateCheck}
+        />
+      )
     case 'loading':
       return <Centered>Scheduling {view.label}…</Centered>
     case 'error':
@@ -315,6 +343,7 @@ export default function App() {
           save={saveControlFor(view.origin, view.saveState, saveCurrent)}
           importMeta={view.importMeta}
           staleness={view.staleness}
+          alreadySaved={view.alreadySaved}
         />
       )
     case 'cooking':

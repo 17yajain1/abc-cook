@@ -201,6 +201,7 @@ def one_run(
             acquire_fn=lambda _u: raw,
             on_telemetry=box.append,
             extraction_effort=ARM_EFFORT[arm],
+            allow_effort_above_ceiling=True,  # the A/B deliberately runs above the ceiling
         )
     except Exception as exc:
         _release(None)

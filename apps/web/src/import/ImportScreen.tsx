@@ -1,7 +1,10 @@
-import type { ImportJobResponse, NormalizedIngredient } from '@abc-cook/schema'
+import type { ImportJobResponse, NormalizedIngredient, SavedRecipe } from '@abc-cook/schema'
 
 import { notGroundedCopy } from './notGroundedCopy'
-import { RecipePreview } from './RecipePreview'
+import type { FindSaved } from './duplicate'
+import { ImportDraft } from './ImportDraft'
+import { FAILURE_COPY } from './phase'
+import { importViewFor } from './importView'
 import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
 
 /** A7: one line per real pipeline stage (design doc §4.5), in the words the cook would use.
@@ -33,8 +36,9 @@ export function isProgressPhase(phase: Phase): boolean {
     phase.kind === 'polling' ||
     phase.kind === 'no_recipe' ||
     phase.kind === 'paste' ||
+    phase.kind === 'failed' ||
     phase.kind === 'not_grounded' ||
-    (phase.kind === 'error' && phase.preview != null)
+    (phase.kind === 'error' && (phase.preview != null || phase.acquired != null))
   )
 }
 
@@ -47,21 +51,56 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset } = job
+  const { phase, setPhase, text, setText, submitText, reset, retry, instant, markThumbnail } = job
 
   if (phase.kind === 'polling') {
-    // Once the source's own recipe is readable, show it and keep the plan-building line
-    // quiet underneath (A2); until then, the plain status word.
-    if (phase.preview) {
+    // Whatever the source has said so far (thumbnail and title at once for a YouTube link,
+    // then its description, then a blog page's own recipe) is shown, with the plan-building
+    // line quiet underneath (A2); until anything is known, the plain status word.
+    const view = importViewFor({
+      instant,
+      acquired: phase.acquired,
+      preview: phase.preview,
+      status: phase.status,
+    })
+    if (view.header || phase.preview) {
       return (
-        <RecipePreview
-          preview={phase.preview}
-          footer={<PreviewFooter />}
+        <ImportDraft
+          view={view}
+          footer={
+            phase.preview ? <PreviewFooter /> : <p>{STATUS_COPY[phase.status] ?? 'Working…'}</p>
+          }
           onCancel={reset}
+          onThumbnailLoaded={markThumbnail}
         />
       )
     }
     return <Centered>{STATUS_COPY[phase.status] ?? 'Working…'}</Centered>
+  }
+
+  if (phase.kind === 'failed') {
+    // The header stays (thumbnail, channel, title, description); the message and what to
+    // do about it replace the sections that were never going to fill. No footer, so the
+    // message appears once.
+    return (
+      <ImportDraft
+        view={importViewFor({
+          instant,
+          acquired: phase.acquired,
+          preview: phase.preview,
+          status: 'failed',
+        })}
+        failure={
+          <FailureBody
+            failure={phase.failure}
+            onTryAgain={retry}
+            onPaste={() => setPhase({ kind: 'paste', error: null })}
+            onTryAnother={reset}
+          />
+        }
+        onCancel={onCancel}
+      />
+    )
   }
 
   if (phase.kind === 'no_recipe') {
@@ -86,15 +125,24 @@ export function ImportProgress({
     )
   }
 
-  if (phase.kind === 'error' && phase.preview) {
-    // The plan failed but the source's own recipe is still worth reading (A2 fallback).
+  if (phase.kind === 'error' && (phase.preview || phase.acquired)) {
+    // The plan failed but what the source gave us is still worth reading (A2 fallback).
     return (
-      <RecipePreview
-        preview={phase.preview}
+      <ImportDraft
+        view={importViewFor({
+          instant,
+          acquired: phase.acquired,
+          preview: phase.preview,
+          status: 'failed',
+        })}
         footer={
           <>
             <span className="text-signal">{phase.message}</span>{' '}
-            <button type="button" onClick={reset} className="underline underline-offset-4">
+            <button
+              type="button"
+              onClick={reset}
+              className="-my-3 py-3 underline underline-offset-4"
+            >
               Try again
             </button>
           </>
@@ -122,14 +170,22 @@ export function ImportScreen({
   onImported,
   onCancel,
   initialUrl,
+  findSaved,
+  onDuplicate,
+  skipDuplicateCheck,
 }: {
   onImported: OnImported
   onCancel: () => void
   /** Prefills the field (Re-import). The user still taps "Get the plan": an LLM spend is
    * never started by a mount. */
   initialUrl?: string
+  /** Duplicate check for a pasted URL, and what to do on a match (open the saved entry). */
+  findSaved?: FindSaved
+  onDuplicate?: (saved: SavedRecipe) => void
+  /** Re-import and Import again: the source is already saved, import it anyway. */
+  skipDuplicateCheck?: boolean
 }) {
-  const job = useImportJob(onImported, initialUrl)
+  const job = useImportJob(onImported, { initialUrl, findSaved, onDuplicate, skipDuplicateCheck })
   const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
 
   if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />
@@ -190,6 +246,46 @@ export function ImportScreen({
       >
         back to recipes
       </button>
+    </div>
+  )
+}
+
+/** What a failed import says and offers. `unavailable` is the provider's fault, so trying
+ * again is reasonable; `incomplete` would most likely fail the same way, so it offers the
+ * other two routes in. */
+function FailureBody({
+  failure,
+  onTryAgain,
+  onPaste,
+  onTryAnother,
+}: {
+  failure: 'unavailable' | 'incomplete'
+  onTryAgain: () => void
+  onPaste: () => void
+  onTryAnother: () => void
+}) {
+  const primary = 'w-full rounded-control bg-signal py-3 text-[15px] font-semibold text-paper'
+  return (
+    <div role="alert">
+      <p className="text-[15px] leading-[1.45] text-ink">{FAILURE_COPY[failure]}</p>
+      {failure === 'unavailable' ? (
+        <button type="button" onClick={onTryAgain} className={`mt-5 ${primary}`}>
+          Try again
+        </button>
+      ) : (
+        <>
+          <button type="button" onClick={onPaste} className={`mt-5 ${primary}`}>
+            Paste the recipe text
+          </button>
+          <button
+            type="button"
+            onClick={onTryAnother}
+            className="mt-2 flex min-h-[44px] w-full items-center justify-center text-[15px] text-ink-2 underline underline-offset-4"
+          >
+            Try another link
+          </button>
+        </>
+      )}
     </div>
   )
 }

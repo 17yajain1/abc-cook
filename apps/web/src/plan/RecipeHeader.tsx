@@ -5,6 +5,7 @@ import { servingsLine } from '@/lib/servings'
 import { sourceLink } from '@/lib/source'
 
 import { BackButton } from './BackButton'
+import { AlreadySavedNotice, type AlreadySaved } from './AlreadySavedNotice'
 import { headerMeta } from './headerMeta'
 import { CookOutlineView } from './CookOutlineView'
 import { PlanAheadCard } from './PlanAheadCard'
@@ -39,6 +40,7 @@ export function RecipeHeader({
   importMeta,
   onBack,
   staleness,
+  alreadySaved,
 }: {
   plan: RenderPlan
   save?: SaveControl
@@ -49,6 +51,8 @@ export function RecipeHeader({
   importMeta?: ImportMeta | null
   /** The saved plan may be out of date: shown directly under the title. */
   staleness?: StalenessMarker
+  /** A pasted link matched this saved recipe: "Already in your Cookbook" + Import again. */
+  alreadySaved?: AlreadySaved
 }) {
     const servings = servingsLine(plan.servingsSource, importMeta)
   const source = sourceLink(plan.sourceUrl)
@@ -66,6 +70,8 @@ export function RecipeHeader({
         {plan.title}
       </h1>
       {staleness && <StalenessNotice marker={staleness} />}
+      {/* One action never shows twice: the stale marker's Re-import wins over Import again. */}
+      {alreadySaved && !staleness?.onReimport && <AlreadySavedNotice alreadySaved={alreadySaved} />}
       {source && (
         <a
           href={source.href}
