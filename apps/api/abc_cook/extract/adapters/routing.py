@@ -16,7 +16,12 @@ from __future__ import annotations
 import pydantic
 
 from abc_cook.extract.adapters.anthropic import AnthropicAdapter
-from abc_cook.extract.adapters.base import EffortLevel, ExtractResult, LLMAdapter
+from abc_cook.extract.adapters.base import (
+    EffortLevel,
+    ExtractResult,
+    LLMAdapter,
+    TextDeltaCallback,
+)
 from abc_cook.extract.adapters.openai import OpenAIAdapter
 
 
@@ -33,6 +38,11 @@ class RoutingAdapter:
         """Construct the router from a model id -> adapter mapping."""
         self._by_model = by_model
 
+    @property
+    def streams_text(self) -> bool:
+        """Whether any routed adapter streams, so `extract` may be given `on_text`."""
+        return any(getattr(adapter, "streams_text", False) for adapter in self._by_model.values())
+
     def extract[T: pydantic.BaseModel](
         self,
         *,
@@ -42,13 +52,24 @@ class RoutingAdapter:
         max_tokens: int,
         output_type: type[T],
         effort: EffortLevel | None = None,
+        on_text: TextDeltaCallback | None = None,
     ) -> ExtractResult[T]:
-        """See `LLMAdapter.extract`."""
+        """See `LLMAdapter.extract`. `on_text` is forwarded only to an adapter that streams."""
         adapter = self._by_model.get(model)
         if adapter is None:
             return ExtractResult(
                 recipe=None,
                 error=f"RoutingAdapter: no adapter registered for model {model!r}",
+            )
+        if on_text is not None and getattr(adapter, "streams_text", False):
+            return adapter.extract(  # type: ignore[call-arg]
+                prompt=prompt,
+                source_text=source_text,
+                model=model,
+                max_tokens=max_tokens,
+                output_type=output_type,
+                effort=effort,
+                on_text=on_text,
             )
         return adapter.extract(
             prompt=prompt,

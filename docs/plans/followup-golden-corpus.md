@@ -263,3 +263,41 @@ Decide before M5 whether this should surface as degraded/unavailable (the cook i
 without the spoken method), or retry later. Related: live benches burn YouTube quota, and the 429 appeared
 between two back-to-back bench runs. Prefer probe-only runs (no yt-dlp, no captions) for anything that does
 not need YouTube.
+
+### FGC-19 (PR-S2): a mid-stream extraction failure's spend is unreported
+
+When a streamed extraction call stalls or drops mid-stream, no final usage chunk arrives. The call carries
+`usage=None`, so `import cost:` under-reports that job. Decide whether to log the characters received as a
+lower bound. Usage is never estimated (`CallUsage` rule).
+
+### FGC-20 (PR-S2): "ingredients ≤ 15 s" misses when the probe stage hits its cap
+
+Chole and captions-manual-en spend the full 10 s probe stage, so acquire takes ~14 s. Ingredients then land
+at ~22 s even with streaming. Candidates:
+
+- lever 9, parallel acquisition;
+- start extraction before probing finishes when the description has no recipe-like link.
+
+### FGC-21 (PR-S2): the draft's step text can state a time the plan later changes
+
+Draft steps are the model's step text, which can carry the source's own "fry 5 min". If verification changes
+that duration (FGC-11-like), the draft and the validated plan disagree. Measure how often this happens on the
+corpus.
+
+### FGC-22 (S3): strict JSON output changes the stream
+
+S3's strict output mode may change key order or chunking. Before S3 merges, re-verify:
+
+- `DraftScanner`'s assumptions: `ingredients` before `steps`, and `text` first in a step;
+- the replay texts.
+
+### FGC-23 (PR-S2): a long reasoning silence ends as `unavailable`
+
+At `low`, a reasoning silence longer than `STREAM_IDLE_TIMEOUT_S` (60 s) has never been measured (max ~16 s).
+If one happened, the job would end as `unavailable`, not `incomplete`. Revisit if S3 or FGC-12 changes the
+extraction effort.
+
+### FGC-24 (M5): the "Your plan is ready" tap
+
+PR-S2 hands off on a tap, not automatically. In M5, measure ready→tap time and abandonment on the reading
+screen.

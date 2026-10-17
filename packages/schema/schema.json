@@ -188,6 +188,19 @@
       ],
       "type": "object"
     },
+    "DraftStep": {
+      "description": "One step of a streamed draft. The text only: never a duration field.",
+      "properties": {
+        "text": {
+          "description": "The model's step text, as streamed (lightly normalized).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    },
     "GraphProvenance": {
       "description": "Sibling record to a `CookingGraph`, keyed by node id.\n\nDeliberately not a field on `Node` (design doc \u00a75, \"Where confidence/provenance\nlives\") \u2014 computed by `provenance.py` alongside `graph.py`'s output, so `Node` and\nthe golden fixtures stay byte-identical.",
       "properties": {
@@ -214,6 +227,18 @@
           ],
           "default": null,
           "description": "Title, channel and description once acquire has returned (not for pasted text). Kept on every later status, like `preview`."
+        },
+        "draft": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StreamedDraft"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The ingredients and steps as the extraction call streams them, before validation. Kept on every later status, like `preview`, so a failed job still shows what was read. `None` for a result-cache hit, or when streaming is off."
         },
         "error": {
           "anyOf": [
@@ -2038,6 +2063,43 @@
           ],
           "default": null,
           "description": "Set only to name a component a later step uses. Omit to leave unchanged."
+        }
+      },
+      "type": "object"
+    },
+    "StreamedDraft": {
+      "description": "What the extraction call has said so far, before anything is validated.\n\nUnvalidated and labelled a draft on screen. It carries no durations, timers, offsets,\ntotals or servings, by construction: the scanner that fills it reads nothing but the\ningredient lines and each step's text. The validated plan replaces it, one tap away.",
+      "properties": {
+        "calls": {
+          "default": 1,
+          "description": "Extraction calls started so far (a retry or escalation shows as 2). A later call only fills a section still empty; it never rewrites what is shown.",
+          "type": "integer"
+        },
+        "ingredients": {
+          "default": [],
+          "description": "Each ingredient once its line has closed, in the order the model wrote them. Append-only.",
+          "items": {
+            "$ref": "#/$defs/NormalizedIngredient"
+          },
+          "type": "array"
+        },
+        "ingredients_complete": {
+          "default": false,
+          "description": "The model has finished the ingredients list (`[]` plus this is an empty list).",
+          "type": "boolean"
+        },
+        "steps": {
+          "default": [],
+          "description": "Each step once its text has closed. Append-only.",
+          "items": {
+            "$ref": "#/$defs/DraftStep"
+          },
+          "type": "array"
+        },
+        "steps_complete": {
+          "default": false,
+          "description": "The model has finished the step list.",
+          "type": "boolean"
         }
       },
       "type": "object"
