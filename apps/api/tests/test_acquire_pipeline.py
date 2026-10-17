@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from abc_cook.extract.acquire import RawAcquisition, pipeline
+from abc_cook.extract.acquire import RawAcquisition, SourceMetadata, pipeline
 from abc_cook.extract.acquire.blog import RecipePage
 from abc_cook.extract.acquire.pipeline import acquire
 
@@ -126,3 +126,31 @@ def test_accepts_youtube_and_instagram_hosts(monkeypatch: pytest.MonkeyPatch) ->
     assert acquire("https://www.youtube.com/watch?v=test").source_url is not None
     assert acquire("https://www.instagram.com/reel/Abc123/").source_url is not None
     assert acquire("https://instagram.com/reel/Abc123/").source_url is not None  # no www.
+
+
+def test_metadata_is_reported_before_the_first_link_is_probed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[str] = []
+
+    def fake_youtube(url: str, *, on_metadata: object = None) -> RawAcquisition:
+        raw = _raw()
+        assert callable(on_metadata)
+        on_metadata(SourceMetadata(raw.title, raw.channel, raw.description))
+        events.append("youtube-finished")  # captions ran inside fetch, after the callback
+        return raw
+
+    monkeypatch.setattr(pipeline, "fetch_youtube", fake_youtube)
+    monkeypatch.setattr(pipeline, "find_candidate_links", lambda d: ["https://a.test"])
+
+    def probe(url: str, **kwargs: object) -> None:
+        events.append("probe")
+
+    monkeypatch.setattr(pipeline, "fetch_recipe", probe)
+
+    acquire(
+        "https://youtu.be/test",
+        on_metadata=lambda meta: events.append(f"metadata:{meta.title}"),
+    )
+
+    assert events == ["metadata:Test Video", "youtube-finished", "probe"]

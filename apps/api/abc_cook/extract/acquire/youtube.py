@@ -16,7 +16,7 @@ import re
 
 import yt_dlp
 
-from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire import MetadataCallback, RawAcquisition, SourceMetadata
 from abc_cook.extract.acquire.instagram import clean_placeholder_title
 from abc_cook.extract.acquire.transcript import (
     JUNK_WORD_THRESHOLD,
@@ -81,13 +81,18 @@ def parse_chapters(description: str) -> list[NormalizedChapter]:
     return chapters
 
 
-def fetch(url: str) -> RawAcquisition:
+def fetch(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquisition:
     """Fetch title/channel/description/chapters/transcript for `url`. No LLM.
 
     Leg 3 (captions, M2.10) reads off this same `info` dict rather than a second
     yt-dlp call, per the design doc §4.4 single-yt-dlp-touchpoint rule. A missing or
     unfetchable track never fails the import: `transcript` simply stays `None`, same
     as `blog_recipe` failing soft in `blog.py`.
+
+    `on_metadata`, when given, is called once with the title/channel/description right
+    after yt-dlp returns -- before the caption fetch -- so a caller can show the source
+    while the slower legs run. The values are the same ones the returned
+    `RawAcquisition` carries.
 
     Raises:
         RuntimeError: yt-dlp could not extract metadata for `url`.
@@ -104,6 +109,10 @@ def fetch(url: str) -> RawAcquisition:
         raise RuntimeError(f"yt-dlp returned no data for {url}")
 
     description = info.get("description")
+    title = clean_placeholder_title(info.get("title", ""), description)
+    channel = info.get("channel") or info.get("uploader")
+    if on_metadata is not None:
+        on_metadata(SourceMetadata(title=title, channel=channel, description=description))
 
     transcript = None
     transcript_segments: list[TranscriptSegment] = []
@@ -152,8 +161,8 @@ def fetch(url: str) -> RawAcquisition:
 
     return RawAcquisition(
         source_url=url,
-        title=clean_placeholder_title(info.get("title", ""), description),
-        channel=info.get("channel") or info.get("uploader"),
+        title=title,
+        channel=channel,
         description=description,
         chapters=parse_chapters(description) if description else [],
         video_duration_sec=info.get("duration"),

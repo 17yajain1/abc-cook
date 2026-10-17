@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 
 from abc_cook.api.main import create_app
 from abc_cook.api.routes import import_ as import_routes
-from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire import MetadataCallback, RawAcquisition, SourceMetadata
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
 from abc_cook.extract.adapters.base import ExtractResult
 from abc_cook.extract.cache import DiskResultCache
@@ -67,7 +67,7 @@ def _raw(**overrides: object) -> RawAcquisition:
     return RawAcquisition(**defaults)  # type: ignore[arg-type]
 
 
-def _fake_acquire(url: str) -> RawAcquisition:
+def _fake_acquire(url: str, **_kwargs: object) -> RawAcquisition:
     """Stands in for `acquire_fn`: same signature, ignores `url`, returns a fixed raw."""
     return _raw(source_url=url)
 
@@ -164,7 +164,7 @@ def test_ingredients_only_recipe_stops_at_tier_0() -> None:
 
 
 def test_done_result_reports_all_three_sources_when_all_present() -> None:
-    def _acquire_with_all_legs(url: str) -> RawAcquisition:
+    def _acquire_with_all_legs(url: str, **_kwargs: object) -> RawAcquisition:
         return _raw(
             source_url=url,
             blog_recipe={"@type": "Recipe", "recipeIngredient": ["1 onion"]},
@@ -210,7 +210,7 @@ def test_tier0_result_carries_acquisition_warnings() -> None:
     result too, not just the `done` path -- a human reviewing a refusal should still
     see it."""
 
-    def _acquire_with_warning(url: str) -> RawAcquisition:
+    def _acquire_with_warning(url: str, **_kwargs: object) -> RawAcquisition:
         return _raw(source_url=url, acquisition_warnings=["Transcript truncated to 24000 chars."])
 
     app = create_app()
@@ -228,7 +228,7 @@ def test_tier0_result_carries_acquisition_warnings() -> None:
 
 
 def test_done_result_carries_acquisition_warnings_alongside_corroboration() -> None:
-    def _acquire_with_warning(url: str) -> RawAcquisition:
+    def _acquire_with_warning(url: str, **_kwargs: object) -> RawAcquisition:
         return _raw(source_url=url, acquisition_warnings=["Transcript truncated to 24000 chars."])
 
     app = create_app()
@@ -250,7 +250,7 @@ def test_acquire_failure_reports_as_a_failed_job() -> None:
     """An unexpected exception must never leave a job stuck mid-flight (design doc
     §4.5's `failed` status exists for exactly this)."""
 
-    def _boom(url: str) -> RawAcquisition:
+    def _boom(url: str, **_kwargs: object) -> RawAcquisition:
         raise RuntimeError("network is down")
 
     app = create_app()
@@ -278,7 +278,7 @@ def test_unknown_job_is_404() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _blog_acquire(url: str) -> RawAcquisition:
+def _blog_acquire(url: str, **_kwargs: object) -> RawAcquisition:
     recipe = {
         "@type": "Recipe",
         "name": "Test Recipe",
@@ -322,7 +322,7 @@ def test_video_job_without_a_linked_page_has_no_preview() -> None:
 
 
 def test_page_without_a_recipe_ends_as_no_recipe_found() -> None:
-    def acquire_fn(url: str) -> RawAcquisition:
+    def acquire_fn(url: str, **_kwargs: object) -> RawAcquisition:
         raise NoRecipeFoundError("no Recipe JSON-LD")
 
     app = create_app()
@@ -436,7 +436,7 @@ def test_healthy_failure_free_jobs_have_no_failure_field() -> None:
 def test_last_resort_error_is_a_fixed_sentence_and_logged(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    def boom(url: str) -> RawAcquisition:
+    def boom(url: str, **_kwargs: object) -> RawAcquisition:
         raise RuntimeError(f"network is down {_SECRET}")
 
     with caplog.at_level(logging.ERROR, logger=import_routes.__name__):
@@ -525,7 +525,7 @@ def test_route_never_sends_an_effort_above_the_ceiling() -> None:
         seen: list[tuple[str, str | None]] = []
         adapter = _RecordingAdapter(script=list(script), repair_results=repair_results, seen=seen)
 
-        def acquire(url: str) -> RawAcquisition:
+        def acquire(url: str, **_kwargs: object) -> RawAcquisition:
             return _raw(
                 source_url=url,
                 description="Chop the onion. Melt the butter in a pan. Serve hot.",
@@ -574,32 +574,55 @@ def _store_client(store: _RecordingStore, adapter: object, acquire: object) -> T
     return TestClient(app)
 
 
-def test_acquired_is_set_right_after_acquire_and_kept_on_every_later_status() -> None:
-    def acquire(url: str) -> RawAcquisition:
-        return _raw(
-            source_url=url, title="Kadhi Pakora", channel="Some Kitchen", description="Dahi, besan."
+def _yt_like_acquire(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquisition:
+    """Like `pipeline.acquire` for a video: reports metadata early, then returns the raw."""
+    if on_metadata is not None:
+        on_metadata(
+            SourceMetadata(title="Kadhi Pakora", channel="Some Kitchen", description="Dahi, besan.")
         )
+    return _raw(
+        source_url=url, title="Kadhi Pakora", channel="Some Kitchen", description="Dahi, besan."
+    )
 
+
+def test_acquired_is_set_right_after_ytdlp_and_kept_on_every_later_status() -> None:
     store = _RecordingStore()
     client = _store_client(
-        store, _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())]), acquire
+        store,
+        _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())]),
+        _yt_like_acquire,
     )
     job_id = client.post("/import", json={"url": "https://youtu.be/test"}).json()["job_id"]
 
-    # The first status write after acquire (`extracting`) already carries it, and so does
-    # every one after, including the terminal `done`.
+    # The first write carrying `acquired` is the early one: still `acquiring`, written from
+    # the metadata callback before captions or link probing. Every later write keeps it,
+    # including the terminal `done`.
     assert store.writes, "no status write was recorded"
-    assert store.writes[0].status == "extracting"
+    assert store.writes[0].status == "acquiring"
     for state in store.writes:
         assert state.acquired is not None
         assert state.acquired.title == "Kadhi Pakora"
         assert state.acquired.channel == "Some Kitchen"
         assert state.acquired.description == "Dahi, besan."
+    assert [w.status for w in store.writes][:2] == ["acquiring", "extracting"]
     assert store.writes[-1].status == "done"
 
     job = ImportJobResponse.model_validate(client.get(f"/import/{job_id}").json())
     assert job.acquired is not None
     assert job.acquired.title == "Kadhi Pakora"
+
+
+def test_acquired_falls_back_to_the_returned_raw_when_acquire_reports_nothing_early() -> None:
+    def acquire(url: str, **_kwargs: object) -> RawAcquisition:  # a recipe page / a fake
+        return _raw(source_url=url, title="Kadhi Pakora", description="Dahi, besan.")
+
+    store = _RecordingStore()
+    client = _store_client(
+        store, _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())]), acquire
+    )
+    client.post("/import", json={"url": "https://youtu.be/test"})
+    assert store.writes[0].status == "extracting"
+    assert all(s.acquired is not None and s.acquired.title == "Kadhi Pakora" for s in store.writes)
 
 
 def test_acquired_survives_a_failed_job() -> None:

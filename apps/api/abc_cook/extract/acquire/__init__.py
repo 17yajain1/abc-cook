@@ -7,6 +7,8 @@ transcription/ASR, still deferred) means adding one producer function here, neve
 downstream redesign.
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -14,6 +16,23 @@ from pydantic import BaseModel, Field
 from abc_cook.extract.acquire.transcript import TranscriptSegment
 from abc_cook.schema.graph import SourceKind
 from abc_cook.schema.normalized import NormalizedChapter
+
+
+@dataclass(frozen=True)
+class SourceMetadata:
+    """The display fields yt-dlp returns, reported before captions and link probing.
+
+    A plain dataclass so this package does not import `schema/api.py`; the route maps it
+    to `AcquiredSource`.
+    """
+
+    title: str
+    channel: str | None
+    description: str | None
+
+
+MetadataCallback = Callable[[SourceMetadata], None]
+"""Called once, right after the source's metadata is known and before any slower leg."""
 
 
 class RawAcquisition(BaseModel):

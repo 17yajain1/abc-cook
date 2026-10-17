@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire import MetadataCallback, RawAcquisition
 from abc_cook.extract.acquire.blog import (
     NoRecipeFoundError,
     fetch_recipe,
@@ -69,7 +69,7 @@ def _host_in(host: str, hosts: frozenset[str]) -> bool:
     return any(host == h or host.endswith(f".{h}") for h in hosts)
 
 
-def acquire(url: str) -> RawAcquisition:
+def acquire(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquisition:
     """Legs 1+3 (YouTube metadata + captions), then leg 2.
 
     Leg 2 finds the first description link with Recipe JSON-LD. It is a bonus and
@@ -78,6 +78,10 @@ def acquire(url: str) -> RawAcquisition:
     result from legs 1+3 is returned unchanged.
 
     Any other https URL is treated as a recipe page (`_acquire_recipe_page`).
+
+    `on_metadata` fires once, right after yt-dlp returns and before captions and link
+    probing, so the caller can show the source early. A pasted recipe page has no early
+    phase and never calls it.
 
     Raises:
         NoRecipeFoundError: a recipe-page URL was fetched but carries no usable Recipe.
@@ -97,7 +101,7 @@ def acquire(url: str) -> RawAcquisition:
         )
     if not _host_in(host, _SUPPORTED_HOSTS):
         return _acquire_recipe_page(url, host)
-    raw = fetch_youtube(url)
+    raw = fetch_youtube(url) if on_metadata is None else fetch_youtube(url, on_metadata=on_metadata)
     if raw.blog_recipe is not None or not raw.description:
         return raw
 
