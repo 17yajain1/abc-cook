@@ -109,6 +109,58 @@ def test_find_candidate_links_keeps_link_shorteners() -> None:
     assert candidates == ["https://bit.ly/2DbcxhJ"]
 
 
+def test_find_candidate_links_deduplicates_and_keeps_description_order() -> None:
+    description = (
+        "https://b.example/two https://a.example/one https://b.example/two "
+        "https://bit.ly/x https://a.example/one"
+    )
+    assert find_candidate_links(description) == [
+        "https://b.example/two",
+        "https://a.example/one",
+        "https://bit.ly/x",
+    ]
+
+
+def test_find_candidate_links_strips_zero_width_characters() -> None:
+    zero_width = chr(0x200B) * 3
+    description = f"http://www.chefkunalkapur.com/{zero_width}\nhttps://x.example/p{zero_width}"
+    assert find_candidate_links(description) == [
+        "http://www.chefkunalkapur.com/",
+        "https://x.example/p",
+    ]
+
+
+def test_find_candidate_links_drops_a_mangled_host() -> None:
+    assert find_candidate_links("https://aip.urlgeni.ushttps://blog.example/recipe") == []
+
+
+def test_find_candidate_links_excludes_shops_and_amazon_country_domains() -> None:
+    description = " ".join(
+        f"https://{host}/x"
+        for host in (
+            "amzn.to",
+            "amzlink.to",
+            "www.amazon.de",
+            "amazon.co.uk",
+            "smile.amazon.com.au",
+            "linktr.ee",
+            "creativecommons.org",
+        )
+    )
+    assert find_candidate_links(description) == []
+
+
+def test_find_candidate_links_unwraps_a_geniuslink_wrapper() -> None:
+    blog = "https://aip.urlgeni.us/https://blog.example/recipe/x"
+    shop = "https://aip.urlgeni.us/https://amzn.to/abc"
+    assert find_candidate_links(f"{shop} {blog}") == ["https://blog.example/recipe/x"]
+
+
+def test_find_candidate_links_keeps_goo_gl_and_other_shorteners() -> None:
+    description = "https://goo.gl/a https://tinyurl.com/b https://b.link/c"
+    assert find_candidate_links(description) == description.split()
+
+
 def test_find_candidate_links_empty_description() -> None:
     assert find_candidate_links("") == []
 

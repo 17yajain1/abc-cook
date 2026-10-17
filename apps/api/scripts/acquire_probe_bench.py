@@ -212,7 +212,7 @@ def _run_one(label: str, url: str, mode: str) -> dict[str, Any]:
             row["links"] = entries
             row["probe_s"] = round(sum(entry["seconds"] for entry in entries), 3)
             row["stopped"] = report.stopped
-            row["abandoned"] = sum(1 for e in entries if e["outcome"] == "link timeout")
+            row["abandoned"] = report.abandoned
             row["blog_link"] = next((e["link"] for e in entries if e["outcome"] == "recipe"), None)
             row["blog_final_url"] = report.final_url
             for entry in entries:
