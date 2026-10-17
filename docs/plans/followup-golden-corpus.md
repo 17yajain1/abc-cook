@@ -137,7 +137,17 @@ failure). Fix: capture the raw text (and `finish_reason`) on a parse failure bef
 
 - Evidence: `notes/investigate-extraction-speed/REPORT.md` (T2, rows with 2 calls).
 
-### FGC-14 (P1): acquisition budget (S1.5, after S1, before S2)
+### FGC-14 (P1): acquisition budget (S1.5, after S1, before S2) — addressed by PR-S1.5
+
+**Status (2026-10-17): addressed by PR-S1.5.** The plan is `docs/plans/pr-s1-5-acquisition-budget.md`:
+
+- `acquired` is reported right after yt-dlp;
+- affiliate and shop hosts are excluded before fetching, and `urlgeni.us` wrappers are unwrapped;
+- a redirect onto an excluded host is refused before that host is fetched;
+- each link gets 4 s and the whole stage 8 s;
+- a cost and token line is logged per import.
+
+The evidence below is kept as it was.
 
 The description's blog links are probed one at a time (`acquire/pipeline.py` loops `find_candidate_links`
 and calls `fetch_recipe` on each), and extraction waits for the loop. On the phone (PR-S1 measuring,
@@ -194,6 +204,24 @@ today finds its blog stops finding it.
 - First deploy (M5): deploy the API before the web, and check `/health` `postprocess_version` matches the
   web's stamp before switching traffic.
 
+### FGC-15 (S3): output-token spread per recipe at `low` (n=3)
+
+Measure the output-token spread per recipe at `low` with n=3, not only `minimal` vs `low`. Croissant
+ended degraded on 2026-10-17 at `low`, and repair didn't fix it, though it was clean in the
+investigation. One run per recipe can't tell a typical result from an unlucky one.
+
+- Evidence: the 2026-10-17 croissant import at `low` (degraded); `notes/investigate-extraction-speed/REPORT.md`.
+
+### FGC-16 (R5 at the latest): "Plan simplified" visible without scrolling
+
+Check that the "Plan simplified" notice is visible without scrolling at 360 × 697. Do this in R5 at
+the latest.
+
+### FGC-17 (M5): cold-start pre-warm
+
+The first import on a fresh process spent 74 s in `extract`, a one-time cost of importing the
+provider SDK. Pre-warm at startup, so the first cook after a deploy or a scale-up doesn't pay it.
+
 ### Competitor note: ReciMe web (black-box HAR, 2026-10-16)
 
 - Fresh imports take 8.5-13.6 s server-side and 12.6-17.2 s to the recipe page.
@@ -223,3 +251,15 @@ first, other common ones later. What to track:
   and scaling keep the source's system and never silently convert. Input for R3 and R4.
 - **Next corpus round:** a second Hindi video (after the FGC-1 fix) and one long English video. A
   European-language video comes later, once Europe is in scope.
+
+### FGC-18 (before M5): YouTube caption 429 silently drops the transcript
+
+Seen 2026-10-17 during the S1.5 bench: YouTube's caption endpoint answered 429, `transcript.fetch_segments`
+retried (about 7 s in total), then gave up. The import continues with no transcript and the cook is not
+told; the only trace is an `acquisition_warnings` entry that nothing shows. Every AFTER row with a caption
+track lost its transcript this way.
+
+Decide before M5 whether this should surface as degraded/unavailable (the cook is told the recipe was read
+without the spoken method), or retry later. Related: live benches burn YouTube quota, and the 429 appeared
+between two back-to-back bench runs. Prefer probe-only runs (no yt-dlp, no captions) for anything that does
+not need YouTube.

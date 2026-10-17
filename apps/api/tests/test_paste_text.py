@@ -162,7 +162,7 @@ def test_text_import_records_text_provenance_and_skips_acquisition() -> None:
 
 
 def _client(adapter: _FakeAdapter) -> TestClient:
-    def _boom(url: str) -> RawAcquisition:
+    def _boom(url: str, **_kwargs: object) -> RawAcquisition:
         raise AssertionError("acquire must not run for pasted text")
 
     app = create_app()
@@ -211,7 +211,7 @@ def test_url_requests_are_unchanged() -> None:
     )
     adapter = _FakeAdapter(results=[ExtractResult(recipe=_recipe())])
     app = create_app()
-    app.dependency_overrides[import_routes.get_acquire] = lambda: lambda url: raw
+    app.dependency_overrides[import_routes.get_acquire] = lambda: lambda url, **_kwargs: raw
     app.dependency_overrides[import_routes.get_adapter] = lambda: adapter
     client = TestClient(app)
 

@@ -16,7 +16,7 @@ import httpx
 import pytest
 import yt_dlp
 
-from abc_cook.extract.acquire import RawAcquisition
+from abc_cook.extract.acquire import RawAcquisition, SourceMetadata
 from abc_cook.extract.acquire import transcript as transcript_module
 from abc_cook.extract.acquire.blog import fetch_recipe, find_candidate_links
 from abc_cook.extract.acquire.transcript import select_track
@@ -107,6 +107,58 @@ def test_find_candidate_links_keeps_link_shorteners() -> None:
     (verified in design doc §10.A)."""
     candidates = find_candidate_links("Written recipe: https://bit.ly/2DbcxhJ")
     assert candidates == ["https://bit.ly/2DbcxhJ"]
+
+
+def test_find_candidate_links_deduplicates_and_keeps_description_order() -> None:
+    description = (
+        "https://b.example/two https://a.example/one https://b.example/two "
+        "https://bit.ly/x https://a.example/one"
+    )
+    assert find_candidate_links(description) == [
+        "https://b.example/two",
+        "https://a.example/one",
+        "https://bit.ly/x",
+    ]
+
+
+def test_find_candidate_links_strips_zero_width_characters() -> None:
+    zero_width = chr(0x200B) * 3
+    description = f"http://www.chefkunalkapur.com/{zero_width}\nhttps://x.example/p{zero_width}"
+    assert find_candidate_links(description) == [
+        "http://www.chefkunalkapur.com/",
+        "https://x.example/p",
+    ]
+
+
+def test_find_candidate_links_drops_a_mangled_host() -> None:
+    assert find_candidate_links("https://aip.urlgeni.ushttps://blog.example/recipe") == []
+
+
+def test_find_candidate_links_excludes_shops_and_amazon_country_domains() -> None:
+    description = " ".join(
+        f"https://{host}/x"
+        for host in (
+            "amzn.to",
+            "amzlink.to",
+            "www.amazon.de",
+            "amazon.co.uk",
+            "smile.amazon.com.au",
+            "linktr.ee",
+            "creativecommons.org",
+        )
+    )
+    assert find_candidate_links(description) == []
+
+
+def test_find_candidate_links_unwraps_a_geniuslink_wrapper() -> None:
+    blog = "https://aip.urlgeni.us/https://blog.example/recipe/x"
+    shop = "https://aip.urlgeni.us/https://amzn.to/abc"
+    assert find_candidate_links(f"{shop} {blog}") == ["https://blog.example/recipe/x"]
+
+
+def test_find_candidate_links_keeps_goo_gl_and_other_shorteners() -> None:
+    description = "https://goo.gl/a https://tinyurl.com/b https://b.link/c"
+    assert find_candidate_links(description) == description.split()
 
 
 def test_find_candidate_links_empty_description() -> None:
@@ -340,6 +392,43 @@ def test_fetch_populates_transcript_on_successful_caption_fetch(
     assert acquisition.transcript == transcript_text
     assert acquisition.transcript_kind == "auto"
     assert acquisition.acquisition_warnings == []
+
+
+def test_fetch_reports_metadata_before_the_caption_fetch_and_matches_the_final_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    info = _base_info(
+        title="Video by batati.being.batati",
+        channel=None,
+        uploader="batati.being.batati",
+        description="Lauki soup\n\nRecipe in pinned comment below",
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]},
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    events: list[str] = []
+    seen: list[SourceMetadata] = []
+
+    def fake_get(url: str, timeout: float = 15.0) -> _FakeCaptionResponse:
+        events.append("captions")
+        return _FakeCaptionResponse({"events": []})
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+
+    def on_metadata(meta: SourceMetadata) -> None:
+        events.append("metadata")
+        seen.append(meta)
+
+    acquisition = fetch("https://www.instagram.com/reel/fake/", on_metadata=on_metadata)
+
+    assert events == ["metadata", "captions"]  # reported first, captions ran after
+    assert seen == [
+        SourceMetadata(
+            title=acquisition.title,
+            channel=acquisition.channel,
+            description=acquisition.description,
+        )
+    ]
+    assert acquisition.channel == "batati.being.batati"
 
 
 def test_fetch_ignores_a_junk_transcript_and_warns_instead(

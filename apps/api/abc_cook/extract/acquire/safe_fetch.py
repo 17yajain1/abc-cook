@@ -18,12 +18,15 @@ private address. Guards, all enforced here and nowhere else:
   check above.
 - Total deadline `timeout_s` per request, a `MAX_BYTES` body cap enforced while
   streaming, and HTML content types only.
+- Optional, for the description-link probe only: `refuse_host` stops a redirect onto an
+  unwanted host before that hop is requested, and `deadline` bounds the whole fetch.
 """
 
 from __future__ import annotations
 
 import ipaddress
 import socket
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
@@ -127,6 +130,8 @@ def fetch_html(
     allow_http: bool = False,
     resolve: Resolver = resolve_host,
     transport: httpx.BaseTransport | None = None,
+    refuse_host: Callable[[str], bool] | None = None,
+    deadline: float | None = None,
 ) -> FetchedPage:
     """GET `url` under every guard in the module docstring.
 
@@ -138,6 +143,13 @@ def fetch_html(
         allow_http: Also permit http on port 80 (description-link leg only).
         resolve: DNS resolver; injectable so tests never touch the network.
         transport: httpx transport; injectable for the same reason.
+        refuse_host: Called with each *redirect target's* lower-case hostname before that hop
+            is requested; True raises `FetchError("redirected to excluded host")`. The
+            first URL is the caller's choice and is not passed through it.
+        deadline: A `time.monotonic()` value. Checked before each hop and while streaming;
+            each hop's httpx timeout is capped at the time left. Past it, the fetch raises
+            `FetchError("link timeout")`. A blocking DNS lookup is not interruptible here --
+            the caller bounds that by running the fetch on a worker thread.
 
     Returns:
         The final URL and the decoded HTML text.
@@ -147,7 +159,17 @@ def fetch_html(
     """
     current = url
     with httpx.Client(transport=transport, timeout=timeout_s, follow_redirects=False) as client:
-        for _hop in range(max_redirects + 1):
+        for hop in range(max_redirects + 1):
+            hop_timeout = timeout_s
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise FetchError("link timeout")
+                hop_timeout = min(timeout_s, remaining)
+            if hop and refuse_host is not None:
+                target = (urlparse(current).hostname or "").lower()
+                if refuse_host(target):
+                    raise FetchError("redirected to excluded host")
             host, ip = _vet_url(current, resolve, allow_http=allow_http)
             parsed = urlparse(current)
             pinned_host = f"[{ip}]" if ":" in ip else ip
@@ -158,6 +180,7 @@ def fetch_html(
                     pinned,
                     headers={"Host": host, "User-Agent": _USER_AGENT, "Accept": "text/html"},
                     extensions={"sni_hostname": host},
+                    timeout=hop_timeout,
                 ) as response:
                     if response.is_redirect:
                         location = response.headers.get("location")
@@ -175,7 +198,11 @@ def fetch_html(
                         body.extend(chunk)
                         if len(body) > max_bytes:
                             raise FetchError(f"body over {max_bytes} bytes")
+                        if deadline is not None and time.monotonic() >= deadline:
+                            raise FetchError("link timeout")
                     return FetchedPage(current, _decode(bytes(body), response.charset_encoding))
             except httpx.HTTPError as exc:
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise FetchError("link timeout") from exc
                 raise FetchError(f"{type(exc).__name__}: {exc}") from exc
     raise FetchError(f"more than {max_redirects} redirects")

@@ -35,17 +35,49 @@ _EXCLUDED_HOSTS = frozenset(
         "amazon.com",
         "amazon.in",
         "bit.ly",
+        # Affiliate wrappers, shops and social/link-in-bio hosts. None of these has ever
+        # led to a recipe page in the corpus, and each costs a full fetch to find out.
+        "amzn.to",
+        "amzn.eu",
+        "a.co",
+        "amzlink.to",
+        "geni.us",
+        "flipkart.com",
+        "fkrt.it",
+        "linktr.ee",
+        "patreon.com",
+        "anchor.fm",
+        "spotify.com",
+        "threads.net",
+        "wa.me",
+        "t.me",
+        "creativecommons.org",
+        "free-stock-music.com",
     }
 )
 """Known social/video/affiliate hosts to skip when scanning a description for a
-recipe-blog link (design doc §4.4). `bit.ly` is excluded from the *candidate* list
-itself, not followed-and-then-checked — see `find_candidate_links`."""
+recipe-blog link (design doc §4.4). `bit.ly` is excluded as a *final* page, not as a
+candidate -- see `find_candidate_links`. Amazon country domains (`amazon.*`) are matched
+by `_AMAZON_LABEL`, not listed."""
+
+_SHORTENERS = frozenset({"bit.ly", "b.link", "tinyurl.com", "goo.gl"})
+"""Link shorteners: kept as candidates and followed, since one can resolve to a real blog
+(design doc §10.A). They are fine as a redirect *hop*, never as the page we land on."""
+
+_AMAZON_LABEL = re.compile(r"(^|\.)amazon\.[a-z]{2,3}(\.[a-z]{2})?$")
+_WRAPPER_HOST = re.compile(r"(^|\.)urlgeni\.us$")
+_EMBEDDED_URL = re.compile(r"https?://", re.IGNORECASE)
+_ZERO_WIDTH = re.compile(r"[\u200b-\u200d\ufeff]")
+_NETLOC = re.compile(r"^([^\W_]([\w-]*[^\W_])?\.)+[^\W_]([\w-]*[^\W_])?(:\d+)?$")
+"""Host (dotted labels, at least two) with an optional numeric port. An empty port
+(`host:`), an embedded `://` or a one-label host fails -- the shape of a mangled
+`aip.urlgeni.ushttps://...` paste."""
 
 _LDJSON_BLOCK = re.compile(
     r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.IGNORECASE | re.DOTALL,
 )
-_URL_IN_TEXT = re.compile(r'https?://[^\s<>"\')]+')
+_URL_IN_TEXT = re.compile(r'https?://[^\s<>"\')\u200b-\u200d\ufeff]+')
 
 
 class NoRecipeFoundError(RuntimeError):
@@ -61,25 +93,82 @@ def _host_of(url: str) -> str:
 
 
 def _is_excluded(host: str) -> bool:
+    if _AMAZON_LABEL.search(host):
+        return True
     return any(host == excluded or host.endswith("." + excluded) for excluded in _EXCLUDED_HOSTS)
 
 
-def find_candidate_links(description: str) -> list[str]:
-    """URLs in `description` worth trying as a recipe blog.
+def is_excluded_host(host: str) -> bool:
+    """Whether `host` (lower-case, no port) can never be a recipe page worth fetching."""
+    return _is_excluded(host.removeprefix("www."))
 
-    A link shortener (bit.ly and similar) is deliberately NOT excluded here — design
-    doc §4.4 excludes it only *after* redirect resolution, since a bit.ly link
-    genuinely can resolve to a real recipe blog (verified in §10.A). `fetch_recipe`
-    follows redirects itself, so the exclusion there checks the final host.
+
+def refuse_redirect_host(host: str) -> bool:
+    """`fetch_html`'s `refuse_host` for the description-link probe.
+
+    A redirect *hop* onto an excluded host ends the fetch before that hop is requested, so a
+    `bit.ly` link that points at YouTube costs one 301 round trip instead of a page load. A
+    shortener hop is allowed (one can lead to a blog).
     """
-    candidates = []
+    host = host.removeprefix("www.")
+    if any(host == s or host.endswith("." + s) for s in _SHORTENERS):
+        return False
+    return _is_excluded(host)
+
+
+def _clean_url(raw: str) -> str:
+    return _ZERO_WIDTH.sub("", raw).rstrip(".,;)")
+
+
+def _unwrap(url: str) -> str:
+    """The URL a known pass-through wrapper points at, else `url` unchanged.
+
+    `aip.urlgeni.us/https://amzn.to/x` carries its destination in the path; judging the
+    wrapper by its own host would hide a blog behind it (or a shop).
+    """
+    parsed = urlparse(url)
+    if not _WRAPPER_HOST.search(parsed.netloc.lower()):
+        return url
+    tail = url[len(parsed.scheme) + 3 + len(parsed.netloc) :]
+    embedded = _EMBEDDED_URL.search(tail)
+    return tail[embedded.start() :] if embedded else url
+
+
+def count_links(description: str) -> int:
+    """How many URLs `description` contains, before any filtering (for the probe's log line)."""
+    return len(_URL_IN_TEXT.findall(description))
+
+
+def find_candidate_links(description: str) -> list[str]:
+    """URLs in `description` worth trying as a recipe blog, in description order.
+
+    Pure: no network. A link is dropped when its host is malformed, when it is a known
+    pass-through wrapper whose destination is excluded, or when its host is excluded
+    (social, video, shops, affiliate wrappers, `amazon.*`). Repeats keep their first
+    occurrence. Link shorteners (bit.ly, goo.gl and similar) are deliberately kept: design
+    doc §4.4 judges them only after redirect resolution, since a shortened link can
+    resolve to a real recipe blog (verified in §10.A). `fetch_recipe_page` refuses a
+    redirect onto an excluded host before requesting it.
+    """
+    candidates: list[str] = []
+    seen: set[str] = set()
     for match in _URL_IN_TEXT.finditer(description):
-        url = match.group(0).rstrip(".,;)")
-        host = _host_of(url)
-        if host in ("bit.ly", "b.link", "tinyurl.com"):
-            candidates.append(url)  # resolve first; excluded-host check happens post-redirect
+        written = _clean_url(match.group(0))
+        if written in seen:
             continue
-        if _is_excluded(host):
+        seen.add(written)
+        if not _NETLOC.match(urlparse(written).netloc.lower()):
+            continue  # a mangled paste, e.g. `aip.urlgeni.ushttps://...`
+        url = _unwrap(written)  # a wrapper is judged, and fetched, by what it points at
+        if url != written:
+            if url in seen:
+                continue
+            seen.add(url)
+        netloc = urlparse(url).netloc.lower()
+        if not _NETLOC.match(netloc):
+            continue
+        host = netloc.removeprefix("www.")
+        if _is_excluded(host) and host not in _SHORTENERS:
             continue
         candidates.append(url)
     return candidates
@@ -157,15 +246,26 @@ def fetch_recipe_page(
     *,
     allow_http: bool = False,
     fetch: Callable[..., FetchedPage] = fetch_html,
+    deadline: float | None = None,
+    refuse_host: Callable[[str], bool] | None = None,
 ) -> RecipePage:
     """Fetch `url` through the SSRF-guarded fetcher and find its Recipe JSON-LD.
 
     Never raises: a refused or failed fetch, a redirect onto an excluded host, or a page
     with no Recipe node all come back as `RecipePage(recipe=None, reason=...)`, so the
     caller can tell *why* (the previous implementation swallowed every error silently).
+
+    `deadline` (a `time.monotonic()` value) and `refuse_host` are the description-link
+    probe's bounds, passed to `fetch` only when set: the pasted recipe-page path (A1) calls
+    `fetch` exactly as before.
     """
+    bounds: dict[str, Any] = {}
+    if deadline is not None:
+        bounds["deadline"] = deadline
+    if refuse_host is not None:
+        bounds["refuse_host"] = refuse_host
     try:
-        page = fetch(url, allow_http=allow_http)
+        page = fetch(url, allow_http=allow_http, **bounds)
     except FetchError as exc:
         return RecipePage(recipe=None, reason=exc.reason)
     if _is_excluded(_host_of(page.final_url)):

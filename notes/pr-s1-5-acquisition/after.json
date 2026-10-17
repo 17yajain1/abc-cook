@@ -1,0 +1,263 @@
+{
+  "mode": "after",
+  "stopped": null,
+  "rows": [
+    {
+      "label": "kadhi-pakora",
+      "url": "https://www.youtube.com/watch?v=Oa2s0dklrRo",
+      "mode": "after",
+      "total_s": 12.875,
+      "ytdlp_s": 3.844,
+      "description_len": 2973,
+      "has_transcript": false,
+      "blog_found": true,
+      "blog_name": "Recipe Of Kadhi Pakora By Chef Kunal Kapur",
+      "acquired_at_s": 4.172,
+      "links": [
+        {
+          "link": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+          "outcome": "recipe",
+          "seconds": 1.797,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 1.797,
+      "stopped": "found",
+      "abandoned": 0,
+      "blog_link": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+      "blog_final_url": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/"
+    },
+    {
+      "label": "croissant",
+      "url": "https://www.youtube.com/watch?v=OzdqThvpMko",
+      "mode": "after",
+      "total_s": 9.984,
+      "ytdlp_s": 3.078,
+      "description_len": 590,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 3.203,
+      "links": [],
+      "probe_s": 0,
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "pumpkin-pancakes",
+      "url": "https://www.youtube.com/watch?v=TYZNzCnNGwA",
+      "mode": "after",
+      "total_s": 11.359,
+      "ytdlp_s": 4.094,
+      "description_len": 359,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 4.265,
+      "links": [],
+      "probe_s": 0,
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "vanilla-cupcakes",
+      "url": "https://www.youtube.com/watch?v=YP8a6ugKQ6Y",
+      "mode": "after",
+      "total_s": 3.781,
+      "ytdlp_s": 3.625,
+      "description_len": 2847,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 3.781,
+      "links": [],
+      "probe_s": 0,
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "chole-bhature",
+      "url": "https://www.youtube.com/watch?v=FU1ZVLMbWjA",
+      "mode": "after",
+      "total_s": 18.516,
+      "ytdlp_s": 3.328,
+      "description_len": 2081,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 3.485,
+      "links": [
+        {
+          "link": "https://goo.gl/MH3A4r",
+          "outcome": "link timeout",
+          "seconds": 4.0,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://goo.gl/Sxk4Fp",
+          "outcome": "link timeout",
+          "seconds": 4.016,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 8.016,
+      "stopped": "budget",
+      "abandoned": 2,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "captions-manual-en",
+      "url": "https://www.youtube.com/watch?v=pxpJmXq2w7c",
+      "mode": "after",
+      "total_s": 19.234,
+      "ytdlp_s": 3.953,
+      "description_len": 2997,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 4.109,
+      "links": [
+        {
+          "link": "http://goo.gl/L7Ngdo",
+          "outcome": "link timeout",
+          "seconds": 4.031,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "http://goo.gl/z8RCxr",
+          "outcome": "link timeout",
+          "seconds": 3.969,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 8.0,
+      "stopped": "budget",
+      "abandoned": 2,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "pizza-dough",
+      "url": "https://www.youtube.com/watch?v=WM1XcYXix0Y",
+      "mode": "after",
+      "total_s": 13.344,
+      "ytdlp_s": 4.344,
+      "description_len": 2118,
+      "has_transcript": false,
+      "blog_found": true,
+      "blog_name": "Overnight Pizza Dough Recipe",
+      "acquired_at_s": 4.469,
+      "links": [
+        {
+          "link": "https://natashaskitchen.com/pizza-dough-recipe/",
+          "outcome": "recipe",
+          "seconds": 1.938,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 1.938,
+      "stopped": "found",
+      "abandoned": 0,
+      "blog_link": "https://natashaskitchen.com/pizza-dough-recipe/",
+      "blog_final_url": "https://natashaskitchen.com/pizza-dough-recipe/"
+    },
+    {
+      "label": "blog-link-only",
+      "url": "https://youtu.be/3Q4NBZaF29w",
+      "mode": "after",
+      "total_s": 18.781,
+      "ytdlp_s": 3.578,
+      "description_len": 2988,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 3.703,
+      "links": [
+        {
+          "link": "https://bit.ly/2DbcxhJ",
+          "outcome": "link timeout",
+          "seconds": 4.016,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://www.nehascookbook.com/",
+          "outcome": "link timeout",
+          "seconds": 3.984,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 8.0,
+      "stopped": "budget",
+      "abandoned": 2,
+      "blog_link": null,
+      "blog_final_url": null
+    },
+    {
+      "label": "full-method",
+      "url": "https://youtu.be/o3k55z-tv9I",
+      "mode": "after",
+      "total_s": 12.75,
+      "ytdlp_s": 3.422,
+      "description_len": 2398,
+      "has_transcript": false,
+      "blog_found": true,
+      "blog_name": "Dal Makhani Recipe By Chef Kunal Kapur",
+      "acquired_at_s": 3.64,
+      "links": [
+        {
+          "link": "http://www.chefkunalkapur.com/dal-makhni/",
+          "outcome": "recipe",
+          "seconds": 2.172,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 2.172,
+      "stopped": "found",
+      "abandoned": 0,
+      "blog_link": "http://www.chefkunalkapur.com/dal-makhni/",
+      "blog_final_url": "https://www.chefkunalkapur.com/recipe/dal-makhni/"
+    },
+    {
+      "label": "captions-auto-en-long",
+      "url": "https://www.youtube.com/watch?v=5e5UYxESO-E",
+      "mode": "after",
+      "total_s": 13.64,
+      "ytdlp_s": 4.187,
+      "description_len": 1536,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "acquired_at_s": 4.343,
+      "links": [
+        {
+          "link": "https://wayoframen.com/shop",
+          "outcome": "http 403",
+          "seconds": 2.687,
+          "final_host": null,
+          "note": null
+        }
+      ],
+      "probe_s": 2.687,
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "blog_link": null,
+      "blog_final_url": null
+    }
+  ]
+}

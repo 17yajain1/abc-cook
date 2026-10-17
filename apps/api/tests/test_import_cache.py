@@ -68,7 +68,7 @@ class _Acquire:
     raw: RawAcquisition
     calls: int = 0
 
-    def __call__(self, url: str) -> RawAcquisition:
+    def __call__(self, url: str, **_kwargs: object) -> RawAcquisition:
         self.calls += 1
         return self.raw.model_copy(update={"source_url": url})
 

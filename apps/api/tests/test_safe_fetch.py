@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import time
+from collections.abc import Iterator
+
 import httpx
 import pytest
 
@@ -184,3 +187,90 @@ def test_allow_http_permits_port_80_only() -> None:
             resolve=_public,
             transport=_html_transport(),
         )
+
+
+# --- description-link probe bounds: refuse_host and deadline -------------------------
+
+
+def _redirecting(routes: dict[str, str], seen_hosts: list[str]) -> httpx.MockTransport:
+    """`Host` -> redirect target, else a 200 page; records every host actually requested."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        host = request.headers["host"]
+        seen_hosts.append(host)
+        if host in routes:
+            return httpx.Response(301, headers={"location": routes[host]})
+        return httpx.Response(200, headers={"content-type": "text/html"}, text=f"<p>{host}</p>")
+
+    return httpx.MockTransport(handler)
+
+
+def test_refuse_host_stops_a_redirect_before_the_hop_is_requested() -> None:
+    seen: list[str] = []
+    transport = _redirecting({"short.example": "https://www.video.example/watch"}, seen)
+    with pytest.raises(FetchError, match="redirected to excluded host"):
+        fetch_html(
+            "https://short.example/x",
+            resolve=_public,
+            transport=transport,
+            refuse_host=lambda host: host.endswith("video.example"),
+        )
+    assert seen == ["short.example"]  # the video host was never requested
+
+
+def test_refuse_host_lets_a_redirect_to_an_allowed_host_through() -> None:
+    seen: list[str] = []
+    transport = _redirecting({"short.example": "https://blog.example/recipe"}, seen)
+    page = fetch_html(
+        "https://short.example/x",
+        resolve=_public,
+        transport=transport,
+        refuse_host=lambda host: host.endswith("video.example"),
+    )
+    assert page.final_url == "https://blog.example/recipe"
+    assert seen == ["short.example", "blog.example"]
+
+
+def test_refuse_host_is_not_applied_to_the_first_url() -> None:
+    page = fetch_html(
+        "https://first.example/x",
+        resolve=_public,
+        transport=_html_transport(),
+        refuse_host=lambda host: True,
+    )
+    assert page.text == "<html>ok</html>"
+
+
+def test_an_expired_deadline_raises_link_timeout_before_any_request() -> None:
+    seen: list[str] = []
+    with pytest.raises(FetchError, match="link timeout"):
+        fetch_html(
+            "https://slow.example/x",
+            resolve=_public,
+            transport=_redirecting({}, seen),
+            deadline=time.monotonic() - 1.0,
+        )
+    assert seen == []
+
+
+def test_the_deadline_cuts_a_body_that_streams_too_slowly() -> None:
+    class _SlowBody(httpx.SyncByteStream):
+        def __iter__(self) -> Iterator[bytes]:
+            for _ in range(50):
+                time.sleep(0.05)
+                yield b"<p>x</p>"
+
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200, headers={"content-type": "text/html"}, stream=_SlowBody()
+        )
+    )
+    started = time.monotonic()
+    with pytest.raises(FetchError, match="link timeout"):
+        fetch_html(
+            "https://slow.example/x",
+            resolve=_public,
+            transport=transport,
+            deadline=time.monotonic() + 0.2,
+        )
+    assert time.monotonic() - started < 1.0
