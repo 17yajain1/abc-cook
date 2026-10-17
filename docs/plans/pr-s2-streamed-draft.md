@@ -29,6 +29,12 @@ These are folded into the sections they touch.
   - S2a adds `GZipMiddleware(minimum_size=1000)`, with a test.
   - HARD STOP A reports the compressed draft-bearing poll size for kadhi and chole-low.
 
+- **A5. Per-item ingredients (owner, after HARD STOP A).** The draft publishes each ingredient
+  once its object closes, like steps.
+  - `StreamedDraft.ingredients` is an append-only list, with `ingredients_complete`.
+  - This replaces the `None`-until-the-array-closes shape in Â§3.1.5, Â§3.1.6, R3 and Â§3.3.
+  - The ingredients target is restated in Â§6.
+
 ## Context
 
 Today a no-blog YouTube import shows the header (S1, ~0.5 s) and the description (S1.5, ~3–4 s),
@@ -69,7 +75,7 @@ Recommended here. These are the defaults; the owner can override them at plan re
 |---|---|---|---|
 | R1 | Title at hand-off | The reading screen keeps the **raw source title** (oEmbed, then `acquired`) the whole time. The recipe page shows the plan title (`graph.title`) after the tap. | The hand-off is a page change (D1), so nothing switches in place. The reading screen is "what the source said" (thumbnail, channel, raw title, description), and the recipe page is ABC Cook's plan. No early `resolve_title` call and no header text change mid-read. |
 | R2 | Stall timeouts | Watchdog **idle 60 s** (no stream chunk). The **per-call total deadline stays `request_timeout_s(max_tokens)`** (380 s at 16K, 700 s at 32K), now enforced on the wall clock. **`MAX_RETRIES = 1` is unchanged.** httpx `Timeout(connect=10, read=75, write=30, pool=10)` is a backstop. | See §3.1.4. The worst case for a stall goes from ~1,400 s to about 150 s before the stream starts, or the time streamed plus 60 s. |
-| R3 | Draft on the identical retry or the escalation | **Fill, never replace.** Each section (ingredients; steps) comes from the first call that produced it. A later call only fills a section that is still empty, so the draft on screen never shrinks or rewrites. `import cost:` counts every call, as today. | Owner: no morphing list. A retry produces new wording, and swapping it in would rewrite rows under the cook's eyes. The validated plan is one tap away. |
+| R3 | Draft on the identical retry or the escalation | **Fill, never replace.** A section (ingredients; steps) belongs to the first call that produced any item for it. A later call fills it only if it is still empty. If call 1 stops partway, its partial list stays, with `*_complete` false. The draft on screen never shrinks or rewrites. `import cost:` counts every call, as today. | Owner: no morphing list. A retry produces new wording, and swapping it in would rewrite rows under the cook's eyes. The validated plan is one tap away. |
 | R4 | Draft on a failed job | **Amended (A2): keep the draft.** The S1 failure message and its actions ("Try again", or "Paste the recipe text" / "Try another link") sit at the top. The draft sits below them under its "Draft" label. With no draft, the S1 failure layout is unchanged. Home ground either way. | Owner decision. What was read is still worth reading, the same way a failed job already keeps `preview`. The label keeps it honest. |
 | R5 | Transport | **The existing 1.2 s poll**, with a `draft` field on the job, like `acquired`. No SSE. | Polling adds ≤ 1.2 s (mean 0.6 s) to each milestone. The ingredients target (≤ 15 s) has ~2–3 s of slack for a typical acquire. SSE would save ~0.6 s and add a streaming connection on Cloud Run. |
 | R6 | Blog preview present (YouTube + blog, pasted recipe page) | **The server always drafts. The web picks per section:** the preview's lines when that section is non-empty, otherwise the draft. | The source's own text beats the LLM's draft. Choosing per section still fills a section the blog page left empty. |
@@ -163,11 +169,12 @@ Recommended here. These are the defaults; the owner can override them at plan re
 - It tracks string/escape state, a container stack and the current top-level key. A leading
   ```` ```json ```` fence is skipped.
 - Milestones:
-  - **ingredients:** when the top-level `ingredients` array closes:
-    - `json.loads` the slice;
-    - `NormalizedIngredient.model_validate` each item, skipping invalid items;
-    - `[]` means complete and empty;
-    - a missing or unclosed array means `None`.
+  - **ingredients (A5):** each object directly inside the top-level `ingredients` array, once
+    its closing brace arrives:
+    - `json.loads` the object and `NormalizedIngredient.model_validate` it;
+    - an invalid item is skipped, and the items after it still count;
+    - `ingredients_complete` is set when the array closes, so `[]` plus complete is an empty
+      list, and a missing or unclosed array is "not complete".
   - **steps:** inside the top-level `steps` array, each element object's `"text"` string, once its
     closing quote arrives:
     - decoded with `json.loads('"' + raw + '"')`, which handles `\uXXXX` and surrogate pairs;
@@ -187,7 +194,8 @@ class DraftStep(BaseModel):
 class StreamedDraft(BaseModel):
     """Unvalidated, streamed from the extraction call; labelled a draft on screen. No durations,
     timers, offsets, totals or servings, by construction."""
-    ingredients: list[NormalizedIngredient] | None  # None until the array is complete
+    ingredients: list[NormalizedIngredient] = []    # append-only, each item once its object closes (A5)
+    ingredients_complete: bool = False              # the array has closed; [] + complete = empty list
     steps: list[DraftStep] = []                      # each once its `text` has closed
     steps_complete: bool = False
     calls: int = 1                                   # extraction calls started so far (retry/escalation visible)
@@ -313,7 +321,10 @@ ImportJobResponse.draft: StreamedDraft | None  # kept on every later status, lik
   - `Pending` becomes 2–3 static skeleton rows (`--color-home-skeleton-*`), with **no shimmer**.
   - A small "Draft" label beside the Ingredients and Steps headings, only while the content is
     the draft. Its copy is fixed at W1.
-  - The draft list is append-only, so nothing reorders while streaming (R3).
+  - The draft lists are append-only, so nothing reorders while streaming (R3).
+  - **Ingredient rendering rule (A5).** Draft ingredients render in arrival order. A group
+    heading appears when the group changes from the previous item. There is no regrouping during
+    the draft. The recipe page after the tap shows the proper grouping.
 - **Ready and hand-off (D1).**
   - `Phase` gains `{ kind: 'ready', instant, acquired, preview, draft, finished }`. It keeps the last
     view inputs, so the draft stays readable.
@@ -342,8 +353,8 @@ ImportJobResponse.draft: StreamedDraft | None  # kept on every later status, lik
   `[import-timing]`.
 
 ### 3.3 What S2b relies on from S2a (frozen once S2a merges)
-- `ImportJobResponse.draft: StreamedDraft | None`, with `ingredients | None`, `steps[].text`,
-  `steps_complete` and `calls`.
+- `ImportJobResponse.draft: StreamedDraft | None`, with `ingredients` (append-only list),
+  `ingredients_complete`, `steps[].text`, `steps_complete` and `calls` (A5).
 - The harness command line.
 
 If S2a changes any of these, S2b goes back to plan mode first.
@@ -384,8 +395,7 @@ If S2a changes any of these, S2b goes back to plan mode first.
   - **Every truncation boundary:** feed each replay text (5 fixtures plus the synthetic Hindi text)
     one character at a time, and snapshot after every character. Checks:
     - it never raises;
-    - ingredients are `None` until the array closes, then equal the final;
-    - steps are always a prefix of the final list;
+    - ingredients and steps are always a prefix of the final list (A5), and `ingredients_complete` implies the full list;
     - at full length the draft equals what `parse(text)` yields (ingredients and step texts).
   - **Chunking invariance:** seeded random chunk sizes give the same milestone sequence, including
     splits inside `\uXXXX`, inside surrogate pairs and inside escapes.
@@ -396,8 +406,8 @@ If S2a changes any of these, S2b goes back to plan mode first.
     - raw Devanagari, `\u0915`-style escapes and emoji;
     - names with quotes and backslashes.
   - **Empty and missing:**
-    - `"ingredients":[]` → `[]`; a missing key → `None`;
-    - an invalid item is skipped and the others are kept;
+    - `"ingredients":[]` → `[]` + complete; a missing key → `[]` and not complete;
+    - an invalid item is skipped without stopping the items after it;
     - a step with no `text` is skipped;
     - `text` not first in the step still works;
     - duplicate top-level keys: the first wins;
@@ -491,10 +501,12 @@ S2a HARD STOP A (poll-observed, no web):
 
 | target | today (S1/S1.5) | measured (replay, median/max of n=3) | met? |
 |---|---|---|---|
-| ingredients ≤ 15 s after paste | at the plan, ~33–37 s (no blog) | | |
+| first ingredient ≤ 15 s typical, ≤ 20 s worst, from paste (A5) | at the plan, ~33–37 s (no blog) | | |
 | first step ~18–20 s | at the plan | | |
 | full plan ≤ 40 s typical | ~33–37 s | | |
 
+- The old "full ingredient list ≤ 15 s" came from reading the 8.1 s probe figure (T6) as the list
+  closing, when it was the `ingredients` key starting. The full list closes 9–14 s into the call.
 - One row per fixture: kadhi, croissant, pumpkin, vanilla, chole-low, plus the retry and stall scripts.
 - The stand-in acquire is 6 s (3.5 s `acquired`). The rows are re-stated for a 14 s acquire (the
   chole probe hitting its 10 s cap) as arithmetic, flagged as FGC-20.
@@ -642,7 +654,9 @@ The owner merges. No deploy.
   - `PYTHONPATH=apps/api`.
   - There is no `.env` in worktrees. Load keys with python-dotenv from the main checkout's
     `apps/api/.env`, and never print or copy them. The key is `LLM_API_KEY`.
-- ₹0 runs use an invalid `LLM_API_KEY` in that process only.
+- ₹0 runs (pytest, benches, replay) set **both** `OPENAI_API_KEY` and `LLM_API_KEY` to invalid
+  values in that process only. `OPENAI_API_KEY` is the extraction key; `LLM_API_KEY` is the
+  Anthropic repair key. Setting only one leaves the other path able to spend.
 - `make types` in a worktree: `npm ci` in `packages/schema`, then `make types PY=python`, with an
   absolute PYTHONPATH.
 - Never `ruff format .`.
@@ -665,7 +679,7 @@ The owner merges. No deploy.
   kill all node processes: stop only the PIDs you started.
 - Never commit to main. Branch → push → PR → the owner approves and merges.
 
-## S2a results (replay, INR 0), 2026-10-17
+## S2a results (replay, INR 0), 2026-10-17, after A5 (per-item ingredients)
 
 `scripts/stream_draft_bench.py`, real FastAPI app + replay adapter + stand-in acquire (metadata at
 3.5 s, acquire returns at 6.0 s), polled at 1.2 s. n=3 per clean fixture. Median / max in seconds
@@ -675,37 +689,38 @@ since the POST. Raw rows: `notes/pr-s2-streamed-draft/replay.json`.
 streams at kadhi's characters per second. These are timings of the plumbing at that pace, not
 measurements of any recipe.
 
-| fixture | ingredients (target <= 15) | first step (target ~18-20) | steps done | full plan (target <= 40) | status |
-|---|---|---|---|---|---|
-| kadhi-pakora | 19.3 / 19.4 NOT met | 19.3 / 19.4 met | 31.4 / 31.5 | 32.7 / 32.7 met | done |
-| croissant | 15.7 / 15.7 NOT met (0.7 s over) | 15.7 / 15.7 met | 31.4 / 31.4 | 33.8 / 33.8 met | done |
-| pumpkin-pancakes | 16.9 / 16.9 NOT met | 16.9 / 16.9 met | 24.1 / 24.2 | 32.6 / 32.6 met (includes the stand-in 8 s repair) | done |
-| vanilla-cupcakes | 15.7 / 15.7 NOT met (0.7 s over) | 15.7 / 15.7 met | 19.3 / 20.5 | 20.5 / 20.6 met | done |
-| chole-bhature-low | 20.5 / 20.6 NOT met | 20.5 / 20.6 about | 38.6 / 38.7 | 48.5 / 48.5 NOT met (degraded, stand-in repair absent) | done (degraded) |
-| kadhi, `invalid_json,ok` (retry) | 19.3 | 19.3 | n/a (call 1 cut) | 53.2 | done, draft frozen from call 1, `calls` = 2 |
-| kadhi, `stall_after:3000` | 19.3 | 19.3 | n/a | failed at 79.7 | failed `unavailable`, draft kept |
+Targets (A5): first ingredient <= 15 s typical, <= 20 s worst, from paste; first step ~18-20 s;
+full plan <= 40 s typical. The old "full list <= 15 s" read T6's 8.1 s probe figure as the list
+closing, when it was the `ingredients` key starting.
+
+| fixture | first ingredient | ingredients complete | first step | steps done | full plan | status |
+|---|---|---|---|---|---|---|
+| kadhi-pakora | 14.5 / 14.6 met | 19.3 / 19.4 | 19.3 / 19.4 met | 31.4 / 31.5 | 32.6 / 32.7 met | done |
+| croissant | 14.5 / 14.5 met | 15.7 / 15.7 | 15.7 / 15.7 met | 31.4 / 31.4 | 33.8 / 33.8 met | done |
+| pumpkin-pancakes | 14.5 / 14.5 met | 16.9 / 16.9 | 16.9 / 16.9 met | 24.1 / 24.1 | 32.6 / 32.6 met (includes the stand-in 8 s repair) | done |
+| vanilla-cupcakes | 14.5 / 14.5 met | 15.7 / 15.7 | 15.7 / 15.7 met | 20.5 / 20.6 | 20.5 / 20.6 met | done |
+| chole-bhature-low | 14.5 / 14.5 met | 20.5 / 20.6 | 20.5 / 20.6 about | 38.6 / 38.7 | 49.8 / 49.9 NOT met (degraded; no stored repair) | done (degraded) |
+| kadhi, `invalid_json,ok` (retry) | 14.5 | 19.3 | 19.3 | n/a (call 1 cut) | 53.2 | done; list and steps frozen from call 1, `calls` = 2 |
+| kadhi, `stall_after:3000` | 14.5 | 19.3 | 19.3 | n/a | failed at 79.6 | failed `unavailable`, draft kept |
 
 Today (S1/S1.5, no blog): nothing readable until the plan, ~33-37 s.
 
-Findings:
-
-- **Ingredients miss the 15 s target in every replay.** The ingredient list closes 9.2-13.7 s into
-  the extraction call (kadhi 12.3 s, 30 items), and the call starts after the 6 s acquire. The
-  target holds only measured from the start of the call, not from paste. The scanner publishes
-  the list when its array closes (section 3.1.5), so a 30-item list is visible at ~19 s.
-- If the first ingredient should appear earlier, the draft would have to publish items as they
-  close (first item at ~8.2 s in the call). That changes `StreamedDraft.ingredients` from
-  `None`-until-complete to append-only, which S2b relies on (section 3.3). Not done; owner decision.
-- With a 14 s acquire (the chole probe at its 10 s cap, FGC-20), add 8 s to every figure above:
-  kadhi ingredients ~27 s, chole ~28.5 s. Arithmetic, not a run.
-- The first step arrives in the same poll as the ingredients (it closes within ~0.3 s of them).
-- Stall: failure shows at 79.7 s = 6 s acquire + 7.7 s to first token + ~5 s streamed + the 60 s idle bound.
+- The first ingredient closes 8.2 s into the call in every fixture (the replay's pre-content wait),
+  plus the 6 s acquire, plus up to one poll. It does not depend on the list's length.
+- With a 14 s acquire (FGC-20) add 8 s: the first ingredient lands at ~22.5 s, over the 20 s worst
+  case. Arithmetic, not a run.
+- Live check (A3), first ingredient estimated at INR 0: the live JSON has no per-chunk timings, so
+  this interpolates between the measured first content and the measured list-complete time by
+  character offset of the first item in the replay text. Kadhi ~10.9 s into the call (~16.9 s from
+  paste with a 6 s acquire); croissant ~8.7 s (~14.7 s). An estimate, and kadhi would miss the
+  15 s typical target by ~2 s because the real call started streaming at 10.4 s, not 7.7 s.
+- Stall: failure at 79.6 s = 6 s acquire + 7.7 s to first token + ~5 s streamed + the 60 s idle bound.
 
 Poll payload (A4), largest in-flight draft-bearing poll, gzip as sent / raw JSON:
 
 | fixture | poll gzip / raw | draft alone gzip / raw |
 |---|---|---|
-| kadhi-pakora | 3,103 / 9,923 | 1,123 / 4,096 |
-| chole-bhature-low | 2,971 / 9,349 | 2,035 / 6,868 |
+| kadhi-pakora | 3,113 / 9,951 | 1,127 / 4,124 |
+| chole-bhature-low | 2,979 / 9,377 | 2,043 / 6,896 |
 
 (The terminal poll also carries the whole plan.)
