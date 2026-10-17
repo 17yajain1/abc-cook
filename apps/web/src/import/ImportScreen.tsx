@@ -3,6 +3,7 @@ import type { ImportJobResponse, NormalizedIngredient, SavedRecipe } from '@abc-
 import { notGroundedCopy } from './notGroundedCopy'
 import type { FindSaved } from './duplicate'
 import { ImportDraft } from './ImportDraft'
+import { FAILURE_COPY } from './phase'
 import { importViewFor } from './importView'
 import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
 
@@ -35,6 +36,7 @@ export function isProgressPhase(phase: Phase): boolean {
     phase.kind === 'polling' ||
     phase.kind === 'no_recipe' ||
     phase.kind === 'paste' ||
+    phase.kind === 'failed' ||
     phase.kind === 'not_grounded' ||
     (phase.kind === 'error' && (phase.preview != null || phase.acquired != null))
   )
@@ -49,7 +51,7 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset, instant, markThumbnail } = job
+  const { phase, setPhase, text, setText, submitText, reset, retry, instant, markThumbnail } = job
 
   if (phase.kind === 'polling') {
     // Whatever the source has said so far (thumbnail and title at once for a YouTube link,
@@ -74,6 +76,31 @@ export function ImportProgress({
       )
     }
     return <Centered>{STATUS_COPY[phase.status] ?? 'Working…'}</Centered>
+  }
+
+  if (phase.kind === 'failed') {
+    // The header stays (thumbnail, channel, title, description); the message and what to
+    // do about it replace the sections that were never going to fill. No footer, so the
+    // message appears once.
+    return (
+      <ImportDraft
+        view={importViewFor({
+          instant,
+          acquired: phase.acquired,
+          preview: phase.preview,
+          status: 'failed',
+        })}
+        failure={
+          <FailureBody
+            failure={phase.failure}
+            onTryAgain={retry}
+            onPaste={() => setPhase({ kind: 'paste', error: null })}
+            onTryAnother={reset}
+          />
+        }
+        onCancel={onCancel}
+      />
+    )
   }
 
   if (phase.kind === 'no_recipe') {
@@ -219,6 +246,46 @@ export function ImportScreen({
       >
         back to recipes
       </button>
+    </div>
+  )
+}
+
+/** What a failed import says and offers. `unavailable` is the provider's fault, so trying
+ * again is reasonable; `incomplete` would most likely fail the same way, so it offers the
+ * other two routes in. */
+function FailureBody({
+  failure,
+  onTryAgain,
+  onPaste,
+  onTryAnother,
+}: {
+  failure: 'unavailable' | 'incomplete'
+  onTryAgain: () => void
+  onPaste: () => void
+  onTryAnother: () => void
+}) {
+  const primary = 'w-full rounded-control bg-signal py-3 text-[15px] font-semibold text-paper'
+  return (
+    <div role="alert">
+      <p className="text-[15px] leading-[1.45] text-ink">{FAILURE_COPY[failure]}</p>
+      {failure === 'unavailable' ? (
+        <button type="button" onClick={onTryAgain} className={`mt-5 ${primary}`}>
+          Try again
+        </button>
+      ) : (
+        <>
+          <button type="button" onClick={onPaste} className={`mt-5 ${primary}`}>
+            Paste the recipe text
+          </button>
+          <button
+            type="button"
+            onClick={onTryAnother}
+            className="mt-2 flex min-h-[44px] w-full items-center justify-center text-[15px] text-ink-2 underline underline-offset-4"
+          >
+            Try another link
+          </button>
+        </>
+      )}
     </div>
   )
 }

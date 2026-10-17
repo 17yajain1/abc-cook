@@ -1,8 +1,7 @@
-import type { AcquiredSource, ImportJobResponse, PreviewSection, SourcePreview } from '@abc-cook/schema'
+import type { AcquiredSource, PreviewSection, SourcePreview } from '@abc-cook/schema'
 
 import type { InstantHeader } from './instantPreview'
-
-export type ImportStatus = ImportJobResponse['status']
+import type { ImportStatus } from './phase'
 
 /**
  * What the import screen shows while a job runs, decided in one pure place.
@@ -14,6 +13,9 @@ export type ImportStatus = ImportJobResponse['status']
  *
  * Built to be extended, not replaced: a later streamed draft adds an `items` variant to
  * `ingredients` and a `steps` variant to `method`.
+ *
+ * `none` is the failed variant: a section the source never filled is dropped rather than
+ * left as a "pending" placeholder promising content that is not coming.
  */
 export interface ImportViewModel {
   header: {
@@ -22,8 +24,8 @@ export interface ImportViewModel {
     thumbnailUrl: string | null
     description: string | null
   } | null
-  ingredients: { kind: 'pending' } | { kind: 'lines'; lines: string[] }
-  method: { kind: 'pending' } | { kind: 'sections'; sections: PreviewSection[] }
+  ingredients: { kind: 'pending' } | { kind: 'none' } | { kind: 'lines'; lines: string[] }
+  method: { kind: 'pending' } | { kind: 'none' } | { kind: 'sections'; sections: PreviewSection[] }
   status: ImportStatus
 }
 
@@ -54,10 +56,13 @@ export function importViewFor({ instant, acquired, preview, status }: ImportView
   const lines = preview?.ingredients.filter((line) => line.trim()) ?? []
   const sections = (preview?.instructions ?? []).filter((s) => s.lines.length > 0)
 
+  const failed = status === 'failed'
+  const empty = failed ? ({ kind: 'none' } as const) : ({ kind: 'pending' } as const)
+
   return {
     header: hasHeader ? { title, channel, thumbnailUrl, description } : null,
-    ingredients: lines.length > 0 ? { kind: 'lines', lines } : { kind: 'pending' },
-    method: sections.length > 0 ? { kind: 'sections', sections } : { kind: 'pending' },
+    ingredients: lines.length > 0 ? { kind: 'lines', lines } : empty,
+    method: sections.length > 0 ? { kind: 'sections', sections } : empty,
     status,
   }
 }

@@ -1,28 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type {
-  AcquiredSource,
-  SavedRecipe,
-  ImportJobResponse,
-  ImportMeta,
-  ImportResult,
-  RecipePlanResponse,
-  SourcePreview,
-} from '@abc-cook/schema'
+import type { ImportMeta, RecipePlanResponse, SavedRecipe } from '@abc-cook/schema'
 
 import { ApiError, pollImport, startImport, startImportText } from '../api/client'
 import { fetchOEmbed } from '../api/oembed'
 import { derivePlan, type RenderPlan } from '../plan/derive'
-import { importExtrasFrom, type ImportExtras } from './importExtras'
-import { createImportTimer } from './importTiming'
 import type { FindSaved } from './duplicate'
+import { importExtrasFrom, type ImportExtras } from './importExtras'
+import { importMetaFrom } from './importMeta'
+import { createImportTimer } from './importTiming'
 import type { InstantHeader } from './instantPreview'
+import { phaseFor, type Phase } from './phase'
 import { runSubmit } from './submitFlow'
 
-/** No standalone `ImportStatus` export exists in the generated package (it's inlined
- * as a literal union on `ImportJobResponse.status`) — derive it rather than duplicate
- * the status union by hand, which CLAUDE.md's schema rule forbids. */
-export type ImportStatus = ImportJobResponse['status']
+export type { ImportStatus, Phase } from './phase'
 
 const POLL_INTERVAL_MS = 1200
 const MAX_POLLS = 250
@@ -31,32 +22,6 @@ const MAX_POLLS = 250
  * Hitting the ceiling never abandons the job — the `slow` phase keeps its id so
  * "Keep waiting" resumes polling; the server's own per-call timeouts are what end a
  * genuinely stuck job (as `failed`). */
-
-export type Phase =
-  | { kind: 'entry' }
-  | {
-      kind: 'polling'
-      status: ImportStatus
-      preview: SourcePreview | null
-      acquired: AcquiredSource | null
-    }
-  | { kind: 'not_grounded'; job: ImportJobResponse }
-  | { kind: 'no_recipe' }
-  | { kind: 'paste'; error: string | null }
-  | {
-      kind: 'error'
-      message: string
-      preview: SourcePreview | null
-      acquired: AcquiredSource | null
-    }
-  | {
-      kind: 'slow'
-      jobId: string
-      token: number
-      status: ImportStatus
-      preview: SourcePreview | null
-      acquired: AcquiredSource | null
-    }
 
 export type OnImported = (
   plan: RenderPlan,
@@ -106,57 +71,48 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
     [],
   )
 
+  // What Try again resubmits: the URL of the last URL submit, or null for a pasted text.
+  const lastUrlRef = useRef<string | null>(null)
+
   const poll = (jobId: string, token: number, attempt: number) => {
     pollImport(jobId)
       .then((job) => {
         if (tokenRef.current !== token) return
+        if (job.acquired) timerObj.current.mark('acquired')
 
-        if (job.status === 'done' && job.result?.graph && job.result.plan && job.result.stages) {
+        const decision = phaseFor(job, {
+          jobId,
+          token,
+          attempt,
+          maxPolls: MAX_POLLS,
+          url: lastUrlRef.current,
+        })
+        if (decision.kind === 'done') {
+          // `phaseFor` only says `done` when graph, plan and stages are all present.
+          const result = job.result!
           const payload = {
-            graph: job.result.graph,
-            plan: job.result.plan,
-            stages: job.result.stages,
-            summary: job.result.summary ?? null,
+            graph: result.graph!,
+            plan: result.plan!,
+            stages: result.stages!,
+            summary: result.summary ?? null,
           }
           timerObj.current.mark('plan')
           console.info('[import-timing]', timerObj.current.report())
           onImported(
-            derivePlan(payload, job.result.provenance ?? null),
+            derivePlan(payload, result.provenance ?? null),
             payload,
-            importMetaFrom(job.result),
-            importExtrasFrom(job.result),
+            importMetaFrom(result),
+            importExtrasFrom(result),
           )
           return
         }
-        if (job.status === 'method_not_grounded') {
-          setPhase({ kind: 'not_grounded', job })
-          return
+        setPhase(decision.phase)
+        if (decision.keepPolling) {
+          timerRef.current = window.setTimeout(
+            () => poll(jobId, token, attempt + 1),
+            POLL_INTERVAL_MS,
+          )
         }
-        if (job.status === 'no_recipe_found') {
-          setPhase({ kind: 'no_recipe' })
-          return
-        }
-        if (job.status === 'failed') {
-          setPhase({
-            kind: 'error',
-            message: job.error ?? 'The import failed.',
-            preview: job.preview ?? null,
-            acquired: job.acquired ?? null,
-          })
-          return
-        }
-        const preview = job.preview ?? null
-        const acquired = job.acquired ?? null
-        if (acquired) timerObj.current.mark('acquired')
-        if (attempt >= MAX_POLLS) {
-          setPhase({ kind: 'slow', jobId, token, status: job.status, preview, acquired })
-          return
-        }
-        setPhase({ kind: 'polling', status: job.status, preview, acquired })
-        timerRef.current = window.setTimeout(
-          () => poll(jobId, token, attempt + 1),
-          POLL_INTERVAL_MS,
-        )
       })
       .catch((err: unknown) => {
         if (tokenRef.current !== token) return
@@ -164,17 +120,12 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
       })
   }
 
-  /** `override` lets a caller submit a value that isn't in the hook's own `url` state
-   * (the Copy sheet owns its field). Call from a click handler, never a mount effect.
-   * The order is fixed in `runSubmit`: duplicate check, then the instant header, then
-   * the network call. */
-  const submit = (override?: string) => {
-    const trimmed = (override ?? url).trim()
-    if (!trimmed) return
+  const start = (trimmed: string, skipDuplicateCheck: boolean | undefined) => {
     const token = ++tokenRef.current
+    lastUrlRef.current = trimmed
     runSubmit(
       trimmed,
-      { findSaved: options.findSaved, skipDuplicateCheck: options.skipDuplicateCheck },
+      { findSaved: options.findSaved, skipDuplicateCheck },
       {
         begin: (quick) => {
           timerObj.current = createImportTimer()
@@ -207,9 +158,28 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
     )
   }
 
+  /** `override` lets a caller submit a value that isn't in the hook's own `url` state
+   * (the Copy sheet owns its field). Call from a click handler, never a mount effect.
+   * The order is fixed in `runSubmit`: duplicate check, then the instant header, then
+   * the network call. */
+  const submit = (override?: string) => {
+    const trimmed = (override ?? url).trim()
+    if (!trimmed) return
+    start(trimmed, options.skipDuplicateCheck)
+  }
+
+  /** Try again after an `unavailable` failure: the same input, resubmitted. Nothing was
+   * saved, so it skips the duplicate check. A pasted text resubmits the text. */
+  const retry = () => {
+    if (phase.kind !== 'failed') return
+    if (phase.url) start(phase.url, true)
+    else submitText()
+  }
+
   const submitText = () => {
     if (!text.trim()) return
     const token = ++tokenRef.current
+    lastUrlRef.current = null
     setInstant(null)
     setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
     startImportText(text)
@@ -257,23 +227,10 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
     text,
     setText,
     submit,
+    retry,
     submitText,
     keepWaiting,
     reset,
-  }
-}
-
-/** A6: import-status fields the frozen `RecipePlanResponse` doesn't carry, computed
- * once here so App/PlanScreen/the saved-library entry all thread the same value
- * rather than re-deriving `degraded` at each hop. */
-function importMetaFrom(result: ImportResult): ImportMeta {
-  const warnings = result.warnings ?? []
-  return {
-    warnings,
-    review_recommended: result.review_recommended ?? false,
-    sources: result.sources ?? [],
-    provenance: result.provenance ?? null,
-    degraded: warnings.includes('degraded'),
   }
 }
 

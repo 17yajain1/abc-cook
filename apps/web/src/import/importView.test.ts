@@ -118,6 +118,44 @@ describe('importViewFor', () => {
     })
   })
 
+  describe('a failed job', () => {
+    it('has no pending sections: they are absent, not placeholders', () => {
+      const view = importViewFor({
+        ...base,
+        instant: instant({ title: 'T' }),
+        acquired: acquired(),
+        status: 'failed',
+      })
+      expect(view.ingredients).toEqual({ kind: 'none' })
+      expect(view.method).toEqual({ kind: 'none' })
+      expect(JSON.stringify(view)).not.toContain('pending')
+    })
+
+    it('keeps the header: thumbnail, channel, title and description', () => {
+      const view = importViewFor({ ...base, instant: instant(), acquired: acquired(), status: 'failed' })
+      expect(view.header).toEqual({
+        title: 'Acquired title',
+        channel: 'Acquired channel',
+        thumbnailUrl: THUMB,
+        description: 'Acquired description',
+      })
+    })
+
+    it('still shows source lines it really has (a blog preview), only dropping the empty ones', () => {
+      const view = importViewFor({
+        ...base,
+        preview: preview({ instructions: [] }),
+        status: 'failed',
+      })
+      expect(view.ingredients).toEqual({ kind: 'lines', lines: ['1 onion', '2 tbsp oil'] })
+      expect(view.method).toEqual({ kind: 'none' })
+    })
+
+    it('a running job still shows pending, so the failed variant is the only difference', () => {
+      expect(importViewFor({ ...base, status: 'extracting' }).ingredients).toEqual({ kind: 'pending' })
+    })
+  })
+
   it('has no duration, timer or advice field anywhere on the model', () => {
     const view = importViewFor({
       instant: instant({ title: 'T', channel: 'C' }),

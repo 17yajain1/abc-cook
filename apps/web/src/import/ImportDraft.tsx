@@ -20,12 +20,16 @@ const YT_PLACEHOLDER_WIDTH = 120
 export function ImportDraft({
   view,
   footer,
+  failure,
   onCancel,
   onThumbnailLoaded,
 }: {
   view: ImportViewModel
-  /** The quiet line pinned under the page, e.g. "Building your cooking plan…". */
-  footer: ReactNode
+  /** The quiet line pinned under the page, e.g. "Building your cooking plan…". Absent in a
+   * failed state, where the message lives in `failure` and must not appear twice. */
+  footer?: ReactNode
+  /** A failed job's message and its actions, in the body where Ingredients would be. */
+  failure?: ReactNode
   onCancel: () => void
   onThumbnailLoaded?: () => void
 }) {
@@ -64,62 +68,70 @@ export function ImportDraft({
           </header>
         )}
 
-        <section className="mt-8">
-          <h2 className="text-[15px] font-semibold text-ink">Ingredients</h2>
-          {view.ingredients.kind === 'lines' ? (
-            <ul className="mt-2 border-t border-rule">
-              {view.ingredients.lines.map((line, i) => (
-                <IngredientRow key={`${i}-${line}`} tone="plan" primary={line} />
-              ))}
-            </ul>
-          ) : (
-            <Pending />
-          )}
-        </section>
+        {failure && <section className="mt-8">{failure}</section>}
 
-        <section className="mt-8">
-          <h2 className="text-[15px] font-semibold text-ink">Method</h2>
-          {view.method.kind === 'sections' ? (
-            view.method.sections.map((section, s) => (
-              <div key={`${s}-${section.heading ?? ''}`} className="mt-3">
-                {section.heading && (
-                  <h3 className="mb-1 text-[15px] font-medium text-ink-2">{section.heading}</h3>
-                )}
-                <ol>
-                  {section.lines.map((line, i) => {
-                    stepNumber += 1
-                    return (
-                      <li key={`${i}-${line}`} className="flex gap-3 py-2">
-                        <span className="tabular w-5 flex-shrink-0 pt-px text-right text-[13px] text-ink-3">
-                          {stepNumber}
-                        </span>
-                        <span className="text-[15px] leading-[1.55] text-ink">{line}</span>
-                      </li>
-                    )
-                  })}
-                </ol>
-              </div>
-            ))
-          ) : (
-            <Pending />
-          )}
-        </section>
+        {view.ingredients.kind !== 'none' && (
+          <section className="mt-8">
+            <h2 className="text-[15px] font-semibold text-ink">Ingredients</h2>
+            {view.ingredients.kind === 'lines' ? (
+              <ul className="mt-2 border-t border-rule">
+                {view.ingredients.lines.map((line, i) => (
+                  <IngredientRow key={`${i}-${line}`} tone="plan" primary={line} />
+                ))}
+              </ul>
+            ) : (
+              <Pending />
+            )}
+          </section>
+        )}
+
+        {view.method.kind !== 'none' && (
+          <section className="mt-8">
+            <h2 className="text-[15px] font-semibold text-ink">Method</h2>
+            {view.method.kind === 'sections' ? (
+              view.method.sections.map((section, s) => (
+                <div key={`${s}-${section.heading ?? ''}`} className="mt-3">
+                  {section.heading && (
+                    <h3 className="mb-1 text-[15px] font-medium text-ink-2">{section.heading}</h3>
+                  )}
+                  <ol>
+                    {section.lines.map((line, i) => {
+                      stepNumber += 1
+                      return (
+                        <li key={`${i}-${line}`} className="flex gap-3 py-2">
+                          <span className="tabular w-5 flex-shrink-0 pt-px text-right text-[13px] text-ink-3">
+                            {stepNumber}
+                          </span>
+                          <span className="text-[15px] leading-[1.55] text-ink">{line}</span>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                </div>
+              ))
+            ) : (
+              <Pending />
+            )}
+          </section>
+        )}
       </div>
 
-      <div
-        className="flex-shrink-0 border-t border-rule px-5 pb-6 pt-4 text-[15px] text-ink-2"
-        role="status"
-        aria-live="polite"
-      >
-        {footer}
-      </div>
+      {footer != null && (
+        <div
+          className="flex-shrink-0 border-t border-rule px-5 pb-6 pt-4 text-[15px] text-ink-2"
+          role="status"
+          aria-live="polite"
+        >
+          {footer}
+        </div>
+      )}
     </div>
   )
 }
 
 /** A section the source hasn't filled yet: one quiet line, no shimmer, no skeleton. */
 function Pending() {
-  return <p className="mt-2 text-[13px] text-ink-3">Not read yet</p>
+  return <p className="mt-2 text-[13px] text-ink-3">Appears once the recipe is read.</p>
 }
 
 /**
