@@ -185,7 +185,9 @@ def test_milestones_before_a_break_are_kept() -> None:
 
 
 def test_invalid_unicode_escape_breaks_without_raising() -> None:
-    scanner = _feed_all('{"ingredients":[],"steps":[{"text":"a"},{"text":"bad \\u12zz"},{"text":"c"}]}')
+    scanner = _feed_all(
+        '{"ingredients":[],"steps":[{"text":"a"},{"text":"bad \\u12zz"},{"text":"c"}]}'
+    )
     assert scanner.broken
     assert scanner.steps == ["a"]
 
@@ -195,7 +197,7 @@ def test_feed_reports_milestones() -> None:
     assert scanner.feed('{"title":"t","ingredients":[') is False
     assert scanner.feed('{"name":"a","qty":null,"unit":null,"prep_note":null}') is False
     assert scanner.feed("]") is True  # ingredients closed
-    assert scanner.feed(',"steps":[{"text":"one"') is False  # text closed? not yet: object open
+    assert scanner.feed(',"steps":[{"text":"one"') is True  # the text string closed
     assert scanner.feed(',"label":"x"}') is False
     assert scanner.feed(',{"text":"two"}') is True
     assert scanner.feed("]") is True  # steps_complete
