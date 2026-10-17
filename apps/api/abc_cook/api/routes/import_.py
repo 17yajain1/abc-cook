@@ -31,7 +31,7 @@ from abc_cook.extract.acquire.text import PastedTextError, from_pasted_text
 from abc_cook.extract.adapters.base import LLMAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.cache import DiskResultCache, ResultCache
-from abc_cook.extract.import_pipeline import run_import
+from abc_cook.extract.import_pipeline import ImportTelemetry, run_import
 from abc_cook.extract.source_key import SourceKey, make_source_key
 from abc_cook.schema.api import AcquiredSource, ImportJobResponse, ImportStartResponse
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
@@ -163,6 +163,29 @@ def get_acquire() -> AcquireFn:
     return default_acquire
 
 
+def _log_import_cost(job_id: str, telemetry: ImportTelemetry) -> None:
+    """One INFO line per job with its measured cost and tokens (extraction plus repair).
+
+    `telemetry.total_calls` is `[*extraction_calls, *repair_calls]`, so a repair that fired is
+    included in every figure. Counts and model ids only: no URL, no key.
+    """
+    cost = telemetry.cost_inr
+    reasoning = telemetry.reasoning_tokens
+    calls = telemetry.total_calls
+    _logger.info(
+        "import cost: graph_id=%s tier=%s cache_hit=%s cost_inr=%s input_tokens=%d "
+        "output_tokens=%d reasoning_tokens=%s calls=[%s]",
+        job_id,
+        telemetry.tier,
+        telemetry.cache_hit,
+        "unpriced" if cost is None else f"{cost:.2f}",
+        sum(c.input_tokens for c in calls),
+        telemetry.output_tokens,
+        "unreported" if reasoning is None else reasoning,
+        " ".join(f"{c.model}:{c.input_tokens}/{c.output_tokens}" for c in calls),
+    )
+
+
 def _run_job(
     job_id: str,
     url: str,
@@ -223,6 +246,7 @@ def _run_job(
             acquire_fn=recording_acquire,
             on_status=on_status,
             on_preview=on_preview,
+            on_telemetry=lambda telemetry: _log_import_cost(job_id, telemetry),
             cache=cache,
             fresh=fresh,
             source_key=source_key,

@@ -26,11 +26,18 @@ from abc_cook.api.main import create_app
 from abc_cook.api.routes import import_ as import_routes
 from abc_cook.extract.acquire import MetadataCallback, RawAcquisition, SourceMetadata
 from abc_cook.extract.acquire.blog import NoRecipeFoundError
-from abc_cook.extract.adapters.base import ExtractResult
+from abc_cook.extract.adapters.base import CallUsage, ExtractResult
 from abc_cook.extract.cache import DiskResultCache
 from abc_cook.extract.normalize import EXTRACTION_EFFORT_CEILING
+from abc_cook.extract.pricing import call_cost_inr
 from abc_cook.schema.api import ImportJobResponse, ImportStartResponse
-from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
+from abc_cook.schema.normalized import (
+    NormalizedIngredient,
+    NormalizedRecipe,
+    NormalizedStep,
+    RepairProposal,
+    StepRepair,
+)
 
 _JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 
@@ -666,3 +673,119 @@ def test_a_job_before_acquire_finishes_has_no_acquired_block() -> None:
     assert state.acquired is None
     response = ImportJobResponse(job_id="j", status=state.status, acquired=state.acquired)
     assert response.acquired is None
+
+
+# ---------------------------------------------------------------------------
+# PR-S1.5: the per-job cost and token log line, and the logging config that lets it out.
+# ---------------------------------------------------------------------------
+
+
+def _usage(model: str, tokens_in: int, tokens_out: int, reasoning: int | None = None) -> CallUsage:
+    return CallUsage(
+        model=model,
+        input_tokens=tokens_in,
+        output_tokens=tokens_out,
+        cache_read_input_tokens=None,
+        cache_creation_input_tokens=None,
+        stop_reason="end_turn",
+        latency_ms=1.0,
+        max_tokens_requested=1000,
+        reasoning_tokens=reasoning,
+    )
+
+
+def _cost_line(caplog: pytest.LogCaptureFixture) -> str:
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("import cost:")]
+    assert len(lines) == 1, lines
+    return lines[0]
+
+
+def _run_and_capture_cost(
+    caplog: pytest.LogCaptureFixture, results: list[ExtractResult], raw: RawAcquisition
+) -> str:
+    def acquire(url: str, **_kwargs: object) -> RawAcquisition:
+        return raw
+
+    client = _client_with(_FakeAdapter(results=results), acquire=acquire)
+    with caplog.at_level(logging.INFO, logger=import_routes.__name__):
+        _post_and_poll(client)
+    return _cost_line(caplog)
+
+
+def test_cost_line_reports_a_priced_extraction_only_import(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    usage = _usage("gpt-5-mini", 1000, 2000, reasoning=1500)
+    line = _run_and_capture_cost(
+        caplog, [ExtractResult(recipe=_grounded_recipe(), usage=usage)], _raw()
+    )
+    expected = call_cost_inr(usage)
+    assert expected is not None
+    assert f"cost_inr={expected:.2f}" in line
+    assert "input_tokens=1000 output_tokens=2000 reasoning_tokens=1500" in line
+    assert "calls=[gpt-5-mini:1000/2000]" in line
+
+
+def test_cost_line_says_unpriced_for_an_unknown_model(caplog: pytest.LogCaptureFixture) -> None:
+    usage = _usage("some-new-model", 10, 20)
+    line = _run_and_capture_cost(
+        caplog, [ExtractResult(recipe=_grounded_recipe(), usage=usage)], _raw()
+    )
+    assert "cost_inr=unpriced" in line
+    assert "reasoning_tokens=unreported" in line
+
+
+def test_cost_line_includes_the_repair_call(caplog: pytest.LogCaptureFixture) -> None:
+    extraction = _usage("gpt-5-mini", 1000, 2000, reasoning=1500)
+    repair = _usage("claude-sonnet-5", 300, 40)
+    unconsumed_salt = _grounded_recipe().model_copy(
+        update={
+            "ingredients": [
+                NormalizedIngredient(name="Onion", qty="1", unit="medium", prep_note=None),
+                NormalizedIngredient(name="Salt", qty="1", unit="tsp", prep_note=None),
+            ]
+        }
+    )
+    proposal = RepairProposal(
+        steps=[
+            StepRepair(
+                consumes_ingredients=["Onion", "Salt"],
+                produces_component=None,
+                depends_on_previous=True,
+            )
+        ]
+    )
+    raw = _raw(description="1 onion, salt. Heat oil, add onion, cook until golden. Serve hot.")
+    line = _run_and_capture_cost(
+        caplog,
+        [
+            ExtractResult(recipe=unconsumed_salt, usage=extraction),
+            ExtractResult(recipe=proposal, usage=repair),
+        ],
+        raw,
+    )
+
+    total = call_cost_inr(extraction)
+    repair_cost = call_cost_inr(repair)
+    assert total is not None
+    assert repair_cost is not None
+    assert f"cost_inr={total + repair_cost:.2f}" in line
+    assert "input_tokens=1300 output_tokens=2040" in line
+    assert "calls=[gpt-5-mini:1000/2000 claude-sonnet-5:300/40]" in line
+
+
+def test_abc_cook_info_logs_reach_a_handler_exactly_once() -> None:
+    create_app()
+    logger = logging.getLogger("abc_cook")
+    assert logger.getEffectiveLevel() <= logging.INFO
+    assert logger.handlers
+    # One stream handler on `abc_cook`, created once however many apps are built.
+    create_app()
+    assert len(logger.handlers) == 1
+    # No second copy through root's handlers beyond pytest's own capture handlers.
+    root_stream_handlers = [
+        h
+        for h in logging.getLogger().handlers
+        if isinstance(h, logging.StreamHandler) and type(h).__module__ == "logging"
+    ]
+    assert root_stream_handlers == []
