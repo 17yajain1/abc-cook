@@ -72,7 +72,10 @@ function canonicalUrlKey(raw: string): string {
   }
 
   const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
-  const path = parsed.pathname.replace(/\/+$/, '')
+  // Path only: newer URL implementations (current Chrome, Node 26) percent-encode `^` as
+  // `%5E`, older ones leave it. Saved keys exist in both forms, so fold to the literal `^`
+  // and every runtime agrees. The query and fragment are untouched.
+  const path = parsed.pathname.replace(/\/+$/, '').replace(/%5e/gi, '^')
 
   const params = new URLSearchParams(parsed.search)
   for (const key of [...params.keys()]) {
@@ -108,18 +111,32 @@ function textKey(value: string): string {
   return `text:${normalized.slice(0, 32)}#${fnv1a(normalized)}`
 }
 
+/** The key for a URL a person typed or pasted, or `null` when it does not parse. The one
+ * definition `canonicalSourceKey` also uses. `null` (not a lower-cased fallback) so a
+ * duplicate check can never match a saved entry on a garbled string. */
+export function canonicalUrlSourceKey(url: string): string | null {
+  try {
+    new URL(url)
+  } catch {
+    return null
+  }
+  const videoId = youtubeVideoId(url)
+  if (videoId) return `youtube:${videoId}`
+
+  const shortcode = instagramShortcode(url)
+  if (shortcode) return `instagram:${shortcode}`
+
+  return canonicalUrlKey(url)
+}
+
 /** The canonical dedup key for a graph's source (M2.12 design decision 2). */
 export function canonicalSourceKey(source: SourceRef): string {
   if (source.kind === 'text') return textKey(source.value)
   if (source.kind !== 'url') return `${source.kind}:${source.value}`
 
-  const videoId = youtubeVideoId(source.value)
-  if (videoId) return `youtube:${videoId}`
-
-  const shortcode = instagramShortcode(source.value)
-  if (shortcode) return `instagram:${shortcode}`
-
-  return canonicalUrlKey(source.value)
+  // An unparseable URL still gets a (lower-cased) key so it can be saved; it just never
+  // matches a pasted URL (`canonicalUrlSourceKey` is null for it).
+  return canonicalUrlSourceKey(source.value) ?? canonicalUrlKey(source.value)
 }
 
 /** A thumbnail image for a saved entry, derived from its key — never stored (M2.12

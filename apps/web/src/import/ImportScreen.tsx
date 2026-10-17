@@ -1,6 +1,7 @@
-import type { ImportJobResponse, NormalizedIngredient } from '@abc-cook/schema'
+import type { ImportJobResponse, NormalizedIngredient, SavedRecipe } from '@abc-cook/schema'
 
 import { notGroundedCopy } from './notGroundedCopy'
+import type { FindSaved } from './duplicate'
 import { ImportDraft } from './ImportDraft'
 import { importViewFor } from './importView'
 import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
@@ -142,14 +143,22 @@ export function ImportScreen({
   onImported,
   onCancel,
   initialUrl,
+  findSaved,
+  onDuplicate,
+  skipDuplicateCheck,
 }: {
   onImported: OnImported
   onCancel: () => void
   /** Prefills the field (Re-import). The user still taps "Get the plan": an LLM spend is
    * never started by a mount. */
   initialUrl?: string
+  /** Duplicate check for a pasted URL, and what to do on a match (open the saved entry). */
+  findSaved?: FindSaved
+  onDuplicate?: (saved: SavedRecipe) => void
+  /** Re-import and Import again: the source is already saved, import it anyway. */
+  skipDuplicateCheck?: boolean
 }) {
-  const job = useImportJob(onImported, initialUrl)
+  const job = useImportJob(onImported, { initialUrl, findSaved, onDuplicate, skipDuplicateCheck })
   const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
 
   if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />

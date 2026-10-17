@@ -6,6 +6,7 @@ import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
+import type { AlreadySaved } from './AlreadySavedNotice'
 import { IngredientsPanel } from './IngredientsPanel'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import type { StalenessMarker } from './staleness'
@@ -68,6 +69,7 @@ export function PlanScreen({
   save,
   importMeta,
   staleness,
+  alreadySaved,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -77,6 +79,8 @@ export function PlanScreen({
   save?: SaveControl
   importMeta?: ImportMeta | null
   staleness?: StalenessMarker
+  /** Set when a pasted link matched this saved recipe: offers Import again. */
+  alreadySaved?: AlreadySaved
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const statusLine = statusLineFor(importMeta)
@@ -149,7 +153,14 @@ export function PlanScreen({
         onScroll={onScroll}
         className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
       >
-        <RecipeHeader plan={plan} save={save} importMeta={importMeta} onBack={onBack} staleness={staleness} />
+        <RecipeHeader
+          plan={plan}
+          save={save}
+          importMeta={importMeta}
+          onBack={onBack}
+          staleness={staleness}
+          alreadySaved={alreadySaved}
+        />
         {/* A6 stays here, and stays hidden while the staleness line shows under the title. */}
         {!staleness && statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 

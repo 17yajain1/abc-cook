@@ -342,7 +342,9 @@ def _instagram_shortcode(url: _Url) -> str | None:
 
 def _canonical_url_key(url: _Url, pairs: list[tuple[str, str]]) -> str:
     host = url.host.removeprefix("www.")
-    path = url.path.rstrip("/")
+    # Path only: newer URL implementations percent-encode `^`, older ones do not; saved
+    # keys exist in both forms, so fold to the literal (same rule as sourceKey.ts).
+    path = url.path.rstrip("/").replace("%5E", "^").replace("%5e", "^")
     kept = [
         (k, v)
         for k, v in pairs

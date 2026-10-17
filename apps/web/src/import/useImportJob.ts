@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type {
   AcquiredSource,
+  SavedRecipe,
   ImportJobResponse,
   ImportMeta,
   ImportResult,
@@ -14,7 +15,9 @@ import { fetchOEmbed } from '../api/oembed'
 import { derivePlan, type RenderPlan } from '../plan/derive'
 import { importExtrasFrom, type ImportExtras } from './importExtras'
 import { createImportTimer } from './importTiming'
-import { instantPreviewFor, type InstantHeader } from './instantPreview'
+import type { FindSaved } from './duplicate'
+import type { InstantHeader } from './instantPreview'
+import { runSubmit } from './submitFlow'
 
 /** No standalone `ImportStatus` export exists in the generated package (it's inlined
  * as a literal union on `ImportJobResponse.status`) — derive it rather than duplicate
@@ -68,7 +71,19 @@ export type OnImported = (
  * and timer refs make a stale poll chain (previous submit, or one outliving the
  * component) unable to overwrite newer state.
  */
-export function useImportJob(onImported: OnImported, initialUrl = '') {
+export interface ImportJobOptions {
+  /** Prefills the field (Re-import, Import again). */
+  initialUrl?: string
+  /** Looks a pasted URL up among the saved recipes. Absent: no duplicate check. */
+  findSaved?: FindSaved
+  /** A pasted URL is already saved: open that entry instead of importing it again. */
+  onDuplicate?: (saved: SavedRecipe) => void
+  /** Set by Re-import and Import again, which import a source that is already saved. */
+  skipDuplicateCheck?: boolean
+}
+
+export function useImportJob(onImported: OnImported, options: ImportJobOptions = {}) {
+  const { initialUrl = '' } = options
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
   const [url, setUrl] = useState(initialUrl)
   const [text, setText] = useState('')
@@ -150,36 +165,46 @@ export function useImportJob(onImported: OnImported, initialUrl = '') {
   }
 
   /** `override` lets a caller submit a value that isn't in the hook's own `url` state
-   * (the Copy sheet owns its field). Call from a click handler, never a mount effect. */
+   * (the Copy sheet owns its field). Call from a click handler, never a mount effect.
+   * The order is fixed in `runSubmit`: duplicate check, then the instant header, then
+   * the network call. */
   const submit = (override?: string) => {
     const trimmed = (override ?? url).trim()
     if (!trimmed) return
     const token = ++tokenRef.current
-    timerObj.current = createImportTimer()
-    timerObj.current.mark('submit')
-    // The instant header is set before the network call, so the thumbnail is on screen
-    // while POST /import is still in flight. oEmbed runs in parallel with it, under the
-    // same token: a stale answer from a previous submit is dropped.
-    const quick = instantPreviewFor(trimmed)
-    setInstant(quick ? { thumbnailUrl: quick.thumbnailUrl, title: null, channel: null } : null)
-    setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
-    if (quick) {
-      void fetchOEmbed(quick.oembedUrl).then((found) => {
-        if (!found || tokenRef.current !== token) return
-        timerObj.current.mark('title')
-        setInstant((prev) => (prev && prev.title == null ? { ...prev, ...found } : prev))
-      })
-    }
-    startImport(trimmed)
-      .then(({ job_id }) => {
-        if (tokenRef.current !== token) return
-        poll(job_id, token, 0)
-      })
-      .catch((err: unknown) => {
-        if (tokenRef.current !== token) return
-        setInstant(null)
-        setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
-      })
+    runSubmit(
+      trimmed,
+      { findSaved: options.findSaved, skipDuplicateCheck: options.skipDuplicateCheck },
+      {
+        begin: (quick) => {
+          timerObj.current = createImportTimer()
+          timerObj.current.mark('submit')
+          // Set before the network call, so the thumbnail is on screen while POST /import
+          // is still in flight.
+          setInstant(quick ? { thumbnailUrl: quick.thumbnailUrl, title: null, channel: null } : null)
+          setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
+        },
+        // oEmbed runs in parallel with the POST, under the same token: a stale answer from
+        // a previous submit is dropped, and a title that is already set is never replaced.
+        fetchOEmbed: (oembedUrl) => fetchOEmbed(oembedUrl),
+        onTitle: (found) => {
+          if (tokenRef.current !== token) return
+          timerObj.current.mark('title')
+          setInstant((prev) => (prev && prev.title == null ? { ...prev, ...found } : prev))
+        },
+        startImport,
+        onStarted: (jobId) => {
+          if (tokenRef.current !== token) return
+          poll(jobId, token, 0)
+        },
+        onStartFailed: (err) => {
+          if (tokenRef.current !== token) return
+          setInstant(null)
+          setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
+        },
+        onDuplicate: (saved) => options.onDuplicate?.(saved),
+      },
+    )
   }
 
   const submitText = () => {

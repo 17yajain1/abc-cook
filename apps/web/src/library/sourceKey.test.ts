@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { SourceRef } from '@abc-cook/schema'
 
-import { canonicalSourceKey, instagramShortcode, thumbnailUrlFor, youtubeVideoId } from './sourceKey'
+import {
+  canonicalSourceKey,
+  canonicalUrlSourceKey,
+  instagramShortcode,
+  thumbnailUrlFor,
+  youtubeVideoId,
+} from './sourceKey'
 
 function urlSource(value: string): SourceRef {
   return { kind: 'url', value, imported_at: '2026-09-15T00:00:00Z' }
@@ -123,5 +129,30 @@ describe('thumbnailUrlFor', () => {
     expect(thumbnailUrlFor('instagram:Abc123')).toBeNull() // no derivable public thumbnail
     expect(thumbnailUrlFor('url:example.com/page')).toBeNull()
     expect(thumbnailUrlFor('text:chop onion')).toBeNull()
+  })
+})
+
+describe('canonicalUrlSourceKey', () => {
+  it('is the same key canonicalSourceKey gives a url source', () => {
+    for (const url of [
+      'https://youtu.be/nF8krMx7OxA?si=x',
+      'https://www.instagram.com/reel/CWqAgUZgCku/',
+      'https://www.example.com/recipes/dal/?utm_source=x&b=2&a=1',
+    ]) {
+      expect(canonicalUrlSourceKey(url)).toBe(canonicalSourceKey(urlSource(url)))
+    }
+  })
+
+  it('is null for a URL that does not parse, where canonicalSourceKey falls back', () => {
+    expect(canonicalUrlSourceKey('not a url at all')).toBeNull()
+    expect(canonicalSourceKey(urlSource('not a url at all'))).toBe('url:not a url at all')
+  })
+
+  it('folds %5E in the path to ^ in every runtime, and leaves the query alone', () => {
+    expect(canonicalUrlSourceKey('https://example.com/a^b')).toBe('url:example.com/a^b')
+    expect(canonicalUrlSourceKey('https://example.com/a%5Eb')).toBe('url:example.com/a^b')
+    expect(canonicalUrlSourceKey('https://example.com/a%5eb?q=%5E')).toBe(
+      'url:example.com/a^b?q=%5E',
+    )
   })
 })

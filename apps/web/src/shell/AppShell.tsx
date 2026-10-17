@@ -45,7 +45,7 @@ export function AppShell({
   sessionStore: SessionStore
   /** Reuses `App`'s `goToConflict`: resolves `library:`/`server:` plan keys. */
   onResume: (planKey: string) => void
-  onOpenSaved: (id: string) => void
+  onOpenSaved: (id: string, opts?: { alreadySaved?: boolean }) => void
   onPick: (recipeId: string) => void
   onImport: () => void
   onImported: (
@@ -68,7 +68,14 @@ export function AppShell({
   // click handlers only — a mount effect would double-fire under StrictMode.
   const session = useSyncExternalStore(sessionStore.subscribe, sessionStore.getState)
   const continueInfo = selectContinue(session, Date.now(), library.get)
-  const job = useImportJob(onImported)
+  const job = useImportJob(onImported, {
+    findSaved: (key) => library.findBySource(key),
+    // A pasted link the person already saved opens that entry; nothing is fetched or spent.
+    onDuplicate: (saved) => {
+      setSheetOpen(false)
+      onOpenSaved(saved.id, { alreadySaved: true })
+    },
+  })
   const clipboard = useClipboardUrl()
   const [sheetOpen, setSheetOpen] = useState(false)
   // Null with the flag off: nothing loads, and the section is not rendered at all.

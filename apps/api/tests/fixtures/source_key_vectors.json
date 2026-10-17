@@ -448,6 +448,16 @@
   },
   {
    "kind": "url",
+   "value": "https://example.com/a%5Eb",
+   "key": "url:example.com/a^b"
+  },
+  {
+   "kind": "url",
+   "value": "https://example.com/a%5eb?q=%5E",
+   "key": "url:example.com/a^b?q=%5E"
+  },
+  {
+   "kind": "url",
    "value": "https://[2001:db8:0:0:1:0:0:1]/x",
    "key": "url:[2001:db8::1:0:0:1]/x"
   },
