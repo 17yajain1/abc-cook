@@ -14,6 +14,8 @@ module docstring for why that distinction is load-bearing, not cosmetic).
 
 from __future__ import annotations
 
+import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
@@ -42,6 +44,40 @@ def request_timeout_s(max_tokens: int) -> float:
     stuck call ends the import job as `failed` instead of leaving it mid-status.
     """
     return 60.0 + max_tokens / 50
+
+
+STREAM_IDLE_TIMEOUT_S = 60.0
+"""Longest a streaming extraction may go without a chunk before the watchdog closes it.
+
+Sized from more than one measurement (PR-S2 plan §3.1.4). The longest healthy silence is
+the reasoning wait before the first visible token: 7.7 s with 960 reasoning tokens for
+kadhi at `low` (REPORT T6), and across the T2 `low` calls reasoning ranged from 192 to
+1,984 tokens (pizza's retry), which is about 1.6-16.4 s at 121 tok/s. After the first
+token chunks arrive about every 10 ms. 60 s is 3.6x the worst estimate, so it also covers
+a provider 2-3x slower than measured. The per-call total deadline stays
+`request_timeout_s(max_tokens)`; this is the stall bound inside it.
+"""
+
+STREAM_CONNECT_TIMEOUT_S = 10.0
+STREAM_READ_TIMEOUT_S = 75.0
+STREAM_WRITE_TIMEOUT_S = 30.0
+STREAM_POOL_TIMEOUT_S = 10.0
+"""httpx backstop for a streaming call, before the first byte of the response. The watchdog
+owns stalls once the stream has started; with `MAX_RETRIES = 1` the worst case before it
+starts is about 2 x 75 s (PR-S2 plan §3.1.4)."""
+
+TextDeltaCallback = Callable[[str], None]
+"""Called with each non-empty piece of response text as a streaming adapter receives it."""
+
+STREAM_EXTRACTION_ENV = "ABC_COOK_STREAM_EXTRACTION"
+"""Kill switch (PR-S2 amendment A1). Unset means on; `0`, `false` or `off` (any case) turns
+streaming off, and the OpenAI adapter then sends today's non-streaming request."""
+
+
+def stream_extraction_enabled() -> bool:
+    """Whether the extraction call may stream: `ABC_COOK_STREAM_EXTRACTION`, default on."""
+    value = os.environ.get(STREAM_EXTRACTION_ENV, "").strip().lower()
+    return value not in {"0", "false", "off"}
 
 
 def exception_summary(exc: BaseException) -> str:
@@ -76,6 +112,9 @@ class CallUsage:
     """Hidden reasoning tokens, already included in `output_tokens` (OpenAI reports
     them as a subset of `completion_tokens`). `None` = the provider doesn't report
     them (Anthropic here) -- not "zero". A0 instrumentation only; never priced twice."""
+    first_content_ms: float | None = None
+    """Milliseconds from the request to the first visible text chunk of a streamed call.
+    `None` for a non-streaming call. Measurement only; nothing reads it for a decision."""
 
 
 @dataclass(frozen=True)
