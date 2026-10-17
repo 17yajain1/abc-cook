@@ -1,0 +1,550 @@
+{
+  "mode": "before",
+  "stopped": null,
+  "rows": [
+    {
+      "label": "kadhi-pakora",
+      "url": "https://www.youtube.com/watch?v=Oa2s0dklrRo",
+      "mode": "before",
+      "total_s": 5.875,
+      "ytdlp_s": 2.437,
+      "description_len": 2973,
+      "has_transcript": true,
+      "blog_found": true,
+      "blog_name": "Recipe Of Kadhi Pakora By Chef Kunal Kapur",
+      "links": [
+        {
+          "link": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+          "outcome": "recipe",
+          "seconds": 1.672,
+          "final_host": "chefkunalkapur.com",
+          "note": null
+        }
+      ],
+      "blog_link": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+      "blog_final_url": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+      "probe_s": 1.672
+    },
+    {
+      "label": "croissant",
+      "url": "https://www.youtube.com/watch?v=OzdqThvpMko",
+      "mode": "before",
+      "total_s": 4.562,
+      "ytdlp_s": 2.859,
+      "description_len": 590,
+      "has_transcript": true,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 0
+    },
+    {
+      "label": "pumpkin-pancakes",
+      "url": "https://www.youtube.com/watch?v=TYZNzCnNGwA",
+      "mode": "before",
+      "total_s": 7.313,
+      "ytdlp_s": 3.0,
+      "description_len": 359,
+      "has_transcript": true,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [
+        {
+          "link": "https://amzn.to/3UX3fNZ",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.781,
+          "final_host": "amazon.com",
+          "note": null
+        }
+      ],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 2.781
+    },
+    {
+      "label": "vanilla-cupcakes",
+      "url": "https://www.youtube.com/watch?v=YP8a6ugKQ6Y",
+      "mode": "before",
+      "total_s": 16.75,
+      "ytdlp_s": 3.297,
+      "description_len": 2847,
+      "has_transcript": false,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [
+        {
+          "link": "https://amzn.to/31PNXwa",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 3.532,
+          "final_host": "amazon.ae",
+          "note": null
+        },
+        {
+          "link": "https://amzn.to/34AXmti",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 3.266,
+          "final_host": "amazon.ae",
+          "note": null
+        },
+        {
+          "link": "https://amzn.to/3jz5ZJ2",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 3.141,
+          "final_host": "amazon.ae",
+          "note": null
+        },
+        {
+          "link": "https://amzn.to/2JfLuob",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 3.359,
+          "final_host": "amazon.ae",
+          "note": null
+        }
+      ],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 13.298
+    },
+    {
+      "label": "chole-bhature",
+      "url": "https://www.youtube.com/watch?v=FU1ZVLMbWjA",
+      "mode": "before",
+      "total_s": 64.672,
+      "ytdlp_s": 2.718,
+      "description_len": 2081,
+      "has_transcript": true,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [
+        {
+          "link": "https://goo.gl/MH3A4r",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.14,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://goo.gl/Sxk4Fp",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.422,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amazon.in/shop/cookingshooking",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.641,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4vNHfCL",
+          "outcome": "redirected to excluded host",
+          "seconds": 4.281,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4xZZ42Z",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.953,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/44PW4Zn",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.891,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4woxv1s",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.938,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.ushttps://amzn.to/4vbQUSo",
+          "outcome": "dns failure for 'aip.urlgeni.ushttps'",
+          "seconds": 1.14,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4xUONF4",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.844,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4awuLH1",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.344,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4eIINI5",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.188,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4vLc0YX",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.704,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "https://aip.urlgeni.us/https://amzn.to/4wn0KSe",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.906,
+          "final_host": "amazon.in",
+          "note": null
+        }
+      ],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 60.392
+    },
+    {
+      "label": "captions-manual-en",
+      "url": "https://www.youtube.com/watch?v=pxpJmXq2w7c",
+      "mode": "before",
+      "total_s": 100.985,
+      "ytdlp_s": 2.781,
+      "description_len": 2997,
+      "has_transcript": true,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [
+        {
+          "link": "http://goo.gl/L7Ngdo",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.157,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "http://goo.gl/z8RCxr",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.218,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3xNYDbC",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.985,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://amzn.to/3HKreFL",
+          "outcome": "redirected to excluded host",
+          "seconds": 3.547,
+          "final_host": "amazon.in",
+          "note": null
+        },
+        {
+          "link": "http://bit.ly/3IUgrL9",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.25,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3CnNXpY",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.109,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3nTg6vA",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.734,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/350Eq5V",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.875,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3nVyyDS",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.0,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/30S2cPw",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.407,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/2SWEZbt",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.359,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3k1F09Z",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.297,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/34U63NW",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.078,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/2De5h4b",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.031,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/39NNhtC",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.203,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/39NNhtC",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.0,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3k2BImV",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.891,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/2Jze4RX",
+          "outcome": "redirected to excluded host",
+          "seconds": 1.906,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3Ht8lWu",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.125,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3Mu3kj0",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.078,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3Nti169",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.203,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3Ms8dZV",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.079,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3lmEVQj",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.5,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3yGaI6S",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.047,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3wrGcfo",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.047,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3NsnwC1",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.156,
+          "final_host": "youtube.com",
+          "note": null
+        },
+        {
+          "link": "http://goo.gl/L7Ngdo",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.297,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "http://goo.gl/z8RCxr",
+          "outcome": "ConnectTimeout: timed out",
+          "seconds": 11.422,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://bit.ly/3xNYDbC",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.281,
+          "final_host": "youtube.com",
+          "note": null
+        }
+      ],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 96.282
+    },
+    {
+      "label": "pizza-dough",
+      "url": "https://www.youtube.com/watch?v=WM1XcYXix0Y",
+      "mode": "before",
+      "total_s": 8.953,
+      "ytdlp_s": 3.359,
+      "description_len": 2118,
+      "has_transcript": true,
+      "blog_found": true,
+      "blog_name": "Overnight Pizza Dough Recipe",
+      "links": [
+        {
+          "link": "https://amzlink.to/az0vR1N8PiUPw",
+          "outcome": "redirected to excluded host",
+          "seconds": 2.391,
+          "final_host": "amazon.com",
+          "note": "amazon-family bot page (recorded, continuing)"
+        },
+        {
+          "link": "https://natashaskitchen.com/pizza-dough-recipe/",
+          "outcome": "recipe",
+          "seconds": 1.765,
+          "final_host": "natashaskitchen.com",
+          "note": null
+        }
+      ],
+      "blog_link": "https://natashaskitchen.com/pizza-dough-recipe/",
+      "blog_final_url": "https://natashaskitchen.com/pizza-dough-recipe/",
+      "probe_s": 4.156
+    },
+    {
+      "label": "blog-link-only",
+      "url": "https://youtu.be/3Q4NBZaF29w",
+      "mode": "before",
+      "total_s": 7.016,
+      "ytdlp_s": 3.078,
+      "description_len": 2988,
+      "has_transcript": true,
+      "blog_found": true,
+      "blog_name": "rasgulla recipe | spongy rasgulla recipe |Bengali rasgulla",
+      "links": [
+        {
+          "link": "https://bit.ly/2DbcxhJ",
+          "outcome": "recipe",
+          "seconds": 2.547,
+          "final_host": "nehascookbook.com",
+          "note": null
+        }
+      ],
+      "blog_link": "https://bit.ly/2DbcxhJ",
+      "blog_final_url": "https://www.nehascookbook.com/rasgulla-recipe-spongy-rasgulla-recipe-bengali-rasgulla/",
+      "probe_s": 2.547
+    },
+    {
+      "label": "full-method",
+      "url": "https://youtu.be/o3k55z-tv9I",
+      "mode": "before",
+      "total_s": 6.125,
+      "ytdlp_s": 2.672,
+      "description_len": 2398,
+      "has_transcript": true,
+      "blog_found": true,
+      "blog_name": "Dal Makhani Recipe By Chef Kunal Kapur",
+      "links": [
+        {
+          "link": "http://www.chefkunalkapur.com/dal-makhni/",
+          "outcome": "recipe",
+          "seconds": 1.954,
+          "final_host": "chefkunalkapur.com",
+          "note": null
+        }
+      ],
+      "blog_link": "http://www.chefkunalkapur.com/dal-makhni/",
+      "blog_final_url": "https://www.chefkunalkapur.com/recipe/dal-makhni/",
+      "probe_s": 1.954
+    },
+    {
+      "label": "captions-auto-en-long",
+      "url": "https://www.youtube.com/watch?v=5e5UYxESO-E",
+      "mode": "before",
+      "total_s": 11.906,
+      "ytdlp_s": 3.125,
+      "description_len": 1536,
+      "has_transcript": true,
+      "blog_found": false,
+      "blog_name": null,
+      "links": [
+        {
+          "link": "https://patreon.com/wayoframen",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 2.547,
+          "final_host": "patreon.com",
+          "note": null
+        },
+        {
+          "link": "https://wayoframen.com/shop",
+          "outcome": "http 403",
+          "seconds": 2.563,
+          "final_host": null,
+          "note": null
+        },
+        {
+          "link": "https://anchor.fm/wayoframen",
+          "outcome": "no Recipe JSON-LD",
+          "seconds": 2.265,
+          "final_host": "creators.spotify.com",
+          "note": null
+        }
+      ],
+      "blog_link": null,
+      "blog_final_url": null,
+      "probe_s": 7.375
+    }
+  ]
+}
