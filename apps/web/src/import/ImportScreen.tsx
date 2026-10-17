@@ -1,7 +1,8 @@
 import type { ImportJobResponse, NormalizedIngredient } from '@abc-cook/schema'
 
 import { notGroundedCopy } from './notGroundedCopy'
-import { RecipePreview } from './RecipePreview'
+import { ImportDraft } from './ImportDraft'
+import { importViewFor } from './importView'
 import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
 
 /** A7: one line per real pipeline stage (design doc §4.5), in the words the cook would use.
@@ -34,7 +35,7 @@ export function isProgressPhase(phase: Phase): boolean {
     phase.kind === 'no_recipe' ||
     phase.kind === 'paste' ||
     phase.kind === 'not_grounded' ||
-    (phase.kind === 'error' && phase.preview != null)
+    (phase.kind === 'error' && (phase.preview != null || phase.acquired != null))
   )
 }
 
@@ -47,17 +48,27 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset } = job
+  const { phase, setPhase, text, setText, submitText, reset, instant, markThumbnail } = job
 
   if (phase.kind === 'polling') {
-    // Once the source's own recipe is readable, show it and keep the plan-building line
-    // quiet underneath (A2); until then, the plain status word.
-    if (phase.preview) {
+    // Whatever the source has said so far (thumbnail and title at once for a YouTube link,
+    // then its description, then a blog page's own recipe) is shown, with the plan-building
+    // line quiet underneath (A2); until anything is known, the plain status word.
+    const view = importViewFor({
+      instant,
+      acquired: phase.acquired,
+      preview: phase.preview,
+      status: phase.status,
+    })
+    if (view.header || phase.preview) {
       return (
-        <RecipePreview
-          preview={phase.preview}
-          footer={<PreviewFooter />}
+        <ImportDraft
+          view={view}
+          footer={
+            phase.preview ? <PreviewFooter /> : <p>{STATUS_COPY[phase.status] ?? 'Working…'}</p>
+          }
           onCancel={reset}
+          onThumbnailLoaded={markThumbnail}
         />
       )
     }
@@ -86,15 +97,24 @@ export function ImportProgress({
     )
   }
 
-  if (phase.kind === 'error' && phase.preview) {
-    // The plan failed but the source's own recipe is still worth reading (A2 fallback).
+  if (phase.kind === 'error' && (phase.preview || phase.acquired)) {
+    // The plan failed but what the source gave us is still worth reading (A2 fallback).
     return (
-      <RecipePreview
-        preview={phase.preview}
+      <ImportDraft
+        view={importViewFor({
+          instant,
+          acquired: phase.acquired,
+          preview: phase.preview,
+          status: 'failed',
+        })}
         footer={
           <>
             <span className="text-signal">{phase.message}</span>{' '}
-            <button type="button" onClick={reset} className="underline underline-offset-4">
+            <button
+              type="button"
+              onClick={reset}
+              className="-my-3 py-3 underline underline-offset-4"
+            >
               Try again
             </button>
           </>
