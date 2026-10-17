@@ -1,0 +1,231 @@
+{
+  "stop": null,
+  "rows": [
+    {
+      "label": "kadhi-pakora",
+      "run": 1,
+      "candidates": [
+        "https://www.chefkunalkapur.com/recipe/kadi-pakoda/"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 1.968,
+      "final_url": "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+      "entries": [
+        [
+          "https://www.chefkunalkapur.com/recipe/kadi-pakoda/",
+          "recipe",
+          1.968
+        ]
+      ]
+    },
+    {
+      "label": "croissant",
+      "run": 1,
+      "candidates": [],
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "probe_s": 0,
+      "final_url": null,
+      "entries": []
+    },
+    {
+      "label": "pumpkin-pancakes",
+      "run": 1,
+      "candidates": [],
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "probe_s": 0,
+      "final_url": null,
+      "entries": []
+    },
+    {
+      "label": "vanilla-cupcakes",
+      "run": 1,
+      "candidates": [],
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "probe_s": 0,
+      "final_url": null,
+      "entries": []
+    },
+    {
+      "label": "chole-bhature",
+      "run": 1,
+      "candidates": [
+        "https://goo.gl/MH3A4r",
+        "https://goo.gl/Sxk4Fp"
+      ],
+      "stopped": "exhausted",
+      "abandoned": 1,
+      "probe_s": 10.016,
+      "final_url": null,
+      "entries": [
+        [
+          "https://goo.gl/MH3A4r",
+          "link timeout",
+          8.0
+        ],
+        [
+          "https://goo.gl/Sxk4Fp",
+          "link timeout",
+          2.016
+        ]
+      ]
+    },
+    {
+      "label": "captions-manual-en",
+      "run": 1,
+      "candidates": [
+        "http://goo.gl/L7Ngdo",
+        "http://goo.gl/z8RCxr",
+        "https://bit.ly/3xNYDbC",
+        "http://bit.ly/3IUgrL9",
+        "https://bit.ly/3CnNXpY",
+        "https://bit.ly/3nTg6vA",
+        "https://bit.ly/350Eq5V",
+        "https://bit.ly/3nVyyDS",
+        "https://bit.ly/30S2cPw",
+        "https://bit.ly/2SWEZbt",
+        "https://bit.ly/3k1F09Z",
+        "https://bit.ly/34U63NW",
+        "https://bit.ly/2De5h4b",
+        "https://bit.ly/39NNhtC",
+        "https://bit.ly/3k2BImV",
+        "https://bit.ly/2Jze4RX",
+        "https://bit.ly/3Ht8lWu",
+        "https://bit.ly/3Mu3kj0",
+        "https://bit.ly/3Nti169",
+        "https://bit.ly/3Ms8dZV",
+        "https://bit.ly/3lmEVQj",
+        "https://bit.ly/3yGaI6S",
+        "https://bit.ly/3wrGcfo",
+        "https://bit.ly/3NsnwC1"
+      ],
+      "stopped": "budget",
+      "abandoned": 2,
+      "probe_s": 10.015,
+      "final_url": null,
+      "entries": [
+        [
+          "http://goo.gl/L7Ngdo",
+          "link timeout",
+          8.015
+        ],
+        [
+          "http://goo.gl/z8RCxr",
+          "link timeout",
+          2.0
+        ]
+      ]
+    },
+    {
+      "label": "pizza-dough",
+      "run": 1,
+      "candidates": [
+        "https://natashaskitchen.com/pizza-dough-recipe/"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 1.735,
+      "final_url": "https://natashaskitchen.com/pizza-dough-recipe/",
+      "entries": [
+        [
+          "https://natashaskitchen.com/pizza-dough-recipe/",
+          "recipe",
+          1.735
+        ]
+      ]
+    },
+    {
+      "label": "blog-link-only",
+      "run": 1,
+      "candidates": [
+        "https://bit.ly/2DbcxhJ"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 3.093,
+      "final_url": "https://www.nehascookbook.com/rasgulla-recipe-spongy-rasgulla-recipe-bengali-rasgulla/",
+      "entries": [
+        [
+          "https://bit.ly/2DbcxhJ",
+          "recipe",
+          3.093
+        ]
+      ]
+    },
+    {
+      "label": "blog-link-only",
+      "run": 2,
+      "candidates": [
+        "https://bit.ly/2DbcxhJ"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 2.485,
+      "final_url": "https://www.nehascookbook.com/rasgulla-recipe-spongy-rasgulla-recipe-bengali-rasgulla/",
+      "entries": [
+        [
+          "https://bit.ly/2DbcxhJ",
+          "recipe",
+          2.485
+        ]
+      ]
+    },
+    {
+      "label": "blog-link-only",
+      "run": 3,
+      "candidates": [
+        "https://bit.ly/2DbcxhJ"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 6.75,
+      "final_url": "https://www.nehascookbook.com/rasgulla-recipe-spongy-rasgulla-recipe-bengali-rasgulla/",
+      "entries": [
+        [
+          "https://bit.ly/2DbcxhJ",
+          "recipe",
+          6.75
+        ]
+      ]
+    },
+    {
+      "label": "full-method",
+      "run": 1,
+      "candidates": [
+        "http://www.chefkunalkapur.com/dal-makhni/"
+      ],
+      "stopped": "found",
+      "abandoned": 0,
+      "probe_s": 2.015,
+      "final_url": "https://www.chefkunalkapur.com/recipe/dal-makhni/",
+      "entries": [
+        [
+          "http://www.chefkunalkapur.com/dal-makhni/",
+          "recipe",
+          2.015
+        ]
+      ]
+    },
+    {
+      "label": "captions-auto-en-long",
+      "run": 1,
+      "candidates": [
+        "https://wayoframen.com/shop"
+      ],
+      "stopped": "exhausted",
+      "abandoned": 0,
+      "probe_s": 4.469,
+      "final_url": null,
+      "entries": [
+        [
+          "https://wayoframen.com/shop",
+          "http 403",
+          4.469
+        ]
+      ]
+    }
+  ]
+}
