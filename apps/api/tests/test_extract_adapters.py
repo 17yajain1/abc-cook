@@ -16,11 +16,12 @@ import openai
 import pydantic
 import pytest
 
+from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.adapters.anthropic import AnthropicAdapter
 from abc_cook.extract.adapters.base import MAX_RETRIES, request_timeout_s
 from abc_cook.extract.adapters.openai import OpenAIAdapter
 from abc_cook.extract.adapters.prompting import parse_failure_reason
-from abc_cook.extract.normalize import ESCALATED_MAX_TOKENS, MAX_TOKENS
+from abc_cook.extract.normalize import ESCALATED_MAX_TOKENS, MAX_TOKENS, normalize
 
 
 class _Out(pydantic.BaseModel):
@@ -310,3 +311,105 @@ def test_timeout_margin_over_a_legitimate_call() -> None:
     for budget in (MAX_TOKENS, ESCALATED_MAX_TOKENS):
         legitimate_s = budget * 8.3 / 1000 + 8
         assert request_timeout_s(budget) >= 2 * legitimate_s, (budget, legitimate_s)
+
+
+# --- Reasoning-exhausted chain: provider response -> adapter -> normalize -> incomplete ----
+
+
+def _openai_exhausted(content: str | None, counter: list[int]) -> OpenAIAdapter:
+    """finish_reason "length", all completion tokens spent on reasoning, no visible text."""
+    adapter = OpenAIAdapter(api_key=_SECRET)
+    choice = types.SimpleNamespace(
+        message=types.SimpleNamespace(content=content), finish_reason="length"
+    )
+    usage = types.SimpleNamespace(
+        prompt_tokens=10,
+        completion_tokens=16_000,
+        prompt_tokens_details=None,
+        completion_tokens_details=types.SimpleNamespace(reasoning_tokens=16_000),
+    )
+    response = types.SimpleNamespace(choices=[choice], usage=usage)
+
+    def create(**_: Any) -> Any:
+        counter.append(1)
+        return response
+
+    adapter._client = types.SimpleNamespace(  # type: ignore[assignment]
+        chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
+    )
+    return adapter
+
+
+def _anthropic_exhausted(blocks: list[Any], counter: list[int]) -> AnthropicAdapter:
+    adapter = AnthropicAdapter(api_key=_SECRET)
+    message = types.SimpleNamespace(
+        content=blocks,
+        stop_reason="max_tokens",
+        usage=types.SimpleNamespace(
+            input_tokens=10,
+            output_tokens=16_000,
+            cache_read_input_tokens=0,
+            cache_creation_input_tokens=0,
+        ),
+    )
+
+    def create(**_: Any) -> Any:
+        counter.append(1)
+        return message
+
+    adapter._client = types.SimpleNamespace(  # type: ignore[assignment]
+        messages=types.SimpleNamespace(create=create)
+    )
+    return adapter
+
+
+_RAW = RawAcquisition(
+    source_url="https://youtu.be/chain", title="Chole", description="1 cup chickpeas. Boil."
+)
+
+
+@pytest.mark.parametrize("content", ["", "   \n", None], ids=["empty", "whitespace", "none"])
+def test_openai_reasoning_exhausted_chain_ends_incomplete_after_one_call(
+    content: str | None,
+) -> None:
+    counter: list[int] = []
+    adapter = _openai_exhausted(content, counter)
+
+    result = _extract(adapter, max_tokens=MAX_TOKENS)
+    assert result.truncated is True
+    assert result.error_kind == "truncated"
+    assert result.raw_text is not None  # never None: None would mean "unknown", not "empty"
+    assert result.raw_text.strip() == ""
+    assert result.usage is not None
+    assert result.usage.reasoning_tokens == result.usage.output_tokens
+
+    counter.clear()
+    outcome = normalize(_RAW, adapter)
+    assert len(counter) == 1  # no escalation
+    assert outcome.tier0_result is not None
+    assert outcome.tier0_result.status == "failed"
+    assert outcome.tier0_result.failure == "incomplete"
+    assert "runaway" not in " ".join(outcome.tier0_result.warnings)
+
+
+@pytest.mark.parametrize(
+    "blocks",
+    [[], [types.SimpleNamespace(type="thinking", thinking="hmm")]],
+    ids=["no-blocks", "thinking-only"],
+)
+def test_anthropic_reasoning_exhausted_chain_ends_incomplete_after_one_call(
+    blocks: list[Any],
+) -> None:
+    counter: list[int] = []
+    adapter = _anthropic_exhausted(blocks, counter)
+
+    result = _extract(adapter, max_tokens=MAX_TOKENS)
+    assert result.truncated is True
+    assert result.error_kind == "truncated"
+    assert result.raw_text == ""
+
+    counter.clear()
+    outcome = normalize(_RAW, adapter)
+    assert len(counter) == 1
+    assert outcome.tier0_result is not None
+    assert outcome.tier0_result.failure == "incomplete"
