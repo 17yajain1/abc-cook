@@ -194,3 +194,106 @@ class NsStream:
 
     def close(self) -> None:
         return None
+
+
+# --- a whole-adapter fake that streams scripted text to `on_text` ----------------------------
+
+
+class StreamingFake:
+    """An `LLMAdapter` that replays scripted responses through `on_text`, chunk by chunk.
+
+    Each script is `(text, outcome)`; `outcome` is `ok` (parsed), `invalid_json` (the text,
+    cut short, as `raw_text`), `truncated`, or `infra` (the stream stalls after the text).
+    A call past the end of the script is a test bug.
+    """
+
+    streams_text = True
+
+    def __init__(self, scripts: list[tuple[str, str]], chunk_size: int = 8) -> None:
+        self._scripts = scripts
+        self._chunk_size = chunk_size
+        self.calls = 0
+        self.kwargs: list[dict[str, Any]] = []
+
+    def extract(
+        self,
+        *,
+        prompt: str,
+        source_text: str,
+        model: str,
+        max_tokens: int,
+        output_type: type,
+        effort: str | None = None,
+        on_text: Any = None,
+    ) -> Any:
+        from abc_cook.extract.adapters.base import CallUsage, ExtractResult
+        from abc_cook.extract.adapters.prompting import parse
+
+        self.kwargs.append({"output_type": output_type, "on_text": on_text is not None})
+        text, outcome = self._scripts[self.calls]
+        self.calls += 1
+        if on_text is not None:
+            for i in range(0, len(text), self._chunk_size):
+                on_text(text[i : i + self._chunk_size])
+        usage = CallUsage(
+            model=model,
+            input_tokens=100,
+            output_tokens=50,
+            cache_read_input_tokens=0,
+            cache_creation_input_tokens=None,
+            stop_reason="stop",
+            latency_ms=1.0,
+            max_tokens_requested=max_tokens,
+            reasoning_tokens=10,
+        )
+        if outcome == "ok":
+            return ExtractResult(recipe=parse(text, output_type), usage=usage)
+        if outcome == "invalid_json":
+            return ExtractResult(
+                recipe=None,
+                error="response was not valid NormalizedRecipe JSON",
+                error_kind="unparseable",
+                usage=usage,
+                raw_text=text,
+            )
+        if outcome == "truncated":
+            return ExtractResult(
+                recipe=None,
+                truncated=True,
+                error="max_tokens",
+                error_kind="truncated",
+                usage=usage,
+                raw_text=text,
+            )
+        assert outcome == "infra", outcome
+        return ExtractResult(recipe=None, error="StreamIdleTimeout", error_kind="infra")
+
+
+def recipe_text(tag: str = "a", steps: int = 3, ingredients: int = 2) -> str:
+    """Compact `NormalizedRecipe` JSON for a small valid sequential recipe.
+
+    `tag` flavours every ingredient and step so two calls' wording is distinguishable.
+    """
+    from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe, NormalizedStep
+
+    names = [f"{tag} onion", f"{tag} oil", f"{tag} salt", f"{tag} rice"][:ingredients]
+    recipe = NormalizedRecipe(
+        title="Test Recipe",
+        method_grounded=True,
+        ingredients=[
+            NormalizedIngredient(name=n, qty="1", unit="cup", prep_note=None) for n in names
+        ],
+        steps=[
+            NormalizedStep(
+                text=f"{tag} step {i + 1}: heat oil, add {names[i % len(names)]} and cook.",
+                attention="hands_on",
+                duration_stated=False,
+                consumes_ingredients=[names[i % len(names)]],
+                station="burner",
+                interruptible=False,
+                freshness="none",
+            )
+            for i in range(steps)
+        ],
+    )
+    return recipe.model_dump_json()

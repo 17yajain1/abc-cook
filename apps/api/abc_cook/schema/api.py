@@ -12,6 +12,7 @@ from abc_cook.schema.normalized import (
     ImportOriginal,
     ImportResult,
     ImportStatus,
+    NormalizedIngredient,
     SourcePreview,
 )
 from abc_cook.schema.plan import CookingPlan, PlanSummary, StageSpan
@@ -74,6 +75,34 @@ class AcquiredSource(BaseModel):
     )
 
 
+class DraftStep(BaseModel):
+    """One step of a streamed draft. The text only: never a duration field."""
+
+    text: str = Field(description="The model's step text, as streamed (lightly normalized).")
+
+
+class StreamedDraft(BaseModel):
+    """What the extraction call has said so far, before anything is validated.
+
+    Unvalidated and labelled a draft on screen. It carries no durations, timers, offsets,
+    totals or servings, by construction: the scanner that fills it reads nothing but the
+    ingredient lines and each step's text. The validated plan replaces it, one tap away.
+    """
+
+    ingredients: list[NormalizedIngredient] | None = Field(
+        description="`None` until the model has finished the ingredients list.",
+    )
+    steps: list[DraftStep] = Field(
+        default=[], description="Each step once its text has closed. Append-only."
+    )
+    steps_complete: bool = Field(default=False, description="The model has finished the step list.")
+    calls: int = Field(
+        default=1,
+        description="Extraction calls started so far (a retry or escalation shows as 2). A "
+        "later call only fills a section still empty; it never rewrites what is shown.",
+    )
+
+
 class ImportJobResponse(BaseModel):
     """`GET /import/{job_id}` — the client polls this (design doc §4.5).
 
@@ -97,6 +126,12 @@ class ImportJobResponse(BaseModel):
         default=None,
         description="Title, channel and description once acquire has returned (not for pasted "
         "text). Kept on every later status, like `preview`.",
+    )
+    draft: StreamedDraft | None = Field(
+        default=None,
+        description="The ingredients and steps as the extraction call streams them, before "
+        "validation. Kept on every later status, like `preview`, so a failed job still shows "
+        "what was read. `None` for a result-cache hit, or when streaming is off.",
     )
 
 

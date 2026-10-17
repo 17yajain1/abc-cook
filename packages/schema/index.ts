@@ -360,6 +360,18 @@ export interface WaitWindow {
   used_min: number;
 }
 /**
+ * One step of a streamed draft. The text only: never a duration field.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "DraftStep".
+ */
+export interface DraftStep {
+  /**
+   * The model's step text, as streamed (lightly normalized).
+   */
+  text: string;
+}
+/**
  * Sibling record to a `CookingGraph`, keyed by node id.
  *
  * Deliberately not a field on `Node` (design doc §5, "Where confidence/provenance
@@ -405,6 +417,10 @@ export interface ImportJobResponse {
    */
   acquired?: AcquiredSource | null;
   /**
+   * The ingredients and steps as the extraction call streams them, before validation. Kept on every later status, like `preview`, so a failed job still shows what was read. `None` for a result-cache hit, or when streaming is off.
+   */
+  draft?: StreamedDraft | null;
+  /**
    * Set when status is failed.
    */
   error?: string | null;
@@ -432,6 +448,66 @@ export interface ImportJobResponse {
     | 'method_not_grounded'
     | 'no_recipe_found'
     | 'failed';
+}
+/**
+ * What the extraction call has said so far, before anything is validated.
+ *
+ * Unvalidated and labelled a draft on screen. It carries no durations, timers, offsets,
+ * totals or servings, by construction: the scanner that fills it reads nothing but the
+ * ingredient lines and each step's text. The validated plan replaces it, one tap away.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "StreamedDraft".
+ */
+export interface StreamedDraft {
+  /**
+   * Extraction calls started so far (a retry or escalation shows as 2). A later call only fills a section still empty; it never rewrites what is shown.
+   */
+  calls?: number;
+  /**
+   * `None` until the model has finished the ingredients list.
+   */
+  ingredients: NormalizedIngredient[] | null;
+  /**
+   * Each step once its text has closed. Append-only.
+   */
+  steps?: DraftStep[];
+  /**
+   * The model has finished the step list.
+   */
+  steps_complete?: boolean;
+}
+/**
+ * One ingredient line, structured but not yet graph-ready.
+ *
+ * `qty` stays a free-text string, not a float: real sources state quantities as
+ * "a little less than 2", "1/2", or ranges, which cannot be honestly forced into a
+ * single number here. `graph.py` does that best-effort conversion, not this model.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NormalizedIngredient".
+ */
+export interface NormalizedIngredient {
+  /**
+   * Ingredient grouping, e.g. "For tadka", when the source states one.
+   */
+  group?: string | null;
+  /**
+   * As named in the source. Never invented.
+   */
+  name: string;
+  /**
+   * Stated on the ingredient line itself, e.g. "finely chopped".
+   */
+  prep_note: string | null;
+  /**
+   * Quantity as stated, verbatim or lightly normalized.
+   */
+  qty: string | null;
+  /**
+   * Unit, e.g. "cup", "tsp", "medium".
+   */
+  unit: string | null;
 }
 /**
  * The source's own recipe text, readable before any LLM call (A2).
@@ -521,38 +597,6 @@ export interface ImportResult {
     | 'failed';
   summary?: PlanSummary | null;
   warnings?: string[];
-}
-/**
- * One ingredient line, structured but not yet graph-ready.
- *
- * `qty` stays a free-text string, not a float: real sources state quantities as
- * "a little less than 2", "1/2", or ranges, which cannot be honestly forced into a
- * single number here. `graph.py` does that best-effort conversion, not this model.
- *
- * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "NormalizedIngredient".
- */
-export interface NormalizedIngredient {
-  /**
-   * Ingredient grouping, e.g. "For tadka", when the source states one.
-   */
-  group?: string | null;
-  /**
-   * As named in the source. Never invented.
-   */
-  name: string;
-  /**
-   * Stated on the ingredient line itself, e.g. "finely chopped".
-   */
-  prep_note: string | null;
-  /**
-   * Quantity as stated, verbatim or lightly normalized.
-   */
-  qty: string | null;
-  /**
-   * Unit, e.g. "cup", "tsp", "medium".
-   */
-  unit: string | null;
 }
 /**
  * Everything post-processing reads, kept so a saved recipe can be re-processed free.
