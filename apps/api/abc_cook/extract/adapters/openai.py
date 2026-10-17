@@ -39,7 +39,9 @@ from abc_cook.extract.adapters.base import (
     MAX_RETRIES,
     CallUsage,
     EffortLevel,
+    ErrorKind,
     ExtractResult,
+    exception_summary,
     request_timeout_s,
 )
 from abc_cook.extract.adapters.prompting import parse, system_prompt
@@ -52,6 +54,29 @@ _EFFORT_MAP: dict[EffortLevel, Literal["minimal", "low", "medium", "high"]] = {
     "xhigh": "high",  # GPT-5-series has no "xhigh" -- capped, not dropped silently.
     "max": "high",
 }
+
+
+def _error_kind(exc: openai.APIError) -> ErrorKind:
+    """`infra` for anything about the provider or the link, `request` for other 4xx.
+
+    A timeout is `infra` on purpose: `request_timeout_s` assumes a 50 tok/s floor, so a
+    timed-out call means the provider was degraded, not that the recipe was too long for
+    its budget (that ends as a `length` truncation).
+    """
+    if isinstance(
+        exc,
+        (
+            openai.AuthenticationError,
+            openai.PermissionDeniedError,
+            openai.APIConnectionError,  # includes APITimeoutError
+            openai.RateLimitError,
+            openai.InternalServerError,
+        ),
+    ):
+        return "infra"
+    if isinstance(exc, openai.APIStatusError):
+        return "infra" if exc.status_code >= 500 else "request"
+    return "request"
 
 
 class OpenAIAdapter:
@@ -96,7 +121,9 @@ class OpenAIAdapter:
                 timeout=request_timeout_s(max_tokens),
             )
         except openai.APIError as exc:
-            return ExtractResult(recipe=None, error=f"{type(exc).__name__}: {exc}")
+            return ExtractResult(
+                recipe=None, error=exception_summary(exc), error_kind=_error_kind(exc)
+            )
         latency_ms = (time.monotonic() - start) * 1000
 
         choice = response.choices[0]
@@ -124,7 +151,12 @@ class OpenAIAdapter:
             # Same truncation contract as anthropic.py's `stop_reason == "max_tokens"`
             # branch -- retry-eligible, never at the same cap (M2.10 s18 F2).
             return ExtractResult(
-                recipe=None, truncated=True, error="max_tokens", usage=usage, raw_text=text
+                recipe=None,
+                truncated=True,
+                error="max_tokens",
+                error_kind="truncated",
+                usage=usage,
+                raw_text=text,
             )
 
         parsed = parse(text, output_type)
@@ -132,6 +164,8 @@ class OpenAIAdapter:
             return ExtractResult(
                 recipe=None,
                 error=f"response was not valid {output_type.__name__} JSON",
+                error_kind="unparseable",
                 usage=usage,
+                raw_text=text,
             )
         return ExtractResult(recipe=parsed, usage=usage)

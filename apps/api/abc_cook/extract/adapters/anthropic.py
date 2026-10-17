@@ -29,7 +29,9 @@ from abc_cook.extract.adapters.base import (
     MAX_RETRIES,
     CallUsage,
     EffortLevel,
+    ErrorKind,
     ExtractResult,
+    exception_summary,
     request_timeout_s,
 )
 from abc_cook.extract.adapters.prompting import parse, system_prompt
@@ -56,6 +58,24 @@ def _call_usage(
         latency_ms=latency_ms,
         max_tokens_requested=max_tokens,
     )
+
+
+def _error_kind(exc: anthropic.APIError) -> ErrorKind:
+    """Same classification as `openai._error_kind`; see there for the timeout rule."""
+    if isinstance(
+        exc,
+        (
+            anthropic.AuthenticationError,
+            anthropic.PermissionDeniedError,
+            anthropic.APIConnectionError,  # includes APITimeoutError
+            anthropic.RateLimitError,
+            anthropic.InternalServerError,
+        ),
+    ):
+        return "infra"
+    if isinstance(exc, anthropic.APIStatusError):
+        return "infra" if exc.status_code >= 500 else "request"
+    return "request"
 
 
 class AnthropicAdapter:
@@ -116,7 +136,9 @@ class AnthropicAdapter:
                     timeout=timeout,
                 )
         except anthropic.APIError as exc:
-            return ExtractResult(recipe=None, error=f"{type(exc).__name__}: {exc}")
+            return ExtractResult(
+                recipe=None, error=exception_summary(exc), error_kind=_error_kind(exc)
+            )
         latency_ms = (time.monotonic() - start) * 1000
         usage = _call_usage(message, model=model, max_tokens=max_tokens, latency_ms=latency_ms)
 
@@ -129,7 +151,12 @@ class AnthropicAdapter:
             # (M2.10 s18 F2): the caller owns the escalate-or-stop decision, and
             # `raw_text` is what its runaway-generation check reads.
             return ExtractResult(
-                recipe=None, truncated=True, error="max_tokens", usage=usage, raw_text=text
+                recipe=None,
+                truncated=True,
+                error="max_tokens",
+                error_kind="truncated",
+                usage=usage,
+                raw_text=text,
             )
 
         parsed = parse(text, output_type)
@@ -137,6 +164,8 @@ class AnthropicAdapter:
             return ExtractResult(
                 recipe=None,
                 error=f"response was not valid {output_type.__name__} JSON",
+                error_kind="unparseable",
                 usage=usage,
+                raw_text=text,
             )
         return ExtractResult(recipe=parsed, usage=usage)
