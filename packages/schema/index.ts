@@ -465,9 +465,13 @@ export interface StreamedDraft {
    */
   calls?: number;
   /**
-   * `None` until the model has finished the ingredients list.
+   * Each ingredient once its line has closed, in the order the model wrote them. Append-only.
    */
-  ingredients: NormalizedIngredient[] | null;
+  ingredients?: NormalizedIngredient[];
+  /**
+   * The model has finished the ingredients list (`[]` plus this is an empty list).
+   */
+  ingredients_complete?: boolean;
   /**
    * Each step once its text has closed. Append-only.
    */

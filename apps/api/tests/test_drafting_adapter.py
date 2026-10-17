@@ -43,10 +43,15 @@ def test_streams_ingredients_before_steps_then_completes() -> None:
 
     assert result.recipe is not None
     assert drafts, "no draft was published"
-    first_with_ingredients = next(i for i, d in enumerate(drafts) if d.ingredients is not None)
+    first_with_ingredients = next(i for i, d in enumerate(drafts) if d.ingredients)
+    complete_ingredients = next(i for i, d in enumerate(drafts) if d.ingredients_complete)
     first_with_steps = next(i for i, d in enumerate(drafts) if d.steps)
-    assert first_with_ingredients < first_with_steps
+    assert first_with_ingredients <= complete_ingredients < first_with_steps
     assert drafts[first_with_ingredients].steps == []
+    assert len(drafts[first_with_ingredients].ingredients) == 1  # per item, not all at once
+    assert drafts[first_with_ingredients].ingredients_complete is False
+    for before, after in itertools.pairwise(drafts):
+        assert _names(after)[: len(_names(before))] == _names(before)
     # Append-only: each draft's steps are a prefix of the next one's.
     for before, after in itertools.pairwise(drafts):
         assert [s.text for s in after.steps][: len(before.steps)] == [s.text for s in before.steps]
@@ -83,7 +88,7 @@ def test_call_two_fills_sections_call_one_never_reached() -> None:
     second = recipe_text("b")
     adapter, drafts = _draft_adapter(StreamingFake([(first, "truncated"), (second, "ok")]))
     _run(adapter)
-    assert drafts[-1].ingredients is not None
+    assert drafts[-1].ingredients_complete is True
     assert drafts[-1].steps == []
 
     _run(adapter)
@@ -93,6 +98,22 @@ def test_call_two_fills_sections_call_one_never_reached() -> None:
     assert final.steps
     assert all(s.text.startswith("b ") for s in final.steps)  # call 2 filled the steps
     assert final.steps_complete is True
+
+
+def test_a_partial_ingredient_list_stays_and_is_not_extended_by_call_two() -> None:
+    first = recipe_text("a", ingredients=2)
+    first = first[: first.index('"name":"a oil"') + 8]  # item 1 closed, item 2 half-written
+    adapter, drafts = _draft_adapter(
+        StreamingFake([(first, "truncated"), (recipe_text("b", ingredients=4), "ok")])
+    )
+    _run(adapter)
+    assert _names(drafts[-1]) == ["a onion"]
+    assert drafts[-1].ingredients_complete is False
+    _run(adapter)
+    assert drafts[-1].calls == 2
+    assert _names(drafts[-1]) == ["a onion"]  # call 1 owns the list; its partial stays
+    assert drafts[-1].ingredients_complete is False
+    assert drafts[-1].steps  # but call 2 fills the steps call 1 never reached
 
 
 def test_call_one_with_nothing_leaves_no_draft_until_call_two() -> None:
@@ -113,9 +134,11 @@ def test_an_empty_ingredient_list_is_replaced_by_a_later_non_empty_one() -> None
     )
     _run(adapter)
     assert drafts[-1].ingredients == []
+    assert drafts[-1].ingredients_complete is True
     assert [s.text for s in drafts[-1].steps] == ["a one"]
     _run(adapter)
     assert _names(drafts[-1])[0].startswith("b ")
+    assert drafts[-1].ingredients_complete is True
     assert [s.text for s in drafts[-1].steps] == ["a one"]  # steps stay call 1's
 
 
@@ -208,8 +231,9 @@ def test_one_info_line_per_extraction_call(caplog: pytest.LogCaptureFixture) -> 
     lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("draft: ")]
     assert len(lines) == 2
     assert re.match(
-        r"draft: graph_id=g1 call=1 first_content_s=\d+\.\d ingredients_s=\d+\.\d "
-        r"first_step_s=\d+\.\d steps=3 complete=True broken=False",
+        r"draft: graph_id=g1 call=1 first_content_s=\d+\.\d first_ingredient_s=\d+\.\d "
+        r"ingredients_s=\d+\.\d first_step_s=\d+\.\d ingredients=2 steps=3 complete=True "
+        r"broken=False",
         lines[0],
     )
     assert "call=2" in lines[1]
@@ -237,7 +261,15 @@ def test_draft_schema_carries_no_time_fields() -> None:
 
     # `NormalizedIngredient` is reused as-is, so this walks its properties too.
     names = property_names(schema)
-    assert {"ingredients", "steps", "steps_complete", "calls", "text", "name"} <= set(names)
+    assert {
+        "ingredients",
+        "ingredients_complete",
+        "steps",
+        "steps_complete",
+        "calls",
+        "text",
+        "name",
+    } <= set(names)
     assert [n for n in names if forbidden.search(n)] == []
 
 

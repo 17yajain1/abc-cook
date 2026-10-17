@@ -43,9 +43,9 @@ POLL_S = 1.2
 TERMINAL = {"done", "failed", "method_not_grounded", "no_recipe_found"}
 METADATA_AT_S = 3.5
 DONE_AT_S = 6.0
-TARGETS = {"ingredients_s": 15.0, "first_step_s": 20.0, "done_s": 40.0}
-"""Upper bounds from the plan's section 6: ingredients at most 15 s, the first step at about
-18-20 s, and the full plan at most 40 s typical."""
+TARGETS = {"first_ingredient_s": 15.0, "first_step_s": 20.0, "done_s": 40.0}
+"""Upper bounds from the plan's section 6: the first ingredient at most 15 s typical (20 s
+worst), the first step at about 18-20 s, and the full plan at most 40 s typical."""
 
 
 def _serve(app: Any, port: int) -> tuple[uvicorn.Server, threading.Thread]:
@@ -92,7 +92,9 @@ def run_once(fixture: str, script: list[str], port: int, speed: float) -> dict[s
                     raw = len(response.content)
                     if job["status"] not in TERMINAL and raw > max_raw:
                         max_raw, max_wire = raw, response.num_bytes_downloaded
-                    if draft["ingredients"] is not None:
+                    if draft["ingredients"]:
+                        marks.setdefault("first_ingredient_s", now)
+                    if draft["ingredients_complete"]:
                         marks.setdefault("ingredients_s", now)
                     if draft["steps"]:
                         marks.setdefault("first_step_s", now)
@@ -142,18 +144,19 @@ def table(rows: list[dict[str, Any]]) -> str:
     for row in rows:
         groups.setdefault((row["fixture"], ",".join(row["script"])), []).append(row)
     lines = [
-        "| fixture | script | n | status | acquired s | ingredients s | first step s | "
-        "steps done s | done s | calls | in-flight poll gzip / raw bytes | "
-        "draft alone gzip / raw |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| fixture | script | n | status | acquired s | first ingredient s | "
+        "ingredients complete s | first step s | steps done s | done s | calls | "
+        "in-flight poll gzip / raw bytes | draft alone gzip / raw |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for (fixture, script), runs in groups.items():
         largest = max(runs, key=lambda r: r["max_inflight_poll_bytes_raw"])
         statuses = "/".join(sorted({f"{r['status']}" for r in runs}))
         lines.append(
             f"| {fixture} | {script} | {len(runs)} | {statuses} | "
-            f"{_median_max(runs, 'acquired_s')} | {_median_max(runs, 'ingredients_s')} | "
-            f"{_median_max(runs, 'first_step_s')} | {_median_max(runs, 'steps_complete_s')} | "
+            f"{_median_max(runs, 'acquired_s')} | {_median_max(runs, 'first_ingredient_s')} | "
+            f"{_median_max(runs, 'ingredients_s')} | {_median_max(runs, 'first_step_s')} | "
+            f"{_median_max(runs, 'steps_complete_s')} | "
             f"{_median_max(runs, 'done_s')} | {runs[0]['draft_calls']} | "
             f"{largest['max_inflight_poll_bytes_gzip']:,} / "
             f"{largest['max_inflight_poll_bytes_raw']:,} | "

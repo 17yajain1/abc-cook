@@ -2,8 +2,8 @@
 
 The extraction call streams a `NormalizedRecipe` as compact JSON. `DraftScanner` reads it a
 character at a time and surfaces two milestones before the response is complete: the
-`ingredients` array (once it closes) and each step's `text` (once its closing quote
-arrives). Nothing else is read, so no duration, attention, offset, serving count or total
+ingredient lines (each once its object closes) and each step's `text` (once its closing
+quote arrives). Nothing else is read, so no duration, attention, offset, serving count or total
 can reach the draft: it is a transcript of what the model has said so far, not a plan.
 
 It is a reader, not a validator. The finished response still goes through `parse`,
@@ -50,7 +50,7 @@ def _sanitize(value: Any) -> Any:
 class _Frame:
     """One open JSON container on the scanner's stack."""
 
-    __slots__ = ("duplicate", "expect_key", "has_text", "key", "kind", "role")
+    __slots__ = ("duplicate", "expect_key", "has_text", "is_item", "key", "kind", "role")
 
     def __init__(self, kind: str, role: str | None = None) -> None:
         self.kind = kind  # "{" or "["
@@ -59,14 +59,17 @@ class _Frame:
         self.expect_key = kind == "{"
         self.duplicate = False  # the current key already appeared at the top level
         self.has_text = False  # step objects only: the first `text` already counted
+        self.is_item = False  # an object directly inside the ingredients array
 
 
 class DraftScanner:
     """Character-level scanner. `feed(delta)` is O(len(delta)); total work is O(n).
 
     Attributes:
-        ingredients: `None` until the top-level `ingredients` array closes; then the valid
-            items (an invalid item is skipped; `[]` is "complete and empty").
+        ingredients: The valid ingredient items so far, each added once its object closes (an
+            invalid item is skipped without stopping later ones). Append-only.
+        ingredients_complete: The `ingredients` array has closed (`[]` plus complete is an
+            empty list).
         steps: Each top-level `steps` element's `text`, in order, once that string closes.
         steps_complete: The `steps` array has closed.
         broken: The text stopped being parseable as the expected shape. The scanner stops
@@ -75,7 +78,8 @@ class DraftScanner:
 
     def __init__(self) -> None:
         """Start before the first character."""
-        self.ingredients: list[NormalizedIngredient] | None = None
+        self.ingredients: list[NormalizedIngredient] = []
+        self.ingredients_complete = False
         self.steps: list[str] = []
         self.steps_complete = False
         self.broken = False
@@ -89,7 +93,7 @@ class DraftScanner:
         self._str_buf: list[str] | None = None  # collected only for keys and step texts
         self._str_kind: str | None = None  # "key" or "text" when collecting
         self._seen_top_keys: set[str] = set()
-        self._capture: list[str] | None = None  # raw text of the ingredients array
+        self._capture: list[str] | None = None  # raw text of the ingredient object being read
 
     def feed(self, delta: str) -> bool:
         """Consume `delta`. Returns True when a milestone changed.
@@ -190,15 +194,17 @@ class DraftScanner:
                 self._str_buf, self._str_kind = [], "text"
             return False
         if ch == "{":
-            stack.append(_Frame("{"))
+            frame = _Frame("{")
+            if len(stack) == 2 and top.kind == "[" and top.role == "ingredients":
+                frame.is_item = True
+                self._capture = ["{"]
+            stack.append(frame)
             return False
         if ch == "[":
             role = None
             if len(stack) == 1 and not top.duplicate and top.key in ("ingredients", "steps"):
                 role = top.key
             stack.append(_Frame("[", role))
-            if role == "ingredients":
-                self._capture = ["["]
             return False
         if ch == ",":
             if top.kind == "{":
@@ -232,24 +238,20 @@ class DraftScanner:
             self.steps_complete = True
             return True
         if frame.role == "ingredients":
-            return self._finish_ingredients()
+            self.ingredients_complete = True
+            return True
+        if frame.is_item:
+            return self._finish_ingredient()
         return False
 
-    def _finish_ingredients(self) -> bool:
+    def _finish_ingredient(self) -> bool:
         raw = "".join(self._capture or [])
         self._capture = None
-        try:
-            items = _sanitize(json.loads(raw))
-        except json.JSONDecodeError:
-            self.broken = True
+        if len(self.ingredients) >= MAX_DRAFT_INGREDIENTS:
             return False
-        valid: list[NormalizedIngredient] = []
-        for item in items if isinstance(items, list) else []:
-            if len(valid) >= MAX_DRAFT_INGREDIENTS:
-                break
-            try:
-                valid.append(NormalizedIngredient.model_validate(item))
-            except pydantic.ValidationError:
-                continue
-        self.ingredients = valid
+        try:
+            item = NormalizedIngredient.model_validate(_sanitize(json.loads(raw)))
+        except (json.JSONDecodeError, pydantic.ValidationError):
+            return False  # an unusable item is skipped; the ones after it still count
+        self.ingredients.append(item)
         return True

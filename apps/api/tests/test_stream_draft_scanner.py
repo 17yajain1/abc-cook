@@ -72,17 +72,16 @@ def test_every_truncation_boundary_is_a_prefix_of_the_final(name: str) -> None:
     final = _final(text)
     final_steps = [s.text for s in final.steps]
     scanner = DraftScanner()
-    seen_ingredients = False
     for ch in text:
         scanner.feed(ch)
         assert not scanner.broken
-        if scanner.ingredients is None:
-            assert not seen_ingredients
-        else:
-            seen_ingredients = True
-            assert scanner.ingredients == final.ingredients
+        # Both sections only ever grow, and what is shown is a prefix of the final list.
+        assert scanner.ingredients == final.ingredients[: len(scanner.ingredients)]
         assert scanner.steps == final_steps[: len(scanner.steps)]
+        if scanner.ingredients_complete:
+            assert scanner.ingredients == final.ingredients
     assert scanner.ingredients == final.ingredients
+    assert scanner.ingredients_complete
     assert scanner.steps == final_steps
     assert scanner.steps_complete
 
@@ -96,6 +95,7 @@ def test_chunking_does_not_change_the_milestones(name: str) -> None:
         sizes = [rng.randint(1, 40) for _ in range(len(text) // 3)]
         chunked = _feed_all(text, sizes)
         assert chunked.ingredients == reference.ingredients
+        assert chunked.ingredients_complete == reference.ingredients_complete
         assert chunked.steps == reference.steps
         assert chunked.steps_complete == reference.steps_complete
 
@@ -124,7 +124,6 @@ def test_raw_devanagari_and_emoji_survive() -> None:
         'करें"}]}'
     )
     scanner = _feed_all(text)
-    assert scanner.ingredients is not None
     assert scanner.ingredients[0].name == "लाल मिर्च \U0001f336"
     assert scanner.steps == ["तेल गरम करें"]
 
@@ -137,7 +136,6 @@ def test_names_with_quotes_and_backslashes() -> None:
         "steps": [{"text": 'Say "hi" \\ and ] } { go'}],
     }
     scanner = _feed_all(json.dumps(payload, ensure_ascii=False))
-    assert scanner.ingredients is not None
     assert scanner.ingredients[0].name == 'Chef\'s "special" \\ salt'
     assert scanner.steps == ['Say "hi" \\ and ] } { go']
     assert not scanner.broken
@@ -147,6 +145,7 @@ def test_brackets_inside_strings_do_not_confuse_the_scanner() -> None:
     text = '{"title":"a ] } [ {","ingredients":[],"steps":[{"text":"x [ y"},{"text":"z"}]}'
     scanner = _feed_all(text)
     assert scanner.ingredients == []
+    assert scanner.ingredients_complete
     assert scanner.steps == ["x [ y", "z"]
     assert scanner.steps_complete
 
@@ -177,6 +176,7 @@ def test_milestones_before_a_break_are_kept() -> None:
     scanner = _feed_all(text)
     assert scanner.broken
     assert scanner.ingredients == []
+    assert scanner.ingredients_complete
     assert scanner.steps == ["first", "second"]
     assert not scanner.steps_complete
     # A broken scanner stops advancing: nothing later can change the draft.
@@ -195,8 +195,13 @@ def test_invalid_unicode_escape_breaks_without_raising() -> None:
 def test_feed_reports_milestones() -> None:
     scanner = DraftScanner()
     assert scanner.feed('{"title":"t","ingredients":[') is False
-    assert scanner.feed('{"name":"a","qty":null,"unit":null,"prep_note":null}') is False
-    assert scanner.feed("]") is True  # ingredients closed
+    assert scanner.feed('{"name":"a","qty":null,"unit":null') is False  # item still open
+    assert scanner.ingredients == []
+    assert scanner.feed(',"prep_note":null}') is True  # the first ingredient closed
+    assert [i.name for i in scanner.ingredients] == ["a"]
+    assert scanner.ingredients_complete is False
+    assert scanner.feed("]") is True  # ingredients complete
+    assert scanner.ingredients_complete is True
     assert scanner.feed(',"steps":[{"text":"one"') is True  # the text string closed
     assert scanner.feed(',"label":"x"}') is False
     assert scanner.feed(',{"text":"two"}') is True
@@ -211,9 +216,30 @@ def test_text_closes_the_step_milestone_even_if_the_object_stays_open() -> None:
 
 
 def test_empty_and_missing_ingredients() -> None:
-    assert _feed_all('{"ingredients":[],"steps":[]}').ingredients == []
-    assert _feed_all('{"steps":[{"text":"a"}]}').ingredients is None
-    assert _feed_all('{"ingredients":[{"name":"a"').ingredients is None
+    empty = _feed_all('{"ingredients":[],"steps":[]}')
+    assert empty.ingredients == []
+    assert empty.ingredients_complete is True  # an empty list that the model finished
+    missing = _feed_all('{"steps":[{"text":"a"}]}')
+    assert missing.ingredients == []
+    assert missing.ingredients_complete is False  # never said anything
+    unclosed = _feed_all('{"ingredients":[{"name":"a"')
+    assert unclosed.ingredients == []
+    assert unclosed.ingredients_complete is False
+
+
+def test_a_partial_list_is_kept_item_by_item() -> None:
+    item = '{"name":"%s","qty":null,"unit":null,"prep_note":null}'
+    text = '{"ingredients":[' + item % "a" + "," + item % "b" + "," + (item % "c")[:20]
+    scanner = _feed_all(text)
+    assert [i.name for i in scanner.ingredients] == ["a", "b"]
+    assert scanner.ingredients_complete is False
+
+
+def test_an_invalid_item_does_not_stop_the_items_after_it() -> None:
+    text = '{"ingredients":[{"qty":"2"},{"name":"b","qty":null,"unit":null,"prep_note":null}'
+    scanner = _feed_all(text)
+    assert [i.name for i in scanner.ingredients] == ["b"]
+    assert not scanner.broken
 
 
 def test_invalid_ingredient_items_are_skipped() -> None:
@@ -222,8 +248,8 @@ def test_invalid_ingredient_items_are_skipped() -> None:
         '{"qty":"2"},"junk",{"name":"oil","qty":null,"unit":null,"prep_note":null}],"steps":[]}'
     )
     scanner = _feed_all(text)
-    assert scanner.ingredients is not None
     assert [i.name for i in scanner.ingredients] == ["salt", "oil"]
+    assert scanner.ingredients_complete
 
 
 def test_step_without_text_is_skipped_and_text_need_not_come_first() -> None:
@@ -249,7 +275,6 @@ def test_first_duplicate_top_level_key_wins() -> None:
         '"steps":[{"text":"two"}]}'
     )
     scanner = _feed_all(text)
-    assert scanner.ingredients is not None
     assert [i.name for i in scanner.ingredients] == ["a"]
     assert scanner.steps == ["one"]
 
@@ -261,7 +286,6 @@ def test_caps() -> None:
     ]
     steps = [{"text": f"s{n}"} for n in range(MAX_DRAFT_STEPS + 5)]
     scanner = _feed_all(json.dumps({"ingredients": ingredients, "steps": steps}))
-    assert scanner.ingredients is not None
     assert len(scanner.ingredients) == MAX_DRAFT_INGREDIENTS
     assert len(scanner.steps) == MAX_DRAFT_STEPS
     long_text = "x" * (MAX_STEP_TEXT_CHARS + 500)

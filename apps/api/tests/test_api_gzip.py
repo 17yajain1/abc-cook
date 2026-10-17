@@ -24,6 +24,7 @@ def _kadhi_draft() -> StreamedDraft:
     scanner.feed(original.recipe.model_dump_json())
     return StreamedDraft(
         ingredients=scanner.ingredients,
+        ingredients_complete=scanner.ingredients_complete,
         steps=[DraftStep(text=t) for t in scanner.steps],
         steps_complete=scanner.steps_complete,
     )

@@ -61,6 +61,7 @@ def test_clean_replay_streams_the_recipe_and_reaches_done() -> None:
     assert job.draft is not None
     assert job.draft.calls == 1
     assert job.draft.ingredients == recipe.ingredients
+    assert job.draft.ingredients_complete is True
     assert [s.text for s in job.draft.steps] == [s.text for s in recipe.steps]
     assert job.draft.steps_complete is True
 

@@ -2076,18 +2076,17 @@
           "type": "integer"
         },
         "ingredients": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/NormalizedIngredient"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "`None` until the model has finished the ingredients list."
+          "default": [],
+          "description": "Each ingredient once its line has closed, in the order the model wrote them. Append-only.",
+          "items": {
+            "$ref": "#/$defs/NormalizedIngredient"
+          },
+          "type": "array"
+        },
+        "ingredients_complete": {
+          "default": false,
+          "description": "The model has finished the ingredients list (`[]` plus this is an empty list).",
+          "type": "boolean"
         },
         "steps": {
           "default": [],
@@ -2103,9 +2102,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "ingredients"
-      ],
       "type": "object"
     },
     "WaitWindow": {

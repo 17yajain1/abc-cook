@@ -9,9 +9,10 @@ neither what the model is asked nor what comes back.
 A draft can never fail an import: a scanner or callback error is swallowed with one
 WARNING per call, and the real result is returned untouched.
 
-Fill, never replace (plan R3). Each section comes from the first call that produced it. A
-retry or an escalation writes new wording; swapping it in would rewrite rows under the
-cook's eyes, so a later call only fills a section that is still empty.
+Fill, never replace (plan R3). A section (ingredients, steps) belongs to the first call that
+produced any item for it. A retry or an escalation writes new wording; swapping it in would
+rewrite rows under the cook's eyes, so a later call only fills a section that is still empty.
+If call 1 stops partway, its partial list stays, with the section's `*_complete` false.
 """
 
 from __future__ import annotations
@@ -56,7 +57,9 @@ class DraftingAdapter:
         self._on_draft = on_draft
         self._graph_id = graph_id
         self._calls = 0
-        self._ingredients: list[NormalizedIngredient] | None = None
+        self._ingredients: list[NormalizedIngredient] = []
+        self._ingredients_call = 0  # the call that owns the ingredients; 0 = none yet
+        self._ingredients_complete = False
         self._steps: list[str] = []
         self._steps_call = 0  # the call that owns the steps; 0 = none yet
         self._steps_complete = False
@@ -122,13 +125,15 @@ class DraftingAdapter:
             )
         finally:
             _logger.info(
-                "draft: graph_id=%s call=%d first_content_s=%s ingredients_s=%s "
-                "first_step_s=%s steps=%d complete=%s broken=%s",
+                "draft: graph_id=%s call=%d first_content_s=%s first_ingredient_s=%s "
+                "ingredients_s=%s first_step_s=%s ingredients=%d steps=%d complete=%s broken=%s",
                 self._graph_id,
                 call,
                 _seconds(started, marks.get("first_content")),
+                _seconds(started, marks.get("first_ingredient")),
                 _seconds(started, marks.get("ingredients")),
                 _seconds(started, marks.get("first_step")),
+                len(scanner.ingredients),
                 len(scanner.steps),
                 scanner.steps_complete,
                 scanner.broken,
@@ -138,16 +143,30 @@ class DraftingAdapter:
     # -- draft state --------------------------------------------------------------------
 
     def _has_content(self) -> bool:
-        return self._ingredients is not None or bool(self._steps)
+        return bool(self._ingredients) or self._ingredients_complete or bool(self._steps)
 
     def _merge(self, call: int, scanner: DraftScanner, marks: dict[str, float]) -> bool:
         """Fold this call's milestones in, fill-never-replace. True when the draft changed."""
         changed = False
-        found = scanner.ingredients
-        if found is not None and (self._ingredients is None or (not self._ingredients and found)):
-            # Unfilled: nothing yet, or an earlier "no ingredients" (which shows as nothing).
-            self._ingredients = list(found)
-            marks.setdefault("ingredients", time.monotonic())
+        if scanner.ingredients and self._ingredients_call == 0:
+            self._ingredients_call = call  # the first call to produce an item owns the list
+            self._ingredients_complete = False  # an earlier "no ingredients" is superseded
+        if self._ingredients_call == call:
+            if len(scanner.ingredients) != len(self._ingredients):
+                if not self._ingredients:
+                    marks.setdefault("first_ingredient", time.monotonic())
+                self._ingredients = list(scanner.ingredients)
+                changed = True
+            if scanner.ingredients_complete and not self._ingredients_complete:
+                self._ingredients_complete = True
+                marks.setdefault("ingredients", time.monotonic())
+                changed = True
+        elif (
+            self._ingredients_call == 0
+            and scanner.ingredients_complete
+            and not self._ingredients_complete
+        ):
+            self._ingredients_complete = True  # the model said "no ingredients"
             changed = True
         if scanner.steps and self._steps_call == 0:
             self._steps_call = call  # the first call to produce a step owns the steps
@@ -166,6 +185,7 @@ class DraftingAdapter:
         """Report the draft. Returns True when the callback raised (updates then stop)."""
         draft = StreamedDraft(
             ingredients=self._ingredients,
+            ingredients_complete=self._ingredients_complete,
             steps=[DraftStep(text=t) for t in self._steps],
             steps_complete=self._steps_complete,
             calls=self._calls,

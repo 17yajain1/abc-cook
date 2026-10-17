@@ -89,8 +89,15 @@ class StreamedDraft(BaseModel):
     ingredient lines and each step's text. The validated plan replaces it, one tap away.
     """
 
-    ingredients: list[NormalizedIngredient] | None = Field(
-        description="`None` until the model has finished the ingredients list.",
+    ingredients: list[NormalizedIngredient] = Field(
+        default=[],
+        description="Each ingredient once its line has closed, in the order the model wrote "
+        "them. Append-only.",
+    )
+    ingredients_complete: bool = Field(
+        default=False,
+        description="The model has finished the ingredients list (`[]` plus this is an empty "
+        "list).",
     )
     steps: list[DraftStep] = Field(
         default=[], description="Each step once its text has closed. Append-only."

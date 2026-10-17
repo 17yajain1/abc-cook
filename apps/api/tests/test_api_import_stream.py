@@ -111,7 +111,8 @@ def test_draft_write_order_ingredients_then_steps_then_done() -> None:
     first = drafts[0]
     assert first.status == "extracting"
     assert first.draft is not None
-    assert first.draft.ingredients is not None
+    assert len(first.draft.ingredients) == 1  # the first ingredient, as soon as its line closes
+    assert first.draft.ingredients_complete is False
     assert first.draft.steps == []
     # Step counts only grow, one step at a time, and the list is declared complete last.
     counts = [len(w.draft.steps) for w in drafts if w.draft is not None]
@@ -147,7 +148,7 @@ def test_unparseable_retry_freezes_the_draft_from_call_one(
     assert fake.calls == 2
     assert job.draft is not None
     assert job.draft.calls == 2
-    assert job.draft.ingredients is not None
+    assert job.draft.ingredients
     assert job.draft.ingredients[0].name.startswith("a ")  # call 1's wording stays
     assert all(s.text.startswith("a ") for s in job.draft.steps)
     # The validated plan is call 2's, identical to a run that never retried.
@@ -190,7 +191,8 @@ def test_a_stalled_stream_fails_as_unavailable_and_keeps_its_draft(tmp_path: Pat
     assert job.result.failure == "unavailable"
     assert job.error == _UNAVAILABLE_SENTENCE
     assert job.draft is not None
-    assert [i.name for i in job.draft.ingredients or []] == ["Onion"]
+    assert [i.name for i in job.draft.ingredients] == ["Onion"]
+    assert job.draft.ingredients_complete is True
     assert [s.text for s in job.draft.steps] == ["Chop the onion"]
     assert list(tmp_path.rglob("*.json")) == []  # a failure is never cached
     assert store.writes[-1].draft is not None
@@ -227,7 +229,7 @@ def test_a_recipe_page_has_both_a_preview_and_a_draft() -> None:
     job, _ = _run(fake, acquire=_blog_acquire, url="https://kitchen.example/r")
     assert job.preview is not None
     assert job.draft is not None
-    assert job.draft.ingredients is not None
+    assert job.draft.ingredients
 
 
 def test_streaming_and_non_streaming_give_the_same_plan() -> None:
