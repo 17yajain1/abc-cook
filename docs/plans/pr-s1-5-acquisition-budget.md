@@ -329,4 +329,39 @@ Lessons that apply:
 
 ## Before/after results
 
-To be filled in at step 9.
+Measured 2026-10-17 with `apps/api/scripts/acquire_probe_bench.py` (INR 0, no LLM key read), one
+BEFORE run on origin/main code and one AFTER run on this branch, 8 s between acquisitions. Raw rows:
+`notes/pr-s1-5-acquisition/{before,after}.json`. No 429, bot page or non-Amazon 503 was seen by the
+bench itself.
+
+| URL | yt-dlp s (before / after) | acquired at s (after) | probed before -> after | abandoned (after) | probe stage s before -> after | slowest blog fetch s (before / after) | blog before | blog after | same? |
+|---|---|---|---|---|---|---|---|---|---|
+| kadhi-pakora | 2.4 / 3.8 | 4.2 | 1 -> 1 | 0 | 1.7 -> 1.8 | 1.7 / 1.8 | chefkunalkapur.com/recipe/kadi-pakoda | chefkunalkapur.com/recipe/kadi-pakoda | yes |
+| croissant | 2.9 / 3.1 | 3.2 | 0 -> 0 | 0 | 0.0 -> 0.0 | - / - | none | none | yes (none) |
+| pumpkin-pancakes | 3.0 / 4.1 | 4.3 | 1 -> 0 | 0 | 2.8 -> 0.0 | - / - | none | none | yes (none) |
+| vanilla-cupcakes | 3.3 / 3.6 | 3.8 | 4 -> 0 | 0 | 13.3 -> 0.0 | - / - | none | none | yes (none) |
+| chole-bhature | 2.7 / 3.3 | 3.5 | 13 -> 2 | 2 | 60.4 -> 8.0 | - / - | none | none | yes (none) |
+| captions-manual-en | 2.8 / 4.0 | 4.1 | 29 -> 2 | 2 | 96.3 -> 8.0 | - / - | none | none | yes (none) |
+| pizza-dough | 3.4 / 4.3 | 4.5 | 2 -> 1 | 0 | 4.2 -> 1.9 | 1.8 / 1.9 | natashaskitchen.com/pizza-dough-recipe | natashaskitchen.com/pizza-dough-recipe | yes |
+| blog-link-only | 3.1 / 3.6 | 3.7 | 1 -> 2 | 2 | 2.5 -> 8.0 | 2.5 / - | nehascookbook.com/rasgulla-recipe-spongy-rasgu | none | **NO** |
+| full-method | 2.7 / 3.4 | 3.6 | 1 -> 1 | 0 | 2.0 -> 2.2 | 2.0 / 2.2 | chefkunalkapur.com/recipe/dal-makhni | chefkunalkapur.com/recipe/dal-makhni | yes |
+| captions-auto-en-long | 3.1 / 4.2 | 4.3 | 3 -> 1 | 0 | 7.4 -> 2.7 | - / - | none | none | yes (none) |
+
+**Result: not a pass.** One row that found a blog before did not find it after: blog-link-only
+(rasgulla). The `bit.ly` link took 2.5 s in the BEFORE run, and both links timed out at the 4 s per-link
+cap in the AFTER run (`bit.ly`, then the `nehascookbook.com` homepage; stage = budget). A follow-up
+diagnostic fetch outside the bench (two requests, 6 s apart, unbounded) put the same `bit.ly` -> blog fetch
+at 3.3 s and the homepage at 6.2 s. nehascookbook.com serves ~480-650 KB pages slowly, so a 4 s per-link
+cap sits right on its normal latency. This is the "blog-finding fetch took more than ~2.5 s" case; the
+constants are unchanged pending the owner's decision.
+
+Other findings from the same runs:
+
+- `acquired` at 3.2-4.5 s on every URL, set by yt-dlp (3.1-4.3 s), as planned.
+- chole 60.4 -> 8.0 s, captions-manual-en 96.3 -> 8.0 s, vanilla 13.3 -> 0 s. In both budget cases the two
+  `goo.gl` links consumed the stage (dead host: ConnectTimeout), so 2 workers were abandoned each.
+- YouTube's caption endpoint began answering **429** between the two runs: every AFTER row has
+  `has_transcript=False` (BEFORE: True for all 9 with a track) and ~7 s of caption retry time. A direct,
+  single `httpx.get` of kadhi's caption URL confirmed 429. This is the existing transient-failure path in
+  `transcript.py`, unrelated to this change, but it means the AFTER run's `total_s` is not comparable
+  to BEFORE's, and no further YouTube traffic was generated after seeing it.
