@@ -664,3 +664,48 @@ The owner merges. No deploy.
 - The headless Playwright/CDP driver uses its own browser or tab. Port 9222 is the owner's. Don't
   kill all node processes: stop only the PIDs you started.
 - Never commit to main. Branch → push → PR → the owner approves and merges.
+
+## S2a results (replay, INR 0), 2026-10-17
+
+`scripts/stream_draft_bench.py`, real FastAPI app + replay adapter + stand-in acquire (metadata at
+3.5 s, acquire returns at 6.0 s), polled at 1.2 s. n=3 per clean fixture. Median / max in seconds
+since the POST. Raw rows: `notes/pr-s2-streamed-draft/replay.json`.
+
+**The replay pace is calibrated from ONE measured run (REPORT T6, kadhi, n=1).** Every fixture
+streams at kadhi's characters per second. These are timings of the plumbing at that pace, not
+measurements of any recipe.
+
+| fixture | ingredients (target <= 15) | first step (target ~18-20) | steps done | full plan (target <= 40) | status |
+|---|---|---|---|---|---|
+| kadhi-pakora | 19.3 / 19.4 NOT met | 19.3 / 19.4 met | 31.4 / 31.5 | 32.7 / 32.7 met | done |
+| croissant | 15.7 / 15.7 NOT met (0.7 s over) | 15.7 / 15.7 met | 31.4 / 31.4 | 33.8 / 33.8 met | done |
+| pumpkin-pancakes | 16.9 / 16.9 NOT met | 16.9 / 16.9 met | 24.1 / 24.2 | 32.6 / 32.6 met (includes the stand-in 8 s repair) | done |
+| vanilla-cupcakes | 15.7 / 15.7 NOT met (0.7 s over) | 15.7 / 15.7 met | 19.3 / 20.5 | 20.5 / 20.6 met | done |
+| chole-bhature-low | 20.5 / 20.6 NOT met | 20.5 / 20.6 about | 38.6 / 38.7 | 48.5 / 48.5 NOT met (degraded, stand-in repair absent) | done (degraded) |
+| kadhi, `invalid_json,ok` (retry) | 19.3 | 19.3 | n/a (call 1 cut) | 53.2 | done, draft frozen from call 1, `calls` = 2 |
+| kadhi, `stall_after:3000` | 19.3 | 19.3 | n/a | failed at 79.7 | failed `unavailable`, draft kept |
+
+Today (S1/S1.5, no blog): nothing readable until the plan, ~33-37 s.
+
+Findings:
+
+- **Ingredients miss the 15 s target in every replay.** The ingredient list closes 9.2-13.7 s into
+  the extraction call (kadhi 12.3 s, 30 items), and the call starts after the 6 s acquire. The
+  target holds only measured from the start of the call, not from paste. The scanner publishes
+  the list when its array closes (section 3.1.5), so a 30-item list is visible at ~19 s.
+- If the first ingredient should appear earlier, the draft would have to publish items as they
+  close (first item at ~8.2 s in the call). That changes `StreamedDraft.ingredients` from
+  `None`-until-complete to append-only, which S2b relies on (section 3.3). Not done; owner decision.
+- With a 14 s acquire (the chole probe at its 10 s cap, FGC-20), add 8 s to every figure above:
+  kadhi ingredients ~27 s, chole ~28.5 s. Arithmetic, not a run.
+- The first step arrives in the same poll as the ingredients (it closes within ~0.3 s of them).
+- Stall: failure shows at 79.7 s = 6 s acquire + 7.7 s to first token + ~5 s streamed + the 60 s idle bound.
+
+Poll payload (A4), largest in-flight draft-bearing poll, gzip as sent / raw JSON:
+
+| fixture | poll gzip / raw | draft alone gzip / raw |
+|---|---|---|
+| kadhi-pakora | 3,103 / 9,923 | 1,123 / 4,096 |
+| chole-bhature-low | 2,971 / 9,349 | 2,035 / 6,868 |
+
+(The terminal poll also carries the whole plan.)
