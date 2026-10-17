@@ -251,3 +251,15 @@ first, other common ones later. What to track:
   and scaling keep the source's system and never silently convert. Input for R3 and R4.
 - **Next corpus round:** a second Hindi video (after the FGC-1 fix) and one long English video. A
   European-language video comes later, once Europe is in scope.
+
+### FGC-18 (before M5): YouTube caption 429 silently drops the transcript
+
+Seen 2026-10-17 during the S1.5 bench: YouTube's caption endpoint answered 429, `transcript.fetch_segments`
+retried (about 7 s in total), then gave up. The import continues with no transcript and the cook is not
+told; the only trace is an `acquisition_warnings` entry that nothing shows. Every AFTER row with a caption
+track lost its transcript this way.
+
+Decide before M5 whether this should surface as degraded/unavailable (the cook is told the recipe was read
+without the spoken method), or retry later. Related: live benches burn YouTube quota, and the 429 appeared
+between two back-to-back bench runs. Prefer probe-only runs (no yt-dlp, no captions) for anything that does
+not need YouTube.

@@ -7,7 +7,8 @@ Status: plan approved 2026-10-17 with the owner's changes folded in. Branch
 Owner decisions folded in:
 
 - No link ranking; description order is kept.
-- 4 s per link and 8 s per stage, with no minimising from n=1.
+- 4 s per link and 8 s per stage, with no minimising from n=1. **Superseded 2026-10-17: 8 s per link and
+  10 s per stage** (see Before/after results).
 - One module-level bounded executor, with `abandoned=` in the probe log line.
 - The BEFORE run fetches Amazon links, records their outcome and carries on.
 - The 5 s pacing applies between acquisitions.
@@ -140,7 +141,8 @@ Outcome:
   - Because the executor is bounded, stragglers can briefly occupy workers. A new submission then
     waits in the queue, and that wait counts against the stage budget, so the cap still holds.
   - `abandoned=` in the probe line makes this visible.
-- **Numbers (owner decision): 4.0 s per link, 8.0 s per stage.**
+- **Numbers (owner decision, revised 2026-10-17 after the AFTER bench): 8.0 s per link, 10.0 s per stage.**
+  The first decision was 4.0 / 8.0; it lost the rasgulla blog, whose fetch takes 2.5-3.3 s and up to 6.8 s.
   - No minimising from n=1 data.
   - Raise the per-link value only if the AFTER run shows a fetch that found a blog taking more than
     about 2.5 s. Report that at STOP A rather than changing it silently.
@@ -334,20 +336,20 @@ BEFORE run on origin/main code and one AFTER run on this branch, 8 s between acq
 `notes/pr-s1-5-acquisition/{before,after}.json`. No 429, bot page or non-Amazon 503 was seen by the
 bench itself.
 
-| URL | yt-dlp s (before / after) | acquired at s (after) | probed before -> after | abandoned (after) | probe stage s before -> after | slowest blog fetch s (before / after) | blog before | blog after | same? |
-|---|---|---|---|---|---|---|---|---|---|
-| kadhi-pakora | 2.4 / 3.8 | 4.2 | 1 -> 1 | 0 | 1.7 -> 1.8 | 1.7 / 1.8 | chefkunalkapur.com/recipe/kadi-pakoda | chefkunalkapur.com/recipe/kadi-pakoda | yes |
-| croissant | 2.9 / 3.1 | 3.2 | 0 -> 0 | 0 | 0.0 -> 0.0 | - / - | none | none | yes (none) |
-| pumpkin-pancakes | 3.0 / 4.1 | 4.3 | 1 -> 0 | 0 | 2.8 -> 0.0 | - / - | none | none | yes (none) |
-| vanilla-cupcakes | 3.3 / 3.6 | 3.8 | 4 -> 0 | 0 | 13.3 -> 0.0 | - / - | none | none | yes (none) |
-| chole-bhature | 2.7 / 3.3 | 3.5 | 13 -> 2 | 2 | 60.4 -> 8.0 | - / - | none | none | yes (none) |
-| captions-manual-en | 2.8 / 4.0 | 4.1 | 29 -> 2 | 2 | 96.3 -> 8.0 | - / - | none | none | yes (none) |
-| pizza-dough | 3.4 / 4.3 | 4.5 | 2 -> 1 | 0 | 4.2 -> 1.9 | 1.8 / 1.9 | natashaskitchen.com/pizza-dough-recipe | natashaskitchen.com/pizza-dough-recipe | yes |
-| blog-link-only | 3.1 / 3.6 | 3.7 | 1 -> 2 | 2 | 2.5 -> 8.0 | 2.5 / - | nehascookbook.com/rasgulla-recipe-spongy-rasgu | none | **NO** |
-| full-method | 2.7 / 3.4 | 3.6 | 1 -> 1 | 0 | 2.0 -> 2.2 | 2.0 / 2.2 | chefkunalkapur.com/recipe/dal-makhni | chefkunalkapur.com/recipe/dal-makhni | yes |
-| captions-auto-en-long | 3.1 / 4.2 | 4.3 | 3 -> 1 | 0 | 7.4 -> 2.7 | - / - | none | none | yes (none) |
+| URL | yt-dlp s (before / after) | acquired at s (after) | probed before -> after | abandoned (after) | probe stage s before -> after | slowest blog fetch s (before / after) | blog before | blog after | same? | probe-only re-run (8/10) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| kadhi-pakora | 2.4 / 3.8 | 4.2 | 1 -> 1 | 0 | 1.7 -> 1.8 | 1.7 / 1.8 | chefkunalkapur.com/recipe/kadi-pakoda | chefkunalkapur.com/recipe/kadi-pakoda | yes | 2.0 s, found, chefkunalkapur.com/recipe/kadi-pakoda |
+| croissant | 2.9 / 3.1 | 3.2 | 0 -> 0 | 0 | 0.0 -> 0.0 | - / - | none | none | yes (none) | 0.0 s, exhausted, none |
+| pumpkin-pancakes | 3.0 / 4.1 | 4.3 | 1 -> 0 | 0 | 2.8 -> 0.0 | - / - | none | none | yes (none) | 0.0 s, exhausted, none |
+| vanilla-cupcakes | 3.3 / 3.6 | 3.8 | 4 -> 0 | 0 | 13.3 -> 0.0 | - / - | none | none | yes (none) | 0.0 s, exhausted, none |
+| chole-bhature | 2.7 / 3.3 | 3.5 | 13 -> 2 | 2 | 60.4 -> 8.0 | - / - | none | none | yes (none) | 10.0 s, exhausted, none |
+| captions-manual-en | 2.8 / 4.0 | 4.1 | 29 -> 2 | 2 | 96.3 -> 8.0 | - / - | none | none | yes (none) | 10.0 s, budget, none |
+| pizza-dough | 3.4 / 4.3 | 4.5 | 2 -> 1 | 0 | 4.2 -> 1.9 | 1.8 / 1.9 | natashaskitchen.com/pizza-dough-recipe | natashaskitchen.com/pizza-dough-recipe | yes | 1.7 s, found, natashaskitchen.com/pizza-dough-recipe |
+| blog-link-only | 3.1 / 3.6 | 3.7 | 1 -> 2 | 2 | 2.5 -> 8.0 | 2.5 / - | nehascookbook.com/rasgulla-recipe-spongy-rasgu | none | **NO** | 3.1 s, found, nehascookbook.com/rasgulla-recipe-spon<br>2.5 s, found, nehascookbook.com/rasgulla-recipe-spon<br>6.8 s, found, nehascookbook.com/rasgulla-recipe-spon |
+| full-method | 2.7 / 3.4 | 3.6 | 1 -> 1 | 0 | 2.0 -> 2.2 | 2.0 / 2.2 | chefkunalkapur.com/recipe/dal-makhni | chefkunalkapur.com/recipe/dal-makhni | yes | 2.0 s, found, chefkunalkapur.com/recipe/dal-makhni |
+| captions-auto-en-long | 3.1 / 4.2 | 4.3 | 3 -> 1 | 0 | 7.4 -> 2.7 | - / - | none | none | yes (none) | 4.5 s, exhausted, none |
 
-**Result: not a pass.** One row that found a blog before did not find it after: blog-link-only
+**Result of the first AFTER run (4 s / 8 s): not a pass.** One row that found a blog before did not find it after: blog-link-only
 (rasgulla). The `bit.ly` link took 2.5 s in the BEFORE run, and both links timed out at the 4 s per-link
 cap in the AFTER run (`bit.ly`, then the `nehascookbook.com` homepage; stage = budget). A follow-up
 diagnostic fetch outside the bench (two requests, 6 s apart, unbounded) put the same `bit.ly` -> blog fetch
@@ -365,3 +367,22 @@ Other findings from the same runs:
   single `httpx.get` of kadhi's caption URL confirmed 429. This is the existing transient-failure path in
   `transcript.py`, unrelated to this change, but it means the AFTER run's `total_s` is not comparable
   to BEFORE's, and no further YouTube traffic was generated after seeing it.
+
+### Revised caps and probe-only re-run (8 s per link, 10 s per stage)
+
+Owner decision 2026-10-17: per-link 8.0 s, stage 10.0 s (`pipeline.LINK_TIMEOUT_S` / `PROBE_BUDGET_S`).
+The last column of the table above is a probe-only re-run (`apps/api/scripts/probe_only_rerun.py`): each
+row's links from `before.json`, filtered by `find_candidate_links`, through `probe_links` at the new caps.
+No yt-dlp, no captions, so **no YouTube traffic**. Rasgulla ran 3 times, at least 8 s apart; nothing else
+repeated; no retries; no stop condition fired.
+
+- **Rasgulla found nehascookbook.com in all 3 runs** (3.1 s, 2.5 s, 6.8 s). Run 3 shows the site's
+  spread: 6.8 s would have failed at the old 4 s cap and passes at 8 s.
+- Every row that found a blog before finds the same blog (kadhi, pizza-dough, full-method, rasgulla).
+- chole and captions-manual-en still end at the stage cap (10 s), where the two dead `goo.gl` links
+  consume it, down from 60 s and 96 s.
+
+**Caveat on the AFTER columns above.** `has_transcript` (True -> False on every row with a track) and the
+~7 s excess in `total_s` come from YouTube answering the caption endpoint with 429 between the two runs,
+not from this change (FGC-18). Only the probe columns, `acquired at` and the blog outcomes are
+comparable. The 4 s / 8 s table above is kept as the record of that run.
