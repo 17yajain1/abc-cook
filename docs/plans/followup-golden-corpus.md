@@ -137,6 +137,63 @@ failure). Fix: capture the raw text (and `finish_reason`) on a parse failure bef
 
 - Evidence: `notes/investigate-extraction-speed/REPORT.md` (T2, rows with 2 calls).
 
+### FGC-14 (P1): acquisition budget (S1.5, after S1, before S2)
+
+The description's blog links are probed one at a time (`acquire/pipeline.py` loops `find_candidate_links`
+and calls `fetch_recipe` on each), and extraction waits for the loop. On the phone (PR-S1 measuring,
+2026-10-17, invalid-key API, so no extraction cost) the `acquire` stage took:
+
+| Video | acquire stage | `fetch_recipe` calls | ended "redirected to excluded host" |
+|---|---|---|---|
+| chole (FU1ZVLMbWjA) | 54-56 s (3 runs) | 13 | 10 |
+| captions-manual-en (pxpJmXq2w7c) | 78-80 s (2 runs) | 29-32 | 25-26 |
+| vanilla-cupcakes (YP8a6ugKQ6Y) | 12 s | 4 | 0 |
+| kadhi, croissant, pumpkin, shorts | 2.6-5 s | few | n/a |
+
+That is about 2.4-4 s per sequential fetch, with no cap on the number of links. The job reports
+`acquired` and moves to extraction only when the whole stage returns, so the cook sees no description
+for up to 79 s, and a real import would add that to its extraction time.
+
+**Why this disagrees with the investigation's "about 3 s".** Two different things are being compared:
+
+- The investigation's about 3.0-4.3 s (n=3) is **yt-dlp `extract_info` only** (REPORT T8, "Metadata
+  preview from yt-dlp info"). It excludes the blog probing.
+- REPORT T8 never measured a link-heavy description. The script ran 3 of 12 yt-dlp calls, stopped on an
+  HTTP 503 from `amzn.to` at the first blog link of the 3rd video (pumpkin), and states "Chole's
+  acquisition time is unmeasured". The one full row (pizza-dough) had 28 candidate links but hit a recipe
+  on the 2nd, so its blog time was only 4.0 s.
+- So the chole figure here (54 s) is the first measurement of a description whose links are all affiliate
+  or shortener wrappers that never lead to a recipe: every one is fetched, redirected and only then
+  rejected.
+
+**Mechanism (from `acquire/blog.py`).** Shorteners are deliberately not excluded before fetching
+(`find_candidate_links`: "resolve first; excluded-host check happens post-redirect"), and wrappers such as
+`aip.urlgeni.us` are not in `_EXCLUDED_HOSTS` either, so each costs a full request (10 s timeout, up to 5
+redirects) before the "redirected to excluded host" verdict.
+
+Fix candidates (cheapest first; none changes the model's input for a recipe that has a blog hit):
+
+1. **Report `acquired` right after yt-dlp**, before the blog loop, so the title and description show at
+   about 3-4 s regardless of links. Needs a two-phase acquire callback; `import_pipeline.py` and the
+   route's `acquired` wrapper are the touch points.
+2. **Skip known affiliate, shortener-wrapper and shop hosts before fetching** (geniuslink, amzn.to,
+   amzlink.to and similar), keeping the bit.ly/b.link/tinyurl resolve-first rule only where a recipe blog
+   is plausible. Decide the list from the corpus, not by guess.
+3. **A total blog-probe budget plus a per-link timeout** (for example stop probing after N links or T
+   seconds, and a per-link timeout well under 10 s), so a link-heavy description cannot hold extraction
+   for more than a few seconds.
+
+Any of these changes `acquire/` (not covered by the `POSTPROCESS_VERSION` guard, per its docstring), but
+(2) and (3) change which blog is found, so they need the corpus replay and a check that no recipe that
+today finds its blog stops finding it.
+
+- Evidence: the phone runs in `abc-cook-s1-shots/phone/timing-*.json` (outside the repo) and the API log
+  lines `finished ... stages={'acquire': ...}`; the investigation is
+  `notes/investigate-extraction-speed/REPORT.md` (T8).
+- Cost: ₹0 to investigate.
+- First deploy (M5): deploy the API before the web, and check `/health` `postprocess_version` matches the
+  web's stamp before switching traffic.
+
 ### Competitor note: ReciMe web (black-box HAR, 2026-10-16)
 
 - Fresh imports take 8.5-13.6 s server-side and 12.6-17.2 s to the recipe page.
