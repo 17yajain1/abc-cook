@@ -14,7 +14,9 @@ import type { IngredientListGroup } from '../plan/ingredientGroups'
  *
  * The quantity column is the model's own text, `qty` then `unit` (`joinQtyUnit`: a unit the
  * quantity already ends with is not repeated): no parsing, no `formatQty`, no scaling.
- * This screen sits before the scheduler.
+ * This screen sits before the scheduler. It is deliberately not routed through
+ * `scaleQuantity`: it renders `NormalizedIngredient` before `graph.py` builds a `qty_amount`,
+ * and the draft never scales.
  */
 export function draftIngredientGroups(
   ingredients: readonly NormalizedIngredient[],

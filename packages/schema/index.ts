@@ -122,6 +122,10 @@ export interface Ingredient {
    */
   qty: number | null;
   /**
+   * Structured form of `qty_text`, set only when it parsed with certainty. Null means the amount cannot be scaled (vague, a second amount, a package size, ...) and is shown as written.
+   */
+  qty_amount?: QtyAmount | null;
+  /**
    * Quantity as the source stated it, e.g. "1 1/4", "2-3", "a pinch". Display fallback when `qty` cannot be parsed as a single number, and the honest form of ranges and vague amounts that `qty` would otherwise lose.
    */
   qty_text?: string | null;
@@ -129,6 +133,34 @@ export interface Ingredient {
    * Unit, e.g. "medium", "g", "tbsp".
    */
   unit: string | null;
+}
+/**
+ * A quantity parsed from the source text, structured so it can be multiplied.
+ *
+ * Present only when the parser (`abc_cook.extract.quantity.parse_amount`) was certain; the
+ * line then reads back as `prefix + number(s) + rest`. Everything it is not certain about
+ * has no `QtyAmount`, and the line renders as the source wrote it.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "QtyAmount".
+ */
+export interface QtyAmount {
+  /**
+   * The high end of a range (always above `low`); null for an exact amount.
+   */
+  high?: number | null;
+  /**
+   * The number, or the low end of a range.
+   */
+  low: number;
+  /**
+   * An approximate word kept verbatim, e.g. "about ".
+   */
+  prefix?: string;
+  /**
+   * The source text after the number(s), verbatim, e.g. " cup", "g", " pieces".
+   */
+  rest?: string;
 }
 /**
  * One unit of work in the cooking graph.

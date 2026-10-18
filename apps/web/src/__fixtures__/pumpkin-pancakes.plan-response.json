@@ -17,6 +17,7 @@
         "name": "pumpkin",
         "qty": 15.0,
         "qty_text": "15",
+        "qty_amount": null,
         "unit": "oz can",
         "prep_note": null,
         "group": null,
@@ -27,6 +28,12 @@
         "name": "eggs",
         "qty": 2.0,
         "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": null,
         "prep_note": null,
         "group": null,
@@ -37,6 +44,12 @@
         "name": "salt",
         "qty": 0.5,
         "qty_text": "1/2",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -47,6 +60,12 @@
         "name": "pumpkin pie spice",
         "qty": 0.5,
         "qty_text": "1/2",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -57,6 +76,12 @@
         "name": "cinnamon",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -67,6 +92,12 @@
         "name": "brown sugar",
         "qty": 0.25,
         "qty_text": "1/4",
+        "qty_amount": {
+          "low": 0.25,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": null,
         "group": null,
@@ -77,6 +108,12 @@
         "name": "vanilla",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -87,6 +124,12 @@
         "name": "baking powder",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -97,6 +140,12 @@
         "name": "baking soda",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": null,
@@ -107,6 +156,12 @@
         "name": "oil",
         "qty": 0.25,
         "qty_text": "1/4",
+        "qty_amount": {
+          "low": 0.25,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": null,
         "group": null,
@@ -117,6 +172,12 @@
         "name": "flour",
         "qty": 2.5,
         "qty_text": "2 1/2",
+        "qty_amount": {
+          "low": 2.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cups",
         "prep_note": null,
         "group": null,
@@ -127,6 +188,12 @@
         "name": "milk",
         "qty": 1.5,
         "qty_text": "1 1/2",
+        "qty_amount": {
+          "low": 1.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cups",
         "prep_note": null,
         "group": null,
@@ -137,6 +204,7 @@
         "name": "butter",
         "qty": null,
         "qty_text": null,
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": null,
@@ -147,6 +215,7 @@
         "name": "maple syrup",
         "qty": null,
         "qty_text": null,
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": null,
@@ -157,6 +226,7 @@
         "name": "chocolate chips",
         "qty": null,
         "qty_text": null,
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": null,
@@ -167,6 +237,7 @@
         "name": "chocolate syrup",
         "qty": null,
         "qty_text": null,
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": null,
@@ -177,6 +248,7 @@
         "name": "homemade Cool Whip",
         "qty": null,
         "qty_text": null,
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": null,

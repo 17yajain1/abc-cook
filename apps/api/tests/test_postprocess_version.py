@@ -40,6 +40,7 @@ _EXTRACT_MODULES = (
     "provenance.py",
     "import_pipeline.py",
     "postprocess.py",
+    "quantity.py",
 )
 
 

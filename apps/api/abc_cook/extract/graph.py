@@ -38,6 +38,7 @@ from collections import Counter
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
+from abc_cook.extract.quantity import VULGAR_FRACTIONS, parse_amount
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
 from abc_cook.schema.node import Attention, Node, NodeKind
@@ -233,17 +234,10 @@ def _clean_cue(cue: str | None) -> str | None:
     return stripped or None
 
 
-_QTY_VULGAR_FRACTIONS = {
-    "¼": 0.25, "½": 0.5, "¾": 0.75,
-    "⅓": 1 / 3, "⅔": 2 / 3,
-    "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8,
-    "⅙": 1 / 6, "⅚": 5 / 6,
-    "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
-}
 _QTY_MIXED_FRACTION_RE = re.compile(r"^(\d+)\s*[-\s]\s*(\d+)\s*/\s*(\d+)$")
 _QTY_PLAIN_FRACTION_RE = re.compile(r"^(\d+)\s*/\s*(\d+)$")
 _QTY_DECIMAL_RE = re.compile(r"^\d+(?:\.\d+)?$")
-_QTY_VULGAR_RE = re.compile(rf"^(\d+)?\s*([{''.join(_QTY_VULGAR_FRACTIONS)}])$")
+_QTY_VULGAR_RE = re.compile(rf"^(\d+)?\s*([{''.join(VULGAR_FRACTIONS)}])$")
 _RANGE_DASHES = chr(0x2013) + chr(0x2014)  # en dash, em dash -- ASCII-safe in source (RUF001)
 _QTY_RANGE_RE = re.compile(rf"^(\d+(?:\.\d+)?)\s*(?:-|[{_RANGE_DASHES}]|to)\s*(\d+(?:\.\d+)?)$")
 
@@ -272,7 +266,7 @@ def _parse_qty(qty: str | None) -> float | None:
     if match:
         whole_text, frac_char = match.groups()
         whole = int(whole_text) if whole_text else 0
-        return whole + _QTY_VULGAR_FRACTIONS[frac_char]
+        return whole + VULGAR_FRACTIONS[frac_char]
 
     match = _QTY_PLAIN_FRACTION_RE.match(text)
     if match:
@@ -1778,6 +1772,7 @@ def build_graph(
                 name=norm_ing.name,
                 qty=_parse_qty(norm_ing.qty),
                 qty_text=norm_ing.qty,
+                qty_amount=parse_amount(norm_ing.qty, norm_ing.unit),
                 unit=norm_ing.unit,
                 prep_note=norm_ing.prep_note,
                 group=norm_ing.group,

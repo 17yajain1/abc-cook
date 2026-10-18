@@ -1,6 +1,7 @@
 import type { Ingredient } from '@abc-cook/schema'
 
 import type { CookingNodeInfo } from '@/cooking/types'
+import { scaleQuantity } from '@/lib/scaleQuantity'
 
 /**
  * One phrase per consumed ingredient, in `consumes` order: `ing_*` ids only (`comp_*`
@@ -8,12 +9,16 @@ import type { CookingNodeInfo } from '@/cooking/types'
  * `qty unit name` lower-cased. The step screen's F2 ingredient chips show these
  * directly; `quantityLine` is their join, so the two can never disagree.
  *
+ * `factor` (chosen/original servings, default 1) goes through `scaleQuantity`; no caller passes
+ * one yet, and at 1 the phrase is the source's own text.
+ *
  * `prep_note` composition and the single-qty-split-across-nodes case are open items
  * (§8 — "still needs the schema answer") and are intentionally not attempted here.
  */
 export function quantityPhrases(
   node: CookingNodeInfo,
   ingredientsById: ReadonlyMap<string, Ingredient>,
+  factor = 1,
 ): string[] {
   // Identical phrases collapse ("salt to taste · salt to taste" when one node consumes
   // two ids for the same ingredient). Same name with *different* amounts is left alone:
@@ -24,7 +29,7 @@ export function quantityPhrases(
         .filter((id) => id.startsWith('ing_'))
         .map((id) => ingredientsById.get(id))
         .filter((ingredient): ingredient is Ingredient => ingredient != null)
-        .map(quantityPhrase),
+        .map((ingredient) => quantityPhrase(ingredient, factor)),
     ),
   ]
 }
@@ -37,16 +42,18 @@ export function quantityPhrases(
 export function quantityLine(
   node: CookingNodeInfo,
   ingredientsById: ReadonlyMap<string, Ingredient>,
+  factor = 1,
 ): string | null {
-  const phrases = quantityPhrases(node, ingredientsById)
+  const phrases = quantityPhrases(node, ingredientsById, factor)
   return phrases.length > 0 ? phrases.join(' · ') : null
 }
 
-function quantityPhrase(ingredient: Ingredient): string {
+function quantityPhrase(ingredient: Ingredient, factor: number): string {
   const name = ingredient.name.toLowerCase()
   if (ingredient.qty == null && ingredient.unit === 'to taste') return `${name} to taste`
 
-  let qty = ingredient.qty_text ?? (ingredient.qty != null ? String(ingredient.qty) : null)
+  let qty =
+    scaleQuantity(ingredient, factor).text ?? (ingredient.qty != null ? String(ingredient.qty) : null)
   // The source already put the amount in the name ("A handful of fresh coriander" with
   // qty_text "a handful") — print it once, not "a handful a handful of …".
   if (qty != null && startsWithWords(name, qty.toLowerCase())) qty = null

@@ -643,6 +643,18 @@
           ],
           "description": "Quantity, or null when the recipe gives none."
         },
+        "qty_amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QtyAmount"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured form of `qty_text`, set only when it parsed with certainty. Null means the amount cannot be scaled (vague, a second amount, a package size, ...) and is shown as written."
+        },
         "qty_text": {
           "anyOf": [
             {
@@ -1483,6 +1495,42 @@
       },
       "required": [
         "lines"
+      ],
+      "type": "object"
+    },
+    "QtyAmount": {
+      "description": "A quantity parsed from the source text, structured so it can be multiplied.\n\nPresent only when the parser (`abc_cook.extract.quantity.parse_amount`) was certain; the\nline then reads back as `prefix + number(s) + rest`. Everything it is not certain about\nhas no `QtyAmount`, and the line renders as the source wrote it.",
+      "properties": {
+        "high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The high end of a range (always above `low`); null for an exact amount."
+        },
+        "low": {
+          "description": "The number, or the low end of a range.",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "prefix": {
+          "default": "",
+          "description": "An approximate word kept verbatim, e.g. \"about \".",
+          "type": "string"
+        },
+        "rest": {
+          "default": "",
+          "description": "The source text after the number(s), verbatim, e.g. \" cup\", \"g\", \" pieces\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "low"
       ],
       "type": "object"
     },

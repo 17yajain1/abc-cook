@@ -17,6 +17,12 @@
         "name": "Water",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": null,
         "group": null,

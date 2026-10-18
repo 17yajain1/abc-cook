@@ -31,11 +31,30 @@ class Ingredient(BaseModel):
     id: str                          # "ing_onion"
     name: str                        # "Onion"
     qty: float | None                # 2
+    qty_text: str | None = None      # the source's own text: "1 1/2", "2-3", "a pinch"
+    qty_amount: QtyAmount | None = None   # structured qty_text; None = not scalable
     unit: str | None                 # "medium", "g", "tbsp"
     prep_note: str | None            # "finely chopped" — a hint that a prep node exists
     group: str | None                # "For the masala" / "For garnish"
     optional: bool = False
+
+
+class QtyAmount(BaseModel):
+    low: float                       # > 0; the number, or a range's low end
+    high: float | None = None        # a range's high end (> low); None = exact
+    prefix: str = ""                 # approximate word kept verbatim: "about "
+    rest: str = ""                   # source text after the number(s), verbatim: " cup", "g"
 ```
+
+`qty_amount` is parsed in the backend by `extract/quantity.py:parse_amount(qty_text, unit)` during
+`build_graph`, never by the LLM and never by the frontend. The grammar is
+`[prefix] N [sep N] rest`. **`None` means "not scalable, show `qty_text` as written"**, and the parser
+returns it unless every check passes: no leading number (vague text, number words in any language, a
+parenthetical), a second amount (a digit or vulgar fraction in `rest` or `unit`, `+`, `or`), a range
+that does not rise, zero, a decimal comma, or a package size (a measure unit followed by a container
+word: "15 oz can"; whole packets such as "2 packets" are a count and stay scalable). Hand-authored
+goldens carry no `qty_text`, so their `qty_amount` is `None`. The web's `scaleQuantity` multiplies
+`qty_amount` by a servings factor; at factor 1 it returns `qty_text` unchanged.
 
 ### Node
 
