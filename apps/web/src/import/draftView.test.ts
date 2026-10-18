@@ -78,3 +78,14 @@ describe('previewIngredientGroups', () => {
     ])
   })
 })
+
+describe('draftIngredientGroups : a unit already in the quantity', () => {
+  it('is not repeated', () => {
+    const [g] = draftIngredientGroups([
+      { name: 'Chole', group: null, prep_note: null, qty: '1 cup', unit: 'cup' },
+      { name: 'Maida', group: null, prep_note: null, qty: '2 cups', unit: 'cups' },
+      { name: 'Oil', group: null, prep_note: null, qty: '2', unit: 'tbsp' },
+    ])
+    expect(g.items.map((i) => i.trailing)).toEqual(['1 cup', '2 cups', '2 tbsp'])
+  })
+})

@@ -301,3 +301,12 @@ extraction effort.
 
 PR-S2 hands off on a tap, not automatically. In M5, measure ready→tap time and abandonment on the reading
 screen.
+
+### FGC-25 (R3): the model's `qty` sometimes already contains the unit
+
+In the frozen chole-bhature output, 23 of 36 ingredients have a `qty` that already ends with the unit
+(`qty: "1 cup"`, `unit: "cup"`). Shown as `qty` then `unit` this read "1 cup cup" on the reading screen
+(and, through `qty_text`, on the recipe page). PR-S2b hides the repeat at display time with `joinQtyUnit`
+(`apps/web/src/lib/quantity.ts`). That is a mask, not a fix: `_parse_qty` and the stored `unit` still carry
+the duplicate. Fix at the source in R3's `_parse_qty` work: strip a trailing unit from `qty` (or null `unit`)
+when they repeat, and decide whether `qty_text` keeps the model's wording. Re-run the goldens when it lands.

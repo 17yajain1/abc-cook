@@ -52,3 +52,19 @@ describe('panelIngredientGroups', () => {
     expect(new Set(groups.map((g) => g.key)).size).toBe(3)
   })
 })
+
+describe('panelIngredientGroups : a unit already in the quantity text', () => {
+  it('is not repeated', () => {
+    const [g] = panelIngredientGroups([
+      {
+        group: null,
+        items: [
+          ing({ id: 'a', name: 'A', qty_text: '1 cup', unit: 'cup' }),
+          ing({ id: 'b', name: 'B', qty_text: '2 cups', unit: 'cup' }),
+          ing({ id: 'c', name: 'C', qty_text: '1 cupcake', unit: 'cup' }),
+        ],
+      },
+    ])
+    expect(g.items.map((i) => i.trailing)).toEqual(['1 cup', '2 cups', '1 cupcake cup'])
+  })
+})

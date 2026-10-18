@@ -36,3 +36,31 @@ export function formatQty(qty: number | null | undefined): string {
 
   return String(Math.round(qty * 100) / 100)
 }
+
+/** Lower-cased, single-spaced, with one trailing ASCII "s" dropped so cup/cups match. */
+const fold = (text: string): string =>
+  text.trim().toLowerCase().replace(/\s+/g, ' ').replace(/(?<=\S{2})s$/, '')
+
+/**
+ * The text of an ingredient's quantity column: the quantity, then the unit, as written.
+ *
+ * Models often put the unit inside the quantity as well ("1 cup" with unit "cup"), and
+ * appending it again read "1 cup cup". The unit is left off when the quantity text already
+ * ends with it as a whole word: case-insensitive, cup and cups the same unit, and a unit
+ * glued to its number ("250g") counted. "1 cupcake" does not end with "cup", and neither
+ * does "1 cup (240 ml)". Display only: it never parses or rewrites a number, and the
+ * quantity text itself is kept as written ("2 cups" stays "2 cups").
+ */
+export function joinQtyUnit(qty: string | null | undefined, unit: string | null | undefined): string {
+  const q = (qty ?? '').trim()
+  const u = (unit ?? '').trim()
+  if (!u) return q
+  if (!q) return u
+  const foldedQty = fold(q)
+  const foldedUnit = fold(u)
+  if (foldedQty.endsWith(foldedUnit)) {
+    const before = foldedQty.slice(0, foldedQty.length - foldedUnit.length)
+    if (before === '' || /[\s\d]$/.test(before)) return q
+  }
+  return `${q} ${u}`
+}

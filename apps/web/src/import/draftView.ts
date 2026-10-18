@@ -1,5 +1,6 @@
 import type { NormalizedIngredient } from '@abc-cook/schema'
 
+import { joinQtyUnit } from '../lib/quantity'
 import type { IngredientListGroup } from '../plan/ingredientGroups'
 
 /**
@@ -11,8 +12,9 @@ import type { IngredientListGroup } from '../plan/ingredientGroups'
  * after the tap shows the proper grouping). Keys are positions, which are stable under
  * append.
  *
- * The quantity column is the model's own text, `qty` then `unit`, joined and nothing else:
- * no parsing, no `formatQty`, no scaling. This screen sits before the scheduler.
+ * The quantity column is the model's own text, `qty` then `unit` (`joinQtyUnit`: a unit the
+ * quantity already ends with is not repeated): no parsing, no `formatQty`, no scaling.
+ * This screen sits before the scheduler.
  */
 export function draftIngredientGroups(
   ingredients: readonly NormalizedIngredient[],
@@ -25,9 +27,7 @@ export function draftIngredientGroups(
       current = { key: `g${i}`, heading, items: [] }
       groups.push(current)
     }
-    const trailing = [ingredient.qty, ingredient.unit]
-      .filter((part): part is string => !!part && part.trim() !== '')
-      .join(' ')
+    const trailing = joinQtyUnit(ingredient.qty, ingredient.unit)
     current.items.push({ key: `${i}`, name: ingredient.name, trailing: trailing || null })
   })
   return groups

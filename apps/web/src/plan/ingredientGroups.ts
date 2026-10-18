@@ -1,4 +1,4 @@
-import { formatQty } from '../lib/quantity'
+import { formatQty, joinQtyUnit } from '../lib/quantity'
 import type { RenderIngredientGroup } from './derive'
 
 /** What `IngredientList` draws: plain strings, so every mapping onto it tests without a
@@ -28,7 +28,7 @@ export function panelIngredientGroups(groups: RenderIngredientGroup[]): Ingredie
       optional: item.optional === true,
       trailing:
         item.qty_text != null || item.qty != null || item.unit
-          ? [item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()
+          ? joinQtyUnit(item.qty_text ?? formatQty(item.qty), item.unit)
           : null,
     })),
   }))
