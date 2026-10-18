@@ -67,6 +67,7 @@ export function ImportProgress({
         <ImportDraft
           view={view}
           footer={phase.preview ? <PreviewFooter /> : <p>{footer}</p>}
+          working
           onCancel={reset}
           onThumbnailLoaded={markThumbnail}
         />

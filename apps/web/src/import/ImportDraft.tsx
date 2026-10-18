@@ -36,35 +36,50 @@ const DRAFT_LABEL = 'Draft'
 export function ImportDraft({
   view,
   footer,
+  working = false,
   failure,
   onCancel,
+  cancelLabel = 'Cancel',
   onThumbnailLoaded,
 }: {
   view: ImportViewModel
+  /** The job is still running: a small pulsing dot sits beside the footer line. It does not
+   * pulse for people who ask for reduced motion, and is not shown once the job has ended. */
+  working?: boolean
   /** The quiet line pinned under the page, e.g. "Reading the steps…". Absent in a failed
    * state, where the message lives in `failure` and must not appear twice. */
   footer?: ReactNode
   /** A failed job's message and its actions, under the header and above the sections. */
   failure?: ReactNode
   onCancel: () => void
+  /** "Close" once the plan is ready and saved: nothing is being cancelled any more. */
+  cancelLabel?: string
   onThumbnailLoaded?: () => void
 }) {
   let stepNumber = 0
   const header = view.header
+  // The bar is the Home ground and sits above the scroller, so the page never scrolls under
+  // it; its hairline appears only once something has scrolled beneath.
+  const [scrolled, setScrolled] = useState(false)
 
   return (
     <div className="flex h-full flex-col bg-home-ground text-home-ink">
-      <div className="flex flex-shrink-0 justify-end px-5 pt-3.5" style={{ minHeight: 32 }}>
+      <div
+        className={`flex h-12 flex-shrink-0 items-center justify-end border-b bg-home-ground px-5 ${scrolled ? 'border-home-rule' : 'border-transparent'}`}
+      >
         <button
           type="button"
           onClick={onCancel}
-          className="-my-3 py-3 pl-3 text-[13px] text-home-ink-2 underline underline-offset-[3px]"
+          className="-mr-3 flex min-h-[44px] items-center px-3 text-[13px] text-home-ink-2 underline underline-offset-[3px]"
         >
-          Cancel
+          {cancelLabel}
         </button>
       </div>
 
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4">
+      <div
+        className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4"
+        onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
+      >
         {header && (
           <header>
             {header.thumbnailUrl && (
@@ -143,11 +158,17 @@ export function ImportDraft({
 
       {footer != null && (
         <div
-          className="flex-shrink-0 border-t border-home-rule bg-home-ground px-5 pb-6 pt-4 text-[15px] text-home-ink-2"
+          className="flex flex-shrink-0 items-center gap-3 border-t border-home-rule bg-home-ground px-5 pb-6 pt-4 text-[15px] text-home-ink-2"
           role="status"
           aria-live="polite"
         >
-          {footer}
+          {working && (
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 flex-shrink-0 rounded-full bg-home-terracotta motion-safe:animate-pulse"
+            />
+          )}
+          <div className="min-w-0 flex-1">{footer}</div>
         </div>
       )}
     </div>
