@@ -316,7 +316,8 @@ when they repeat, and decide whether `qty_text` keeps the model's wording. Re-ru
 PR-S2b ships the import reading screen on the Home ground, but `docs/DESIGN_SYSTEM.md` has no section for it.
 Add one covering:
 
-- the reading screen: header (16:9 thumbnail, channel 13/400, title 22/30), Ingredients, Steps, "About this video";
+- the reading screen: header (16:9 thumbnail frame, channel 13/400, title 22/30), and the two deviations from the
+  spec: a 16:9 frame instead of the 4:3 card, and no platform badge yet (decide whether to add one), Ingredients, Steps, "About this video";
 - the "Draft" pill beside the Ingredients and Steps headings, and when it shows;
 - the sticky "Your plan is ready" button and the "Close" control;
 - the A2 failure layouts (failure slot above the draft);
