@@ -559,3 +559,39 @@ The v8 A/B (n=3 per arm, `notes/fgc-345/summary.md`) showed, with no added step 
 repair-would-fire 2/3 vs 0/3 (`produces_consumed`); cross-arm edge agreement below the within-A mean by
 0.13 on croissant and 0.10 on pumpkin; `depends_on_previous=false` choices 9 to 17. Small n, so partly
 noise, but v8 is off by default for this reason too. Any future prompt change re-measures all three.
+
+### FGC-42 (P3, web): chips repeat a glued unit and print "to taste salt"
+
+The F2 chips (`cooking-mode/quantity.ts`) join `qty_text`, `unit` and name without `joinQtyUnit`, so
+a `qty_text` that already ends with its unit reads "1 cup cup chole" (the FGC-25 shape; 23 of 36 lines
+in the frozen chole output). The to-taste special case fires only on `unit === 'to taste'`, so an
+imported `qty_text` "to taste" reads "to taste salt" (pinned in `quantityLine.golden.json` for kadhi and
+sabudana). R3 keeps factor-1 output byte-identical, so the fix is its own small PR. It must land
+before or inside R4: at factor != 1 the chips would show "⅔ cup cup chole".
+
+### FGC-43 (R4 input): second amounts and package sizes are unscalable
+
+11 corpus lines carry a second amount in `unit` ("Cup (200g)", "cups (190 g)" in cupcakes; "gms / ½ cup",
+"ml / ¾ cup" in dal makhni), and 3 in `qty_text` ("5 tbsp (50g) for dough and …", "1 tbsp + 1 tsp",
+"¼ cup or 45"). Package sizes (a measure unit followed by a container word: "15 oz can") are the same
+case. R3's `parse_amount` marks all of them unscalable; they show the source text at any factor. R4
+decides how an unscaled line is shown. 0 corpus g/ml lines are scalable (all dual-unit). R4 needs a
+visible "not scaled" marker per line and should report the share of scalable lines per recipe.
+
+### FGC-44 (P3, fixtures): chips print a legacy float where the tab prints a fraction
+
+On hand goldens with no `qty_text`, chips use `String(qty)` ("1.5 cup water", maggi; "1.5 l", donuts)
+while the Ingredients tab uses `formatQty` ("1 1/2 cup"). Production imports always carry `qty_text`, so
+only fixtures show it. R3 keeps both fallbacks as they are.
+
+### FGC-45 (FGC-6 addendum): Hindi number words as quantities are unscalable
+
+आधा, डेढ़, सवा, ढाई (and Hinglish "paav", "sawa") as quantities are not parsed by R3's `parse_amount`: the
+line is unscalable and shows its source text. The corpus has 0 such ingredient lines (the chole model
+wrote digits). Parse them with FGC-6, which owns Hindi number words.
+
+### FGC-46 (R4 input): hand goldens cannot demo scaling
+
+Hand-authored goldens are loaded, not built, and most have no `qty_text` (sabudana has it), so their
+`qty_amount` is null and `scaleQuantity` leaves them as written. R4 screenshots need a recipe built through `build_graph`
+(an `ImportOriginal` fixture such as the widened-corpus recipes), not a hand golden.

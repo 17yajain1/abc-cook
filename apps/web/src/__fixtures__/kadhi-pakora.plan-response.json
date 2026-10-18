@@ -17,6 +17,12 @@
         "name": "Curd",
         "qty": 1.5,
         "qty_text": "1 ½",
+        "qty_amount": {
+          "low": 1.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cups",
         "prep_note": null,
         "group": "FOR KADI",
@@ -27,6 +33,12 @@
         "name": "Besan (gram flour)",
         "qty": 4.0,
         "qty_text": "4",
+        "qty_amount": {
+          "low": 4.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -37,6 +49,12 @@
         "name": "Onion",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": "sliced",
         "group": "FOR KADI",
@@ -47,6 +65,12 @@
         "name": "Garlic",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": "chopped",
         "group": "FOR KADI",
@@ -57,6 +81,12 @@
         "name": "Ginger",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": "chopped",
         "group": "FOR KADI",
@@ -67,6 +97,12 @@
         "name": "Turmeric",
         "qty": 0.75,
         "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -77,6 +113,12 @@
         "name": "Red chilly powder",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -87,6 +129,12 @@
         "name": "Coriander powder",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -97,6 +145,12 @@
         "name": "Roasted Cumin Powder",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -107,6 +161,7 @@
         "name": "Salt",
         "qty": null,
         "qty_text": "to taste",
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": "FOR KADI",
@@ -117,6 +172,12 @@
         "name": "Water",
         "qty": 10.0,
         "qty_text": "10",
+        "qty_amount": {
+          "low": 10.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cups",
         "prep_note": null,
         "group": "FOR KADI",
@@ -127,6 +188,12 @@
         "name": "Oil",
         "qty": 3.0,
         "qty_text": "3",
+        "qty_amount": {
+          "low": 3.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -137,6 +204,12 @@
         "name": "Methi dana (fenugreek)",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -147,6 +220,12 @@
         "name": "Cumin",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -157,6 +236,12 @@
         "name": "Dry red chilly",
         "qty": 2.0,
         "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "nos",
         "prep_note": null,
         "group": "FOR KADI",
@@ -167,6 +252,12 @@
         "name": "Heeng (asafoetida)",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
@@ -177,6 +268,12 @@
         "name": "Besan (gram flour)",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -187,6 +284,7 @@
         "name": "Salt",
         "qty": null,
         "qty_text": "to taste",
+        "qty_amount": null,
         "unit": null,
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -197,6 +295,12 @@
         "name": "Green chilly",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "no",
         "prep_note": "chopped",
         "group": "FOR PAKORA",
@@ -207,6 +311,12 @@
         "name": "Turmeric",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -217,6 +327,12 @@
         "name": "Red chilly powder",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -227,6 +343,12 @@
         "name": "Coriander seeds",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -237,6 +359,12 @@
         "name": "Cumin",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -247,6 +375,12 @@
         "name": "Baking Powder",
         "qty": 0.75,
         "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -257,6 +391,12 @@
         "name": "Spinach",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": "chopped",
         "group": "FOR PAKORA",
@@ -267,6 +407,12 @@
         "name": "Water",
         "qty": 0.75,
         "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "cup",
         "prep_note": null,
         "group": "FOR PAKORA",
@@ -277,6 +423,12 @@
         "name": "Desi Ghee",
         "qty": 2.0,
         "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tbsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
@@ -287,6 +439,12 @@
         "name": "Coriander seeds",
         "qty": 2.0,
         "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
@@ -297,6 +455,12 @@
         "name": "Cumin",
         "qty": 1.0,
         "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
@@ -307,6 +471,12 @@
         "name": "Red chilly powder",
         "qty": 0.5,
         "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
         "unit": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
