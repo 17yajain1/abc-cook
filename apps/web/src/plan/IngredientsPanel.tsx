@@ -1,6 +1,6 @@
-import { formatQty } from '../lib/quantity'
 import type { RenderIngredientGroup } from './derive'
-import { IngredientRow } from './IngredientRow'
+import { IngredientList } from './IngredientList'
+import { panelIngredientGroups } from './ingredientGroups'
 
 /**
  * The Ingredients tab. A plain grouped list — a dead tab is worse than a quiet one.
@@ -10,33 +10,7 @@ import { IngredientRow } from './IngredientRow'
 export function IngredientsPanel({ groups }: { groups: RenderIngredientGroup[] }) {
   return (
     <div className="px-5 py-5">
-      {groups.map((group, i) => (
-        <div key={group.group ?? `ungrouped-${i}`} className="mb-6 last:mb-0">
-          {group.group && (
-            <h3 className="mb-1 text-[13px] font-semibold text-home-ink">{group.group}</h3>
-          )}
-          <ul>
-            {group.items.map((item) => (
-              <IngredientRow
-                key={item.id}
-                primary={
-                  <>
-                    {item.name}
-                    {item.optional && (
-                      <span className="ml-2 text-[13px] text-home-ink-2">optional</span>
-                    )}
-                  </>
-                }
-                trailing={
-                  item.qty_text != null || item.qty != null || item.unit
-                    ? [item.qty_text ?? formatQty(item.qty), item.unit ?? ''].join(' ').trim()
-                    : null
-                }
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
+      <IngredientList groups={panelIngredientGroups(groups)} />
     </div>
   )
 }
