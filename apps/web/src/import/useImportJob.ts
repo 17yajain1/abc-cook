@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { ImportMeta, RecipePlanResponse, SavedRecipe } from '@abc-cook/schema'
+import type { SavedRecipe } from '@abc-cook/schema'
 
 import { ApiError, pollImport, startImport, startImportText } from '../api/client'
 import { fetchOEmbed } from '../api/oembed'
-import { derivePlan, type RenderPlan } from '../plan/derive'
+import { derivePlan } from '../plan/derive'
 import type { FindSaved } from './duplicate'
-import { importExtrasFrom, type ImportExtras } from './importExtras'
+import { completeImport, type ImportHandlers } from './handOff'
+import { importExtrasFrom } from './importExtras'
 import { importMetaFrom } from './importMeta'
+import { hasReadable, importViewFor } from './importView'
 import { createImportTimer } from './importTiming'
 import type { InstantHeader } from './instantPreview'
 import { phaseFor, type Phase } from './phase'
@@ -23,16 +25,10 @@ const MAX_POLLS = 250
  * "Keep waiting" resumes polling; the server's own per-call timeouts are what end a
  * genuinely stuck job (as `failed`). */
 
-export type OnImported = (
-  plan: RenderPlan,
-  payload: RecipePlanResponse,
-  importMeta: ImportMeta,
-  extras: ImportExtras,
-) => void
-
 /**
  * The import state machine, shared by `ImportScreen` and the Home Copy sheet: submit a
- * URL or pasted text, poll the job, and hand a finished plan to `onImported`. The token
+ * URL or pasted text, poll the job, and hand a finished plan to `handlers` (saved at done,
+ * opened at the cook's tap, or at once when nothing was on screen to read). The token
  * and timer refs make a stale poll chain (previous submit, or one outliving the
  * component) unable to overwrite newer state.
  */
@@ -47,7 +43,7 @@ export interface ImportJobOptions {
   skipDuplicateCheck?: boolean
 }
 
-export function useImportJob(onImported: OnImported, options: ImportJobOptions = {}) {
+export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions = {}) {
   const { initialUrl = '' } = options
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
   const [url, setUrl] = useState(initialUrl)
@@ -73,12 +69,34 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
 
   // What Try again resubmits: the URL of the last URL submit, or null for a pasted text.
   const lastUrlRef = useRef<string | null>(null)
+  // Whether the reading screen has shown any recipe text yet: it decides tap vs auto at done.
+  const shownRef = useRef(false)
+  // The last poll's source text and draft, so a network error mid-poll keeps what was read.
+  const lastRef = useRef<Pick<Extract<Phase, { kind: 'polling' }>, 'preview' | 'acquired' | 'draft'>>({
+    preview: null,
+    acquired: null,
+    draft: null,
+  })
+  const [isText, setIsText] = useState(false)
+
+  const resetRead = (text: boolean) => {
+    shownRef.current = false
+    lastRef.current = { preview: null, acquired: null, draft: null }
+    setIsText(text)
+  }
 
   const poll = (jobId: string, token: number, attempt: number) => {
     pollImport(jobId)
       .then((job) => {
         if (tokenRef.current !== token) return
         if (job.acquired) timerObj.current.mark('acquired')
+        if (job.draft?.ingredients?.length) timerObj.current.mark('ingredients')
+        if (job.draft?.steps?.length) timerObj.current.mark('firstStep')
+        lastRef.current = {
+          preview: job.preview ?? null,
+          acquired: job.acquired ?? null,
+          draft: job.draft ?? null,
+        }
 
         const decision = phaseFor(job, {
           jobId,
@@ -97,14 +115,35 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
             summary: result.summary ?? null,
           }
           timerObj.current.mark('plan')
-          console.info('[import-timing]', timerObj.current.report())
-          onImported(
-            derivePlan(payload, result.provenance ?? null),
-            payload,
-            importMetaFrom(result),
-            importExtrasFrom(result),
+          const outcome = completeImport(
+            {
+              plan: derivePlan(payload, result.provenance ?? null),
+              payload,
+              importMeta: importMetaFrom(result),
+              extras: importExtrasFrom(result),
+            },
+            shownRef.current,
+            handlers,
           )
+          if (outcome.kind === 'opened') {
+            timerObj.current.mark('open')
+          } else {
+            timerObj.current.mark('ready')
+            setPhase({
+              kind: 'ready',
+              preview: lastRef.current.preview,
+              acquired: lastRef.current.acquired,
+              draft: lastRef.current.draft,
+              finished: outcome.finished,
+            })
+          }
+          console.info('[import-timing]', timerObj.current.report())
           return
+        }
+        if (decision.phase.kind === 'polling' || decision.phase.kind === 'slow') {
+          const { preview, acquired, draft } = decision.phase
+          const view = importViewFor({ instant: null, acquired, preview, draft, status: decision.phase.status })
+          if (hasReadable(view)) shownRef.current = true
         }
         setPhase(decision.phase)
         if (decision.keepPolling) {
@@ -116,13 +155,15 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
       })
       .catch((err: unknown) => {
         if (tokenRef.current !== token) return
-        setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
+        // A lost connection keeps what had been read: the error shows above it.
+        setPhase({ kind: 'error', message: messageFor(err), ...lastRef.current })
       })
   }
 
   const start = (trimmed: string, skipDuplicateCheck: boolean | undefined) => {
     const token = ++tokenRef.current
     lastUrlRef.current = trimmed
+    resetRead(false)
     runSubmit(
       trimmed,
       { findSaved: options.findSaved, skipDuplicateCheck },
@@ -133,7 +174,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
           // Set before the network call, so the thumbnail is on screen while POST /import
           // is still in flight.
           setInstant(quick ? { thumbnailUrl: quick.thumbnailUrl, title: null, channel: null } : null)
-          setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
+          setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null, draft: null })
         },
         // oEmbed runs in parallel with the POST, under the same token: a stale answer from
         // a previous submit is dropped, and a title that is already set is never replaced.
@@ -151,7 +192,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
         onStartFailed: (err) => {
           if (tokenRef.current !== token) return
           setInstant(null)
-          setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
+          setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null, draft: null })
         },
         onDuplicate: (saved) => options.onDuplicate?.(saved),
       },
@@ -180,8 +221,11 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
     if (!text.trim()) return
     const token = ++tokenRef.current
     lastUrlRef.current = null
+    resetRead(true)
+    timerObj.current = createImportTimer()
+    timerObj.current.mark('submit')
     setInstant(null)
-    setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
+    setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null, draft: null })
     startImportText(text)
       .then(({ job_id }) => {
         if (tokenRef.current !== token) return
@@ -202,6 +246,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
       status: phase.status,
       preview: phase.preview,
       acquired: phase.acquired,
+      draft: phase.draft,
     })
     poll(phase.jobId, phase.token, 0)
   }
@@ -217,11 +262,21 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
 
   const markThumbnail = () => timerObj.current.mark('thumbnail')
 
+  /** The tap on "Your plan is ready": open the plan that was saved when the job finished. */
+  const openReady = () => {
+    if (phase.kind !== 'ready') return
+    timerObj.current.mark('open')
+    console.info('[import-timing]', timerObj.current.report())
+    handlers.open(phase.finished)
+  }
+
   return {
     phase,
     setPhase,
     instant,
+    isText,
     markThumbnail,
+    openReady,
     url,
     setUrl,
     text,

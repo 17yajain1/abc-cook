@@ -30,7 +30,7 @@ describe('phaseFor — failed jobs', () => {
       result: { status: 'failed', failure },
       acquired,
     })
-    expect(phase).toEqual({ kind: 'failed', failure, url: ctx.url, preview: null, acquired })
+    expect(phase).toEqual({ kind: 'failed', failure, url: ctx.url, preview: null, acquired, draft: null })
   })
 
   it('keeps the blog preview on a failed phase', () => {
@@ -54,7 +54,7 @@ describe('phaseFor — failed jobs', () => {
 
   it('a failed job with no failure keeps today’s error path', () => {
     const withMessage = phaseOf({ job_id: 'j1', status: 'failed', error: 'It broke.', acquired })
-    expect(withMessage).toEqual({ kind: 'error', message: 'It broke.', preview: null, acquired })
+    expect(withMessage).toEqual({ kind: 'error', message: 'It broke.', preview: null, acquired, draft: null })
     const bare = phaseOf({ job_id: 'j1', status: 'failed' })
     expect(bare).toMatchObject({ kind: 'error', message: 'The import failed.' })
     const noKind = phaseOf({ job_id: 'j1', status: 'failed', result: { status: 'failed' } })
@@ -89,7 +89,7 @@ describe('phaseFor — the other statuses are unchanged', () => {
     const decision = phaseFor({ job_id: 'j1', status: 'extracting', acquired }, ctx)
     expect(decision).toEqual({
       kind: 'phase',
-      phase: { kind: 'polling', status: 'extracting', preview: null, acquired },
+      phase: { kind: 'polling', status: 'extracting', preview: null, acquired, draft: null },
       keepPolling: true,
     })
   })
@@ -115,6 +115,46 @@ describe('phaseFor — the other statuses are unchanged', () => {
   it('a done job without a plan is not treated as finished', () => {
     const decision = phaseFor({ job_id: 'j1', status: 'done', result: { status: 'done' } }, ctx)
     expect(decision.kind).toBe('phase')
+  })
+})
+
+describe('phaseFor — the streamed draft', () => {
+  const draft = {
+    ingredients: [{ name: 'Onion', group: null, prep_note: null, qty: '1', unit: null }],
+    ingredients_complete: false,
+    steps: [],
+    steps_complete: false,
+    calls: 1,
+  }
+
+  it('is carried by an in-flight job', () => {
+    const phase = phaseOf({ job_id: 'j1', status: 'extracting', acquired, draft })
+    expect(phase.kind === 'polling' && phase.draft).toEqual(draft)
+  })
+
+  it('is carried into slow, so Keep waiting does not drop what was read', () => {
+    const phase = phaseOf({ job_id: 'j1', status: 'extracting', draft }, { attempt: 250 })
+    expect(phase.kind === 'slow' && phase.draft).toEqual(draft)
+  })
+
+  it('is kept by a failed job (A2)', () => {
+    const phase = phaseOf({
+      job_id: 'j1',
+      status: 'failed',
+      result: { status: 'failed', failure: 'unavailable' },
+      draft,
+    })
+    expect(phase.kind === 'failed' && phase.draft).toEqual(draft)
+  })
+
+  it('is kept by the error path too', () => {
+    const phase = phaseOf({ job_id: 'j1', status: 'failed', error: 'It broke.', draft })
+    expect(phase.kind === 'error' && phase.draft).toEqual(draft)
+  })
+
+  it('is null when the server sent none (a cache hit, an older API, streaming off)', () => {
+    const phase = phaseOf({ job_id: 'j1', status: 'extracting' })
+    expect(phase.kind === 'polling' && phase.draft).toBeNull()
   })
 })
 

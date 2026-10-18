@@ -7,7 +7,11 @@ import kadhi from '@/__fixtures__/kadhi-pakora.plan-response.json'
 import { createLibrary, type StorageLike } from '@/library/store'
 import { derivePlan } from '@/plan/derive'
 import { PlanScreen } from '@/plan/PlanScreen'
+import type { ImportHandlers } from './handOff'
 import { ImportScreen } from './ImportScreen'
+
+/** The dev fixtures never reach a finished import, so neither handler runs. */
+const NOOP_HANDLERS: ImportHandlers = { save: () => ({ status: 'idle' }), open: () => {} }
 
 /**
  * DEV ONLY. Reachable through `main.tsx` solely behind `import.meta.env.DEV`, so Vite
@@ -168,7 +172,7 @@ function DuplicateFixture() {
       initialUrl="https://youtu.be/Oa2s0dklrRo?si=shared"
       findSaved={(key) => library.findBySource(key)}
       onDuplicate={(saved) => setShown({ id: saved.id })}
-      onImported={() => {}}
+      importHandlers={NOOP_HANDLERS}
       onCancel={() => {}}
     />
   )
@@ -194,7 +198,7 @@ export function mountImportFixture(root: Root, name: string): void {
   installFetch(key)
   root.render(
     <StrictMode>
-      <ImportScreen initialUrl={JOBS[key].url} onImported={() => {}} onCancel={() => {}} />
+      <ImportScreen initialUrl={JOBS[key].url} importHandlers={NOOP_HANDLERS} onCancel={() => {}} />
     </StrictMode>,
   )
 }

@@ -1,8 +1,10 @@
+import type { FinishedImport } from './handOff'
 import type {
   AcquiredSource,
   ImportJobResponse,
   ImportResult,
   SourcePreview,
+  StreamedDraft,
 } from '@abc-cook/schema'
 
 /** No standalone `ImportStatus` export exists in the generated package (it's inlined
@@ -20,6 +22,17 @@ export type Phase =
       status: ImportStatus
       preview: SourcePreview | null
       acquired: AcquiredSource | null
+      /** What the extraction has streamed so far; kept on every later phase. */
+      draft: StreamedDraft | null
+    }
+  /** The plan is built and already saved; the reading screen stays as it was and offers a tap
+   * to open it. Carries what the screen last showed, so the draft stays readable. */
+  | {
+      kind: 'ready'
+      preview: SourcePreview | null
+      acquired: AcquiredSource | null
+      draft: StreamedDraft | null
+      finished: FinishedImport
     }
   | { kind: 'not_grounded'; job: ImportJobResponse }
   | { kind: 'no_recipe' }
@@ -29,6 +42,7 @@ export type Phase =
       message: string
       preview: SourcePreview | null
       acquired: AcquiredSource | null
+      draft: StreamedDraft | null
     }
   /** The server said why: its provider was unavailable, or the extraction came back
    * incomplete. `url` is what Try again resubmits (`null` for a pasted text). */
@@ -38,6 +52,7 @@ export type Phase =
       url: string | null
       preview: SourcePreview | null
       acquired: AcquiredSource | null
+      draft: StreamedDraft | null
     }
   | {
       kind: 'slow'
@@ -46,6 +61,7 @@ export type Phase =
       status: ImportStatus
       preview: SourcePreview | null
       acquired: AcquiredSource | null
+      draft: StreamedDraft | null
     }
 
 /** The screen's own sentence for each failure kind. The server sends an equivalent one in
@@ -75,6 +91,7 @@ export function phaseFor(
   }
   const preview = job.preview ?? null
   const acquired = job.acquired ?? null
+  const draft = job.draft ?? null
   switch (job.status) {
     case 'method_not_grounded':
       return { kind: 'phase', phase: { kind: 'not_grounded', job }, keepPolling: false }
@@ -83,8 +100,8 @@ export function phaseFor(
     case 'failed': {
       const failure = job.result?.failure
       const phase: Phase = failure
-        ? { kind: 'failed', failure, url: ctx.url, preview, acquired }
-        : { kind: 'error', message: job.error ?? 'The import failed.', preview, acquired }
+        ? { kind: 'failed', failure, url: ctx.url, preview, acquired, draft }
+        : { kind: 'error', message: job.error ?? 'The import failed.', preview, acquired, draft }
       return { kind: 'phase', phase, keepPolling: false }
     }
     default:
@@ -98,13 +115,14 @@ export function phaseFor(
             status: job.status,
             preview,
             acquired,
+            draft,
           },
           keepPolling: false,
         }
       }
       return {
         kind: 'phase',
-        phase: { kind: 'polling', status: job.status, preview, acquired },
+        phase: { kind: 'polling', status: job.status, preview, acquired, draft },
         keepPolling: true,
       }
   }

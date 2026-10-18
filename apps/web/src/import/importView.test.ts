@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AcquiredSource, SourcePreview } from '@abc-cook/schema'
+import type { AcquiredSource, SourcePreview, StreamedDraft } from '@abc-cook/schema'
 
-import { importViewFor } from './importView'
+import { footerFor, importViewFor } from './importView'
 import type { InstantHeader } from './instantPreview'
 
 const THUMB = 'https://i.ytimg.com/vi/abc/hqdefault.jpg'
@@ -175,5 +175,157 @@ describe('importViewFor', () => {
     }
     walk(view)
     expect(keys.filter((k) => /min|dur|time|timer|saved|parallel|start/i.test(k))).toEqual([])
+  })
+})
+
+const draft = (over: Partial<StreamedDraft> = {}): StreamedDraft => ({
+  ingredients: [],
+  ingredients_complete: false,
+  steps: [],
+  steps_complete: false,
+  calls: 1,
+  ...over,
+})
+const onion = { name: 'Onion', group: null, prep_note: null, qty: '1', unit: null }
+
+describe('the streamed draft', () => {
+  it('fills the ingredients as items, in arrival order, as the server sent them', () => {
+    const view = importViewFor({
+      ...base,
+      status: 'extracting',
+      draft: draft({ ingredients: [onion, { ...onion, name: 'Oil', qty: '2', unit: 'tbsp' }] }),
+    })
+    expect(view.ingredients.kind).toBe('items')
+    if (view.ingredients.kind !== 'items') return
+    expect(view.ingredients.groups[0].items.map((i) => [i.name, i.trailing])).toEqual([
+      ['Onion', '1'],
+      ['Oil', '2 tbsp'],
+    ])
+    expect(view.method).toEqual({ kind: 'pending' })
+  })
+
+  it('fills the steps with the model text and whether the list has closed', () => {
+    const open = importViewFor({ ...base, draft: draft({ steps: [{ text: 'Heat oil.' }] }) })
+    expect(open.method).toEqual({ kind: 'steps', steps: ['Heat oil.'], complete: false })
+    const closed = importViewFor({
+      ...base,
+      draft: draft({ steps: [{ text: 'Heat oil.' }], steps_complete: true }),
+    })
+    expect(closed.method).toEqual({ kind: 'steps', steps: ['Heat oil.'], complete: true })
+  })
+
+  it('a blank step is not shown', () => {
+    const view = importViewFor({ ...base, draft: draft({ steps: [{ text: ' ' }, { text: 'Stir.' }] }) })
+    expect(view.method).toEqual({ kind: 'steps', steps: ['Stir.'], complete: false })
+  })
+
+  describe('per-section precedence: preview, then draft, then pending', () => {
+    const d = draft({ ingredients: [onion], steps: [{ text: 'Draft step.' }] })
+
+    it('the preview wins a section it fills, over the draft', () => {
+      const view = importViewFor({ ...base, preview: preview(), draft: d })
+      expect(view.ingredients.kind).toBe('lines')
+      expect(view.method.kind).toBe('sections')
+    })
+
+    it('the draft fills a section the preview left empty', () => {
+      const view = importViewFor({ ...base, preview: preview({ instructions: [] }), draft: d })
+      expect(view.ingredients.kind).toBe('lines')
+      expect(view.method).toEqual({ kind: 'steps', steps: ['Draft step.'], complete: false })
+      const other = importViewFor({ ...base, preview: preview({ ingredients: [] }), draft: d })
+      expect(other.ingredients.kind).toBe('items')
+      expect(other.method.kind).toBe('sections')
+    })
+
+    it('with neither, the section is pending', () => {
+      const view = importViewFor({ ...base, draft: draft() })
+      expect(view.ingredients).toEqual({ kind: 'pending' })
+      expect(view.method).toEqual({ kind: 'pending' })
+    })
+  })
+
+  it('a list the model closed with nothing in it is dropped, not left pending', () => {
+    const view = importViewFor({
+      ...base,
+      draft: draft({ ingredients_complete: true, steps_complete: true }),
+    })
+    expect(view.ingredients).toEqual({ kind: 'none' })
+    expect(view.method).toEqual({ kind: 'none' })
+  })
+
+  describe('a failed job keeps its draft', () => {
+    it('shows the draft sections and drops the ones it never filled', () => {
+      const view = importViewFor({
+        ...base,
+        status: 'failed',
+        draft: draft({ ingredients: [onion] }),
+      })
+      expect(view.ingredients.kind).toBe('items')
+      expect(view.method).toEqual({ kind: 'none' })
+    })
+
+    it('without a draft is the S1 model: both sections none', () => {
+      const view = importViewFor({ ...base, status: 'failed', draft: null })
+      expect(view.ingredients).toEqual({ kind: 'none' })
+      expect(view.method).toEqual({ kind: 'none' })
+      expect(importViewFor({ ...base, status: 'failed' })).toEqual(view)
+    })
+  })
+
+  it('carries no duration, timer, offset or serving field', () => {
+    const view = importViewFor({
+      ...base,
+      status: 'extracting',
+      draft: draft({ ingredients: [onion], steps: [{ text: 'Fry for 5 minutes.' }], steps_complete: true }),
+    })
+    const keys: string[] = []
+    const walk = (value: unknown): void => {
+      if (Array.isArray(value)) value.forEach(walk)
+      else if (value && typeof value === 'object') {
+        for (const [key, child] of Object.entries(value)) {
+          keys.push(key)
+          walk(child)
+        }
+      }
+    }
+    walk(view)
+    expect(keys.filter((k) => /min|dur|time|timer|saved|parallel|start|offset|lead|serv|total/i.test(k))).toEqual(
+      [],
+    )
+  })
+})
+
+describe('footerFor', () => {
+  const none = importViewFor(base)
+  const withIngredients = importViewFor({ ...base, draft: draft({ ingredients: [onion] }) })
+  const withOpenSteps = importViewFor({
+    ...base,
+    draft: draft({ ingredients: [onion], steps: [{ text: 'Heat oil.' }] }),
+  })
+  const withClosedSteps = importViewFor({
+    ...base,
+    draft: draft({ ingredients: [onion], steps: [{ text: 'Heat oil.' }], steps_complete: true }),
+  })
+
+  it.each([
+    ['acquiring, nothing yet', none, 'acquiring', 'Getting the recipe…'],
+    ['acquiring, even with a draft in hand', withIngredients, 'acquiring', 'Getting the recipe…'],
+    ['extracting, no ingredients yet', none, 'extracting', 'Reading the ingredients…'],
+    ['extracting, ingredients but no steps', withIngredients, 'extracting', 'Reading the steps…'],
+    ['extracting, steps still arriving', withOpenSteps, 'extracting', 'Reading the steps…'],
+    ['extracting, steps closed', withClosedSteps, 'extracting', 'Building your cooking plan…'],
+    ['validating', withOpenSteps, 'validating', 'Building your cooking plan…'],
+    ['validating, no draft (cache hit or streaming off)', none, 'validating', 'Building your cooking plan…'],
+    ['plan_building', none, 'plan_building', 'Building your cooking plan…'],
+  ] as const)('%s', (_name, view, status, copy) => {
+    expect(footerFor(view, status)).toBe(copy)
+  })
+
+  it('never states a time, a count or a percentage', () => {
+    for (const view of [none, withIngredients, withOpenSteps, withClosedSteps]) {
+      for (const status of ['acquiring', 'extracting', 'validating', 'plan_building'] as const) {
+        expect(footerFor(view, status)).not.toMatch(/\d|min|sec|%/i)
+      }
+    }
   })
 })

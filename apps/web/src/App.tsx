@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
@@ -11,6 +11,7 @@ import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
 import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
+import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff'
 import type { ImportExtras } from './import/importExtras'
 import { canonicalSourceKey } from './library/sourceKey'
 import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
@@ -66,8 +67,6 @@ const openDeps: OpenDeps = {
   endSessionIfFor,
   now: () => Date.now(),
 }
-
-type SaveState = { status: 'idle' | 'saved' | 'error'; message?: string }
 
 type View =
   | { kind: 'home' }
@@ -193,11 +192,14 @@ export default function App() {
     navToken.current += 1
     setView({ kind: 'import' })
   }, [])
-  // Every finished import lands in the library straight away; re-importing the same
-  // source replaces its entry (`library.save` dedups by source key). On a failed write
-  // the origin stays `import`, so the header's Save control still offers a retry.
-  const onImported = useCallback(
-    (plan: RenderPlan, payload: RecipePlanResponse, importMeta: ImportMeta, extras: ImportExtras) => {
+  // Every finished import lands in the library as soon as the job is done (`saveImported`),
+  // whether or not the cook has opened it yet; re-importing the same source replaces its
+  // entry (`library.save` dedups by source key). Opening it (`openImported`) is a separate
+  // step: the cook's tap on "Your plan is ready", or at once when nothing was on screen to
+  // read. On a failed write the origin stays `import`, so the header's Save control still
+  // offers a retry.
+  const saveImported = useCallback(
+    (payload: RecipePlanResponse, importMeta: ImportMeta, extras: ImportExtras): SaveState => {
       const result = library.save(payload, importMeta, extras)
       if (extras.postprocess_version != null) serverVersion.note(extras.postprocess_version)
       // A re-import replaces an existing entry, so a stale session on it goes too, unless
@@ -206,16 +208,23 @@ export default function App() {
       if (result.ok && result.replaced && !sessionBlocksRefresh(sessionStore.getState(), result.recipe.id, Date.now())) {
         endSessionIfFor(result.recipe.id)
       }
-      setView({
-        kind: 'plan',
-        plan,
-        origin: { kind: 'import', payload, importMeta, extras },
-        saveState: result.ok ? { status: 'saved' } : { status: 'error', message: result.message },
-        importMeta,
-        payload,
-      })
+      return result.ok ? { status: 'saved' } : { status: 'error', message: result.message }
     },
     [],
+  )
+  const openImported = useCallback(({ plan, payload, importMeta, extras, saveState }: FinishedImport) => {
+    setView({
+      kind: 'plan',
+      plan,
+      origin: { kind: 'import', payload, importMeta, extras },
+      saveState,
+      importMeta,
+      payload,
+    })
+  }, [])
+  const importHandlers = useMemo<ImportHandlers>(
+    () => ({ save: saveImported, open: openImported }),
+    [saveImported, openImported],
   )
 
   // P1 #6 §C5: the side effect (starting a session if none is open) happens here, in
@@ -310,7 +319,7 @@ export default function App() {
     case 'import':
       return (
         <ImportScreen
-          onImported={onImported}
+          importHandlers={importHandlers}
           onCancel={backToHome}
           initialUrl={view.initialUrl}
           findSaved={(key) => library.findBySource(key)}
@@ -369,7 +378,7 @@ export default function App() {
           onOpenSaved={openSaved}
           onPick={openRecipe}
           onImport={openImport}
-          onImported={onImported}
+          importHandlers={importHandlers}
           onOpenFeedRecipe={openFeedRecipe}
         />
       )

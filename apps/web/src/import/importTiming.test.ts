@@ -21,4 +21,25 @@ describe('createImportTimer', () => {
     timer.mark('plan')
     expect(timer.report()).toEqual({})
   })
+
+  it('has marks for the first ingredient, the first step, ready and open', () => {
+    let t = 0
+    const timer = createImportTimer(() => t)
+    timer.mark('submit')
+    t = 14500
+    timer.mark('ingredients')
+    t = 19300
+    timer.mark('firstStep')
+    t = 33000
+    timer.mark('ready')
+    t = 36000
+    timer.mark('open')
+    expect(timer.report()).toEqual({
+      submit: 0,
+      ingredients: 14500,
+      firstStep: 19300,
+      ready: 33000,
+      open: 36000,
+    })
+  })
 })

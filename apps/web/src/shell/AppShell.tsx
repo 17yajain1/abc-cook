@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react'
 
-import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
+import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import type { SessionStore } from '@/cooking/store'
 import type { Library } from '@/library/store'
@@ -11,11 +11,10 @@ import { useFeed } from '@/feed/useFeed'
 import { CopySheet } from '@/home/CopySheet'
 import { HomeScreen } from '@/home/HomeScreen'
 import { useClipboardUrl } from '@/home/useClipboardUrl'
-import { ImportProgress, isProgressPhase } from '@/import/ImportScreen'
-import type { ImportExtras } from '@/import/importExtras'
+import { ImportProgress, isProgressPhase } from '@/import/ImportProgress'
+import type { ImportHandlers } from '@/import/handOff'
 import { useImportJob } from '@/import/useImportJob'
 import { PlannerScreen } from '@/planner/PlannerScreen'
-import type { RenderPlan } from '@/plan/derive'
 import { LibraryScreen } from '@/library/LibraryScreen'
 
 import { BottomNav, type Tab } from './BottomNav'
@@ -38,7 +37,7 @@ export function AppShell({
   onOpenSaved,
   onPick,
   onImport,
-  onImported,
+  importHandlers,
   onOpenFeedRecipe,
 }: {
   library: Library
@@ -48,12 +47,7 @@ export function AppShell({
   onOpenSaved: (id: string, opts?: { alreadySaved?: boolean }) => void
   onPick: (recipeId: string) => void
   onImport: () => void
-  onImported: (
-    plan: RenderPlan,
-    payload: RecipePlanResponse,
-    importMeta: ImportMeta,
-    extras: ImportExtras,
-  ) => void
+  importHandlers: ImportHandlers
   onOpenFeedRecipe: (payload: RecipePlanResponse) => void
 }) {
   const [tab, setTabState] = useState<Tab>(lastTab)
@@ -68,7 +62,7 @@ export function AppShell({
   // click handlers only — a mount effect would double-fire under StrictMode.
   const session = useSyncExternalStore(sessionStore.subscribe, sessionStore.getState)
   const continueInfo = selectContinue(session, Date.now(), library.get)
-  const job = useImportJob(onImported, {
+  const job = useImportJob(importHandlers, {
     findSaved: (key) => library.findBySource(key),
     // A pasted link the person already saved opens that entry; nothing is fetched or spent.
     onDuplicate: (saved) => {
