@@ -1,0 +1,36 @@
+row  recipe            effort   strict  n  est INR  reserve  covers
+ 13  croissant         low      on      3     1.95     8.40  STOP A decision 4: produces/F11-a replication, strict on
+ 14  croissant         low      off     2     1.30     5.60  STOP A decision 4: produces/F11-a replication, strict off
+     5 calls; estimated INR 3.25; reserve INR 2.8 per call; hard cap INR 20
+
+spent so far INR 11.76
+
+row 13 rep 0: croissant low strict=on
+  status=done tier=clean cost INR 0.53 running total INR 12.29 / 16
+  import cost: graph_id=s3-row13-0 tier=clean cache_hit=False cost_inr=0.53 input_tokens=140 output_tokens=2990 reasoning_tokens=704 calls=[gpt-5-mini:140/2990]
+  marks={'first_ingredient_s': 12.547, 'ingredients_complete_s': 15.016, 'first_step_s': 15.375, 'steps_complete_s': 34.062} first_content=11.578
+
+row 14 rep 0: croissant low strict=off
+step 15 ("Bake at 190° (375°F) for 20-25 minutes....") is the last step but was marked as producing "baked croissants"; dropped -- no later step can consume it.
+  status=done tier=clean cost INR 0.70 running total INR 13.00 / 16
+  import cost: graph_id=s3-row14-0 tier=clean cache_hit=False cost_inr=0.70 input_tokens=125 output_tokens=4021 reasoning_tokens=1344 calls=[gpt-5-mini:125/4021]
+  marks={'first_ingredient_s': 20.312, 'ingredients_complete_s': 23.031, 'first_step_s': 23.219, 'steps_complete_s': 63.328} first_content=19.328
+
+row 13 rep 1: croissant low strict=on
+step 13 ("Bake at 190° (375°F) for 20-25 minutes....") is the last step but was marked as producing "baked croissants"; dropped -- no later step can consume it.
+  status=done tier=clean cost INR 0.60 running total INR 13.60 / 16
+  import cost: graph_id=s3-row13-1 tier=clean cache_hit=False cost_inr=0.60 input_tokens=140 output_tokens=3380 reasoning_tokens=896 calls=[gpt-5-mini:140/3380]
+  marks={'first_ingredient_s': 12.813, 'ingredients_complete_s': 14.922, 'first_step_s': 15.078, 'steps_complete_s': 33.953} first_content=11.969
+
+row 14 rep 1: croissant low strict=off
+step 13 ("Bake at 190° (375°F) for 20-25 minutes until light, airy, go...") is the last step but was marked as producing "baked croissants"; dropped -- no later step can consume it.
+  status=done tier=clean cost INR 0.50 running total INR 14.10 / 16
+  import cost: graph_id=s3-row14-1 tier=clean cache_hit=False cost_inr=0.50 input_tokens=125 output_tokens=2826 reasoning_tokens=320 calls=[gpt-5-mini:125/2826]
+  marks={'first_ingredient_s': 8.859, 'ingredients_complete_s': 12.672, 'first_step_s': 13.234, 'steps_complete_s': 45.734} first_content=7.328
+
+row 13 rep 2: croissant low strict=on
+  status=done tier=clean cost INR 0.67 running total INR 14.77 / 16
+  import cost: graph_id=s3-row13-2 tier=clean cache_hit=False cost_inr=0.67 input_tokens=140 output_tokens=3805 reasoning_tokens=896 calls=[gpt-5-mini:140/3805]
+  marks={'first_ingredient_s': 11.203, 'ingredients_complete_s': 13.125, 'first_step_s': 13.485, 'steps_complete_s': 42.953} first_content=10.313
+
+spent INR 14.77 of the INR 16 cap

@@ -1,0 +1,27 @@
+row  recipe            effort   strict  n  est INR  reserve  covers
+  1  croissant         low      on      1     0.70     2.80  schema acceptance, first-schema latency, FGC-11
+  2  croissant         low      on      2     1.40     5.60  FGC-11/15 n=3
+  3  croissant         low      off     3     2.04     8.40  strict on vs off; FGC-11 recurrence; FGC-13 logs
+  4  chole-bhature     low      on      2     3.40     5.60  FGC-12/15, long input, max silence
+  5  kadhi-pakora      low      on      3     2.40     8.40  FGC-12/15
+  6  kadhi-pakora      minimal  on      3     1.65     8.40  FGC-12
+  7  croissant         minimal  on      3     1.50     8.40  FGC-12
+  8  pumpkin-pancakes  low      on      1     0.50     2.80  corpus quality (third golden)
+  9  kadhi-pakora      low      off     1     0.77     2.80  strict on vs off on a second recipe
+ 12  chole-bhature     minimal  on      2     2.40     5.60  A1: only if rows 6 and 7 pass the floor
+     21 calls; estimated INR 16.76; reserve INR 2.8 per call; hard cap INR 20
+
+smoke (mock transport, both keys invalid):
+{
+ "status": "done",
+ "tier": "clean",
+ "marks_s": {
+  "first_ingredient_s": 0.141,
+  "ingredients_complete_s": 0.156,
+  "first_step_s": 0.156,
+  "steps_complete_s": 0.172
+ },
+ "extraction_calls": 1,
+ "cost_inr": 0.8712500000000001,
+ "repair_would_fire": false
+}

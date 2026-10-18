@@ -28,6 +28,7 @@ from abc_cook.extract.adapters.base import (
     MAX_RETRIES,
     STREAM_EXTRACTION_ENV,
     STREAM_IDLE_TIMEOUT_S,
+    STRICT_EXTRACTION_ENV,
     request_timeout_s,
     stream_extraction_enabled,
 )
@@ -56,7 +57,8 @@ def _watchdogs() -> list[threading.Thread]:
     return [t for t in threading.enumerate() if t.name == "stream-watchdog"]
 
 
-def test_request_is_the_pre_s2_request_plus_stream_flags() -> None:
+def test_request_is_the_pre_s2_request_plus_stream_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(STRICT_EXTRACTION_ENV, "0")  # PR-S3's response_format is tested elsewhere
     adapter, recorded = scripted_adapter(
         events(content_chunk('{"x":1}'), finish_chunk(), usage_chunk())
     )
@@ -271,9 +273,13 @@ def test_http_error_before_the_stream_starts_is_still_classified() -> None:
 
 def test_idle_bound_clears_the_worst_measured_reasoning_silence() -> None:
     """T2 `low` calls spent 192-1,984 reasoning tokens (pizza's retry) before the first
-    visible token: 1,984 / 121 tok/s = 16.4 s. T6 (kadhi) waited 7.7 s. A healthy call must
-    never look idle, so the bound keeps at least 3x headroom over the worst."""
-    assert STREAM_IDLE_TIMEOUT_S >= 3 * 16.4
+    visible token: 1,984 / 121 tok/s = 16.4 s. T6 (kadhi) waited 7.7 s. PR-S3's 24 live calls
+    (`notes/pr-s3-strict-output/`) saw first-content silences up to 19.3 s (a strict-off croissant
+    call; strict-on at most 13.8 s) and inter-delta gaps up to 0.3 s. A healthy call must never
+    look idle, so the bound keeps at least 3x headroom over the worst observed. The margin is
+    thin: 3 x 19.3 = 57.9 s against 60 s. If a silence over 20 s is ever observed, revisit
+    STREAM_IDLE_TIMEOUT_S."""
+    assert STREAM_IDLE_TIMEOUT_S >= 3 * 19.3
 
 
 def test_per_call_deadline_still_has_s1_margin_over_a_legitimate_call() -> None:
@@ -309,6 +315,7 @@ def test_anything_else_is_on(monkeypatch: pytest.MonkeyPatch, value: str) -> Non
 
 def test_off_sends_exactly_the_pre_s2_request(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(STREAM_EXTRACTION_ENV, "0")
+    monkeypatch.setenv(STRICT_EXTRACTION_ENV, "0")  # PR-S3's response_format is tested elsewhere
     completion = {
         "id": "c",
         "object": "chat.completion",

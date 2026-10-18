@@ -297,3 +297,53 @@ def test_a_lone_surrogate_cannot_poison_the_payload() -> None:
     scanner = _feed_all('{"steps":[{"text":"a \\ud83d b"}]}')
     assert len(scanner.steps) == 1
     scanner.steps[0].encode("utf-8")  # must not raise
+
+
+# --- PR-S3 (FGC-22): captured live strict-output texts ------------------------------------------
+# Two real responses from `response_format` strict output at `low` (kadhi, croissant), with the
+# delta sizes the SDK actually yielded. Strict output must keep the scanner's two assumptions:
+# `ingredients` before `steps`, and the schema's key order (`text` first in a step).
+
+STRICT_NAMES = ("kadhi-pakora", "croissant")
+
+
+def _strict_raw(name: str) -> tuple[str, list[int]]:
+    stream = FIXTURES / "stream"
+    text = (stream / f"{name}.strict-low.raw.txt").read_text(encoding="utf-8")
+    sizes: list[int] = json.loads((stream / f"{name}.strict-low.chunks.json").read_text("utf-8"))
+    assert sum(sizes) == len(text)
+    return text, sizes
+
+
+@pytest.mark.parametrize("name", STRICT_NAMES)
+def test_strict_text_has_the_schema_key_order(name: str) -> None:
+    from abc_cook.schema.normalized import NormalizedIngredient, NormalizedStep
+
+    data = json.loads(_strict_raw(name)[0])
+    assert list(data) == list(NormalizedRecipe.model_fields)
+    assert list(data).index("ingredients") < list(data).index("steps")
+    assert all(list(s) == list(NormalizedStep.model_fields) for s in data["steps"])
+    assert all(next(iter(s)) == "text" for s in data["steps"])
+    assert all(list(i) == list(NormalizedIngredient.model_fields) for i in data["ingredients"])
+
+
+@pytest.mark.parametrize("name", STRICT_NAMES)
+def test_strict_text_gives_the_same_draft_whole_char_by_char_and_as_recorded(name: str) -> None:
+    text, sizes = _strict_raw(name)
+    final = _final(text)
+    final_steps = [s.text for s in final.steps]
+    whole = _feed_all(text)
+    recorded = DraftScanner()
+    pos = 0
+    for size in sizes:
+        recorded.feed(text[pos : pos + size])
+        pos += size
+    char_by_char = DraftScanner()
+    for ch in text:
+        char_by_char.feed(ch)
+    for scanner in (whole, recorded, char_by_char):
+        assert not scanner.broken
+        assert scanner.ingredients == final.ingredients
+        assert scanner.ingredients_complete
+        assert scanner.steps == final_steps
+        assert scanner.steps_complete

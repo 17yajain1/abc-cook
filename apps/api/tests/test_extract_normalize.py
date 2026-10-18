@@ -349,3 +349,69 @@ def test_bench_flag_allows_an_effort_above_the_ceiling(effort: EffortLevel | Non
     adapter = _FakeAdapter(results=[ExtractResult(recipe=_grounded_recipe())])
     outcome = normalize(_raw(), adapter, effort=effort, allow_effort_above_ceiling=True)
     assert outcome.method_grounded is True
+
+
+# --- PR-S3: refusals and request errors ---------------------------------------------------------
+
+
+def _refused() -> ExtractResult:
+    return ExtractResult(
+        recipe=None,
+        error="the model declined to answer",
+        error_kind="refused",
+        usage=_usage(output=20, reasoning=5, stop="stop"),
+    )
+
+
+def _request_error() -> ExtractResult:
+    return ExtractResult(recipe=None, error="BadRequestError (HTTP 400)", error_kind="request")
+
+
+def test_a_refusal_is_failed_refused_with_one_call_and_never_tier0() -> None:
+    adapter = _FakeAdapter(results=[_refused()])
+    outcome = normalize(_raw(), adapter)
+    assert adapter.calls == 1  # no retry
+    assert outcome.recipe is None
+    result = outcome.tier0_result
+    assert result is not None
+    assert result.status == "failed"
+    assert result.failure == "refused"
+    assert len(outcome.calls) == 1  # its usage is kept, so the cost is reported
+
+
+def test_a_refusal_on_the_escalation_is_refused() -> None:
+    plain_truncation = ExtractResult(
+        recipe=None, truncated=True, error="max_tokens", raw_text='{"steps":[{"text":"a"}'
+    )
+    adapter = _FakeAdapter(results=[plain_truncation, _refused()])
+    outcome = normalize(_raw(), adapter)
+    assert adapter.calls == 2
+    assert outcome.tier0_result is not None
+    assert outcome.tier0_result.failure == "refused"
+
+
+def test_a_request_error_is_unavailable_with_one_call(caplog: pytest.LogCaptureFixture) -> None:
+    adapter = _FakeAdapter(results=[_request_error()])
+    with caplog.at_level(logging.WARNING, logger="abc_cook.extract.normalize"):
+        outcome = normalize(_raw(), adapter)
+    assert adapter.calls == 1  # no unparseable-style retry of a rejected request
+    result = outcome.tier0_result
+    assert result is not None
+    assert result.status == "failed"
+    assert result.failure == "unavailable"
+    assert any("HTTP 400" in r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
+
+
+def test_a_request_error_on_the_retry_is_unavailable() -> None:
+    adapter = _FakeAdapter(results=[_unparseable(), _request_error()])
+    outcome = normalize(_raw(), adapter)
+    assert adapter.calls == 2
+    assert outcome.tier0_result is not None
+    assert outcome.tier0_result.failure == "unavailable"
+
+
+def test_unparseable_still_gets_exactly_one_retry() -> None:
+    adapter = _FakeAdapter(results=[_unparseable(), ExtractResult(recipe=_grounded_recipe())])
+    outcome = normalize(_raw(), adapter)
+    assert adapter.calls == 2
+    assert outcome.method_grounded is True

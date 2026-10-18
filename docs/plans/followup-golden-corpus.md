@@ -117,6 +117,27 @@ words the parser cannot read, and two of the three source phrases are the digit 
 whether it recurs at `low` is not known; it needs a repeat before a fix is chosen.
 
 - Evidence: `notes/investigate-extraction-speed/REPORT.md` (T7, croissant minimal vs low).
+- Root cause (PR-S3 plan, 2026-10-18), in two parts:
+  - The model follows `v7.md`'s duration rule, which allows a "small min/max spread" around a
+    stated number ("10 minutes" → min 9, typical 10, max 12). At low it gave 55/60/65.
+  - `graph.py` `_verify_duration` keeps that floor, because it widens (`min(dmin, low)`) and
+    never raises a min below the stated value.
+  - Repair isn't involved.
+  - The same widening sits in the frozen originals: kadhi 28/30/32, cupcakes 9/10/11, pizza
+    4.5/5/6, 1.8/2/2.5 and 55/60/70. So it is not croissant- or low-specific.
+  - The scheduler uses `duration_typical` (60), so no number on screen is expected to change.
+    The ₹0 trace in PR-S3 confirms this before the item is regraded.
+- Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md`), fix F11-a: a generic stated floor in
+  postprocess, keeping the max headroom.
+- **Resolved by PR-S3 (F11-a).** `_verify_duration` now raises `duration_min` to the stated low
+  end (capped at the typical) when exactly one grounded plain expression exists and the per-unit
+  path does not fire; the max keeps its headroom. The ₹0 trace (model 55/60/65 → verify 55/60/65 →
+  node 55/60/65 `extracted` → timeline 60 min) showed no number on screen: the scheduler never
+  reads `duration_min`, and the web uses it only for the `~Nm` countdown when max − min > 15, which
+  no changed node crosses. Before the fix it recurred at `low` in croissant 5/6 strict-on calls and 2/5
+  strict-off calls (all calls through the replication run); with the floor it is 0 in every call. None of the 14 violating steps used hedged wording. Goldens are byte-identical
+  after regen; fixture changes are `duration_min` only (cupcakes preheat 9→10; pizza 4→5 and
+  55→60; dal makhni 1→2 and 28→30). Regraded P1 → P2 (no on-screen change).
 
 ### FGC-12 (P2): run-to-run noise at low is large and the quality comparisons are n=1
 
@@ -127,6 +148,13 @@ durations unchanged" for any effort level, including today's. Wanted before M5: 
 at n=3 on the corpus, scored on edges, stated durations and tier.
 
 - Evidence: `notes/investigate-extraction-speed/REPORT.md` (T7).
+- Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md` § 8): minimal vs low at n=3 on kadhi and
+  croissant; chole at n=2, with chole minimal only if those pass.
+- **Measured by PR-S3** (`notes/pr-s3-strict-output/stop-a.md`, 24 calls). Noise at `low` is real:
+  croissant strict-off edge agreement within the arm is 0.64–0.95 (mean 0.84, n=5). `minimal` at
+  n=3 fails the floor on kadhi (degraded 2/3 vs clean 3/3 at low, repair-would-fire 2/3 vs 0/3,
+  edge recall 0.43–0.58 vs 0.83–1.0) and is no worse on croissant; chole minimal was not run (it
+  runs only if both pass), so `minimal` cannot ship and `low` stays.
 
 ### FGC-13 (P2): about 13% of full calls need an unparseable-response retry
 
@@ -136,6 +164,14 @@ kept on truncations (`openai.py` returns `ExtractResult(recipe=None, error=...)`
 failure). Fix: capture the raw text (and `finish_reason`) on a parse failure before changing anything.
 
 - Evidence: `notes/investigate-extraction-speed/REPORT.md` (T2, rows with 2 calls).
+- Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md`). Strict structured output removes schema
+  and format failures by construction; this is argued, not measured. One defensive retry stays,
+  logged as a "strict contract violation".
+- **Not reproduced by PR-S3.** 0 unparseable responses in 24 calls (strict on and off, `low` and
+  `minimal`), so the 13% could not be measured or attributed. The adapter now WARNING-logs a parse
+  failure under strict, and `normalize` already logs head and tail of any unparseable text, so the
+  next occurrence will carry its cause. Strict ships on (FGC-28), so the next unparseable response will
+  say why.
 
 ### FGC-14 (P1): acquisition budget (S1.5, after S1, before S2) — addressed by PR-S1.5
 
@@ -211,6 +247,14 @@ ended degraded on 2026-10-17 at `low`, and repair didn't fix it, though it was c
 investigation. One run per recipe can't tell a typical result from an unlucky one.
 
 - Evidence: the 2026-10-17 croissant import at `low` (degraded); `notes/investigate-extraction-speed/REPORT.md`.
+- Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md` § 8): n=3 at low for kadhi and croissant,
+  n=2 for chole. Chole also cites the earlier low runs (total_min 473 vs 909).
+- **Measured by PR-S3** (output tokens per call): croissant low strict-off 2826–4021 (n=5), strict-on
+  2990–3805 (n=5, plus 3768 on the first call); croissant minimal 2327–2435; kadhi low 2714–3496
+  (strict on), 3735 (off, n=1); kadhi minimal 2566–2758; chole low strict-on 4757–5545 (n=2);
+  pumpkin low 2168. Explicit nulls under strict did not raise output. Cost per call ₹0.4–1.0.
+  Croissant's repair-would-fire was 3/5 strict-off and 4/6 strict-on before PR-S3's two fixes and
+  0 after: the cause was a label on the final step (FGC-29 is the non-final cousin).
 
 ### FGC-16 (R5 at the latest): "Plan simplified" visible without scrolling
 
@@ -278,6 +322,13 @@ at ~22 s even with streaming. Candidates:
 - lever 9, parallel acquisition;
 - start extraction before probing finishes when the description has no recipe-like link.
 
+PR-S3 result (`minimal` effort, strict on): first ingredient from paste (6 s acquire + call) was
+7.7–8.2 s on croissant and 8.3–9.6 s on kadhi, against 14–20 s at `low`. But `minimal` fails the
+quality floor on kadhi (degraded 2/3, edge recall 0.43–0.58 vs 0.83–1.0 at low; see FGC-12), so
+effort stays `low` and the remaining gap lands here. At `low` the first-ingredient wait today is
+12–20 s from paste with strict on and 15–26 s with it off, and provider latency drifts by several
+seconds between days.
+
 ### FGC-21 (PR-S2): the draft's step text can state a time the plan later changes
 
 Draft steps are the model's step text, which can carry the source's own "fry 5 min". If verification changes
@@ -291,11 +342,33 @@ S3's strict output mode may change key order or chunking. Before S3 merges, re-v
 - `DraftScanner`'s assumptions: `ingredients` before `steps`, and `text` first in a step;
 - the replay texts.
 
+Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md` § 6). The scanner already ignores key order
+within a step and ignores whitespace. Replay texts are `model_dump_json()` (every key, schema
+order), so they are regenerated only if live strict output has a different key sequence.
+
+- **Resolved by PR-S3.** In all 24 live raw texts (strict on and off) the top-level, ingredient and
+  step keys equal schema order, `ingredients` precede `steps`, and `text` is first in every step;
+  `DraftScanner` fed char-by-char and in the recorded chunking equals the final parse and was never
+  `broken`. The replay texts need no regeneration. Two captured strict raw texts (kadhi, croissant)
+  are committed as scanner fixtures under `tests/fixtures/stream/`.
+
 ### FGC-23 (PR-S2): a long reasoning silence ends as `unavailable`
 
 At `low`, a reasoning silence longer than `STREAM_IDLE_TIMEOUT_S` (60 s) has never been measured (max ~16 s).
 If one happened, the job would end as `unavailable`, not `incomplete`. Revisit if S3 or FGC-12 changes the
 extraction effort.
+
+Owned by PR-S3 (`docs/plans/pr-s3-strict-output.md` § 6). The bench records first-content
+silence and the max inter-delta gap per call, with the first call on a new strict schema reported
+separately. The guard test becomes ≥ 3 × the observed max.
+
+- **Resolved by PR-S3.** Max first-content silence over 24 calls was 19.3 s (a strict-off croissant
+  call), then 15.6 s, with strict-on at most 13.8 s; max inter-delta gap 0.3 s. The first strict
+  call (a new schema) was 13.8 s, no slower than strict-off calls the same day, so no first-schema
+  penalty showed. `STREAM_IDLE_TIMEOUT_S` stays 60 s. The guard test is `>= 3 * 19.3`: the STOP A
+  decision said 15.6 s (the max of the first 19 calls), but the later replication call reached
+  19.3 s, so the guard cites the real max. 3 × 19.3 = 57.9 s is under 60 s, but only just; revisit
+  the bound if a silence over 20 s is ever seen.
 
 ### FGC-24 (M5): the "Your plan is ready" tap
 
@@ -325,3 +398,51 @@ Add one covering:
   `:focus-visible` ring (not suppressed; checked on "Your plan is ready", "Close" and "Try again").
 
 Owner decision to record there: whether the ring should become a terracotta `:focus-visible` ring app-wide.
+
+### FGC-27 (after S3): prompt v8, measured on its own
+
+PR-S3 keeps the prompt byte-identical, so the strict on/off A/B isolates strict output. Deferred
+here, to be measured as a separate model-facing change:
+
+- remove the pasted JSON Schema when strict output carries it (about 3,000 prompt tokens);
+- drop or tighten `v7.md`'s "small min/max spread" duration rule (the FGC-11 root cause on the
+  model side);
+- fix `v7.md`'s `duration_typical`, which should be `duration_typical_min`;
+- any instruction found under PR-S3 amendment A2 that conflicts with all-required output. The one
+  found is `v7.md:197`, "Leave `depends_on_previous` at its default; it is a legacy field": under
+  strict the model must emit a value, and it emitted `false` on 25 of 175 steps (14%) vs 4 of 50
+  (8%) strict-off; of the 11 strict-on steps with no explicit `depends_on_steps`, graph.py kept 3
+  independent and forced 8 sequential.
+
+### FGC-28 (PR-S3): strict structured output — resolved: ships on
+
+PR-S3 built strict output (`ABC_COOK_STRICT_EXTRACTION`, a `response_format` with the strict
+schema; the prompt is byte-identical) and measured it on 29 live calls (₹16.84). The owner's rule
+was applied after PR-S3's two post-processing fixes, first on 24 calls (pumpkin failed at n=1 per
+arm), then with pumpkin at n=3 per arm. Final numbers:
+
+- a. croissant repair-would-fire, on 0/5 vs off 0/5 (n=5 each, excluding the first strict call): pass;
+- b. croissant edge agreement: cross on×off 0.834 (25 pairs) vs within-off 0.842 (10 pairs), so
+  0.834 ≥ 0.842 − 0.05: pass (within-on is lower, 0.728);
+- c. stated-floor violations with F11-a on: 0 in both arms: pass;
+- d. kadhi no worse (repair 0/3 vs 0/2; edge R/P 0.92/0.89 vs 0.69/0.74): pass; pumpkin no worse
+  (n=3 per arm): repair-would-fire 1/3 on vs 2/3 off, floor violations 0 and 0, edge recall/precision
+  1.0/0.87 on vs 0.87/0.77 off: pass. The earlier fail was one strict-off pumpkin run (the frozen
+  run from the speed investigation, precision 0.75) against one strict-on run (0.60); pumpkin's
+  per-call precision ranges 0.5–1.0 in both arms, so n=1 was noise.
+
+Gain: first ingredient about 3–6 s earlier at `low` (croissant 10–14 s vs 15–20 s, kadhi 8–12 vs
+15 s) and steps-complete 5–20 s earlier; +2,447 input tokens per call; no output increase; no
+unparseable response in either arm. The kill switch is `ABC_COOK_STRICT_EXTRACTION=0` (or `false`,
+`off`); off sends the request byte-for-byte as before. Evidence: `notes/pr-s3-strict-output/`
+(`stop-a.md`, `produces-consumed.md`, `rescore.out.txt`, `results.md`).
+
+### FGC-29 (PR-S3): a label produced at a non-final step that nothing consumes
+
+Kadhi at `minimal` (calls 6-0 and 6-1) labels step 1 of 9 with `produces_component` and no later
+step names it, and not every later node depends on it, so invariant 6 fires. `produces_consumed` is
+in `REPAIRABLE_RULES`, so a Sonnet call is made, but `StepRepair` cannot clear a label (omitted
+means unchanged, and only an empty-string replacement would drop it), so repair almost never
+resolves it and the plan degrades to a linear chain. PR-S3 fixed only the final-step case (nothing
+later can consume it). Consider a generic drop for a label no node consumes whose siblings carry no
+dependency on it, or a repair hint that allows clearing the label. Record only; not changed.

@@ -32,6 +32,7 @@ caller remembering the gate.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
@@ -40,6 +41,8 @@ from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
 from abc_cook.schema.node import Attention, Node, NodeKind
 from abc_cook.schema.normalized import Freshness, NormalizedRecipe, NormalizedStep, ProvenanceSource
+
+_logger = logging.getLogger(__name__)
 
 _IMMEDIACY_MARKERS = (
     "immediately",
@@ -856,7 +859,15 @@ def _verify_duration(
                 f"duration corrected to {new_typical:g} min to match the text."
             )
         dtyp = new_typical
-        dmin = min(dmin, expr.low_min) if dmin is not None else expr.low_min
+        if _per_unit_floor_multiplier(text) is None:
+            # The stated floor: a time the source gives is the least this step takes, so the
+            # minimum is raised to its low end (capped at the typical) and never left below it
+            # -- "1 hour" cannot come back as min 55. The max keeps its headroom, which the
+            # scheduler reads as the worst case, so widening upward is the conservative side.
+            floor = expr.low_min if dmin is None else max(dmin, expr.low_min)
+            dmin = min(floor, dtyp)
+        else:
+            dmin = min(dmin, expr.low_min) if dmin is not None else expr.low_min
         dmax = max(dmax, expr.high_min) if dmax is not None else expr.high_min
         stated = True
     elif not plain and stated and not ceilings:
@@ -1741,7 +1752,20 @@ def build_graph(
             # cost fixing.
             if not consumer_found:
                 later_nodes = nodes[index + 1 :]
-                if later_nodes and all(
+                if not later_nodes:
+                    # B3's guard for the empty set: a final step has no later node that could
+                    # name its product, so the label can never be consumed. Repair cannot fix
+                    # it either (a consumer must be strictly later), so it would only cost a
+                    # call and then degrade the plan to a chain. Nothing downstream is lost.
+                    _logger.warning(
+                        'step %d ("%s...") is the last step but was marked as producing "%s"; '
+                        "dropped -- no later step can consume it.",
+                        index,
+                        step.text[:60],
+                        step.produces_component,
+                    )
+                    producer.produces = None
+                elif all(
                     _depends_transitively(later, producer.id, nodes_by_id) for later in later_nodes
                 ):
                     warnings.append(

@@ -1,0 +1,36 @@
+row  recipe            effort   strict  n  est INR  reserve  covers
+ 15  pumpkin-pancakes  low      on      2     0.90     5.60  STOP B review: pumpkin n=3 per arm, on
+ 16  pumpkin-pancakes  low      off     3     1.35     8.40  STOP B review: pumpkin n=3 per arm, off
+     5 calls; estimated INR 2.25; reserve INR 2.8 per call; hard cap INR 20
+
+spent so far INR 14.77
+
+row 15 rep 0: pumpkin-pancakes low strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.36 running total INR 15.13 / 18
+  import cost: graph_id=s3-row15-0 tier=degraded cache_hit=False cost_inr=0.36 input_tokens=105 output_tokens=1974 reasoning_tokens=448 calls=[gpt-5-mini:105/1974]
+  marks={'first_ingredient_s': 7.282, 'ingredients_complete_s': 9.719, 'first_step_s': 9.875, 'steps_complete_s': 17.844} first_content=6.703
+
+row 16 rep 0: pumpkin-pancakes low strict=off
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.50 running total INR 15.63 / 18
+  import cost: graph_id=s3-row16-0 tier=degraded cache_hit=False cost_inr=0.50 input_tokens=1242 output_tokens=2690 reasoning_tokens=1088 calls=[gpt-5-mini:1242/2690]
+  marks={'first_ingredient_s': 14.266, 'ingredients_complete_s': 18.5, 'first_step_s': 18.782, 'steps_complete_s': 34.844} first_content=13.438
+
+row 15 rep 1: pumpkin-pancakes low strict=on
+  status=done tier=clean cost INR 0.48 running total INR 16.11 / 18
+  import cost: graph_id=s3-row15-1 tier=clean cache_hit=False cost_inr=0.48 input_tokens=105 output_tokens=2707 reasoning_tokens=896 calls=[gpt-5-mini:105/2707]
+  marks={'first_ingredient_s': 12.281, 'ingredients_complete_s': 17.0, 'first_step_s': 17.312, 'steps_complete_s': 28.046} first_content=11.438
+
+row 16 rep 1: pumpkin-pancakes low strict=off
+  status=done tier=clean cost INR 0.33 running total INR 16.44 / 18
+  import cost: graph_id=s3-row16-1 tier=clean cache_hit=False cost_inr=0.33 input_tokens=90 output_tokens=1846 reasoning_tokens=384 calls=[gpt-5-mini:90/1846]
+  marks={'first_ingredient_s': 9.922, 'ingredients_complete_s': 13.953, 'first_step_s': 14.297, 'steps_complete_s': 24.75} first_content=8.453
+
+row 16 rep 2: pumpkin-pancakes low strict=off
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.40 running total INR 16.84 / 18
+  import cost: graph_id=s3-row16-2 tier=degraded cache_hit=False cost_inr=0.40 input_tokens=90 output_tokens=2247 reasoning_tokens=768 calls=[gpt-5-mini:90/2247]
+  marks={'first_ingredient_s': 8.297, 'ingredients_complete_s': 10.75, 'first_step_s': 11.016, 'steps_complete_s': 20.531} first_content=7.703
+
+spent INR 16.84 of the INR 18 cap

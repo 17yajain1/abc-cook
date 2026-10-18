@@ -423,7 +423,8 @@
             {
               "enum": [
                 "unavailable",
-                "incomplete"
+                "incomplete",
+                "refused"
               ],
               "type": "string"
             },

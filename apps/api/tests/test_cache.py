@@ -243,6 +243,7 @@ _ONE_CHANGE: dict[str, dict[str, Any]] = {
     "extraction_model": {"extraction_model": "gpt-5-nano"},
     "extraction_prompt": {"extraction_prompt": "a different extraction prompt"},
     "extraction_schema": {"extraction_output_type": _AlteredRecipe},
+    "extraction_strict": {"extraction_strict": False},  # the default is on
     "repair_model": {"repair_model": "claude-other"},
     "repair_effort": {"repair_effort": "high"},
     "repair_prompt": {"repair_prompt": "a different repair prompt"},
@@ -302,6 +303,8 @@ def test_every_fingerprint_field_has_an_invalidation_case() -> None:
         "extraction_model",
         "extraction_effort",
         "extraction_prompt_sha256",
+        "extraction_strict",
+        "extraction_response_format_sha256",
         "repair_model",
         "repair_effort",
         "repair_prompt_sha256",
@@ -328,3 +331,13 @@ def test_identity_with_a_lone_surrogate_source_key_is_encodable(tmp_path: Path) 
     c = DiskResultCache(tmp_path, now=_Clock())
     c.put(identity, _entry())
     assert c.get(identity) is not None
+
+
+def test_strict_off_has_no_response_format_hash_and_on_has_one() -> None:
+    off = _fp(extraction_strict=False)
+    on = _fp(extraction_strict=True)
+    assert off.extraction_strict is False
+    assert off.extraction_response_format_sha256 is None
+    assert on.extraction_strict is True
+    assert on.extraction_response_format_sha256 is not None
+    assert _identity(extraction_strict=True) != _identity(extraction_strict=False)

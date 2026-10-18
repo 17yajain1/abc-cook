@@ -1,0 +1,113 @@
+row  recipe            effort   strict  n  est INR  reserve  covers
+  2  croissant         low      on      2     1.40     5.60  FGC-11/15 n=3
+  3  croissant         low      off     3     2.04     8.40  strict on vs off; FGC-11 recurrence; FGC-13 logs
+  4  chole-bhature     low      on      2     3.40     5.60  FGC-12/15, long input, max silence
+  5  kadhi-pakora      low      on      3     2.40     8.40  FGC-12/15
+  6  kadhi-pakora      minimal  on      3     1.65     8.40  FGC-12
+  7  croissant         minimal  on      3     1.50     8.40  FGC-12
+  8  pumpkin-pancakes  low      on      1     0.50     2.80  corpus quality (third golden)
+  9  kadhi-pakora      low      off     1     0.77     2.80  strict on vs off on a second recipe
+     18 calls; estimated INR 13.66; reserve INR 2.8 per call; hard cap INR 20
+
+spent so far INR 0.86
+
+row 2 rep 0: croissant low strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.58 running total INR 1.44 / 20
+  import cost: graph_id=s3-row2-0 tier=degraded cache_hit=False cost_inr=0.58 input_tokens=140 output_tokens=3269 reasoning_tokens=832 calls=[gpt-5-mini:140/3269]
+  marks={'first_ingredient_s': 13.766, 'ingredients_complete_s': 16.578, 'first_step_s': 16.969, 'steps_complete_s': 39.25} first_content=12.766
+
+row 2 rep 1: croissant low strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.64 running total INR 2.09 / 20
+  import cost: graph_id=s3-row2-1 tier=degraded cache_hit=False cost_inr=0.64 input_tokens=140 output_tokens=3630 reasoning_tokens=896 calls=[gpt-5-mini:140/3630]
+  marks={'first_ingredient_s': 10.078, 'ingredients_complete_s': 11.828, 'first_step_s': 12.297, 'steps_complete_s': 35.953} first_content=9.422
+
+row 3 rep 0: croissant low strict=off
+  status=done tier=clean cost INR 0.77 running total INR 2.86 / 20
+  import cost: graph_id=s3-row3-0 tier=clean cache_hit=False cost_inr=0.77 input_tokens=8061 output_tokens=3550 reasoning_tokens=896 calls=[gpt-5-mini:8061/3550]
+  marks={'first_ingredient_s': 14.687, 'ingredients_complete_s': 17.0, 'first_step_s': 17.297, 'steps_complete_s': 46.359} first_content=13.797
+
+row 3 rep 1: croissant low strict=off
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.58 running total INR 3.44 / 20
+  import cost: graph_id=s3-row3-1 tier=degraded cache_hit=False cost_inr=0.58 input_tokens=125 output_tokens=3291 reasoning_tokens=960 calls=[gpt-5-mini:125/3291]
+  marks={'first_ingredient_s': 15.782, 'ingredients_complete_s': 18.375, 'first_step_s': 18.828, 'steps_complete_s': 40.938} first_content=14.75
+
+row 3 rep 2: croissant low strict=off
+  status=done tier=clean cost INR 0.60 running total INR 4.04 / 20
+  import cost: graph_id=s3-row3-2 tier=clean cache_hit=False cost_inr=0.60 input_tokens=125 output_tokens=3412 reasoning_tokens=1024 calls=[gpt-5-mini:125/3412]
+  marks={'first_ingredient_s': 16.5, 'ingredients_complete_s': 19.047, 'first_step_s': 19.39, 'steps_complete_s': 44.344} first_content=15.562
+
+row 4 rep 0: chole-bhature low strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.94 running total INR 4.98 / 20
+  import cost: graph_id=s3-row4-0 tier=degraded cache_hit=False cost_inr=0.94 input_tokens=5421 output_tokens=4757 reasoning_tokens=384 calls=[gpt-5-mini:5421/4757]
+  marks={'first_ingredient_s': 6.25, 'ingredients_complete_s': 16.812, 'first_step_s': 17.469, 'steps_complete_s': 51.765} first_content=5.5
+
+row 4 rep 1: chole-bhature low strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.98 running total INR 5.96 / 20
+  import cost: graph_id=s3-row4-1 tier=degraded cache_hit=False cost_inr=0.98 input_tokens=173 output_tokens=5545 reasoning_tokens=576 calls=[gpt-5-mini:173/5545]
+  marks={'first_ingredient_s': 7.656, 'ingredients_complete_s': 17.187, 'first_step_s': 17.625, 'steps_complete_s': 57.406} first_content=6.828
+
+row 5 rep 0: kadhi-pakora low strict=on
+  status=done tier=clean cost INR 0.69 running total INR 6.65 / 20
+  import cost: graph_id=s3-row5-0 tier=clean cache_hit=False cost_inr=0.69 input_tokens=3488 output_tokens=3496 reasoning_tokens=1024 calls=[gpt-5-mini:3488/3496]
+  marks={'first_ingredient_s': 12.406, 'ingredients_complete_s': 20.516, 'first_step_s': 20.922, 'steps_complete_s': 37.625} first_content=11.562
+
+row 5 rep 1: kadhi-pakora low strict=on
+  status=done tier=clean cost INR 0.50 running total INR 7.15 / 20
+  import cost: graph_id=s3-row5-1 tier=clean cache_hit=False cost_inr=0.50 input_tokens=160 output_tokens=2770 reasoning_tokens=384 calls=[gpt-5-mini:160/2770]
+  marks={'first_ingredient_s': 7.891, 'ingredients_complete_s': 16.547, 'first_step_s': 16.969, 'steps_complete_s': 29.516} first_content=6.969
+
+row 5 rep 2: kadhi-pakora low strict=on
+  status=done tier=clean cost INR 0.49 running total INR 7.64 / 20
+  import cost: graph_id=s3-row5-2 tier=clean cache_hit=False cost_inr=0.49 input_tokens=160 output_tokens=2714 reasoning_tokens=832 calls=[gpt-5-mini:160/2714]
+  marks={'first_ingredient_s': 9.282, 'ingredients_complete_s': 16.688, 'first_step_s': 17.266, 'steps_complete_s': 26.688} first_content=8.563
+
+row 6 rep 0: kadhi-pakora minimal strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.70 running total INR 8.34 / 20
+  import cost: graph_id=s3-row6-0 tier=degraded cache_hit=False cost_inr=0.70 input_tokens=12448 output_tokens=2566 reasoning_tokens=0 calls=[gpt-5-mini:12448/2566]
+  marks={'first_ingredient_s': 3.64, 'ingredients_complete_s': 16.515, 'first_step_s': 17.031, 'steps_complete_s': 34.328} first_content=2.031
+
+row 6 rep 1: kadhi-pakora minimal strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.47 running total INR 8.81 / 20
+  import cost: graph_id=s3-row6-1 tier=degraded cache_hit=False cost_inr=0.47 input_tokens=160 output_tokens=2598 reasoning_tokens=0 calls=[gpt-5-mini:160/2598]
+  marks={'first_ingredient_s': 2.328, 'ingredients_complete_s': 13.296, 'first_step_s': 14.218, 'steps_complete_s': 40.421} first_content=1.203
+
+row 6 rep 2: kadhi-pakora minimal strict=on
+  status=done tier=clean cost INR 0.50 running total INR 9.31 / 20
+  import cost: graph_id=s3-row6-2 tier=clean cache_hit=False cost_inr=0.50 input_tokens=160 output_tokens=2758 reasoning_tokens=0 calls=[gpt-5-mini:160/2758]
+  marks={'first_ingredient_s': 2.703, 'ingredients_complete_s': 10.484, 'first_step_s': 10.828, 'steps_complete_s': 29.875} first_content=1.781
+
+row 7 rep 0: croissant minimal strict=on
+  status=done tier=clean cost INR 0.45 running total INR 9.76 / 20
+  import cost: graph_id=s3-row7-0 tier=clean cache_hit=False cost_inr=0.45 input_tokens=1548 output_tokens=2365 reasoning_tokens=0 calls=[gpt-5-mini:1548/2365]
+  marks={'first_ingredient_s': 2.172, 'ingredients_complete_s': 5.625, 'first_step_s': 6.125, 'steps_complete_s': 34.406} first_content=1.047
+
+row 7 rep 1: croissant minimal strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.42 running total INR 10.18 / 20
+  import cost: graph_id=s3-row7-1 tier=degraded cache_hit=False cost_inr=0.42 input_tokens=140 output_tokens=2327 reasoning_tokens=0 calls=[gpt-5-mini:140/2327]
+  marks={'first_ingredient_s': 2.078, 'ingredients_complete_s': 4.109, 'first_step_s': 4.359, 'steps_complete_s': 22.156} first_content=1.266
+
+row 7 rep 2: croissant minimal strict=on
+repair pass skipped its retry: provider unavailable (repair skipped (bench))
+  status=done tier=degraded cost INR 0.44 running total INR 10.62 / 20
+  import cost: graph_id=s3-row7-2 tier=degraded cache_hit=False cost_inr=0.44 input_tokens=140 output_tokens=2435 reasoning_tokens=0 calls=[gpt-5-mini:140/2435]
+  marks={'first_ingredient_s': 1.703, 'ingredients_complete_s': 3.968, 'first_step_s': 4.078, 'steps_complete_s': 35.625} first_content=0.922
+
+row 8 rep 0: pumpkin-pancakes low strict=on
+  status=done tier=clean cost INR 0.42 running total INR 11.04 / 20
+  import cost: graph_id=s3-row8-0 tier=clean cache_hit=False cost_inr=0.42 input_tokens=1641 output_tokens=2168 reasoning_tokens=576 calls=[gpt-5-mini:1641/2168]
+  marks={'first_ingredient_s': 7.109, 'ingredients_complete_s': 9.484, 'first_step_s': 9.687, 'steps_complete_s': 20.437} first_content=6.437
+
+row 9 rep 0: kadhi-pakora low strict=off
+  status=done tier=clean cost INR 0.72 running total INR 11.76 / 20
+  import cost: graph_id=s3-row9-0 tier=clean cache_hit=False cost_inr=0.72 input_tokens=3089 output_tokens=3735 reasoning_tokens=640 calls=[gpt-5-mini:3089/3735]
+  marks={'first_ingredient_s': 15.343, 'ingredients_complete_s': 28.875, 'first_step_s': 29.328, 'steps_complete_s': 49.093} first_content=13.828
+
+spent INR 11.76 of the INR 20 cap

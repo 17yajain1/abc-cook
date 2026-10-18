@@ -1,0 +1,11 @@
+('chole-bhature', 'low', 'on') repair-would-fire before 2/2 -> after 1/2 edge R [] P []
+('croissant', 'low', 'off') repair-would-fire before 1/3 -> after 0/3 edge R [0.71, 0.56, 0.6] P [0.62, 0.42, 0.43]
+('croissant', 'low', 'on') repair-would-fire before 3/3 -> after 0/3 edge R [0.36, 0.29, 0.5] P [0.33, 0.2, 0.3]
+('croissant', 'minimal', 'on') repair-would-fire before 2/3 -> after 0/3 edge R [0.8, 0.6, 0.5] P [0.67, 0.33, 0.27]
+('kadhi-pakora', 'low', 'off') repair-would-fire before 0/1 -> after 0/1 edge R [0.71] P [0.62]
+('kadhi-pakora', 'low', 'on') repair-would-fire before 0/3 -> after 0/3 edge R [1.0, 0.83, None] P [0.78, 1.0, None]
+('kadhi-pakora', 'minimal', 'on') repair-would-fire before 2/3 -> after 2/3 edge R [0.54, 0.43, 0.58] P [0.88, 0.75, 0.58]
+('pumpkin-pancakes', 'low', 'on') repair-would-fire before 0/1 -> after 0/1 edge R [1.0] P [0.6]
+golden kadhi-pakora final step produces_component = None
+golden croissant final step produces_component = None
+golden pumpkin-pancakes final step produces_component = None

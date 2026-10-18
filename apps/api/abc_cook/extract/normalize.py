@@ -289,7 +289,10 @@ def normalize(
 
     - A provider failure (`error_kind == "infra"`: auth, quota, outage, network, timeout)
       on any call stops at once with a `failed` result (`failure="unavailable"`). The SDK
-      has already retried once, so a same-input retry would only repeat the wait.
+      has already retried once, so a same-input retry would only repeat the wait. A rejected
+      request (`error_kind == "request"`, any other 4xx) stops the same way: the identical
+      request would be rejected again.
+    - A refusal (`error_kind == "refused"`) stops at once with `failure="refused"`.
     - A truncation with no visible output (`_reasoning_exhausted`) stops with no escalation:
       a `failed` result (`failure="incomplete"`).
 
@@ -328,8 +331,35 @@ def normalize(
             _log_unparseable(result, model)
         return result
 
-    def _unavailable(result: ExtractResult[NormalizedRecipe]) -> NormalizeOutcome:
-        warning = f"Extraction provider unavailable ({result.error}); not retrying the same input."
+    def _stop(result: ExtractResult[NormalizedRecipe]) -> NormalizeOutcome | None:
+        """The terminal `failed` outcome for a result no retry can fix, or None to carry on.
+
+        `infra` (provider or link) and `request` (a rejected request, e.g. a schema the provider
+        refused: the same request would be rejected again) end as `unavailable`; a `refused`
+        answer (the model declined, or the output was filtered) ends as `refused`. None of them
+        is retried, and none is ever reported as a recipe with no method.
+        """
+        if result.error_kind == "refused":
+            return NormalizeOutcome(
+                recipe=None,
+                tier0_result=_failed_result(
+                    raw,
+                    "refused",
+                    [f"Extraction was refused by the provider ({result.error}); not retrying."],
+                ),
+                calls=calls,
+                escalated=escalated,
+                truncations=truncations,
+            )
+        if result.error_kind == "request":
+            warning = f"Extraction request was rejected ({result.error}); not retrying."
+            _logger.warning("extraction request rejected: model=%s error=%s", model, result.error)
+        elif result.error_kind == "infra":
+            warning = (
+                f"Extraction provider unavailable ({result.error}); not retrying the same input."
+            )
+        else:
+            return None
         return NormalizeOutcome(
             recipe=None,
             tier0_result=_failed_result(raw, "unavailable", [warning]),
@@ -339,8 +369,8 @@ def normalize(
         )
 
     result = _call(max_tokens)
-    if result.error_kind == "infra":
-        return _unavailable(result)
+    if (stopped := _stop(result)) is not None:
+        return stopped
 
     if result.truncated:
         truncations += 1
@@ -370,8 +400,8 @@ def normalize(
             )
         escalated = True
         result = _call(ESCALATED_MAX_TOKENS)
-        if result.error_kind == "infra":
-            return _unavailable(result)
+        if (stopped := _stop(result)) is not None:
+            return stopped
         if result.truncated:
             truncations += 1
             warning = (
@@ -388,8 +418,8 @@ def normalize(
             )
     elif result.recipe is None:
         result = _call(max_tokens)
-        if result.error_kind == "infra":
-            return _unavailable(result)
+        if (stopped := _stop(result)) is not None:
+            return stopped
 
     if result.recipe is None:
         warning = f"Extraction failed twice; treating as ungrounded (error: {result.error})."
