@@ -1,7 +1,6 @@
 {
   "slug": "kadhi-pakora",
   "known_issues": [
-    "FGC-5",
     "FGC-6"
   ],
   "repair_applied": false,
@@ -157,6 +156,21 @@
         "Add pakoras"
       ],
       "start_min": 51.0,
+      "window": "w2"
+    },
+    {
+      "label": "Wait before serving",
+      "kind": "passive",
+      "attention": "unattended",
+      "station": "none",
+      "duration_min": 10,
+      "duration_typical": 10,
+      "duration_max": 10,
+      "duration_source": "extracted",
+      "depends_on": [
+        "Add pakoras"
+      ],
+      "start_min": 51.0,
       "window": null
     },
     {
@@ -169,12 +183,12 @@
       "duration_max": 2,
       "duration_source": "inferred",
       "depends_on": [
-        "Add pakoras",
         "Make tempering",
         "Cook kadi",
-        "Finish kadi"
+        "Finish kadi",
+        "Wait before serving"
       ],
-      "start_min": 53.0,
+      "start_min": 61.0,
       "window": null
     }
   ],
@@ -188,20 +202,30 @@
       "capacity_min": 21.0,
       "used_min": 5.0,
       "slack_min": 16.0
+    },
+    {
+      "id": "w2",
+      "host": "Wait before serving",
+      "assigned": [
+        "Make tempering"
+      ],
+      "capacity_min": 9.0,
+      "used_min": 2.0,
+      "slack_min": 7.0
     }
   ],
   "totals": {
-    "total_min": 54.0,
-    "serial_min": 60.0,
-    "saved_min": 6.0,
+    "total_min": 62.0,
+    "serial_min": 70.0,
+    "saved_min": 8.0,
     "active_min": 29.0,
-    "elapsed_min": 54.0,
-    "elapsed_high_min": 71.0
+    "elapsed_min": 62.0,
+    "elapsed_high_min": 77.0
   },
   "sessions": [
     {
       "start_min": 0.0,
-      "end_min": 54.0,
+      "end_min": 62.0,
       "active_min": 29.0,
       "preceded_by_wait_min": null,
       "nodes": [
@@ -215,6 +239,7 @@
         "Finish fry",
         "Add pakoras",
         "Make tempering",
+        "Wait before serving",
         "Serve"
       ]
     }

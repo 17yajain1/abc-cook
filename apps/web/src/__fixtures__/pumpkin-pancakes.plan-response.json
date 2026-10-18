@@ -150,7 +150,7 @@
         "unit": null,
         "prep_note": null,
         "group": null,
-        "optional": false
+        "optional": true
       },
       {
         "id": "ing_chocolate_chips",
@@ -304,31 +304,7 @@
         "interruptible": false,
         "max_lead_min": null,
         "doneness_cue": null,
-        "tip": null
-      },
-      {
-        "id": "step_there_are_two_different_ways_to",
-        "stage": "cook",
-        "label": "Serve classic",
-        "instruction": "There are two different ways to eat these pancakes. The first is the classic: serve with butter and maple syrup.",
-        "kind": "active",
-        "attention": "hands_on",
-        "duration_min": 1,
-        "duration_typical": 1,
-        "duration_max": 2,
-        "station": "counter",
-        "depends_on": [
-          "step_put_some_butter_on_a_pan"
-        ],
-        "consumes": [
-          "ing_butter",
-          "ing_maple_syrup"
-        ],
-        "produces": null,
-        "interruptible": false,
-        "max_lead_min": null,
-        "doneness_cue": null,
-        "tip": null
+        "tip": "Optional: There are two different ways to eat these pancakes. The first is the classic: serve with butter and maple syrup."
       },
       {
         "id": "step_the_other_the_creator_s_favorite",
@@ -342,8 +318,7 @@
         "duration_max": 2,
         "station": "counter",
         "depends_on": [
-          "step_put_some_butter_on_a_pan",
-          "step_there_are_two_different_ways_to"
+          "step_put_some_butter_on_a_pan"
         ],
         "consumes": [
           "ing_chocolate_chips",
@@ -415,25 +390,17 @@
         "rank_in_window": null
       },
       {
-        "node_id": "step_there_are_two_different_ways_to",
+        "node_id": "step_the_other_the_creator_s_favorite",
         "start_min": 22.0,
         "end_min": 23.0,
-        "occupies_cook": true,
-        "window_id": null,
-        "rank_in_window": null
-      },
-      {
-        "node_id": "step_the_other_the_creator_s_favorite",
-        "start_min": 23.0,
-        "end_min": 24.0,
         "occupies_cook": true,
         "window_id": null,
         "rank_in_window": null
       }
     ],
     "windows": [],
-    "total_min": 24.0,
-    "serial_min": 24.0,
+    "total_min": 23.0,
+    "serial_min": 23.0,
     "saved_min": 0.0,
     "critical_path": [
       "step_in_a_bowl_add_15_oz",
@@ -441,7 +408,6 @@
       "step_add_1_tsp_of_baking_powder",
       "step_add_1_4_cup_oil_2",
       "step_put_some_butter_on_a_pan",
-      "step_there_are_two_different_ways_to",
       "step_the_other_the_creator_s_favorite"
     ],
     "warnings": []
@@ -450,26 +416,25 @@
     {
       "stage_id": "cook",
       "start_min": 0.0,
-      "end_min": 23.0,
-      "elapsed_min": 23.0,
-      "work_min": 23.0,
+      "end_min": 22.0,
+      "elapsed_min": 22.0,
+      "work_min": 22.0,
       "windowed_work_min": 0.0,
-      "inline_work_min": 23.0,
-      "hands_on_min": 23.0,
+      "inline_work_min": 22.0,
+      "hands_on_min": 22.0,
       "unattended_min": 0.0,
       "node_ids": [
         "step_in_a_bowl_add_15_oz",
         "step_add_1_2_tsp_salt_1",
         "step_add_1_tsp_of_baking_powder",
         "step_add_1_4_cup_oil_2",
-        "step_put_some_butter_on_a_pan",
-        "step_there_are_two_different_ways_to"
+        "step_put_some_butter_on_a_pan"
       ]
     },
     {
       "stage_id": "finish",
-      "start_min": 23.0,
-      "end_min": 24.0,
+      "start_min": 22.0,
+      "end_min": 23.0,
       "elapsed_min": 1.0,
       "work_min": 1.0,
       "windowed_work_min": 0.0,
@@ -482,27 +447,26 @@
     }
   ],
   "summary": {
-    "active_min": 24.0,
-    "attended_min": 24.0,
-    "elapsed_min": 24.0,
-    "elapsed_high_min": 34.0,
+    "active_min": 23.0,
+    "attended_min": 23.0,
+    "elapsed_min": 23.0,
+    "elapsed_high_min": 32.0,
     "sessions": [
       {
         "start_min": 0.0,
-        "end_min": 24.0,
-        "active_min": 24.0,
+        "end_min": 23.0,
+        "active_min": 23.0,
         "node_ids": [
           "step_in_a_bowl_add_15_oz",
           "step_add_1_2_tsp_salt_1",
           "step_add_1_tsp_of_baking_powder",
           "step_add_1_4_cup_oil_2",
           "step_put_some_butter_on_a_pan",
-          "step_there_are_two_different_ways_to",
           "step_the_other_the_creator_s_favorite"
         ],
         "preceded_by_wait_min": null,
-        "elapsed_min": 24.0,
-        "elapsed_high_min": 34.0,
+        "elapsed_min": 23.0,
+        "elapsed_high_min": 32.0,
         "preceded_by_host_node_ids": []
       }
     ],
@@ -510,17 +474,16 @@
     "phases": [
       {
         "start_min": 0.0,
-        "end_min": 24.0,
-        "elapsed_min": 24.0,
-        "elapsed_high_min": 34.0,
-        "active_min": 24.0,
+        "end_min": 23.0,
+        "elapsed_min": 23.0,
+        "elapsed_high_min": 32.0,
+        "active_min": 23.0,
         "node_ids": [
           "step_in_a_bowl_add_15_oz",
           "step_add_1_2_tsp_salt_1",
           "step_add_1_tsp_of_baking_powder",
           "step_add_1_4_cup_oil_2",
           "step_put_some_butter_on_a_pan",
-          "step_there_are_two_different_ways_to",
           "step_the_other_the_creator_s_favorite"
         ],
         "preceded_by_wait_min": null,
