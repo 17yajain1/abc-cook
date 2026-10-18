@@ -10,8 +10,9 @@ body is exactly what production would send. No network, no keys.
     python apps/api/scripts/dump_extraction_request.py --diff before after --out $D
 
 `before` writes the two stream variants (strict does not exist yet, so the switch is not set).
-`after` writes the four combinations. Files are `<label>-stream-{on,off}[-strict-{on,off}].json`,
-canonical JSON (sorted keys, 2-space indent).
+`after` writes the four combinations with the FGC-3 added-steps switch off; `after-off` and
+`after-on` write them with it off and on. Files are
+`<label>-stream-{on,off}[-strict-{on,off}].json`, canonical JSON (sorted keys, 2-space indent).
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ from abc_cook.schema.normalized import (  # noqa: E402
 FIXTURE = API_ROOT / "tests" / "fixtures" / "import" / "kadhi-pakora.raw.json"
 STREAM_ENV = "ABC_COOK_STREAM_EXTRACTION"
 STRICT_ENV = "ABC_COOK_STRICT_EXTRACTION"
+ADDED_ENV = "ABC_COOK_ADDED_STEPS"
 
 
 def _canned() -> str:
@@ -68,8 +70,21 @@ def _sse(payload: dict[str, Any] | str) -> bytes:
     return f"data: {body}\n\n".encode()
 
 
-def capture(*, stream: bool, strict: bool | None) -> dict[str, Any]:
-    """The first extraction request body for one switch combination."""
+def _restore(key: str, value: str | None) -> None:
+    if value is None:
+        os.environ.pop(key, None)
+    else:
+        os.environ[key] = value
+
+
+def capture(*, stream: bool, strict: bool | None, added: bool | None = False) -> dict[str, Any]:
+    """The first extraction request body for one switch combination.
+
+    `added` sets `ABC_COOK_ADDED_STEPS` (FGC-3) for the whole capture: the prompt is
+    built when `normalize` runs, so it stays set until the request is recorded. The
+    default is off, the request as it was before the field existed; `None` leaves the variable as
+    the process has it (unset = the production default).
+    """
     text = _canned()
     seen: list[dict[str, Any]] = []
     usage = {
@@ -129,7 +144,7 @@ def capture(*, stream: bool, strict: bool | None) -> dict[str, Any]:
             },
         )
 
-    saved = {k: os.environ.get(k) for k in (STREAM_ENV, STRICT_ENV)}
+    saved = {k: os.environ.get(k) for k in (STREAM_ENV, STRICT_ENV, ADDED_ENV)}
     try:
         os.environ[STREAM_ENV] = "1" if stream else "0"
         if strict is None:
@@ -139,15 +154,20 @@ def capture(*, stream: bool, strict: bool | None) -> dict[str, Any]:
         adapter = OpenAIAdapter(api_key="sk-dump-unused")
     finally:
         for key, value in saved.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-    adapter._client = adapter._client.with_options(
-        http_client=httpx.Client(transport=httpx.MockTransport(handler))
-    )
-    raw = RawAcquisition.model_validate_json(FIXTURE.read_text(encoding="utf-8"))
-    normalize(raw, adapter)
+            if key != ADDED_ENV:
+                _restore(key, value)
+    if added is not None:
+        os.environ[ADDED_ENV] = "1" if added else "0"
+    else:
+        os.environ.pop(ADDED_ENV, None)
+    try:
+        adapter._client = adapter._client.with_options(
+            http_client=httpx.Client(transport=httpx.MockTransport(handler))
+        )
+        raw = RawAcquisition.model_validate_json(FIXTURE.read_text(encoding="utf-8"))
+        normalize(raw, adapter)
+    finally:
+        _restore(ADDED_ENV, saved[ADDED_ENV])
     if not seen:
         raise RuntimeError("no request was captured")
     return seen[0]
@@ -170,7 +190,7 @@ def main() -> None:
     """Write dumps, or diff two labels."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--label", choices=["before", "after"])
+    parser.add_argument("--label", choices=["before", "after", "after-off", "after-on"])
     parser.add_argument("--diff", nargs=2, metavar=("A", "B"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -178,11 +198,15 @@ def main() -> None:
     if args.label == "before":
         for stream in (True, False):
             _write(args.out, _name("before", stream, None), capture(stream=stream, strict=None))
-    elif args.label == "after":
+    elif args.label in ("after", "after-off", "after-on"):
+        # `after` is `after-off`: the added-steps switch is off unless the label says `-on`.
+        added = args.label == "after-on"
         for stream in (True, False):
             for strict in (False, True):
                 _write(
-                    args.out, _name("after", stream, strict), capture(stream=stream, strict=strict)
+                    args.out,
+                    _name(args.label, stream, strict),
+                    capture(stream=stream, strict=strict, added=added),
                 )
     elif args.diff:
         a, b = args.diff

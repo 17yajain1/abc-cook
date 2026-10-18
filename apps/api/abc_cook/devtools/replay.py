@@ -89,6 +89,18 @@ CHOLE = "chole-bhature-low"
 FIXTURE_NAMES = [*_FIXTURE_FILES, CHOLE]
 
 
+def _replay_text(recipe: NormalizedRecipe) -> str:
+    """The recipe as the model streamed it: compact JSON.
+
+    A frozen capture made before `origin` existed (prompt v7) has no `origin` key; replaying it
+    without one keeps its length, and so its pacing, the one that was measured. A recipe with an
+    added step keeps the key.
+    """
+    if any(step.origin == "added" for step in recipe.steps):
+        return recipe.model_dump_json()
+    return recipe.model_dump_json(exclude={"steps": {"__all__": {"origin"}}})
+
+
 def load_fixture(name: str) -> ReplayFixture:
     """Load one replay fixture by name (`FIXTURE_NAMES`)."""
     if name == CHOLE:
@@ -102,7 +114,7 @@ def load_fixture(name: str) -> ReplayFixture:
                 encoding="utf-8"
             )
         )
-        return ReplayFixture(name, recipe.model_dump_json(), raw)
+        return ReplayFixture(name, _replay_text(recipe), raw)
     if name not in _FIXTURE_FILES:
         raise ValueError(f"unknown replay fixture {name!r}; choose from {FIXTURE_NAMES}")
     original_file, raw_file = _FIXTURE_FILES[name]
@@ -110,7 +122,7 @@ def load_fixture(name: str) -> ReplayFixture:
         (FIXTURES_DIR / original_file).read_text(encoding="utf-8")
     )
     raw = RawAcquisition.model_validate_json((FIXTURES_DIR / raw_file).read_text(encoding="utf-8"))
-    return ReplayFixture(name, original.recipe.model_dump_json(), raw, repair=original.repair)
+    return ReplayFixture(name, _replay_text(original.recipe), raw, repair=original.repair)
 
 
 def _check_outcome(outcome: str) -> str:

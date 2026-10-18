@@ -22,6 +22,11 @@ although the source states a yield of 18-20.
 `.original.json` is the `ImportOriginal` taken from the capture's `result.json`; `reprocess()` of it
 reproduced that result exactly.
 
+Still known-wrong after FGC-3 PR 2. Prompt v8 (2026-10-18, effort `low`, strict) added 0 steps in
+3 of 3 runs (the model's notes say it did not invent mixing steps), so no v8 capture replaces this
+one as a golden. All 6 cupcakes runs of that A/B, v7 and v8, degraded on `ingredients_consumed`
+(FGC-40). Evidence: `docs/plans/fix-fgc-345-quality.md` and `notes/fgc-345/summary.md`.
+
 ## `chole-bhature.raw.json`
 
 Source: FU1ZVLMbWjA (CookingShooking Hindi, 13:14). Auto `hi` Devanagari transcript (11,602 chars),

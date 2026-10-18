@@ -130,6 +130,7 @@ function task(overrides: Partial<RenderTask>): RenderTask {
     durationProvenance: null,
     homeStageIndex: 0,
     tip: null,
+    addedLabel: null,
     ...overrides,
   }
 }

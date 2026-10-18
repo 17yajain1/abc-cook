@@ -37,6 +37,7 @@ export function ImportDraft({
   view,
   footer,
   working = false,
+  addedLabel,
   failure,
   onCancel,
   cancelLabel = 'Cancel',
@@ -46,6 +47,9 @@ export function ImportDraft({
   /** The job is still running: a small pulsing dot sits beside the footer line. It does not
    * pulse for people who ask for reduced motion, and is not shown once the job has ended. */
   working?: boolean
+  /** The line under a step the model marked as added, e.g. "Added by ABC Cook, not in the
+   * video" (FGC-3). A step is never shown as added without it. */
+  addedLabel?: string
   /** The quiet line pinned under the page, e.g. "Reading the steps…". Absent in a failed
    * state, where the message lives in `failure` and must not appear twice. */
   footer?: ReactNode
@@ -123,7 +127,12 @@ export function ImportDraft({
             {view.method.kind === 'steps' ? (
               <ol className="mt-2">
                 {view.method.steps.map((line, i) => (
-                  <Step key={i} number={i + 1} text={line} />
+                  <Step
+                    key={i}
+                    number={i + 1}
+                    text={line}
+                    note={view.method.kind === 'steps' && view.method.added?.[i] ? addedLabel : undefined}
+                  />
                 ))}
               </ol>
             ) : view.method.kind === 'sections' ? (
@@ -192,13 +201,16 @@ function SectionHead({ title, draft }: { title: string; draft: boolean }) {
   )
 }
 
-function Step({ number, text }: { number: number; text: string }) {
+function Step({ number, text, note }: { number: number; text: string; note?: string }) {
   return (
     <li className="flex gap-3 py-2">
       <span className="tabular w-5 flex-shrink-0 pt-px text-right text-[13px] text-home-ink-2">
         {number}
       </span>
-      <span className="text-[15px] leading-[1.55] text-home-ink">{text}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] leading-[1.55] text-home-ink">{text}</span>
+        {note && <span className="block text-[13px] leading-[1.4] text-home-ink-2">{note}</span>}
+      </span>
     </li>
   )
 }

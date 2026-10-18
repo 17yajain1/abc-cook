@@ -1,6 +1,7 @@
 import type { ImportJobResponse } from '@abc-cook/schema'
 
 import { IngredientList } from '../plan/IngredientList'
+import { addedStepLabel } from '@/lib/addedStep'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { draftIngredientGroups } from './draftView'
@@ -61,8 +62,10 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset, retry, instant, isText, markThumbnail, openReady } =
+  const { phase, setPhase, text, setText, submitText, reset, retry, instant, isText, markThumbnail, openReady, url } =
     job
+  // FGC-3: the line under a step the model added; the wording follows the source being read.
+  const addedLabel = addedStepLabel(isText ? { kind: 'text', value: '' } : { kind: 'url', value: url })
   // The page behind the app is the Home ground too (safe-area strip, over-scroll).
   useHomeSurface(true)
 
@@ -83,6 +86,7 @@ export function ImportProgress({
     if (view.header || phase.preview || phase.draft || isText) {
       return (
         <ImportDraft
+          addedLabel={addedLabel}
           view={view}
           footer={phase.preview ? <PreviewFooter /> : <p>{footer}</p>}
           working
@@ -99,6 +103,7 @@ export function ImportProgress({
     // draft stays readable) and a button, not a page change, says so: the cook may be mid-line.
     return (
       <ImportDraft
+        addedLabel={addedLabel}
         view={importViewFor({
           instant,
           acquired: phase.acquired,
@@ -125,6 +130,7 @@ export function ImportProgress({
     // so the message appears once.
     return (
       <ImportDraft
+        addedLabel={addedLabel}
         view={importViewFor({
           instant,
           acquired: phase.acquired,
@@ -181,6 +187,7 @@ export function ImportProgress({
     if (phase.draft) {
       return (
         <ImportDraft
+          addedLabel={addedLabel}
           view={view}
           failure={
             <div role="alert">
@@ -197,6 +204,7 @@ export function ImportProgress({
     }
     return (
       <ImportDraft
+        addedLabel={addedLabel}
         view={view}
         footer={
           <>

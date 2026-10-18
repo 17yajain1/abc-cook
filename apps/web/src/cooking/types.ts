@@ -138,6 +138,9 @@ export interface CookingNodeInfo {
   /** Inverse of `dependsOn` — every node whose `dependsOn` names this one. */
   consumers: string[]
   consumes: string[]
+  /** "Added by ABC Cook, not in the video" (or "recipe") when the node's provenance origin is
+   * `added` (FGC-3); `null` for every step from the source. */
+  addedLabel: string | null
   /** `kind === 'finish'`. Exactly one true per graph (plan §D test row 2). */
   isSink: boolean
   durationMin: number

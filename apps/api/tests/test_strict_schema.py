@@ -74,6 +74,13 @@ def _keywords(node: Any) -> set[str]:
     return out
 
 
+@pytest.fixture(autouse=True)
+def _full_model_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests check the strict transform on the whole model, `origin` included (FGC-3); the
+    switched-off schema without it is covered in `test_added_steps.py`."""
+    monkeypatch.setenv("ABC_COOK_ADDED_STEPS", "1")
+
+
 def test_every_object_is_closed_and_fully_required() -> None:
     schema = strict_json_schema(NormalizedRecipe)
     objects = _objects(schema)
@@ -87,7 +94,8 @@ def test_property_order_is_preserved_with_text_first() -> None:
     schema = strict_json_schema(NormalizedRecipe)
     assert list(schema["properties"]) == list(NormalizedRecipe.model_json_schema()["properties"])
     assert list(schema["properties"])[:3] == ["title", "channel", "method_grounded"]
-    assert next(iter(schema["$defs"]["NormalizedStep"]["properties"])) == "text"
+    # `origin` leads a step so the streamed draft can label it before its text (FGC-3).
+    assert list(schema["$defs"]["NormalizedStep"]["properties"])[:2] == ["origin", "text"]
 
 
 def test_no_unsupported_keywords() -> None:

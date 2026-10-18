@@ -116,6 +116,9 @@ function WindowTask({
             {task.instruction}
           </span>
         )}
+        {task.addedLabel != null && (
+          <span className="mt-0.5 block text-[13px] text-home-ink-2">{task.addedLabel}</span>
+        )}
       </span>
       <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
         {taskDurationText(task)}

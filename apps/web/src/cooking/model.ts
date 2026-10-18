@@ -1,4 +1,6 @@
-import type { RecipePlanResponse, ScheduledNode } from '@abc-cook/schema'
+import type { GraphProvenance, RecipePlanResponse, ScheduledNode } from '@abc-cook/schema'
+
+import { addedStepLabel } from '@/lib/addedStep'
 
 import type { CookingModel, CookingNodeInfo } from './types'
 
@@ -33,7 +35,10 @@ export function executionOrder(scheduled: readonly ScheduledNode[]): string[] {
  * `plan.scheduled` itself is never mutated or re-sorted in place — `order` is a
  * derivation held on the model, not written back (plan §K1).
  */
-export function deriveCookingModel(payload: RecipePlanResponse): CookingModel {
+export function deriveCookingModel(
+  payload: RecipePlanResponse,
+  provenance: GraphProvenance | null = null,
+): CookingModel {
   const { graph, plan } = payload
 
   const stageLabelOf = new Map(graph.stages.map((stage) => [stage.id, stage.label]))
@@ -65,6 +70,8 @@ export function deriveCookingModel(payload: RecipePlanResponse): CookingModel {
       dependsOn: node.depends_on ?? [],
       consumers: consumersOf.get(node.id) ?? [],
       consumes: node.consumes ?? [],
+      addedLabel:
+        provenance?.nodes?.[node.id]?.origin === 'added' ? addedStepLabel(graph.source) : null,
       isSink: node.kind === 'finish',
       durationMin: node.duration_min,
       durationTypical: node.duration_typical,

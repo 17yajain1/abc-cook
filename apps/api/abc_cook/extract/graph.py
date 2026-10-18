@@ -36,6 +36,7 @@ import logging
 import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
+from typing import Literal
 
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
@@ -120,6 +121,8 @@ class NodeDecision:
     depends_on_previous_source: ProvenanceSource
     freshness: Freshness
     freshness_cue: str | None
+    origin: Literal["source", "added"] = "source"
+    """`added` for a step ABC Cook added because the source skips it (FGC-3)."""
 
 
 @dataclass(frozen=True)
@@ -1487,6 +1490,212 @@ def _stages_for(kinds: list[NodeKind]) -> list[str]:
 _STAGE_LABELS = {"prep": "Prep", "cook": "Cook", "finish": "Finish"}
 
 
+_TEMPERATURE_RE = re.compile(
+    r"(?P<gas>gas\s*mark\s*(?P<gasn>\d+))"
+    r"|(?P<num>\d+(?:\.\d+)?)\s*"
+    r"(?:[\u00b0\u00ba]\s*(?P<deg>[CF])?(?![A-Za-z])"
+    r"|degrees?(?:\s+(?P<word>celsius|fahrenheit))?(?![A-Za-z])"
+    r"|(?P<bare>[CF])(?![A-Za-z])"
+    r"|\u0921\u093f\u0917\u094d\u0930\u0940)",
+    re.IGNORECASE,
+)
+"""FGC-3: a temperature in a step's text. A degree sign (with or without C/F), "degrees"
+(optionally celsius/fahrenheit), a bare C/F after a number (only from 40, so a "1 c" of a
+cup is not one; the source corpus is lower-cased, so the case is not checked), "gas mark N" and
+the Hindi word for degrees. Used only to check that an added step does not state a temperature
+the source does not."""
+
+
+def _temperatures(text: str) -> list[tuple[float, str | None]]:
+    """Each temperature in `text` as `(value, system)`; system is c, f, gas or None (unstated)."""
+    found: list[tuple[float, str | None]] = []
+    for match in _TEMPERATURE_RE.finditer(text):
+        if match.group("gas"):
+            found.append((float(match.group("gasn")), "gas"))
+            continue
+        value = float(match.group("num"))
+        bare = match.group("bare")
+        if bare and value < 40:
+            continue
+        letter = match.group("deg") or bare
+        word = (match.group("word") or "").lower()
+        system = letter.lower() if letter else ("c" if word == "celsius" else "f" if word else None)
+        found.append((value, system))
+    return found
+
+
+def _ungrounded_temperature(text: str, corpus: str) -> bool:
+    """Whether `text` states a temperature the source does not: same value, same unit system.
+
+    A temperature whose system is not written ("180 degrees") matches the source's on the
+    number alone.
+    """
+    source = _temperatures(corpus)
+    return any(
+        not any(
+            value == other and (system is None or other_system is None or system == other_system)
+            for other, other_system in source
+        )
+        for value, system in _temperatures(text)
+    )
+
+
+def _time_intervals(text: str) -> list[tuple[float, float]]:
+    """Every duration-shaped phrase in `text` as `(low, high)` minutes, offsets and leads too."""
+    out: list[tuple[float, float]] = []
+    for match in _DURATION_EXPR_RE.finditer(text):
+        factor = _duration_unit_factor(match.group("unit"))
+        a = _duration_number(match.group("a")) * factor
+        b_token = match.group("b")
+        b = _duration_number(b_token) * factor if b_token else a
+        out.append((min(a, b), max(a, b)))
+    return out
+
+
+def _ungrounded_time(text: str, corpus: str) -> bool:
+    """Whether `text` states a time the source does not (an interval it contains nowhere)."""
+    source = _time_intervals(corpus)
+    return any(
+        not any(low <= a and b <= high for low, high in source) for a, b in _time_intervals(text)
+    )
+
+
+def _added_step_problem(
+    step: NormalizedStep, corpus: str, listed: dict[str, list[str]], labels: list[str]
+) -> str | None:
+    """Why an added step must be dropped (FGC-3), or None when it may stay.
+
+    `listed` maps the lower-cased extracted ingredient names (what `_name_candidates` reads);
+    `labels` are the products any step names, which a step may consume too.
+    """
+    if step.role != "required":
+        return "it is not a required step"
+    for name in step.consumes_ingredients:
+        if _name_candidates(name, listed) is None and not any(
+            _names_label([name], label) for label in labels
+        ):
+            return f'it uses "{name}", which the source does not list'
+    if _ungrounded_time(step.text, corpus):
+        return "it states a time the source does not"
+    if _ungrounded_temperature(step.text, corpus):
+        return "it states a temperature the source does not"
+    return None
+
+
+def _names_label(consumed: list[str], label: str) -> bool:
+    """The producer pass's match: a consumed name contains, or is contained in, `label`."""
+    produced = label.lower()
+    return any(produced in name.lower() or name.lower() in produced for name in consumed)
+
+
+def _prepare_added_steps(
+    recipe: NormalizedRecipe, corpus: str, warnings: list[str]
+) -> tuple[NormalizedRecipe, bool]:
+    """FGC-3: apply the added-step guards, dropping what must not reach the plan.
+
+    An added step is dropped when it is not required, it consumes an ingredient the source does not
+    list, or its own text states a time or a temperature that the source does not. A kept added
+    step's `produces_component` is cleared when no later step uses it. A dropped step's
+    ingredients go to the step that needed its product (else the next step), so no ingredient is
+    left unused, and every index a later step holds (`depends_on_steps`, `attach_to_step`) is
+    remapped; a claim on a dropped step becomes
+    the dropped step's own dependencies. A recipe with no added step is returned unchanged.
+
+    Returns the recipe and whether a human review is advised.
+    """
+    steps = recipe.steps
+    if not any(step.origin == "added" for step in steps):
+        return recipe, False
+
+    listed = {ing.name.lower(): [ing.name] for ing in recipe.ingredients}
+    labels = [s.produces_component for s in steps if s.produces_component]
+    drop: set[int] = set()
+    for index, step in enumerate(steps):
+        if step.origin != "added":
+            continue
+        problem = _added_step_problem(step, corpus, listed, labels)
+        if problem is not None:
+            drop.add(index)
+            warnings.append(
+                f'Dropped the step ABC Cook would have added, "{step.text[:60]}": {problem}.'
+            )
+    review = bool(drop)
+
+    kept = [index for index in range(len(steps)) if index not in drop]
+    new_index = {old: new for new, old in enumerate(kept)}
+    updated = {index: steps[index] for index in kept}
+
+    for index in kept:
+        step = steps[index]
+        label = step.produces_component
+        if (
+            step.origin == "added"
+            and label
+            and not any(
+                _names_label(steps[later].consumes_ingredients, label)
+                for later in kept
+                if later > index
+            )
+        ):
+            updated[index] = updated[index].model_copy(update={"produces_component": None})
+            warnings.append(
+                f'Cleared "{label}" from the added step "{step.text[:60]}": no later step uses it.'
+            )
+
+    for index in sorted(drop):
+        gone = steps[index]
+        label = gone.produces_component
+        later = [k for k in kept if k > index]
+        heir = next(
+            (k for k in later if label and _names_label(steps[k].consumes_ingredients, label)),
+            later[0] if later else max(k for k in kept if k < index),
+        )
+        consumed = [
+            name
+            for name in updated[heir].consumes_ingredients
+            if not (label and _names_label([name], label))
+        ]
+        have = {name.lower() for name in consumed}
+        consumed += [
+            name
+            for name in gone.consumes_ingredients
+            if name.lower() not in have and not (label and name.lower() == label.lower())
+        ]
+        updated[heir] = updated[heir].model_copy(update={"consumes_ingredients": consumed})
+
+    def bridged(claim: int, seen: frozenset[int] = frozenset()) -> list[int]:
+        if claim not in drop:
+            return [claim]
+        own = steps[claim].depends_on_steps
+        if own is None or claim in seen:
+            return []
+        return [k for dep in own for k in bridged(dep, seen | {claim})]
+
+    def remap(claim: list[int]) -> list[int]:
+        out: list[int] = []
+        for k in claim:
+            for resolved in bridged(k) if 0 <= k < len(steps) else [k]:
+                in_range = 0 <= resolved < len(steps)
+                mapped = new_index.get(resolved, resolved) if in_range else resolved
+                if mapped not in out:
+                    out.append(mapped)
+        return out
+
+    new_steps: list[NormalizedStep] = []
+    for index in kept:
+        step = updated[index]
+        changes: dict[str, object] = {}
+        if step.depends_on_steps is not None:
+            changes["depends_on_steps"] = remap(step.depends_on_steps)
+        target = step.attach_to_step
+        if target is not None:
+            changes["attach_to_step"] = (
+                new_index.get(target) if 0 <= target < len(steps) and target not in drop else None
+            )
+        new_steps.append(step.model_copy(update=changes) if changes else step)
+    return recipe.model_copy(update={"steps": new_steps}), review
+
+
 def build_graph(
     recipe: NormalizedRecipe,
     raw_source_text: str,
@@ -1537,10 +1746,13 @@ def build_graph(
     """
     if not recipe.steps:
         return GraphBuildResult(graph=None, warnings=["No steps to build a graph from."])
+    if not any(step.origin == "source" for step in recipe.steps):
+        # FGC-3: steps the model added are not the source's method (the Tier 0 gate, re-checked).
+        return GraphBuildResult(graph=None, warnings=["No steps from the source to build from."])
 
     corpus = _verification_corpus(raw_source_text)
     warnings: list[str] = []
-    review_recommended = False
+    recipe, review_recommended = _prepare_added_steps(recipe, corpus, warnings)
 
     # -- Ingredients --------------------------------------------------------------
     ingredients: list[Ingredient] = []
@@ -1647,7 +1859,13 @@ def build_graph(
     attention_sources: list[ProvenanceSource] = []
     kinds: list[NodeKind] = []
     for index, step in enumerate(steps):
-        attention, attention_source = _verify_attention(step, corpus)
+        attention: Attention
+        attention_source: ProvenanceSource
+        if step.origin == "added":
+            # An added step never hosts a wait window or opens parallelism (FGC-3).
+            attention, attention_source = "hands_on", "inferred"
+        else:
+            attention, attention_source = _verify_attention(step, corpus)
         attentions.append(attention)
         attention_sources.append(attention_source)
         kinds.append("finish" if index == total - 1 else _infer_kind(step.text, attention))
@@ -1660,9 +1878,15 @@ def build_graph(
         # §4/§6 item 1: verify the duration claim against the step's own text
         # BEFORE the window-host clamp, so the clamp acts on the verified
         # stated-ness rather than the model's raw self-report.
-        vmin, vtyp, vmax, vstated, duration_warnings, duration_review = _verify_duration(
-            step, corpus, attention
-        )
+        duration_warnings: list[str]
+        if step.origin == "added":
+            # An added step's duration is ABC Cook's estimate, never a stated fact (FGC-3).
+            vmin, vtyp, vmax = step.duration_min, step.duration_typical_min, step.duration_max
+            vstated, duration_warnings, duration_review = False, [], False
+        else:
+            vmin, vtyp, vmax, vstated, duration_warnings, duration_review = _verify_duration(
+                step, corpus, attention
+            )
         warnings.extend(duration_warnings)
         review_recommended = review_recommended or duration_review
         verified_step = step.model_copy(
@@ -1676,7 +1900,9 @@ def build_graph(
         dmin, dtyp, dmax, duration_source, clamp_fired = _resolve_duration(
             verified_step, kind, attention
         )
-        freshness, freshness_cue, max_lead_min = _verify_freshness(step, corpus)
+        freshness, freshness_cue, max_lead_min = (
+            ("none", None, None) if step.origin == "added" else _verify_freshness(step, corpus)
+        )
         _ingredient_ids(step.consumes_ingredients)  # emits the not-found warnings only
 
         if explicit:
@@ -1752,6 +1978,7 @@ def build_graph(
                 depends_on_previous_source=dep_source,
                 freshness=freshness,
                 freshness_cue=freshness_cue,
+                origin=step.origin,
             )
         )
 

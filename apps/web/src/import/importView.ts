@@ -37,7 +37,14 @@ export interface ImportViewModel {
     | { kind: 'pending' }
     | { kind: 'none' }
     | { kind: 'sections'; sections: PreviewSection[] }
-    | { kind: 'steps'; steps: string[]; complete: boolean }
+    | {
+        kind: 'steps'
+        steps: string[]
+        /** Parallel to `steps`: the model marked that step as added (FGC-3). Present only
+         * when at least one step is. */
+        added?: boolean[]
+        complete: boolean
+      }
   status: ImportStatus
 }
 
@@ -76,7 +83,9 @@ export function importViewFor({
   const lines = preview?.ingredients.filter((line) => line.trim()) ?? []
   const sections = (preview?.instructions ?? []).filter((s) => s.lines.length > 0)
   const draftIngredients = draft?.ingredients ?? []
-  const draftSteps = (draft?.steps ?? []).map((s) => s.text).filter((text) => text.trim())
+  const shownSteps = (draft?.steps ?? []).filter((s) => s.text.trim())
+  const draftSteps = shownSteps.map((s) => s.text)
+  const draftAdded = shownSteps.map((s) => s.added === true)
 
   const failed = status === 'failed'
   const empty = (closedEmpty: boolean) =>
@@ -93,7 +102,12 @@ export function importViewFor({
     sections.length > 0
       ? { kind: 'sections', sections }
       : draftSteps.length > 0
-        ? { kind: 'steps', steps: draftSteps, complete: draft?.steps_complete === true }
+        ? {
+            kind: 'steps',
+            steps: draftSteps,
+            ...(draftAdded.some(Boolean) ? { added: draftAdded } : {}),
+            complete: draft?.steps_complete === true,
+          }
         : empty(draft?.steps_complete === true)
 
   return {

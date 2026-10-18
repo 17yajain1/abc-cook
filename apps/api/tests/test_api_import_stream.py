@@ -163,7 +163,7 @@ def test_unparseable_retry_freezes_the_draft_from_call_one(
 
 def test_escalation_keeps_the_first_calls_steps() -> None:
     partial = recipe_text("a", steps=3)
-    partial = partial[: partial.rindex('{"text"')]
+    partial = partial[: partial.rindex('{"origin"')]
     fake = StreamingFake([(partial, "truncated"), (recipe_text("b", steps=3), "ok")])
     job, _ = _run(fake)
 

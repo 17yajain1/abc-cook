@@ -360,12 +360,16 @@ export interface WaitWindow {
   used_min: number;
 }
 /**
- * One step of a streamed draft. The text only: never a duration field.
+ * One step of a streamed draft. The text and its origin: never a duration field.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
  * via the `definition` "DraftStep".
  */
 export interface DraftStep {
+  /**
+   * The model marked this step as one it added because the source skips it (`origin="added"`, FGC-3). The draft labels it; the validated plan decides.
+   */
+  added?: boolean;
   /**
    * The model's step text, as streamed (lightly normalized).
    */
@@ -401,6 +405,10 @@ export interface NodeProvenance {
   };
   freshness?: 'none' | 'stated_unbounded' | 'stated_numeric';
   freshness_cue?: string | null;
+  /**
+   * added when ABC Cook added this step because the source skips it (FGC-3); source otherwise, including for a provenance record saved before this field existed.
+   */
+  origin?: 'source' | 'added';
 }
 /**
  * `GET /import/{job_id}` — the client polls this (design doc §4.5).
@@ -774,6 +782,10 @@ export interface NormalizedStep {
    * ONLY populated for stated_numeric. Never a guessed number.
    */
   max_lead_min?: number | null;
+  /**
+   * source for every step the source describes, even when you reword it. added only for a step you add because the source skips something the dish cannot be made without (see the prompt section "Steps the source skips"); the cook is shown it as added by the app, not by the source. Never added for a source with no method of its own.
+   */
+  origin?: 'source' | 'added';
   /**
    * Freeform label for what this step yields -- set it only when a LATER step will name this exact label in its own consumes_ingredients.
    */

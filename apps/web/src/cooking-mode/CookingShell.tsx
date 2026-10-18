@@ -79,6 +79,9 @@ export function CookingShell({
             <p className={`text-[19px] leading-[1.45] ${g.ink}`} style={{ textWrap: 'pretty' }}>
               {view.title}
             </p>
+            {view.addedNote && (
+              <p className={`mt-2 text-[13px] leading-[1.4] ${g.ink2}`}>{view.addedNote}</p>
+            )}
             {/* F2 ingredient chips: amount + name per ingredient, in the slot the quantity
                 line used (16px below the instruction). Display only — a list, not
                 controls: no handler, no button role, no focus. A chip wraps internally only

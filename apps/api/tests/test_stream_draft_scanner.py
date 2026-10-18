@@ -322,7 +322,10 @@ def test_strict_text_has_the_schema_key_order(name: str) -> None:
     data = json.loads(_strict_raw(name)[0])
     assert list(data) == list(NormalizedRecipe.model_fields)
     assert list(data).index("ingredients") < list(data).index("steps")
-    assert all(list(s) == list(NormalizedStep.model_fields) for s in data["steps"])
+    # These two texts were captured before `origin` existed (prompt v7): every other key,
+    # in the schema's order, with `text` first.
+    captured = [k for k in NormalizedStep.model_fields if k != "origin"]
+    assert all(list(s) == captured for s in data["steps"])
     assert all(next(iter(s)) == "text" for s in data["steps"])
     assert all(list(i) == list(NormalizedIngredient.model_fields) for i in data["ingredients"])
 

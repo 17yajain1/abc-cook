@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import type { RecipePlanResponse } from '@abc-cook/schema'
+import type { GraphProvenance, RecipePlanResponse } from '@abc-cook/schema'
 
 import { deriveCookingModel } from '@/cooking/model'
 import type { SessionStore } from '@/cooking/store'
@@ -37,6 +37,7 @@ import { WhatsCookingSheet } from './WhatsCookingSheet'
  */
 export function CookingModeScreen({
   payload,
+  provenance = null,
   planKey,
   store,
   onExit,
@@ -46,6 +47,8 @@ export function CookingModeScreen({
   emitCompletion,
 }: {
   payload: RecipePlanResponse
+  /** FGC-3: which steps ABC Cook added; `null` for a plan with no provenance (the label is simply absent). */
+  provenance?: GraphProvenance | null
   planKey: string
   store: SessionStore
   onExit: () => void
@@ -64,7 +67,7 @@ export function CookingModeScreen({
    * session replaced through the conflict flow). `App.tsx` appends it to the local outbox. */
   emitCompletion: (event: SessionFinished) => void
 }) {
-  const model = useMemo(() => deriveCookingModel(payload), [payload])
+  const model = useMemo(() => deriveCookingModel(payload, provenance), [payload, provenance])
   const ingredients = useMemo(() => ingredientsById(payload.graph.ingredients), [payload])
   const timing = useMemo(() => headerTiming(payload.summary ?? null, payload.plan.total_min), [payload])
 

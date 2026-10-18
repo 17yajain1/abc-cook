@@ -145,7 +145,7 @@ def test_an_empty_ingredient_list_is_replaced_by_a_later_non_empty_one() -> None
 def test_steps_complete_is_only_set_by_the_call_that_owns_the_steps() -> None:
     # Call 1 streamed two steps and was cut; call 2 completes a different list.
     partial = recipe_text("a", steps=3)
-    partial = partial[: partial.rindex('{"text"')]
+    partial = partial[: partial.rindex('{"origin"')]
     adapter, drafts = _draft_adapter(
         StreamingFake([(partial, "truncated"), (recipe_text("b"), "ok")])
     )
