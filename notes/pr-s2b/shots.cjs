@@ -236,6 +236,13 @@ async function runChole({ fixture, out }) {
   await c.finish()
 }
 
+async function focusRing(page, name) {
+  await page.keyboard.press('Tab')
+  const b = page.getByRole('button', { name, exact: true }).first()
+  await b.focus()
+  const r = await b.evaluate((el) => { const cs = getComputedStyle(el); return { fv: el.matches(':focus-visible'), outline: `${cs.outlineStyle} ${cs.outlineWidth} ${cs.outlineColor}` } })
+  console.log('focus', name, JSON.stringify(r))
+}
 async function runStall({ fixture, out }, which) {
   const c = await newSession(fixture, out)
   const { page } = c
@@ -245,6 +252,7 @@ async function runStall({ fixture, out }, which) {
   await c.shot(`08${which}-stall-${which === 'a' ? 'with' : 'no'}-draft`, 'unavailable on the Home ground')
   await c.scrollTo('bottom'); await c.shot(`08${which}b-scrolled`, 'scrolled')
   await c.scrollTo('top')
+  await focusRing(page, 'Try again')
   await page.getByRole('button', { name: 'Try again' }).click()
   await sleep(500)
   await c.shot(`09${which}-try-again`, 'after Try again: a fresh reading screen')
@@ -284,6 +292,9 @@ async function runPaste({ fixture, out }) {
   await c.shot('11c-paste-draft', 'pasted text: the draft arrives')
   await c.waitFor(() => [...document.querySelectorAll('button')].some((b) => (b.textContent ?? '').trim() === 'Your plan is ready'), null, 150000)
   await c.shot('11d-paste-ready', 'pasted text: ready')
+  await focusRing(page, 'Your plan is ready'); await focusRing(page, 'Close')
+  await page.getByRole('button', { name: 'Your plan is ready' }).click(); await sleep(800)
+  console.log('timing', c.consoleLines.join(' | '))
   await c.finish()
 }
 

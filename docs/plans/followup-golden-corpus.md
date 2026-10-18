@@ -310,3 +310,17 @@ In the frozen chole-bhature output, 23 of 36 ingredients have a `qty` that alrea
 (`apps/web/src/lib/quantity.ts`). That is a mask, not a fix: `_parse_qty` and the stored `unit` still carry
 the duplicate. Fix at the source in R3's `_parse_qty` work: strip a trailing unit from `qty` (or null `unit`)
 when they repeat, and decide whether `qty_text` keeps the model's wording. Re-run the goldens when it lands.
+
+### FGC-26 (docs): `DESIGN_SYSTEM.md` does not describe the Home reading screen
+
+PR-S2b ships the import reading screen on the Home ground, but `docs/DESIGN_SYSTEM.md` has no section for it.
+Add one covering:
+
+- the reading screen: header (16:9 thumbnail, channel 13/400, title 22/30), Ingredients, Steps, "About this video";
+- the "Draft" pill beside the Ingredients and Steps headings, and when it shows;
+- the sticky "Your plan is ready" button and the "Close" control;
+- the A2 failure layouts (failure slot above the draft);
+- pressed and focus states: there are no pressed styles on the reading screen, and focus is the browser's own
+  `:focus-visible` ring (not suppressed; checked on "Your plan is ready", "Close" and "Try again").
+
+Owner decision to record there: whether the ring should become a terracotta `:focus-visible` ring app-wide.

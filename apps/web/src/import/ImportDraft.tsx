@@ -86,7 +86,7 @@ export function ImportDraft({
               <Thumbnail url={header.thumbnailUrl} onLoaded={onThumbnailLoaded} />
             )}
             {header.channel && (
-              <p className="mt-3 text-[13px] font-medium text-home-ink-2">{header.channel}</p>
+              <p className="mt-3 text-[13px] font-normal text-home-ink-2">{header.channel}</p>
             )}
             {header.title && (
               <h1
