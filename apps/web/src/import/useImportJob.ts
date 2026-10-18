@@ -222,6 +222,8 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
     const token = ++tokenRef.current
     lastUrlRef.current = null
     resetRead(true)
+    timerObj.current = createImportTimer()
+    timerObj.current.mark('submit')
     setInstant(null)
     setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null, draft: null })
     startImportText(text)
