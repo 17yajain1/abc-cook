@@ -1,4 +1,13 @@
-export type ImportMark = 'submit' | 'thumbnail' | 'title' | 'acquired' | 'plan'
+export type ImportMark =
+  | 'submit'
+  | 'thumbnail'
+  | 'title'
+  | 'acquired'
+  | 'ingredients'
+  | 'firstStep'
+  | 'plan'
+  | 'ready'
+  | 'open'
 
 /**
  * Wall-clock marks for one import, relative to the submit tap, so the preview speed is

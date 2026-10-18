@@ -104,6 +104,18 @@ export function importViewFor({
   }
 }
 
+/** Whether the screen is showing any recipe text (the source's or the draft's), as opposed to
+ * a header and placeholders. It decides whether the hand-off waits for a tap (`handOffFor`). */
+export function hasReadable(view: ImportViewModel): boolean {
+  const { ingredients, method } = view
+  return (
+    ingredients.kind === 'lines' ||
+    ingredients.kind === 'items' ||
+    method.kind === 'sections' ||
+    method.kind === 'steps'
+  )
+}
+
 /**
  * The quiet line under the page, keyed only on what the server has said: its status and
  * which sections have arrived. It names what is being read, never how long it will take.

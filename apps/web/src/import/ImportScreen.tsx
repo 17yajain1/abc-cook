@@ -7,7 +7,8 @@ import type { FindSaved } from './duplicate'
 import { ImportDraft } from './ImportDraft'
 import { FAILURE_COPY } from './phase'
 import { footerFor, importViewFor } from './importView'
-import { useImportJob, type OnImported, type Phase } from './useImportJob'
+import type { ImportHandlers } from './handOff'
+import { useImportJob, type Phase } from './useImportJob'
 
 const WORKING_OUT = 'Working out what can happen at the same time…'
 
@@ -28,6 +29,7 @@ const NO_RECIPE_COPY = 'That page doesn’t have a recipe we can read.'
 export function isProgressPhase(phase: Phase): boolean {
   return (
     phase.kind === 'polling' ||
+    phase.kind === 'ready' ||
     phase.kind === 'no_recipe' ||
     phase.kind === 'paste' ||
     phase.kind === 'failed' ||
@@ -45,7 +47,7 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset, retry, instant, markThumbnail } = job
+  const { phase, setPhase, text, setText, submitText, reset, retry, instant, markThumbnail, openReady } = job
   // Every progress screen is Home register, so the page behind the app is the Home ground.
   useHomeSurface(true)
 
@@ -74,6 +76,34 @@ export function ImportProgress({
       )
     }
     return <Centered>{footer}</Centered>
+  }
+
+  if (phase.kind === 'ready') {
+    // The plan is built and already saved. The reading screen stays exactly as it was (the
+    // draft stays readable) and a button, not a page change, says so: the cook may be mid-line.
+    return (
+      <ImportDraft
+        view={importViewFor({
+          instant,
+          acquired: phase.acquired,
+          preview: phase.preview,
+          draft: phase.draft,
+          status: 'done',
+        })}
+        footer={
+          <button
+            type="button"
+            onClick={openReady}
+            className="h-14 w-full rounded-full bg-home-terracotta text-[15px] font-semibold text-home-ground"
+          >
+            Your plan is ready
+          </button>
+        }
+        cancelLabel="Close"
+        onCancel={reset}
+        onThumbnailLoaded={markThumbnail}
+      />
+    )
   }
 
   if (phase.kind === 'failed') {
@@ -167,14 +197,14 @@ export function ImportProgress({
  * to hand off.
  */
 export function ImportScreen({
-  onImported,
+  importHandlers,
   onCancel,
   initialUrl,
   findSaved,
   onDuplicate,
   skipDuplicateCheck,
 }: {
-  onImported: OnImported
+  importHandlers: ImportHandlers
   onCancel: () => void
   /** Prefills the field (Re-import). The user still taps "Get the plan": an LLM spend is
    * never started by a mount. */
@@ -185,7 +215,7 @@ export function ImportScreen({
   /** Re-import and Import again: the source is already saved, import it anyway. */
   skipDuplicateCheck?: boolean
 }) {
-  const job = useImportJob(onImported, { initialUrl, findSaved, onDuplicate, skipDuplicateCheck })
+  const job = useImportJob(importHandlers, { initialUrl, findSaved, onDuplicate, skipDuplicateCheck })
   const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
 
   if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />
