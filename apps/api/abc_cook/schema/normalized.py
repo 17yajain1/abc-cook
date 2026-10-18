@@ -422,13 +422,15 @@ class ImportMeta(BaseModel):
     degraded: bool = Field(default=False)
 
 
-ImportFailure = Literal["unavailable", "incomplete"]
+ImportFailure = Literal["unavailable", "incomplete", "refused"]
 """Why a `failed` import result failed, when the pipeline knows (PR-S1).
 
 `unavailable`: the extraction provider could not be used (auth, quota, outage, network,
 timeout) -- nothing to do with the recipe, so trying again later is reasonable.
 `incomplete`: the model spent its whole output budget on reasoning and produced nothing
 readable -- the same input would most likely fail the same way, so retrying is not offered.
+`refused`: the model declined to read the source, or its output was filtered -- also the same
+input, same answer, so a retry is not offered either (PR-S3).
 """
 
 

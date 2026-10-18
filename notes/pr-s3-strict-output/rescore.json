@@ -1,0 +1,407 @@
+{
+ "rows": [
+  {
+   "id": "1-0",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": true,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "2-0",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "2-1",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "3-0",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "3-1",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "3-2",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "4-0",
+   "slug": "chole-bhature",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "4-1",
+   "slug": "chole-bhature",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 1,
+   "floor_after": 0
+  },
+  {
+   "id": "5-0",
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "5-1",
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "5-2",
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "6-0",
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 1,
+   "floor_after": 0
+  },
+  {
+   "id": "6-1",
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "6-2",
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "7-0",
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "7-1",
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "7-2",
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "8-0",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "9-0",
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "13-0",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "13-1",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 3,
+   "floor_after": 0
+  },
+  {
+   "id": "13-2",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 4,
+   "floor_after": 0
+  },
+  {
+   "id": "14-0",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 4,
+   "floor_after": 0
+  },
+  {
+   "id": "14-1",
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "15-0",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "15-1",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "16-0",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "16-1",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": false,
+   "after_fires": false,
+   "floor_before": 0,
+   "floor_after": 0
+  },
+  {
+   "id": "16-2",
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "row1": false,
+   "before_fires": true,
+   "after_fires": true,
+   "floor_before": 0,
+   "floor_after": 0
+  }
+ ],
+ "agreement": {
+  "croissant|row1=False": {
+   "within_off": {
+    "n": 10,
+    "mean": 0.842,
+    "min": 0.64,
+    "max": 0.95
+   },
+   "within_on": {
+    "n": 10,
+    "mean": 0.728,
+    "min": 0.54,
+    "max": 0.89
+   },
+   "cross": {
+    "n": 25,
+    "mean": 0.834,
+    "min": 0.62,
+    "max": 0.96
+   },
+   "n_on": 5,
+   "n_off": 5
+  },
+  "croissant|row1=True": {
+   "within_off": {
+    "n": 10,
+    "mean": 0.842,
+    "min": 0.64,
+    "max": 0.95
+   },
+   "within_on": {
+    "n": 15,
+    "mean": 0.723,
+    "min": 0.54,
+    "max": 0.89
+   },
+   "cross": {
+    "n": 30,
+    "mean": 0.823,
+    "min": 0.55,
+    "max": 0.96
+   },
+   "n_on": 6,
+   "n_off": 5
+  },
+  "kadhi-pakora|row1=False": {
+   "within_off": {
+    "n": 0
+   },
+   "within_on": {
+    "n": 1,
+    "mean": 0.835,
+    "min": 0.83,
+    "max": 0.83
+   },
+   "cross": {
+    "n": 2,
+    "mean": 0.715,
+    "min": 0.67,
+    "max": 0.77
+   },
+   "n_on": 3,
+   "n_off": 1
+  },
+  "kadhi-pakora|row1=True": {
+   "within_off": {
+    "n": 0
+   },
+   "within_on": {
+    "n": 1,
+    "mean": 0.835,
+    "min": 0.83,
+    "max": 0.83
+   },
+   "cross": {
+    "n": 2,
+    "mean": 0.715,
+    "min": 0.67,
+    "max": 0.77
+   },
+   "n_on": 3,
+   "n_off": 1
+  }
+ }
+}

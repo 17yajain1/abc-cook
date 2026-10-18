@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ImportJobResponse } from '@abc-cook/schema'
 
 import { importMetaFrom } from './importMeta'
-import { FAILURE_COPY, phaseFor, type Phase } from './phase'
+import { FAILURE_COPY, FAILURE_HINT, phaseFor, type Phase } from './phase'
 import { statusLineFor } from '../plan/PlanScreen'
 
 const ctx: { jobId: string; token: number; attempt: number; maxPolls: number; url: string | null } = {
@@ -22,7 +22,7 @@ function phaseOf(job: ImportJobResponse, over: Partial<typeof ctx> = {}): Phase 
 }
 
 describe('phaseFor — failed jobs', () => {
-  it.each(['unavailable', 'incomplete'] as const)('a failed job with failure %s is the failed phase', (failure) => {
+  it.each(['unavailable', 'incomplete', 'refused'] as const)('a failed job with failure %s is the failed phase', (failure) => {
     const phase = phaseOf({
       job_id: 'j1',
       status: 'failed',
@@ -162,6 +162,8 @@ describe('failure copy', () => {
   it('has one sentence per failure kind, and neither offers a retry for incomplete', () => {
     expect(FAILURE_COPY.unavailable).toBe('We couldn’t reach our recipe reader. Try again in a minute.')
     expect(FAILURE_COPY.incomplete).toBe('We couldn’t finish reading this recipe.')
+    expect(FAILURE_COPY.refused).toBe('We couldn’t read this recipe.')
+    expect(FAILURE_HINT.refused).toBe('Paste the recipe text, or try another link.')
   })
 })
 

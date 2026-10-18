@@ -1,0 +1,135 @@
+=== 1. produces_consumed violations per croissant call (raw model fields as emitted) ===
+
+-- 1-0  strict=on effort=low  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 15: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[14] depends_on_previous=True
+      later steps whose consumes name it: []
+
+-- 2-0  strict=on effort=low  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 13: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[12] depends_on_previous=True
+      later steps whose consumes name it: []
+
+-- 2-1  strict=on effort=low  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 15: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[14] depends_on_previous=True
+      later steps whose consumes name it: []
+
+-- 3-0  strict=off effort=low  violations=[]
+
+-- 3-1  strict=off effort=low  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 12: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[11] depends_on_previous=True
+      later steps whose consumes name it: []
+
+-- 3-2  strict=off effort=low  violations=[]
+
+-- 7-0  strict=on effort=minimal  violations=[]
+
+-- 7-1  strict=on effort=minimal  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 12: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[11] depends_on_previous=True
+      later steps whose consumes name it: []
+
+-- 7-2  strict=on effort=minimal  violations=['produces_consumed']
+    produces_consumed | Node "step_bake_at_190_375_f_for" produces "comp_baked_croissants", which no node consumes.
+    step 13: 'Bake at 190° (375°F) for 20-25 minutes.'
+      raw: produces_component='baked croissants' consumes_ingredients=['proofed croissants'] depends_on_steps=[12] depends_on_previous=True
+      later steps whose consumes name it: []
+
+=== 2. field fill rates per arm (croissant, low: key absent / null / [] / filled) ===
+ strict-off:
+   produces_component     n= 40 {'null': 18, 'filled': 22}
+   consumes_ingredients   n= 40 {'filled': 33, '[]': 7}
+   depends_on_steps       n= 40 {'[]': 2, 'filled': 36, 'null': 2}
+   depends_on_previous    n= 40 {'false': 1, 'filled': 39}
+   attach_to_step         n= 40 {'null': 40}
+   role_cue               n= 40 {'null': 40}
+   attention_cue          n= 40 {'null': 27, 'filled': 13}
+   label                  n= 40 {'filled': 40}
+ strict-on:
+   produces_component     n= 46 {'filled': 32, 'null': 14}
+   consumes_ingredients   n= 46 {'filled': 42, '[]': 4}
+   depends_on_steps       n= 46 {'[]': 2, 'filled': 43, 'null': 1}
+   depends_on_previous    n= 46 {'false': 1, 'filled': 45}
+   attach_to_step         n= 46 {'null': 46}
+   role_cue               n= 46 {'null': 46}
+   attention_cue          n= 46 {'null': 34, 'filled': 12}
+   label                  n= 46 {'filled': 46}
+ strict-on minimal:
+   produces_component     n= 40 {'filled': 28, 'null': 12}
+   consumes_ingredients   n= 40 {'filled': 36, '[]': 4}
+   depends_on_steps       n= 40 {'[]': 2, 'filled': 37, 'null': 1}
+   depends_on_previous    n= 40 {'false': 3, 'filled': 37}
+   attach_to_step         n= 40 {'null': 40}
+   role_cue               n= 40 {'null': 40}
+   attention_cue          n= 40 {'null': 27, 'filled': 13}
+   label                  n= 40 {'filled': 40}
+ produced labels per call (producer step idx: label -> later consumers by name match):
+   1-0 on low [(0, 'yeast mix', [1, 2, 3]), (3, 'raw dough', [4]), (4, 'kneaded dough', [5]), (5, 'risen dough', [6]), (6, 'dough portions', [7]), (7, 'dough circle', [8]), (8, 'stacked layered dough', [9]), (9, 'chilled layered dough', [10]), (10, 'rectangular dough', [11]), (11, 'triangles', [12]), (12, 'shaped croissants', [13]), (13, 'proofed croissants', [14, 15]), (15, 'baked croissants', [])]
+   2-0 on low [(4, 'dough', [5, 6]), (5, 'risen dough', [6]), (7, 'stacked layers', [8]), (8, 'chilled layers', [9]), (9, 'rolled rectangle', [10]), (10, 'unbaked croissants', [11]), (11, 'proofed croissants', [13]), (13, 'baked croissants', [])]
+   2-1 on low [(1, 'yeast mixture', [2]), (3, 'dough', [4, 5, 6, 7, 9]), (4, 'risen dough', [5, 6]), (6, 'dough circle', [7]), (7, 'stacked butter layers', [8]), (8, 'chilled layered dough', [9]), (9, 'rolled rectangle', [10]), (10, 'triangle pieces', [11]), (11, 'shaped croissants', [12, 13]), (13, 'proofed croissants', [15]), (15, 'baked croissants', [])]
+   3-0 off low [(3, 'kneaded dough', []), (4, 'risen dough', [5]), (5, 'dough portions', [6]), (6, 'stacked rounds', [7]), (7, 'chilled stack', [8]), (8, 'rolled rectangle', [9]), (9, 'triangles', [10]), (10, 'shaped croissants', [11]), (11, 'proofed croissants', [12, 13])]
+   3-1 off low [(1, 'activated yeast', [2]), (2, 'rough dough', [3]), (3, 'smooth dough', [4]), (4, 'risen dough', [5]), (5, 'dough balls', [6]), (6, 'stacked layers', [7]), (7, 'chilled stack', [8]), (8, 'rolled rectangle', [9]), (9, 'shaped croissants', [10]), (10, 'proofed croissants', [11, 12]), (12, 'baked croissants', [])]
+   3-2 off low [(3, 'dough', [4, 5]), (6, 'stacked circles', [7, 8])]
+   7-0 on minimal [(0, 'yeast mixture', [2]), (2, 'dough', [3, 4, 5, 6]), (3, 'kneaded dough', [4]), (4, 'rested dough', [5]), (5, 'dough portions', [6]), (6, 'stacked layered rounds', [7]), (7, 'chilled layered rounds', [8]), (8, 'large rectangle', [9]), (9, 'shaped croissants', [10]), (10, 'proofed croissants', [12])]
+   7-1 on minimal [(3, 'kneaded dough', []), (4, 'rested dough', [5]), (6, 'stacked circles', [7]), (7, 'chilled layered dough', [8]), (8, 'rectangular dough', [9]), (9, 'shaped croissants', [10]), (10, 'proofed croissants', [12]), (12, 'baked croissants', [])]
+   7-2 on minimal [(1, 'mixed dough', [2, 3]), (3, 'kneaded dough', [4]), (4, 'risen dough', [5]), (5, 'dough portions', [6]), (6, 'stacked layers', [7]), (7, 'chilled layers', [8]), (8, 'rectangular dough', [9]), (9, 'formed croissants', [10, 11]), (11, 'proofed croissants', [12, 13]), (13, 'baked croissants', [])]
+
+=== 6. pairwise edge agreement (same matcher; recall/precision of A vs B) ===
+ strict-off pairs:
+   3-0 vs 3-1: R/P(a|b)=0.9/1.0  R/P(b|a)=1.0/0.9
+   3-0 vs 3-2: R/P(a|b)=0.64/0.75  R/P(b|a)=0.75/0.64
+   3-1 vs 3-2: R/P(a|b)=0.89/1.0  R/P(b|a)=1.0/0.89
+   range of all pairwise numbers: 0.64 - 1.0  mean 0.86
+ strict-on pairs (low):
+   1-0 vs 2-0: R/P(a|b)=0.69/0.82  R/P(b|a)=0.82/0.69
+   1-0 vs 2-1: R/P(a|b)=0.8/0.8  R/P(b|a)=0.8/0.8
+   2-0 vs 2-1: R/P(a|b)=0.89/0.73  R/P(b|a)=0.73/0.89
+   range of all pairwise numbers: 0.69 - 0.89  mean 0.79
+ vs golden:
+   1-0 on  low: R/P 0.36/0.44 nodes [16, 18]
+   2-0 on  low: R/P 0.29/0.25 nodes [14, 18]
+   2-1 on  low: R/P 0.5/0.43 nodes [16, 18]
+   3-0 off low: R/P 0.71/0.62 nodes [14, 18]
+   3-1 off low: R/P 0.56/0.45 nodes [13, 18]
+   3-2 off low: R/P 0.6/0.43 nodes [13, 18]
+   7-0 on  minimal: R/P 0.8/0.67 nodes [13, 18]
+   7-1 on  minimal: R/P 0.6/0.38 nodes [13, 18]
+   7-2 on  minimal: R/P 0.5/0.38 nodes [14, 18]
+ cross on-vs-off recall/precision: [(0.73, 0.89), (0.67, 0.89), (0.5, 0.75), (0.89, 0.89), (0.9, 1.0), (0.67, 0.8), (0.83, 1.0), (0.8, 1.0), (0.5, 0.7)]
+
+=== 7. produces_consumed count per call (pre-repair rules) ===
+ 1-0   croissant         low      strict=on  rules=['produces_consumed'] produces_consumed=1
+ 2-0   croissant         low      strict=on  rules=['produces_consumed'] produces_consumed=1
+ 2-1   croissant         low      strict=on  rules=['produces_consumed'] produces_consumed=1
+ 3-0   croissant         low      strict=off rules=[] produces_consumed=0
+ 3-1   croissant         low      strict=off rules=['produces_consumed'] produces_consumed=1
+ 3-2   croissant         low      strict=off rules=[] produces_consumed=0
+ 4-0   chole-bhature     low      strict=on  rules=['produces_consumed'] produces_consumed=1
+ 4-1   chole-bhature     low      strict=on  rules=['ingredients_consumed'] produces_consumed=0
+ 5-0   kadhi-pakora      low      strict=on  rules=[] produces_consumed=0
+ 5-1   kadhi-pakora      low      strict=on  rules=[] produces_consumed=0
+ 5-2   kadhi-pakora      low      strict=on  rules=[] produces_consumed=0
+ 6-0   kadhi-pakora      minimal  strict=on  rules=['produces_consumed'] produces_consumed=1
+ 6-1   kadhi-pakora      minimal  strict=on  rules=['produces_consumed'] produces_consumed=1
+ 6-2   kadhi-pakora      minimal  strict=on  rules=[] produces_consumed=0
+ 7-0   croissant         minimal  strict=on  rules=[] produces_consumed=0
+ 7-1   croissant         minimal  strict=on  rules=['produces_consumed'] produces_consumed=1
+ 7-2   croissant         minimal  strict=on  rules=['produces_consumed'] produces_consumed=1
+ 8-0   pumpkin-pancakes  low      strict=on  rules=[] produces_consumed=0
+ 9-0   kadhi-pakora      low      strict=off rules=[] produces_consumed=0
+ calls with >=1 produces_consumed / calls:
+   ('chole-bhature', 'low', True) 1/2
+   ('croissant', 'low', False) 1/3
+   ('croissant', 'low', True) 3/3
+   ('croissant', 'minimal', True) 2/3
+   ('kadhi-pakora', 'low', False) 0/1
+   ('kadhi-pakora', 'low', True) 0/3
+   ('kadhi-pakora', 'minimal', True) 2/3
+   ('pumpkin-pancakes', 'low', True) 0/1

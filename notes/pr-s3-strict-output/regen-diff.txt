@@ -1,0 +1,7 @@
+croissant.original.json: nodes=18 tier/status=done | duration_min changes: none | OTHER changes: none
+kadhi-pakora.original.json: nodes=11 tier/status=done | duration_min changes: none | OTHER changes: none
+pumpkin-pancakes.original.json: nodes=7 tier/status=done | duration_min changes: none | OTHER changes: none
+vanilla-cupcakes.original.json: nodes=4 tier/status=done | duration_min changes: [('preheat oven', 9, 10)] | OTHER changes: [('stated', [9, 20], [10, 20])]
+pizza-dough (normalized+raw): nodes=14 tier/status=done | duration_min changes: [('small bowl stir together', 4, 5), ('remove the dough', 55, 60)] | OTHER changes: [('stated', [2, 4, 8, 55, 240, 1080], [2, 5, 8, 60, 240, 1080])]
+dal-makhni (normalized+source_text): nodes=14 tier/status=done | duration_min changes: [('pan melt butter', 1, 2), ('cook the dal', 28, 30)] | OTHER changes: [('stated', [1, 28, 180], [2, 30, 180])]
+ONLY duration_min changed everywhere: False

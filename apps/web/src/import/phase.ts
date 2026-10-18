@@ -69,6 +69,12 @@ export type Phase =
 export const FAILURE_COPY: Record<ImportFailure, string> = {
   unavailable: 'We couldn’t reach our recipe reader. Try again in a minute.',
   incomplete: 'We couldn’t finish reading this recipe.',
+  refused: 'We couldn’t read this recipe.',
+}
+
+/** A second line under the sentence, for the failure kinds that have one. */
+export const FAILURE_HINT: Partial<Record<ImportFailure, string>> = {
+  refused: 'Paste the recipe text, or try another link.',
 }
 
 export type PollDecision =

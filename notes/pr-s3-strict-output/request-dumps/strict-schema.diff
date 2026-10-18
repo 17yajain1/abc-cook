@@ -1,0 +1,98 @@
+--- model_json_schema
++++ strict
+@@ -25 +24,0 @@
+-     "default": null,
+@@ -32 +31,2 @@
+-    "start_sec"
++    "start_sec",
++    "end_sec"
+@@ -35 +35,2 @@
+-   "type": "object"
++   "type": "object",
++   "additionalProperties": false
+@@ -90 +90,0 @@
+-     "default": null,
+@@ -99 +99,2 @@
+-    "prep_note"
++    "prep_note",
++    "group"
+@@ -102 +103,2 @@
+-   "type": "object"
++   "type": "object",
++   "additionalProperties": false
+@@ -121 +122,0 @@
+-     "default": null,
+@@ -144 +144,0 @@
+-     "default": null,
+@@ -157 +156,0 @@
+-     "default": null,
+@@ -169 +167,0 @@
+-     "default": null,
+@@ -181 +178,0 @@
+-     "default": null,
+@@ -207 +203,0 @@
+-     "default": null,
+@@ -231 +226,0 @@
+-     "default": null,
+@@ -244 +238,0 @@
+-     "default": null,
+@@ -265 +258,0 @@
+-     "default": null,
+@@ -306 +298,0 @@
+-     "default": null,
+@@ -319 +310,0 @@
+-     "default": null,
+@@ -332 +322,0 @@
+-     "default": null,
+@@ -338,0 +329 @@
++    "label",
+@@ -339,0 +331,4 @@
++    "attention_cue",
++    "duration_typical_min",
++    "duration_min",
++    "duration_max",
+@@ -340,0 +336,7 @@
++    "depends_on_previous",
++    "depends_on_steps",
++    "role",
++    "role_cue",
++    "attach_to_step",
++    "consumes_ingredients",
++    "produces_component",
+@@ -343 +345,4 @@
+-    "freshness"
++    "freshness",
++    "freshness_cue",
++    "max_lead_min",
++    "doneness_cue"
+@@ -346 +351,2 @@
+-   "type": "object"
++   "type": "object",
++   "additionalProperties": false
+@@ -365 +370,0 @@
+-   "default": null,
+@@ -383 +387,0 @@
+-   "default": null,
+@@ -405 +408,0 @@
+-   "default": null,
+@@ -418 +420,0 @@
+-   "default": null,
+@@ -430 +431,0 @@
+-   "default": null,
+@@ -466 +467,11 @@
+-  "method_grounded"
++  "channel",
++  "method_grounded",
++  "servings",
++  "servings_source",
++  "yield_text",
++  "cuisine",
++  "stated_total_min",
++  "ingredients",
++  "steps",
++  "chapters",
++  "notes"
+@@ -469 +480,2 @@
+- "type": "object"
++ "type": "object",
++ "additionalProperties": false

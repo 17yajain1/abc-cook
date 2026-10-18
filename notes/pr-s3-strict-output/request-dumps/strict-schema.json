@@ -1,0 +1,482 @@
+{
+ "$defs": {
+  "NormalizedChapter": {
+   "description": "A YouTube chapter marker. Grounded, but stage-level — never a node duration.\n\nSee design doc §0: a chapter delta measures how long the creator spent on screen,\nnot how long the cook will spend. Used only by `corroborate.py`.",
+   "properties": {
+    "label": {
+     "description": "Chapter title, e.g. \"Marination\".",
+     "title": "Label",
+     "type": "string"
+    },
+    "start_sec": {
+     "description": "Chapter start, in seconds from video start.",
+     "title": "Start Sec",
+     "type": "integer"
+    },
+    "end_sec": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Chapter end, in seconds. Null for the last chapter if unknown.",
+     "title": "End Sec"
+    }
+   },
+   "required": [
+    "label",
+    "start_sec",
+    "end_sec"
+   ],
+   "title": "NormalizedChapter",
+   "type": "object",
+   "additionalProperties": false
+  },
+  "NormalizedIngredient": {
+   "description": "One ingredient line, structured but not yet graph-ready.\n\n`qty` stays a free-text string, not a float: real sources state quantities as\n\"a little less than 2\", \"1/2\", or ranges, which cannot be honestly forced into a\nsingle number here. `graph.py` does that best-effort conversion, not this model.",
+   "properties": {
+    "name": {
+     "description": "As named in the source. Never invented.",
+     "title": "Name",
+     "type": "string"
+    },
+    "qty": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Quantity as stated, verbatim or lightly normalized.",
+     "title": "Qty"
+    },
+    "unit": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Unit, e.g. \"cup\", \"tsp\", \"medium\".",
+     "title": "Unit"
+    },
+    "prep_note": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Stated on the ingredient line itself, e.g. \"finely chopped\".",
+     "title": "Prep Note"
+    },
+    "group": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Ingredient grouping, e.g. \"For tadka\", when the source states one.",
+     "title": "Group"
+    }
+   },
+   "required": [
+    "name",
+    "qty",
+    "unit",
+    "prep_note",
+    "group"
+   ],
+   "title": "NormalizedIngredient",
+   "type": "object",
+   "additionalProperties": false
+  },
+  "NormalizedStep": {
+   "description": "One candidate node, before `graph.py` decides how to build it.\n\nMirrors the shape of `Node` closely enough that `graph.py` is mostly a direct\ntranslation, but stays looser where real sources are messy (`duration_*` as\n`float | None` rather than required ints) and adds the hint/verification fields\n§10.C's independent-verification rule needs.",
+   "properties": {
+    "text": {
+     "description": "The step, lightly normalized. Never invented.",
+     "title": "Text",
+     "type": "string"
+    },
+    "label": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "A short (1-4 word) UI heading for this step -- a summary in your own words (e.g. \"Mix marinade\", \"First rise\"), not a truncation of text. Null if you have none. graph.py accepts it only by shape (word count, no leading conditional marker, no trailing preposition/conjunction) and falls back to its own trim of `text` otherwise -- it is never checked against `text` for topical match, so accuracy is still your job.",
+     "title": "Label"
+    },
+    "attention": {
+     "description": "The model's classification. MUST default to hands_on when no explicit cue is present (design doc §5) — graph.py re-checks this via attention_cue before trusting periodic/unattended.",
+     "enum": [
+      "hands_on",
+      "periodic",
+      "unattended"
+     ],
+     "title": "Attention",
+     "type": "string"
+    },
+    "attention_cue": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Verbatim source phrase justifying periodic/unattended. Null when attention is hands_on. graph.py must confirm this string actually appears in the source text before honoring a non-hands_on attention.",
+     "title": "Attention Cue"
+    },
+    "duration_typical_min": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Duration Typical Min"
+    },
+    "duration_min": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Duration Min"
+    },
+    "duration_max": {
+     "anyOf": [
+      {
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "title": "Duration Max"
+    },
+    "duration_stated": {
+     "description": "True only if a number was written in the source text; False if this is a plausible estimate from a vague-but-present cue (\"cook until golden\"). graph.py applies the §4.7 low-end clamp (duration_typical = duration_min) to window-host nodes when this is False.",
+     "title": "Duration Stated",
+     "type": "boolean"
+    },
+    "depends_on_previous": {
+     "default": true,
+     "description": "LEGACY (prompt v1/v2). Consecutive stated steps default to sequential (§4.7). False only when the model asserts genuine independence; graph.py still applies the two-condition test (no shared ingredient/component, no produces/consumes link) before honoring False. Ignored once depends_on_steps is provided.",
+     "title": "Depends On Previous",
+     "type": "boolean"
+    },
+    "depends_on_steps": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "integer"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "0-based positions of the EARLIER steps whose output or pan/vessel state this step directly needs. [] means it genuinely needs nothing earlier. None means not provided -- graph.py then falls back to depends_on_previous. A claim, not a fact: graph.py verifies it.",
+     "title": "Depends On Steps"
+    },
+    "role": {
+     "default": "required",
+     "description": "required: part of cooking the dish. optional: conditional or nice-to-have (\"If you plan to...\", \"if desired\"). alternative: another way to do an earlier step (\"Microwave method: ...\"). Never drop an optional/alternative instruction; mark it here instead.",
+     "enum": [
+      "required",
+      "optional",
+      "alternative"
+     ],
+     "title": "Role",
+     "type": "string"
+    },
+    "role_cue": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Verbatim source phrase showing the step is optional/alternative. Null when role is required. graph.py must find it in the source text before honoring a non-required role.",
+     "title": "Role Cue"
+    },
+    "attach_to_step": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "0-based position of the required step this optional/alternative instruction belongs with. Null when role is required.",
+     "title": "Attach To Step"
+    },
+    "consumes_ingredients": {
+     "description": "Ingredient names (matching NormalizedIngredient.name), OR a produces_component label from an earlier step, when this step uses that earlier step's output.",
+     "items": {
+      "type": "string"
+     },
+     "title": "Consumes Ingredients",
+     "type": "array"
+    },
+    "produces_component": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Freeform label for what this step yields -- set it only when a LATER step will name this exact label in its own consumes_ingredients.",
+     "title": "Produces Component"
+    },
+    "station": {
+     "description": "Explicit if stated; else the §4.7 verb-based default.",
+     "enum": [
+      "burner",
+      "oven",
+      "counter",
+      "sink",
+      "fridge",
+      "none"
+     ],
+     "title": "Station",
+     "type": "string"
+    },
+    "interruptible": {
+     "description": "Almost never stated; §4.7 default is prep=true, active/finish=false.",
+     "title": "Interruptible",
+     "type": "boolean"
+    },
+    "freshness": {
+     "description": "See module docstring: never invent a number for stated_unbounded.",
+     "enum": [
+      "none",
+      "stated_unbounded",
+      "stated_numeric"
+     ],
+     "title": "Freshness",
+     "type": "string"
+    },
+    "freshness_cue": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "Verbatim source phrase, when freshness != none. graph.py should require this to carry a genuine immediacy marker (\"immediately\", \"just before serving\") before trusting stated_unbounded — a bare \"serve\" is not one (§10.C finding 3).",
+     "title": "Freshness Cue"
+    },
+    "max_lead_min": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "ONLY populated for stated_numeric. Never a guessed number.",
+     "title": "Max Lead Min"
+    },
+    "doneness_cue": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "A qualitative phrase, only if textually present, e.g. \"until golden\".",
+     "title": "Doneness Cue"
+    }
+   },
+   "required": [
+    "text",
+    "label",
+    "attention",
+    "attention_cue",
+    "duration_typical_min",
+    "duration_min",
+    "duration_max",
+    "duration_stated",
+    "depends_on_previous",
+    "depends_on_steps",
+    "role",
+    "role_cue",
+    "attach_to_step",
+    "consumes_ingredients",
+    "produces_component",
+    "station",
+    "interruptible",
+    "freshness",
+    "freshness_cue",
+    "max_lead_min",
+    "doneness_cue"
+   ],
+   "title": "NormalizedStep",
+   "type": "object",
+   "additionalProperties": false
+  }
+ },
+ "description": "The real, inspectable value that crosses the normalize -> graph seam.\n\n`method_grounded` is the model's own claim and MUST NOT be trusted as-is\n(§10.C finding 1): `normalize.py`'s Tier 0 gate recomputes it as `bool(steps)`\nbefore any caller acts on it.",
+ "properties": {
+  "title": {
+   "description": "A clean dish name (e.g. \"Buttermilk Pancakes\"), NOT the raw source title verbatim -- the source's own title is preserved separately as ImportResult.source_title regardless of what you put here. Never invent a name unrelated to the source: title.py only accepts this claim when every word in it is grounded in the raw title or a linked blog's own name (case-folded, light stemming), and replaces it with a deterministic cleanup of the raw title otherwise -- so an invented word is simply discarded, not shown to the cook.",
+   "title": "Title",
+   "type": "string"
+  },
+  "channel": {
+   "anyOf": [
+    {
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "description": "Source channel/site name.",
+   "title": "Channel"
+  },
+  "method_grounded": {
+   "description": "The model's own claim about whether method text existed. A hint only — callers must independently verify via `bool(steps)`.",
+   "title": "Method Grounded",
+   "type": "boolean"
+  },
+  "servings": {
+   "anyOf": [
+    {
+     "type": "integer"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "description": "How many PEOPLE this feeds — only if the source states that, in those terms. Never the yield count (how many pieces/items the recipe makes) — that goes in yield_text instead. If the source only gives a piece count (\"makes 14 rasgulla\") with no separate people count, leave this null; do not copy the piece count here.",
+   "title": "Servings"
+  },
+  "servings_source": {
+   "default": "defaulted",
+   "enum": [
+    "stated",
+    "defaulted"
+   ],
+   "title": "Servings Source",
+   "type": "string"
+  },
+  "yield_text": {
+   "anyOf": [
+    {
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "description": "The source's own stated yield, verbatim or lightly trimmed — whatever it actually says it makes (\"14 rasgulla\", \"2 loaves\", \"8 people\"), including a unit/item word even when that's just a count of people. Only if a number is stated; null if the source gives no number at all (\"makes a dozen\" has no digit — leave this null rather than converting words to a number).",
+   "title": "Yield Text"
+  },
+  "cuisine": {
+   "anyOf": [
+    {
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "title": "Cuisine"
+  },
+  "stated_total_min": {
+   "anyOf": [
+    {
+     "type": "integer"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "description": "ONLY an explicit stated total-time claim. Never derived from video duration.",
+   "title": "Stated Total Min"
+  },
+  "ingredients": {
+   "items": {
+    "$ref": "#/$defs/NormalizedIngredient"
+   },
+   "title": "Ingredients",
+   "type": "array"
+  },
+  "steps": {
+   "items": {
+    "$ref": "#/$defs/NormalizedStep"
+   },
+   "title": "Steps",
+   "type": "array"
+  },
+  "chapters": {
+   "items": {
+    "$ref": "#/$defs/NormalizedChapter"
+   },
+   "title": "Chapters",
+   "type": "array"
+  },
+  "notes": {
+   "description": "Free-text notes for a human reviewer: ambiguities, translation doubts, etc.",
+   "items": {
+    "type": "string"
+   },
+   "title": "Notes",
+   "type": "array"
+  }
+ },
+ "required": [
+  "title",
+  "channel",
+  "method_grounded",
+  "servings",
+  "servings_source",
+  "yield_text",
+  "cuisine",
+  "stated_total_min",
+  "ingredients",
+  "steps",
+  "chapters",
+  "notes"
+ ],
+ "title": "NormalizedRecipe",
+ "type": "object",
+ "additionalProperties": false
+}

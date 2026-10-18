@@ -7,7 +7,7 @@ import { draftIngredientGroups } from './draftView'
 import { ImportDraft } from './ImportDraft'
 import { footerFor, importViewFor } from './importView'
 import { notGroundedCopy } from './notGroundedCopy'
-import { FAILURE_COPY } from './phase'
+import { FAILURE_COPY, FAILURE_HINT, type ImportFailure } from './phase'
 import { useImportJob, type Phase } from './useImportJob'
 
 /** Home's primary button: a terracotta pill, sentence case (DESIGN_SYSTEM.md, Register: Home). */
@@ -220,15 +220,15 @@ export function ImportProgress({
 }
 
 /** What a failed import says and offers. `unavailable` is the provider's fault, so trying
- * again is reasonable; `incomplete` would most likely fail the same way, so it offers the
- * other two routes in. */
+ * again is reasonable; `incomplete` and `refused` would most likely fail the same way, so
+ * they offer the other two routes in. */
 function FailureBody({
   failure,
   onTryAgain,
   onPaste,
   onTryAnother,
 }: {
-  failure: 'unavailable' | 'incomplete'
+  failure: ImportFailure
   onTryAgain: () => void
   onPaste: () => void
   onTryAnother: () => void
@@ -236,6 +236,9 @@ function FailureBody({
   return (
     <div role="alert">
       <p className="text-[15px] leading-[1.45] text-home-ink">{FAILURE_COPY[failure]}</p>
+      {FAILURE_HINT[failure] && (
+        <p className="mt-1 text-[15px] leading-[1.45] text-home-ink-2">{FAILURE_HINT[failure]}</p>
+      )}
       {failure === 'unavailable' ? (
         <button type="button" onClick={onTryAgain} className={`mt-5 ${PRIMARY}`}>
           Try again

@@ -2,9 +2,10 @@
 
 Added M2.11 (production extraction model change: Haiku -> GPT-5-mini, per the M2.10
 repair/extraction bake-offs). Same mechanism as `anthropic.py` -- schema-in-prompt +
-manual `json.loads`/`model_validate` via the shared `prompting` module, never this
-provider's native structured-output mode -- so the extraction task is provably
-identical across providers, not just similar.
+manual `json.loads`/`model_validate` via the shared `prompting` module -- so the extraction
+task is provably identical across providers, not just similar. (PR-S3 adds this provider's
+strict structured output on top of that, as a `response_format` request field only: the
+prompt and the pasted schema are unchanged, and the response is still parsed by `parse`.)
 
 Provider differences from the Anthropic adapter, all confirmed live during the M2.10
 bake-off (see the bake-off report for detail, not repeated here):
@@ -31,6 +32,12 @@ the deltas are joined into the same `text` that `parse` has always received. A w
 thread closes a stream that goes quiet (idle) or runs past the per-call deadline, because
 a stalled stream would otherwise hold the job at its last status until httpx gave up.
 `ABC_COOK_STREAM_EXTRACTION=0` restores the blocking call exactly (`_extract_blocking`).
+
+PR-S3: with `ABC_COOK_STRICT_EXTRACTION` on (the default) the request also carries
+`response_format` = strict `json_schema` for the output type, so the response always has every
+key and valid enums, and a refusal arrives as `delta.refusal` / `message.refusal` instead of
+text (reported as `error_kind="refused"`). Off sends today's request byte for byte, in both the
+streaming and the blocking path. Both switches are read once, at construction.
 """
 
 from __future__ import annotations
@@ -60,8 +67,9 @@ from abc_cook.extract.adapters.base import (
     exception_summary,
     request_timeout_s,
     stream_extraction_enabled,
+    strict_extraction_enabled,
 )
-from abc_cook.extract.adapters.prompting import parse, system_prompt
+from abc_cook.extract.adapters.prompting import parse, response_format, system_prompt
 
 _logger = logging.getLogger(__name__)
 
@@ -182,6 +190,7 @@ class OpenAIAdapter:
             api_key=api_key or os.environ.get("OPENAI_API_KEY"), max_retries=MAX_RETRIES
         )
         self._stream = stream_extraction_enabled()  # read once, at construction (A1)
+        self._strict = strict_extraction_enabled()  # read once, at construction (PR-S3)
         self._stream_idle_s = stream_idle_s
         self._stream_deadline_s = stream_deadline_s
 
@@ -226,6 +235,20 @@ class OpenAIAdapter:
             on_text=on_text,
         )
 
+    def _format_kwargs(self, output_type: type[pydantic.BaseModel]) -> dict[str, Any]:
+        """`response_format` when strict is on; nothing at all when off (today's request)."""
+        return {"response_format": response_format(output_type)} if self._strict else {}
+
+    def _log_contract_violation(self, output_type: type[pydantic.BaseModel], finish: Any) -> None:
+        """WARNING when strict output still failed to parse: it should not be possible."""
+        if self._strict:
+            _logger.warning(
+                "strict contract violation: response was not valid %s JSON despite strict "
+                "structured output (finish_reason=%s)",
+                output_type.__name__,
+                finish,
+            )
+
     def _extract_blocking[T: pydantic.BaseModel](
         self,
         *,
@@ -252,6 +275,7 @@ class OpenAIAdapter:
                 max_completion_tokens=max_tokens,
                 reasoning_effort=reasoning_effort,
                 timeout=request_timeout_s(max_tokens),
+                **self._format_kwargs(output_type),
             )
         except openai.APIError as exc:
             return ExtractResult(
@@ -280,6 +304,16 @@ class OpenAIAdapter:
             reasoning_tokens=reasoning,
         )
 
+        if self._strict and (
+            getattr(choice.message, "refusal", None) or choice.finish_reason == "content_filter"
+        ):
+            return ExtractResult(
+                recipe=None,
+                error="content_filter" if choice.finish_reason == "content_filter" else "refusal",
+                error_kind="refused",
+                usage=usage,
+            )
+
         if choice.finish_reason == "length":
             # Same truncation contract as anthropic.py's `stop_reason == "max_tokens"`
             # branch -- retry-eligible, never at the same cap (M2.10 s18 F2).
@@ -294,6 +328,7 @@ class OpenAIAdapter:
 
         parsed = parse(text, output_type)
         if parsed is None:
+            self._log_contract_violation(output_type, choice.finish_reason)
             return ExtractResult(
                 recipe=None,
                 error=f"response was not valid {output_type.__name__} JSON",
@@ -337,6 +372,7 @@ class OpenAIAdapter:
                 stream=True,
                 stream_options={"include_usage": True},
                 timeout=_STREAM_TIMEOUT,
+                **self._format_kwargs(output_type),
             )
         except openai.APIError as exc:
             return ExtractResult(
@@ -348,6 +384,7 @@ class OpenAIAdapter:
         )
         watchdog.start()
         deltas: list[str] = []
+        refused = False
         finish_reason: str | None = None
         usage_obj: Any = None
         first_content_ms: float | None = None
@@ -362,6 +399,8 @@ class OpenAIAdapter:
                 choice = chunk.choices[0]
                 if choice.finish_reason is not None:
                     finish_reason = choice.finish_reason
+                if self._strict and getattr(choice.delta, "refusal", None):
+                    refused = True
                 delta = choice.delta.content if choice.delta is not None else None
                 if not delta:
                     continue
@@ -416,6 +455,14 @@ class OpenAIAdapter:
                 first_content_ms=first_content_ms,
             )
 
+        if self._strict and (refused or finish_reason == "content_filter"):
+            return ExtractResult(
+                recipe=None,
+                error="content_filter" if finish_reason == "content_filter" else "refusal",
+                error_kind="refused",
+                usage=usage,
+            )
+
         if finish_reason == "length":
             return ExtractResult(
                 recipe=None,
@@ -428,6 +475,7 @@ class OpenAIAdapter:
 
         parsed = parse(text, output_type)
         if parsed is None:
+            self._log_contract_violation(output_type, finish_reason)
             return ExtractResult(
                 recipe=None,
                 error=f"response was not valid {output_type.__name__} JSON",

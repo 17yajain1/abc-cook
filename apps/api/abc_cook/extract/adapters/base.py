@@ -27,7 +27,7 @@ repair pass). Optional and provider-dependent — an adapter that has no such co
 simply ignores it."""
 
 
-ErrorKind = Literal["infra", "request", "unparseable", "truncated"]
+ErrorKind = Literal["infra", "request", "unparseable", "truncated", "refused"]
 """See `ExtractResult.error_kind`."""
 
 
@@ -77,6 +77,17 @@ streaming off, and the OpenAI adapter then sends today's non-streaming request."
 def stream_extraction_enabled() -> bool:
     """Whether the extraction call may stream: `ABC_COOK_STREAM_EXTRACTION`, default on."""
     value = os.environ.get(STREAM_EXTRACTION_ENV, "").strip().lower()
+    return value not in {"0", "false", "off"}
+
+
+STRICT_EXTRACTION_ENV = "ABC_COOK_STRICT_EXTRACTION"
+"""Kill switch (PR-S3). Unset means on; `0`, `false` or `off` (any case) turns strict structured
+output off, and the OpenAI adapter then sends exactly the request it sent before PR-S3."""
+
+
+def strict_extraction_enabled() -> bool:
+    """Whether the extraction call asks for strict structured output: default on."""
+    value = os.environ.get(STRICT_EXTRACTION_ENV, "").strip().lower()
     return value not in {"0", "false", "off"}
 
 
@@ -135,8 +146,9 @@ class ExtractResult[T: pydantic.BaseModel]:
     `error_kind` says what sort of failure `error` describes, so the caller can tell a
     provider outage from a bad answer: `infra` (auth, permission, rate limit, 5xx,
     connection or timeout: nothing to do with the input, so same-input retries are
-    pointless), `request` (any other 4xx), `unparseable`, or `truncated`. `None` on
-    success.
+    pointless), `request` (any other 4xx, e.g. a rejected schema: also not worth a retry),
+    `unparseable`, `truncated`, or `refused` (the model declined or the output was filtered:
+    a retry would be refused again). `None` on success.
     """
 
     recipe: T | None

@@ -10,6 +10,7 @@ source text independently of whatever the fake "model" claimed.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -259,7 +260,8 @@ def test_stated_duration_is_not_clamped() -> None:
     result = _build(_recipe(steps), source_text)
     assert result.graph is not None
     node = result.graph.nodes[0]
-    assert (node.duration_min, node.duration_typical, node.duration_max) == (9, 10, 12)
+    # typical and max are not clamped; the min is raised to the stated 10 (F11-a stated floor).
+    assert (node.duration_min, node.duration_typical, node.duration_max) == (10, 10, 12)
 
 
 def test_missing_duration_falls_back_to_deterministic_default() -> None:
@@ -345,6 +347,61 @@ def test_verify_duration_leaves_a_typical_already_inside_a_range_unchanged() -> 
     )
     assert (dmin, dtyp, dmax) == (240, 270, 300)
     assert not warnings
+
+
+def test_verify_duration_stated_floor_raises_a_min_below_the_stated_time() -> None:
+    """F11-a: the model's small min/max spread cannot put the min under what the source says."""
+    dmin, dtyp, dmax, stated, _warnings, _review = _verify(
+        "Let the dough rest for 1 hour.",
+        duration_min=55, duration_typical_min=60, duration_max=65, duration_stated=True,
+    )
+    assert (dmin, dtyp, dmax) == (60, 60, 65)  # max keeps its headroom
+    assert stated is True
+
+
+def test_verify_duration_stated_floor_uses_the_low_end_of_a_range() -> None:
+    dmin, dtyp, dmax, _stated, _warnings, _review = _verify(
+        "Bake for 5 to 10 minutes.",
+        duration_min=4, duration_typical_min=7, duration_max=12, duration_stated=True,
+    )
+    assert (dmin, dtyp, dmax) == (5, 7, 12)
+
+
+def test_verify_duration_stated_floor_never_lowers_or_passes_the_typical() -> None:
+    above, _typ, _max, _stated, _w, _r = _verify(
+        "Simmer for 10 minutes.",
+        duration_min=11, duration_typical_min=10, duration_max=12, duration_stated=True,
+    )
+    assert above == 10  # a min above the typical is capped at it
+    kept, _typ, _max, _stated, _w, _r = _verify(
+        "Simmer for 10 minutes.",
+        duration_min=10, duration_typical_min=10, duration_max=10, duration_stated=True,
+    )
+    assert kept == 10
+
+
+def test_verify_duration_stated_floor_with_no_model_min_is_the_stated_low_end() -> None:
+    dmin, dtyp, _dmax, _stated, _w, _r = _verify(
+        "Simmer for 10 minutes.", duration_typical_min=10, duration_stated=True
+    )
+    assert (dmin, dtyp) == (10, 10)
+
+
+def test_verify_duration_stated_floor_skips_per_unit_and_ungrounded_steps() -> None:
+    # Ungrounded claim: nothing stated in the text, so no floor and the min is untouched.
+    dmin, _typ, _max, stated, _w, _r = _verify(
+        "Roast the vegetables until golden.",
+        duration_min=20, duration_typical_min=25, duration_max=30, duration_stated=True,
+    )
+    assert dmin == 20
+    assert stated is False
+    # Per-unit text takes the per-unit path: the old min(...) rule, and no stated claim.
+    dmin, dtyp, _max, stated, _w, _r = _verify(
+        "Fry the pooris for 2 minutes per side.",
+        duration_min=1, duration_typical_min=2, duration_max=3, duration_stated=True,
+    )
+    assert stated is False
+    assert dmin <= dtyp
 
 
 def test_verify_duration_ceiling_downgrades_a_stated_claim_and_caps_max() -> None:
@@ -759,6 +816,65 @@ def test_unconsumed_produces_in_a_pure_chain_is_safely_dropped_with_a_warning() 
     assert mix.produces is None  # dropped
     assert any("dropped" in w.lower() for w in result.warnings)
     assert validate(result.graph) == []
+
+
+def test_final_step_produces_is_dropped_with_a_logged_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """B3's guard for the empty set: nothing can consume a final step's product, and repair
+    cannot make anything later, so the label is dropped instead of becoming a violation."""
+    steps = [
+        _step(text="Mix the dough.", produces_component="mixed dough"),
+        _step(text="Knead the dough.", consumes_ingredients=["mixed dough"]),
+        _step(text="Bake the dough.", produces_component="baked dough"),
+    ]
+    with caplog.at_level(logging.WARNING, logger="abc_cook.extract.graph"):
+        result = _build(
+            _recipe(steps, ingredients=[]), "Mix the dough. Knead the dough. Bake the dough."
+        )
+    assert result.graph is not None
+    assert result.graph.nodes[0].produces is not None  # consumed by step 1: kept
+    assert result.graph.nodes[-1].produces is None  # final step: dropped
+    assert validate(result.graph) == []
+    messages = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(messages) == 1
+    assert "last step" in messages[0]
+    assert "baked dough" in messages[0]
+
+
+def test_final_step_without_produces_logs_nothing(caplog: pytest.LogCaptureFixture) -> None:
+    steps = [_step(text="Mix the dough."), _step(text="Bake the dough.")]
+    with caplog.at_level(logging.WARNING, logger="abc_cook.extract.graph"):
+        result = _build(_recipe(steps, ingredients=[]), "Mix the dough. Bake the dough.")
+    assert result.graph is not None
+    assert not [r for r in caplog.records if r.levelno == logging.WARNING]
+
+
+def test_non_final_unconsumed_produces_is_still_a_violation() -> None:
+    """Only the final step is dropped: a sibling fork's unconsumed label still fires (B3)."""
+    steps = [
+        _step(text="Chop the onions.", consumes_ingredients=["Onion"]),
+        _step(
+            text="Fry the onions until golden.",
+            attention="unattended",
+            attention_cue="fry the onions",
+            depends_on_previous=False,
+            produces_component="fried onions",
+        ),
+        _step(
+            text="Toast the spices.",
+            attention="unattended",
+            attention_cue="toast the spices",
+            depends_on_previous=False,
+        ),
+        _step(text="Serve."),
+    ]
+    result = _build(
+        _recipe(steps), "Chop the onions. Fry the onions until golden. Toast the spices. Serve."
+    )
+    assert result.graph is not None
+    assert result.graph.nodes[1].produces is not None
+    assert [v.rule for v in validate(result.graph)] == ["produces_consumed"]
 
 
 # ---------------------------------------------------------------------------
@@ -1629,7 +1745,7 @@ def test_dal_makhni_cook_step_duration_is_grounded_despite_the_spelling_mismatch
     assert result.graph is not None
     node = next(n for n in result.graph.nodes if n.id == "step_cook_the_dal_for_30_minutes")
     decision = next(d for d in result.node_decisions if d.node_id == node.id)
-    assert (node.duration_min, node.duration_typical, node.duration_max) == (28, 30, 32)
+    assert (node.duration_min, node.duration_typical, node.duration_max) == (30, 30, 32)
     assert decision.duration_source == "extracted"
     assert not any("Cook the dal for 30" in w for w in result.warnings)
 
@@ -2912,7 +3028,8 @@ def test_step4_oatmeal_simmer_duration_is_now_corrected_against_the_text() -> No
     result = _build(_oatmeal_recipe(), _OATMEAL_SOURCE)
     assert result.graph is not None
     simmer = result.graph.nodes[1]
-    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (4, 5, 5)
+    # The model's min 4 is raised to the stated 5 by the F11-a stated floor.
+    assert (simmer.duration_min, simmer.duration_typical, simmer.duration_max) == (5, 5, 5)
     assert result.node_decisions[1].duration_source == "extracted"
 
 

@@ -11,8 +11,10 @@ across files that could drift.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
+from typing import Any
 
 import pydantic
 
@@ -42,6 +44,77 @@ def system_prompt(prompt: str, output_type: type[pydantic.BaseModel]) -> str:
     """The extraction/repair prompt with the output type's JSON Schema appended."""
     schema = json.dumps(output_type.model_json_schema(), ensure_ascii=False)
     return prompt + OUTPUT_FORMAT_INSTRUCTIONS.format(schema=schema)
+
+
+def strict_json_schema(output_type: type[pydantic.BaseModel]) -> dict[str, Any]:
+    """The provider's strict structured-output form of `output_type`'s JSON Schema (PR-S3).
+
+    A pure, deterministic transform of `model_json_schema()`; the Pydantic models are not edited.
+    It mirrors `openai.lib._pydantic.to_strict_json_schema` (what the SDK's `.parse()` sends and
+    the API accepts); `tests/test_strict_schema.py` pins the two together. Every object gets
+    `additionalProperties: false` and all its properties listed as `required`; `default: null`
+    is dropped (the nullable branch stays); non-null defaults stay; a `$ref` with sibling keys
+    is unravelled. Property order is preserved, which is what keeps `text` first in a step.
+    """
+    schema = copy.deepcopy(output_type.model_json_schema())
+    return _strictify(schema, root=schema)
+
+
+def _strictify(node: dict[str, Any], *, root: dict[str, Any]) -> dict[str, Any]:
+    for key in ("$defs", "definitions"):
+        defs = node.get(key)
+        if isinstance(defs, dict):
+            for sub in defs.values():
+                _strictify(sub, root=root)
+
+    if node.get("type") == "object" and "additionalProperties" not in node:
+        node["additionalProperties"] = False
+
+    properties = node.get("properties")
+    if isinstance(properties, dict):
+        node["required"] = list(properties)
+        node["properties"] = {k: _strictify(v, root=root) for k, v in properties.items()}
+
+    items = node.get("items")
+    if isinstance(items, dict):
+        node["items"] = _strictify(items, root=root)
+
+    any_of = node.get("anyOf")
+    if isinstance(any_of, list):
+        node["anyOf"] = [_strictify(v, root=root) for v in any_of]
+
+    all_of = node.get("allOf")
+    if isinstance(all_of, list):
+        if len(all_of) == 1:
+            node.update(_strictify(all_of[0], root=root))
+            node.pop("allOf")
+        else:
+            node["allOf"] = [_strictify(v, root=root) for v in all_of]
+
+    if "default" in node and node["default"] is None:
+        node.pop("default")
+
+    ref = node.get("$ref")
+    if isinstance(ref, str) and len(node) > 1:
+        resolved: Any = root
+        for part in ref[2:].split("/"):
+            resolved = resolved[part]
+        node.update({**resolved, **node})
+        node.pop("$ref")
+        return _strictify(node, root=root)
+    return node
+
+
+def response_format(output_type: type[pydantic.BaseModel]) -> dict[str, Any]:
+    """The `response_format` request field that turns on strict structured output."""
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": output_type.__name__,
+            "strict": True,
+            "schema": strict_json_schema(output_type),
+        },
+    }
 
 
 def strip_code_fences(text: str) -> str:

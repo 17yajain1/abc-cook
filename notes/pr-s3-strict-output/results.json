@@ -1,0 +1,2947 @@
+{
+ "rows": [
+  {
+   "id": "row1-0",
+   "row": 1,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": true,
+   "first_content_s": 13.844,
+   "first_ingredient_s": 14.578,
+   "ingredients_complete_s": 17.062,
+   "first_step_s": 17.437,
+   "steps_complete_s": 39.969,
+   "done_s": 40.719,
+   "first_ingredient_from_paste_s": 20.6,
+   "max_silence_s": 13.844,
+   "max_gap_s": 0.094,
+   "input_uncached": 10508,
+   "cached": 0,
+   "output_tokens": 3768,
+   "reasoning_tokens": 1024,
+   "retries": 0,
+   "cost_inr": 0.863855,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 16,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    263.0,
+    263.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     16,
+     18
+    ],
+    "node_recall": 0.72,
+    "node_precision": 0.81,
+    "edge_recall": 0.36,
+    "edge_precision": 0.33,
+    "stated_equal": true,
+    "total_min": [
+     263.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 16,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row2-0",
+   "row": 2,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 12.766,
+   "first_ingredient_s": 13.766,
+   "ingredients_complete_s": 16.578,
+   "first_step_s": 16.969,
+   "steps_complete_s": 39.25,
+   "done_s": 39.766,
+   "first_ingredient_from_paste_s": 19.8,
+   "max_silence_s": 12.766,
+   "max_gap_s": 0.094,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 3269,
+   "reasoning_tokens": 832,
+   "retries": 0,
+   "cost_inr": 0.5807370000000001,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 14,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    259.0,
+    259.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     14,
+     18
+    ],
+    "node_recall": 0.61,
+    "node_precision": 0.79,
+    "edge_recall": 0.29,
+    "edge_precision": 0.2,
+    "stated_equal": true,
+    "total_min": [
+     259.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 14,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row2-1",
+   "row": 2,
+   "rep": 1,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 9.422,
+   "first_ingredient_s": 10.078,
+   "ingredients_complete_s": 11.828,
+   "first_step_s": 12.297,
+   "steps_complete_s": 35.953,
+   "done_s": 37.297,
+   "first_ingredient_from_paste_s": 16.1,
+   "max_silence_s": 9.422,
+   "max_gap_s": 0.109,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 3630,
+   "reasoning_tokens": 896,
+   "retries": 0,
+   "cost_inr": 0.642107,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 16,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    283.0,
+    283.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     16,
+     18
+    ],
+    "node_recall": 0.61,
+    "node_precision": 0.69,
+    "edge_recall": 0.5,
+    "edge_precision": 0.3,
+    "stated_equal": true,
+    "total_min": [
+     283.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 16,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row3-0",
+   "row": 3,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 13.797,
+   "first_ingredient_s": 14.687,
+   "ingredients_complete_s": 17.0,
+   "first_step_s": 17.297,
+   "steps_complete_s": 46.359,
+   "done_s": 48.094,
+   "first_ingredient_from_paste_s": 20.7,
+   "max_silence_s": 13.797,
+   "max_gap_s": 0.141,
+   "input_uncached": 8061,
+   "cached": 0,
+   "output_tokens": 3550,
+   "reasoning_tokens": 896,
+   "retries": 0,
+   "cost_inr": 0.7747962500000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8061,
+   "non_default": {
+    "steps": 14,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    243.0,
+    243.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     14,
+     18
+    ],
+    "node_recall": 0.61,
+    "node_precision": 0.79,
+    "edge_recall": 0.71,
+    "edge_precision": 0.62,
+    "stated_equal": true,
+    "total_min": [
+     243.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 14,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row3-1",
+   "row": 3,
+   "rep": 1,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 14.75,
+   "first_ingredient_s": 15.782,
+   "ingredients_complete_s": 18.375,
+   "first_step_s": 18.828,
+   "steps_complete_s": 40.938,
+   "done_s": 42.203,
+   "first_ingredient_from_paste_s": 21.8,
+   "max_silence_s": 14.75,
+   "max_gap_s": 0.109,
+   "input_uncached": 125,
+   "cached": 7936,
+   "output_tokens": 3291,
+   "reasoning_tokens": 960,
+   "retries": 0,
+   "cost_inr": 0.57899025,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8061,
+   "non_default": {
+    "steps": 13,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    254.0,
+    254.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     13,
+     18
+    ],
+    "node_recall": 0.67,
+    "node_precision": 0.92,
+    "edge_recall": 0.56,
+    "edge_precision": 0.42,
+    "stated_equal": true,
+    "total_min": [
+     254.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 13,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row3-2",
+   "row": 3,
+   "rep": 2,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 15.562,
+   "first_ingredient_s": 16.5,
+   "ingredients_complete_s": 19.047,
+   "first_step_s": 19.39,
+   "steps_complete_s": 44.344,
+   "done_s": 45.422,
+   "first_ingredient_from_paste_s": 22.5,
+   "max_silence_s": 15.562,
+   "max_gap_s": 0.234,
+   "input_uncached": 125,
+   "cached": 7936,
+   "output_tokens": 3412,
+   "reasoning_tokens": 1024,
+   "retries": 0,
+   "cost_inr": 0.59956025,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8061,
+   "non_default": {
+    "steps": 13,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    244.0,
+    244.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     13,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.77,
+    "edge_recall": 0.6,
+    "edge_precision": 0.43,
+    "stated_equal": true,
+    "total_min": [
+     244.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 13,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row4-0",
+   "row": 4,
+   "rep": 0,
+   "slug": "chole-bhature",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 5.5,
+   "first_ingredient_s": 6.25,
+   "ingredients_complete_s": 16.812,
+   "first_step_s": 17.469,
+   "steps_complete_s": 51.765,
+   "done_s": 53.14,
+   "first_ingredient_from_paste_s": 12.2,
+   "max_silence_s": 5.5,
+   "max_gap_s": 0.11,
+   "input_uncached": 5421,
+   "cached": 8960,
+   "output_tokens": 4757,
+   "reasoning_tokens": 384,
+   "retries": 0,
+   "cost_inr": 0.9429262500000001,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 14381,
+   "non_default": {
+    "steps": 15,
+    "depends_on_previous_false": 4,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    404.0,
+    404.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 3,
+    "typical_differs_from_text": 0
+   },
+   "plan_nodes": 15,
+   "parallel": 7,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 36,
+     "steps": 15,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 36,
+     "steps": 15,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row4-1",
+   "row": 4,
+   "rep": 1,
+   "slug": "chole-bhature",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 6.828,
+   "first_ingredient_s": 7.656,
+   "ingredients_complete_s": 17.187,
+   "first_step_s": 17.625,
+   "steps_complete_s": 57.406,
+   "done_s": 58.953,
+   "first_ingredient_from_paste_s": 13.7,
+   "max_silence_s": 6.828,
+   "max_gap_s": 0.234,
+   "input_uncached": 173,
+   "cached": 14208,
+   "output_tokens": 5545,
+   "reasoning_tokens": 576,
+   "retries": 0,
+   "cost_inr": 0.9765182500000001,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "ingredients_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 14381,
+   "non_default": {
+    "steps": 19,
+    "depends_on_previous_false": 4,
+    "role_non_required": 1,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    852.0,
+    852.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 2,
+    "typical_differs_from_text": 0
+   },
+   "plan_nodes": 19,
+   "parallel": 0,
+   "stated_multiset_len": 2,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 36,
+     "steps": 19,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 36,
+     "steps": 19,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row5-0",
+   "row": 5,
+   "rep": 0,
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 11.562,
+   "first_ingredient_s": 12.406,
+   "ingredients_complete_s": 20.516,
+   "first_step_s": 20.922,
+   "steps_complete_s": 37.625,
+   "done_s": 39.437,
+   "first_ingredient_from_paste_s": 18.4,
+   "max_silence_s": 11.562,
+   "max_gap_s": 0.14,
+   "input_uncached": 3488,
+   "cached": 8960,
+   "output_tokens": 3496,
+   "reasoning_tokens": 1024,
+   "retries": 0,
+   "cost_inr": 0.6874800000000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 8,
+    "depends_on_previous_false": 2,
+    "role_non_required": 0,
+    "servings_source_non_default": 1
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    55.0,
+    55.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     8,
+     11
+    ],
+    "node_recall": 0.64,
+    "node_precision": 0.88,
+    "edge_recall": 1.0,
+    "edge_precision": 0.78,
+    "stated_equal": true,
+    "total_min": [
+     55.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 8,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 8,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 8,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row5-1",
+   "row": 5,
+   "rep": 1,
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 6.969,
+   "first_ingredient_s": 7.891,
+   "ingredients_complete_s": 16.547,
+   "first_step_s": 16.969,
+   "steps_complete_s": 29.516,
+   "done_s": 30.422,
+   "first_ingredient_from_paste_s": 13.9,
+   "max_silence_s": 6.969,
+   "max_gap_s": 0.094,
+   "input_uncached": 160,
+   "cached": 12288,
+   "output_tokens": 2770,
+   "reasoning_tokens": 384,
+   "retries": 0,
+   "cost_inr": 0.5004120000000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 8,
+    "depends_on_previous_false": 3,
+    "role_non_required": 0,
+    "servings_source_non_default": 1
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    65.0,
+    65.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     8,
+     11
+    ],
+    "node_recall": 0.64,
+    "node_precision": 0.88,
+    "edge_recall": 0.83,
+    "edge_precision": 1.0,
+    "stated_equal": true,
+    "total_min": [
+     65.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 8,
+   "parallel": 1,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 8,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 8,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row5-2",
+   "row": 5,
+   "rep": 2,
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 8.563,
+   "first_ingredient_s": 9.282,
+   "ingredients_complete_s": 16.688,
+   "first_step_s": 17.266,
+   "steps_complete_s": 26.688,
+   "done_s": 28.032,
+   "first_ingredient_from_paste_s": 15.3,
+   "max_silence_s": 8.563,
+   "max_gap_s": 0.109,
+   "input_uncached": 160,
+   "cached": 12288,
+   "output_tokens": 2714,
+   "reasoning_tokens": 832,
+   "retries": 0,
+   "cost_inr": 0.490892,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 4,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 1
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    43.0,
+    43.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     4,
+     11
+    ],
+    "node_recall": 0.09,
+    "node_precision": 0.25,
+    "edge_recall": null,
+    "edge_precision": null,
+    "stated_equal": true,
+    "total_min": [
+     43.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 4,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 4,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 4,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row6-0",
+   "row": 6,
+   "rep": 0,
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 2.031,
+   "first_ingredient_s": 3.64,
+   "ingredients_complete_s": 16.515,
+   "first_step_s": 17.031,
+   "steps_complete_s": 34.328,
+   "done_s": 35.39,
+   "first_ingredient_from_paste_s": 9.6,
+   "max_silence_s": 2.031,
+   "max_gap_s": 0.141,
+   "input_uncached": 12448,
+   "cached": 0,
+   "output_tokens": 2566,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.70074,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 9,
+    "depends_on_previous_false": 2,
+    "role_non_required": 0,
+    "servings_source_non_default": 1
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    65.0,
+    65.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 1,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     9,
+     11
+    ],
+    "node_recall": 0.82,
+    "node_precision": 1.0,
+    "edge_recall": 0.54,
+    "edge_precision": 0.88,
+    "stated_equal": false,
+    "total_min": [
+     65.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 9,
+   "parallel": 0,
+   "stated_multiset_len": 1,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 9,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 9,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row6-1",
+   "row": 6,
+   "rep": 1,
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 1.203,
+   "first_ingredient_s": 2.328,
+   "ingredients_complete_s": 13.296,
+   "first_step_s": 14.218,
+   "steps_complete_s": 40.421,
+   "done_s": 41.812,
+   "first_ingredient_from_paste_s": 8.3,
+   "max_silence_s": 1.203,
+   "max_gap_s": 0.266,
+   "input_uncached": 160,
+   "cached": 12288,
+   "output_tokens": 2598,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.471172,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 9,
+    "depends_on_previous_false": 2,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    66.0,
+    66.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     9,
+     11
+    ],
+    "node_recall": 0.82,
+    "node_precision": 1.0,
+    "edge_recall": 0.43,
+    "edge_precision": 0.75,
+    "stated_equal": true,
+    "total_min": [
+     66.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 9,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 9,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 9,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row6-2",
+   "row": 6,
+   "rep": 2,
+   "slug": "kadhi-pakora",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 1.781,
+   "first_ingredient_s": 2.703,
+   "ingredients_complete_s": 10.484,
+   "first_step_s": 10.828,
+   "steps_complete_s": 29.875,
+   "done_s": 31.344,
+   "first_ingredient_from_paste_s": 8.7,
+   "max_silence_s": 1.781,
+   "max_gap_s": 0.172,
+   "input_uncached": 160,
+   "cached": 12288,
+   "output_tokens": 2758,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.49837200000000004,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 12448,
+   "non_default": {
+    "steps": 10,
+    "depends_on_previous_false": 2,
+    "role_non_required": 0,
+    "servings_source_non_default": 1
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    63.0,
+    63.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     10,
+     11
+    ],
+    "node_recall": 0.73,
+    "node_precision": 0.8,
+    "edge_recall": 0.58,
+    "edge_precision": 0.58,
+    "stated_equal": true,
+    "total_min": [
+     63.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 10,
+   "parallel": 1,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 10,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 10,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row7-0",
+   "row": 7,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 1.047,
+   "first_ingredient_s": 2.172,
+   "ingredients_complete_s": 5.625,
+   "first_step_s": 6.125,
+   "steps_complete_s": 34.406,
+   "done_s": 35.219,
+   "first_ingredient_from_paste_s": 8.2,
+   "max_silence_s": 1.047,
+   "max_gap_s": 0.172,
+   "input_uncached": 1548,
+   "cached": 8960,
+   "output_tokens": 2365,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.4539850000000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 13,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    248.0,
+    248.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     13,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.77,
+    "edge_recall": 0.8,
+    "edge_precision": 0.67,
+    "stated_equal": true,
+    "total_min": [
+     248.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 13,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row7-1",
+   "row": 7,
+   "rep": 1,
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 1.266,
+   "first_ingredient_s": 2.078,
+   "ingredients_complete_s": 4.109,
+   "first_step_s": 4.359,
+   "steps_complete_s": 22.156,
+   "done_s": 23.063,
+   "first_ingredient_from_paste_s": 8.1,
+   "max_silence_s": 1.266,
+   "max_gap_s": 0.093,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 2327,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.420597,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 13,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    261.0,
+    261.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     13,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.77,
+    "edge_recall": 0.6,
+    "edge_precision": 0.33,
+    "stated_equal": true,
+    "total_min": [
+     261.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 13,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row7-2",
+   "row": 7,
+   "rep": 2,
+   "slug": "croissant",
+   "effort": "minimal",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 0.922,
+   "first_ingredient_s": 1.703,
+   "ingredients_complete_s": 3.968,
+   "first_step_s": 4.078,
+   "steps_complete_s": 35.625,
+   "done_s": 36.625,
+   "first_ingredient_from_paste_s": 7.7,
+   "max_silence_s": 0.922,
+   "max_gap_s": 0.234,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 2435,
+   "reasoning_tokens": 0,
+   "retries": 0,
+   "cost_inr": 0.43895700000000004,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "produces_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 14,
+    "depends_on_previous_false": 1,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    268.0,
+    268.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     14,
+     18
+    ],
+    "node_recall": 0.61,
+    "node_precision": 0.79,
+    "edge_recall": 0.5,
+    "edge_precision": 0.27,
+    "stated_equal": true,
+    "total_min": [
+     268.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 14,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row8-0",
+   "row": 8,
+   "rep": 0,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 6.437,
+   "first_ingredient_s": 7.109,
+   "ingredients_complete_s": 9.484,
+   "first_step_s": 9.687,
+   "steps_complete_s": 20.437,
+   "done_s": 21.265,
+   "first_ingredient_from_paste_s": 13.1,
+   "max_silence_s": 6.437,
+   "max_gap_s": 0.094,
+   "input_uncached": 1641,
+   "cached": 8960,
+   "output_tokens": 2168,
+   "reasoning_tokens": 576,
+   "retries": 0,
+   "cost_inr": 0.4224712500000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10601,
+   "non_default": {
+    "steps": 7,
+    "depends_on_previous_false": 1,
+    "role_non_required": 2,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    27.0,
+    27.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     7,
+     7
+    ],
+    "node_recall": 0.71,
+    "node_precision": 0.71,
+    "edge_recall": 1.0,
+    "edge_precision": 0.6,
+    "stated_equal": true,
+    "total_min": [
+     27.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 7,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row9-0",
+   "row": 9,
+   "rep": 0,
+   "slug": "kadhi-pakora",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 13.828,
+   "first_ingredient_s": 15.343,
+   "ingredients_complete_s": 28.875,
+   "first_step_s": 29.328,
+   "steps_complete_s": 49.093,
+   "done_s": 50.734,
+   "first_ingredient_from_paste_s": 21.3,
+   "max_silence_s": 13.828,
+   "max_gap_s": 0.125,
+   "input_uncached": 3089,
+   "cached": 6912,
+   "output_tokens": 3735,
+   "reasoning_tokens": 640,
+   "retries": 0,
+   "cost_inr": 0.71527925,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10001,
+   "non_default": {
+    "steps": 10,
+    "depends_on_previous_false": 3,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    48.0,
+    48.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     10,
+     11
+    ],
+    "node_recall": 0.64,
+    "node_precision": 0.7,
+    "edge_recall": 0.71,
+    "edge_precision": 0.62,
+    "stated_equal": true,
+    "total_min": [
+     48.0,
+     54.0
+    ]
+   },
+   "plan_nodes": 10,
+   "parallel": 1,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 30,
+     "steps": 10,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 30,
+     "steps": 10,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row13-0",
+   "row": 13,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 11.578,
+   "first_ingredient_s": 12.547,
+   "ingredients_complete_s": 15.016,
+   "first_step_s": 15.375,
+   "steps_complete_s": 34.062,
+   "done_s": 34.906,
+   "first_ingredient_from_paste_s": 18.5,
+   "max_silence_s": 11.578,
+   "max_gap_s": 0.125,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 2990,
+   "reasoning_tokens": 704,
+   "retries": 0,
+   "cost_inr": 0.5333070000000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 13,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    259.0,
+    259.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     13,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.77,
+    "edge_recall": 0.6,
+    "edge_precision": 0.43,
+    "stated_equal": true,
+    "total_min": [
+     259.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 13,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 8,
+     "steps": 13,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row13-1",
+   "row": 13,
+   "rep": 1,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 11.969,
+   "first_ingredient_s": 12.813,
+   "ingredients_complete_s": 14.922,
+   "first_step_s": 15.078,
+   "steps_complete_s": 33.953,
+   "done_s": 35.5,
+   "first_ingredient_from_paste_s": 18.8,
+   "max_silence_s": 11.969,
+   "max_gap_s": 0.094,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 3380,
+   "reasoning_tokens": 896,
+   "retries": 0,
+   "cost_inr": 0.599607,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 14,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    267.0,
+    267.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     14,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.71,
+    "edge_recall": 0.75,
+    "edge_precision": 0.43,
+    "stated_equal": true,
+    "total_min": [
+     267.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 14,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 7,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 7,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row13-2",
+   "row": 13,
+   "rep": 2,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 10.313,
+   "first_ingredient_s": 11.203,
+   "ingredients_complete_s": 13.125,
+   "first_step_s": 13.485,
+   "steps_complete_s": 42.953,
+   "done_s": 44.282,
+   "first_ingredient_from_paste_s": 17.2,
+   "max_silence_s": 10.313,
+   "max_gap_s": 0.109,
+   "input_uncached": 140,
+   "cached": 10368,
+   "output_tokens": 3805,
+   "reasoning_tokens": 896,
+   "retries": 0,
+   "cost_inr": 0.671857,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10508,
+   "non_default": {
+    "steps": 18,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    288.0,
+    288.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     18,
+     18
+    ],
+    "node_recall": 0.78,
+    "node_precision": 0.78,
+    "edge_recall": 0.36,
+    "edge_precision": 0.4,
+    "stated_equal": true,
+    "total_min": [
+     288.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 18,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 7,
+     "steps": 18,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 7,
+     "steps": 18,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row14-0",
+   "row": 14,
+   "rep": 0,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 19.328,
+   "first_ingredient_s": 20.312,
+   "ingredients_complete_s": 23.031,
+   "first_step_s": 23.219,
+   "steps_complete_s": 63.328,
+   "done_s": 64.281,
+   "first_ingredient_from_paste_s": 26.3,
+   "max_silence_s": 19.328,
+   "max_gap_s": 0.281,
+   "input_uncached": 125,
+   "cached": 7936,
+   "output_tokens": 4021,
+   "reasoning_tokens": 1344,
+   "retries": 0,
+   "cost_inr": 0.70309025,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8061,
+   "non_default": {
+    "steps": 16,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    273.0,
+    273.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     16,
+     18
+    ],
+    "node_recall": 0.78,
+    "node_precision": 0.88,
+    "edge_recall": 0.58,
+    "edge_precision": 0.47,
+    "stated_equal": true,
+    "total_min": [
+     273.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 16,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 16,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row14-1",
+   "row": 14,
+   "rep": 1,
+   "slug": "croissant",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 7.328,
+   "first_ingredient_s": 8.859,
+   "ingredients_complete_s": 12.672,
+   "first_step_s": 13.234,
+   "steps_complete_s": 45.734,
+   "done_s": 46.672,
+   "first_ingredient_from_paste_s": 14.9,
+   "max_silence_s": 7.328,
+   "max_gap_s": 0.219,
+   "input_uncached": 125,
+   "cached": 7936,
+   "output_tokens": 2826,
+   "reasoning_tokens": 320,
+   "retries": 0,
+   "cost_inr": 0.4999402500000001,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8061,
+   "non_default": {
+    "steps": 14,
+    "depends_on_previous_false": 0,
+    "role_non_required": 0,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    264.0,
+    264.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 4,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     14,
+     18
+    ],
+    "node_recall": 0.56,
+    "node_precision": 0.71,
+    "edge_recall": 0.75,
+    "edge_precision": 0.38,
+    "stated_equal": true,
+    "total_min": [
+     264.0,
+     256.0
+    ]
+   },
+   "plan_nodes": 14,
+   "parallel": 0,
+   "stated_multiset_len": 6,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 9,
+     "steps": 14,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row15-0",
+   "row": 15,
+   "rep": 0,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 6.703,
+   "first_ingredient_s": 7.282,
+   "ingredients_complete_s": 9.719,
+   "first_step_s": 9.875,
+   "steps_complete_s": 17.844,
+   "done_s": 18.5,
+   "first_ingredient_from_paste_s": 13.3,
+   "max_silence_s": 6.703,
+   "max_gap_s": 0.157,
+   "input_uncached": 105,
+   "cached": 10496,
+   "output_tokens": 1974,
+   "reasoning_tokens": 448,
+   "retries": 0,
+   "cost_inr": 0.36011525000000005,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "ingredients_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10601,
+   "non_default": {
+    "steps": 7,
+    "depends_on_previous_false": 1,
+    "role_non_required": 2,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    35.0,
+    35.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     7,
+     7
+    ],
+    "node_recall": 0.86,
+    "node_precision": 0.86,
+    "edge_recall": 1.0,
+    "edge_precision": 1.0,
+    "stated_equal": true,
+    "total_min": [
+     35.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 7,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row15-1",
+   "row": 15,
+   "rep": 1,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": true,
+   "first_strict_schema_call": false,
+   "first_content_s": 11.438,
+   "first_ingredient_s": 12.281,
+   "ingredients_complete_s": 17.0,
+   "first_step_s": 17.312,
+   "steps_complete_s": 28.046,
+   "done_s": 29.296,
+   "first_ingredient_from_paste_s": 18.3,
+   "max_silence_s": 11.438,
+   "max_gap_s": 0.234,
+   "input_uncached": 105,
+   "cached": 10496,
+   "output_tokens": 2707,
+   "reasoning_tokens": 896,
+   "retries": 0,
+   "cost_inr": 0.48472525,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 10601,
+   "non_default": {
+    "steps": 7,
+    "depends_on_previous_false": 1,
+    "role_non_required": 3,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    14.0,
+    14.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     6,
+     7
+    ],
+    "node_recall": 0.57,
+    "node_precision": 0.67,
+    "edge_recall": 1.0,
+    "edge_precision": 1.0,
+    "stated_equal": true,
+    "total_min": [
+     14.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 6,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 17,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 17,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row16-0",
+   "row": 16,
+   "rep": 0,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 13.438,
+   "first_ingredient_s": 14.266,
+   "ingredients_complete_s": 18.5,
+   "first_step_s": 18.782,
+   "steps_complete_s": 34.844,
+   "done_s": 36.485,
+   "first_ingredient_from_paste_s": 20.3,
+   "max_silence_s": 13.438,
+   "max_gap_s": 0.171,
+   "input_uncached": 1242,
+   "cached": 6912,
+   "output_tokens": 2690,
+   "reasoning_tokens": 1088,
+   "retries": 0,
+   "cost_inr": 0.49838050000000006,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "ingredients_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8154,
+   "non_default": {
+    "steps": 7,
+    "depends_on_previous_false": 0,
+    "role_non_required": 2,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    18.0,
+    18.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     7,
+     7
+    ],
+    "node_recall": 0.86,
+    "node_precision": 0.86,
+    "edge_recall": 0.8,
+    "edge_precision": 1.0,
+    "stated_equal": true,
+    "total_min": [
+     18.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 7,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 12,
+     "steps": 7,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row16-1",
+   "row": 16,
+   "rep": 1,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 8.453,
+   "first_ingredient_s": 9.922,
+   "ingredients_complete_s": 13.953,
+   "first_step_s": 14.297,
+   "steps_complete_s": 24.75,
+   "done_s": 25.656,
+   "first_ingredient_from_paste_s": 15.9,
+   "max_silence_s": 8.453,
+   "max_gap_s": 0.172,
+   "input_uncached": 90,
+   "cached": 8064,
+   "output_tokens": 1846,
+   "reasoning_tokens": 384,
+   "retries": 0,
+   "cost_inr": 0.33286850000000007,
+   "tier": "clean",
+   "repair_would_fire": false,
+   "violations_pre_repair": [],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8154,
+   "non_default": {
+    "steps": 6,
+    "depends_on_previous_false": 0,
+    "role_non_required": 2,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    27.0,
+    27.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     6,
+     7
+    ],
+    "node_recall": 0.71,
+    "node_precision": 0.83,
+    "edge_recall": 1.0,
+    "edge_precision": 0.5,
+    "stated_equal": true,
+    "total_min": [
+     27.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 6,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 12,
+     "steps": 6,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 12,
+     "steps": 6,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  },
+  {
+   "id": "row16-2",
+   "row": 16,
+   "rep": 2,
+   "slug": "pumpkin-pancakes",
+   "effort": "low",
+   "strict": false,
+   "first_strict_schema_call": false,
+   "first_content_s": 7.703,
+   "first_ingredient_s": 8.297,
+   "ingredients_complete_s": 10.75,
+   "first_step_s": 11.016,
+   "steps_complete_s": 20.531,
+   "done_s": 22.078,
+   "first_ingredient_from_paste_s": 14.3,
+   "max_silence_s": 7.703,
+   "max_gap_s": 0.25,
+   "input_uncached": 90,
+   "cached": 8064,
+   "output_tokens": 2247,
+   "reasoning_tokens": 768,
+   "retries": 0,
+   "cost_inr": 0.4010385,
+   "tier": "degraded",
+   "repair_would_fire": true,
+   "violations_pre_repair": [
+    "ingredients_consumed"
+   ],
+   "status": "done",
+   "error_kinds": [
+    null
+   ],
+   "stop_reasons": [
+    "stop"
+   ],
+   "input_total": 8154,
+   "non_default": {
+    "steps": 6,
+    "depends_on_previous_false": 0,
+    "role_non_required": 2,
+    "servings_source_non_default": 0
+   },
+   "floor_violations_off": 0,
+   "floor_violations_on": 0,
+   "floor_violation_detail_off": [],
+   "hedged_among_violations_off": 0,
+   "total_min_off_on": [
+    24.0,
+    24.0
+   ],
+   "fgc21": {
+    "steps_with_single_stated_time": 0,
+    "typical_differs_from_text": 0
+   },
+   "vs_golden": {
+    "nodes": [
+     6,
+     7
+    ],
+    "node_recall": 0.86,
+    "node_precision": 1.0,
+    "edge_recall": 0.8,
+    "edge_precision": 0.8,
+    "stated_equal": true,
+    "total_min": [
+     24.0,
+     24.0
+    ]
+   },
+   "plan_nodes": 6,
+   "parallel": 0,
+   "stated_multiset_len": 0,
+   "key_order": {
+    "parsed": true,
+    "top_equal_schema_order": true,
+    "ingredients_before_steps": true,
+    "every_step_equal_schema_order": true,
+    "text_first_in_every_step": true,
+    "every_ingredient_equal_schema_order": true
+   },
+   "scanner": {
+    "char_by_char": {
+     "ingredients": 12,
+     "steps": 6,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    },
+    "real_chunking": {
+     "ingredients": 12,
+     "steps": 6,
+     "ingredients_complete": true,
+     "steps_complete": true,
+     "broken": false,
+     "equals_final_parse": true
+    }
+   }
+  }
+ ],
+ "minimal_floor": {
+  "kadhi-pakora": {
+   "slug": "kadhi-pakora",
+   "evaluated": true,
+   "new_stated_time_violations": false,
+   "violations_low_off": [
+    0,
+    0,
+    0
+   ],
+   "violations_minimal_off": [
+    0,
+    0,
+    0
+   ],
+   "violations_minimal_on": [
+    0,
+    0,
+    0
+   ],
+   "tier_regression": true,
+   "tiers_low": [
+    "clean",
+    "clean",
+    "clean"
+   ],
+   "tiers_minimal": [
+    "degraded",
+    "degraded",
+    "clean"
+   ],
+   "repair_rate_low": 0.0,
+   "repair_rate_minimal": 0.6666666666666666,
+   "repair_worse": true,
+   "edge_recall_low": [
+    1.0,
+    0.83
+   ],
+   "edge_recall_minimal": [
+    0.54,
+    0.43,
+    0.58
+   ],
+   "edge_recall_outside_low_spread": true,
+   "edge_precision_low": [
+    0.78,
+    1.0
+   ],
+   "edge_precision_minimal": [
+    0.88,
+    0.75,
+    0.58
+   ],
+   "edge_precision_outside_low_spread": true,
+   "passes": false
+  },
+  "croissant": {
+   "slug": "croissant",
+   "evaluated": true,
+   "new_stated_time_violations": false,
+   "violations_low_off": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "violations_minimal_off": [
+    0,
+    0,
+    0
+   ],
+   "violations_minimal_on": [
+    0,
+    0,
+    0
+   ],
+   "tier_regression": false,
+   "tiers_low": [
+    "degraded",
+    "degraded",
+    "clean",
+    "clean",
+    "clean",
+    "degraded"
+   ],
+   "tiers_minimal": [
+    "clean",
+    "degraded",
+    "degraded"
+   ],
+   "repair_rate_low": 0.5,
+   "repair_rate_minimal": 0.6666666666666666,
+   "repair_worse": true,
+   "edge_recall_low": [
+    0.29,
+    0.5,
+    0.6,
+    0.75,
+    0.36,
+    0.36
+   ],
+   "edge_recall_minimal": [
+    0.8,
+    0.6,
+    0.5
+   ],
+   "edge_recall_outside_low_spread": false,
+   "edge_precision_low": [
+    0.2,
+    0.3,
+    0.43,
+    0.43,
+    0.4,
+    0.33
+   ],
+   "edge_precision_minimal": [
+    0.67,
+    0.33,
+    0.27
+   ],
+   "edge_precision_outside_low_spread": false,
+   "passes": false
+  },
+  "chole-bhature": {
+   "slug": "chole-bhature",
+   "evaluated": false
+  },
+  "pumpkin-pancakes": {
+   "slug": "pumpkin-pancakes",
+   "evaluated": false
+  }
+ }
+}

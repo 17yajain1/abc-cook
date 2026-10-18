@@ -1,0 +1,35 @@
+=== final-step check, all calls ===
+ 1-0   croissant        low     on  violating (step, of n)=[(15, 16)] final-step-has-produces_component=True second-to-last=False
+ 2-0   croissant        low     on  violating (step, of n)=[(13, 14)] final-step-has-produces_component=True second-to-last=False
+ 2-1   croissant        low     on  violating (step, of n)=[(15, 16)] final-step-has-produces_component=True second-to-last=False
+ 3-0   croissant        low     off violating (step, of n)=[] final-step-has-produces_component=False second-to-last=False
+ 3-1   croissant        low     off violating (step, of n)=[(12, 13)] final-step-has-produces_component=True second-to-last=False
+ 3-2   croissant        low     off violating (step, of n)=[] final-step-has-produces_component=False second-to-last=False
+ 4-0   chole-bhature    low     on  violating (step, of n)=[(14, 15)] final-step-has-produces_component=True second-to-last=True
+ 4-1   chole-bhature    low     on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=True
+ 5-0   kadhi-pakora     low     on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=True
+ 5-1   kadhi-pakora     low     on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=False
+ 5-2   kadhi-pakora     low     on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=True
+ 6-0   kadhi-pakora     minimal on  violating (step, of n)=[(1, 9)] final-step-has-produces_component=False second-to-last=True
+ 6-1   kadhi-pakora     minimal on  violating (step, of n)=[(1, 9)] final-step-has-produces_component=False second-to-last=False
+ 6-2   kadhi-pakora     minimal on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=True
+ 7-0   croissant        minimal on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=False
+ 7-1   croissant        minimal on  violating (step, of n)=[(12, 13)] final-step-has-produces_component=True second-to-last=False
+ 7-2   croissant        minimal on  violating (step, of n)=[(13, 14)] final-step-has-produces_component=True second-to-last=False
+ 8-0   pumpkin-pancakes low     on  violating (step, of n)=[] final-step-has-produces_component=False second-to-last=False
+ 9-0   kadhi-pakora     low     off violating (step, of n)=[] final-step-has-produces_component=False second-to-last=True
+ calls whose FINAL step carries produces_component / calls:
+   ('chole-bhature', 'low', True) 1/2
+   ('croissant', 'low', False) 1/3
+   ('croissant', 'low', True) 3/3
+   ('croissant', 'minimal', True) 2/3
+   ('kadhi-pakora', 'low', False) 0/1
+   ('kadhi-pakora', 'low', True) 0/3
+   ('kadhi-pakora', 'minimal', True) 0/3
+   ('pumpkin-pancakes', 'low', True) 0/1
+
+=== repair, no LLM: replay with hand-built proposals on call 1-0 ===
+ no-op proposal (all fields omitted): tier=degraded nodes=16 edges=15
+ no proposal: tier=degraded nodes=16 edges=15
+ produces_component='' on the last step: tier=repaired
+ baseline postprocess edges (unrepaired structure) = 19 edges, tier would be repaired/degraded:
