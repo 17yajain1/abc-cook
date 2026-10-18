@@ -116,7 +116,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
       })
       .catch((err: unknown) => {
         if (tokenRef.current !== token) return
-        setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
+        setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null, draft: null })
       })
   }
 
@@ -133,7 +133,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
           // Set before the network call, so the thumbnail is on screen while POST /import
           // is still in flight.
           setInstant(quick ? { thumbnailUrl: quick.thumbnailUrl, title: null, channel: null } : null)
-          setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
+          setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null, draft: null })
         },
         // oEmbed runs in parallel with the POST, under the same token: a stale answer from
         // a previous submit is dropped, and a title that is already set is never replaced.
@@ -151,7 +151,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
         onStartFailed: (err) => {
           if (tokenRef.current !== token) return
           setInstant(null)
-          setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null })
+          setPhase({ kind: 'error', message: messageFor(err), preview: null, acquired: null, draft: null })
         },
         onDuplicate: (saved) => options.onDuplicate?.(saved),
       },
@@ -181,7 +181,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
     const token = ++tokenRef.current
     lastUrlRef.current = null
     setInstant(null)
-    setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null })
+    setPhase({ kind: 'polling', status: 'acquiring', preview: null, acquired: null, draft: null })
     startImportText(text)
       .then(({ job_id }) => {
         if (tokenRef.current !== token) return
@@ -202,6 +202,7 @@ export function useImportJob(onImported: OnImported, options: ImportJobOptions =
       status: phase.status,
       preview: phase.preview,
       acquired: phase.acquired,
+      draft: phase.draft,
     })
     poll(phase.jobId, phase.token, 0)
   }

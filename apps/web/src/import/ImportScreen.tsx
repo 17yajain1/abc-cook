@@ -1,27 +1,21 @@
 import type { ImportJobResponse, NormalizedIngredient, SavedRecipe } from '@abc-cook/schema'
 
+import { useHomeSurface } from '@/shell/useHomeSurface'
+
 import { notGroundedCopy } from './notGroundedCopy'
 import type { FindSaved } from './duplicate'
 import { ImportDraft } from './ImportDraft'
 import { FAILURE_COPY } from './phase'
-import { importViewFor } from './importView'
-import { useImportJob, type ImportStatus, type OnImported, type Phase } from './useImportJob'
+import { footerFor, importViewFor } from './importView'
+import { useImportJob, type OnImported, type Phase } from './useImportJob'
 
-/** A7: one line per real pipeline stage (design doc §4.5), in the words the cook would use.
- * No percentages or invented progress — a line changes only when the server's status does.
- * `plan_building` has no entry: with a preview on screen it gets `PreviewFooter`. */
 const WORKING_OUT = 'Working out what can happen at the same time…'
-const STATUS_COPY: Partial<Record<ImportStatus, string>> = {
-  acquiring: 'Getting the recipe…',
-  extracting: WORKING_OUT,
-  validating: 'Building your cooking plan…',
-}
 
 /** Under the preview: what has happened (the page gave us its recipe) and what is happening. */
 function PreviewFooter() {
   return (
     <>
-      <p className="text-ink">Found the recipe on the page.</p>
+      <p className="text-home-ink">Found the recipe on the page.</p>
       <p>{WORKING_OUT}</p>
     </>
   )
@@ -52,30 +46,33 @@ export function ImportProgress({
   onCancel: () => void
 }) {
   const { phase, setPhase, text, setText, submitText, reset, retry, instant, markThumbnail } = job
+  // Every progress screen is Home register, so the page behind the app is the Home ground.
+  useHomeSurface(true)
 
   if (phase.kind === 'polling') {
     // Whatever the source has said so far (thumbnail and title at once for a YouTube link,
-    // then its description, then a blog page's own recipe) is shown, with the plan-building
-    // line quiet underneath (A2); until anything is known, the plain status word.
+    // then its description, a blog page's own recipe, and the extraction's draft as it
+    // streams) is shown, with one quiet line underneath naming what is being read; until
+    // anything is known, the plain status word.
     const view = importViewFor({
       instant,
       acquired: phase.acquired,
       preview: phase.preview,
+      draft: phase.draft,
       status: phase.status,
     })
-    if (view.header || phase.preview) {
+    const footer = footerFor(view, phase.status)
+    if (view.header || phase.preview || phase.draft) {
       return (
         <ImportDraft
           view={view}
-          footer={
-            phase.preview ? <PreviewFooter /> : <p>{STATUS_COPY[phase.status] ?? 'Working…'}</p>
-          }
+          footer={phase.preview ? <PreviewFooter /> : <p>{footer}</p>}
           onCancel={reset}
           onThumbnailLoaded={markThumbnail}
         />
       )
     }
-    return <Centered>{STATUS_COPY[phase.status] ?? 'Working…'}</Centered>
+    return <Centered>{footer}</Centered>
   }
 
   if (phase.kind === 'failed') {
@@ -88,6 +85,7 @@ export function ImportProgress({
           instant,
           acquired: phase.acquired,
           preview: phase.preview,
+          draft: phase.draft,
           status: 'failed',
         })}
         failure={
@@ -133,6 +131,7 @@ export function ImportProgress({
           instant,
           acquired: phase.acquired,
           preview: phase.preview,
+          draft: phase.draft,
           status: 'failed',
         })}
         footer={

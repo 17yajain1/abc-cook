@@ -1,21 +1,37 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
-import { IngredientRow } from '../plan/IngredientRow'
+import { IngredientList } from '../plan/IngredientList'
+import { previewIngredientGroups } from './draftView'
 import type { ImportViewModel } from './importView'
 
 /** YouTube serves a 120px-wide grey placeholder (HTTP 200) for an id with no thumbnail. */
 const YT_PLACEHOLDER_WIDTH = 120
 
+/** The label on a section while it shows the draft, not the source's own text. */
+const DRAFT_LABEL = 'Draft'
+
 /**
- * The import screen while a job runs: what the source itself has said so far (ported from
- * `RecipePreview`, which this replaces).
+ * The reading screen while a job runs: what the source itself has said so far, and the
+ * extraction's draft of the recipe as it streams in.
  *
- * Source text only, rendered exactly as received — no durations, no timers, no start-time
- * advice, no shimmer. This screen sits *before* the scheduler and must not borrow its
- * authority (CLAUDE.md: the frontend renders `CookingPlan`, nothing more). Presentation
- * follows `DESIGN_SYSTEM.md`: paper, ink, hairline rules, no cards, no pills. The
- * masthead uses the recipe page's title scale (30 / 700 / 34) so the hand-off to the plan
- * doesn't change the type.
+ * Home register (`DESIGN_SYSTEM.md` § Register: Home): the same ground as the Copy sheet
+ * and the recipe page, so nothing flips at the hand-off. Order, top to bottom: thumbnail,
+ * channel, title, Ingredients, Steps, then "About this video". The description sits last
+ * so the recipe arrives under the cook's thumb first; before the draft starts, the two
+ * recipe sections are a few static bars, so the description still shows on the first
+ * screen.
+ *
+ * The title is the source's raw one, at Home's screen-title size (22 / 700) and clamped to
+ * three lines: a real video title runs 60-100 characters, which at the recipe page's 30px
+ * is four or five lines and pushes the description off the first screen. The leading is 30,
+ * not the spec's 26: the clamp clips overflow, and a Devanagari title loses its top marks
+ * (a "की" reads as "को") below about 1.35. The recipe page after the tap shows the plan's
+ * own title in full.
+ *
+ * Source text and draft text only, rendered exactly as received: no durations, no timers,
+ * no start-time advice, no shimmer. This screen sits *before* the scheduler and must not
+ * borrow its authority (CLAUDE.md: the frontend renders `CookingPlan`, nothing more). The
+ * draft lists are append-only, so a row on screen never moves while it streams.
  */
 export function ImportDraft({
   view,
@@ -25,10 +41,10 @@ export function ImportDraft({
   onThumbnailLoaded,
 }: {
   view: ImportViewModel
-  /** The quiet line pinned under the page, e.g. "Building your cooking plan…". Absent in a
-   * failed state, where the message lives in `failure` and must not appear twice. */
+  /** The quiet line pinned under the page, e.g. "Reading the steps…". Absent in a failed
+   * state, where the message lives in `failure` and must not appear twice. */
   footer?: ReactNode
-  /** A failed job's message and its actions, in the body where Ingredients would be. */
+  /** A failed job's message and its actions, under the header and above the sections. */
   failure?: ReactNode
   onCancel: () => void
   onThumbnailLoaded?: () => void
@@ -37,12 +53,12 @@ export function ImportDraft({
   const header = view.header
 
   return (
-    <div className="flex h-full flex-col bg-paper">
+    <div className="flex h-full flex-col bg-home-ground text-home-ink">
       <div className="flex flex-shrink-0 justify-end px-5 pt-3.5" style={{ minHeight: 32 }}>
         <button
           type="button"
           onClick={onCancel}
-          className="-my-3 py-3 pl-3 text-[13px] text-ink-3 underline underline-offset-[3px]"
+          className="-my-3 py-3 pl-3 text-[13px] text-home-ink-2 underline underline-offset-[3px]"
         >
           Cancel
         </button>
@@ -55,16 +71,15 @@ export function ImportDraft({
               <Thumbnail url={header.thumbnailUrl} onLoaded={onThumbnailLoaded} />
             )}
             {header.channel && (
-              <p className="mt-3 text-[13px] font-medium text-ink-3">{header.channel}</p>
+              <p className="mt-3 text-[13px] font-medium text-home-ink-2">{header.channel}</p>
             )}
             {header.title && (
               <h1
-                className={`${header.channel ? 'mt-1' : 'mt-3'} text-[30px] font-bold leading-[34px] tracking-[-0.5px] text-ink`}
+                className={`${header.channel ? 'mt-1' : 'mt-3'} line-clamp-3 text-[22px] font-bold leading-[30px] tracking-[-0.3px] text-home-ink`}
               >
                 {header.title}
               </h1>
             )}
-            {header.description && <Description text={header.description} />}
           </header>
         )}
 
@@ -72,13 +87,15 @@ export function ImportDraft({
 
         {view.ingredients.kind !== 'none' && (
           <section className="mt-8">
-            <h2 className="text-[15px] font-semibold text-ink">Ingredients</h2>
-            {view.ingredients.kind === 'lines' ? (
-              <ul className="mt-2 border-t border-rule">
-                {view.ingredients.lines.map((line, i) => (
-                  <IngredientRow key={`${i}-${line}`} tone="plan" primary={line} />
-                ))}
-              </ul>
+            <SectionHead title="Ingredients" draft={view.ingredients.kind === 'items'} />
+            {view.ingredients.kind === 'items' ? (
+              <div className="mt-2">
+                <IngredientList groups={view.ingredients.groups} />
+              </div>
+            ) : view.ingredients.kind === 'lines' ? (
+              <div className="mt-2">
+                <IngredientList groups={previewIngredientGroups(view.ingredients.lines)} />
+              </div>
             ) : (
               <Pending />
             )}
@@ -87,24 +104,25 @@ export function ImportDraft({
 
         {view.method.kind !== 'none' && (
           <section className="mt-8">
-            <h2 className="text-[15px] font-semibold text-ink">Method</h2>
-            {view.method.kind === 'sections' ? (
+            <SectionHead title="Steps" draft={view.method.kind === 'steps'} />
+            {view.method.kind === 'steps' ? (
+              <ol className="mt-2">
+                {view.method.steps.map((line, i) => (
+                  <Step key={i} number={i + 1} text={line} />
+                ))}
+              </ol>
+            ) : view.method.kind === 'sections' ? (
               view.method.sections.map((section, s) => (
                 <div key={`${s}-${section.heading ?? ''}`} className="mt-3">
                   {section.heading && (
-                    <h3 className="mb-1 text-[15px] font-medium text-ink-2">{section.heading}</h3>
+                    <h3 className="mb-1 text-[15px] font-semibold text-home-ink-2">
+                      {section.heading}
+                    </h3>
                   )}
                   <ol>
                     {section.lines.map((line, i) => {
                       stepNumber += 1
-                      return (
-                        <li key={`${i}-${line}`} className="flex gap-3 py-2">
-                          <span className="tabular w-5 flex-shrink-0 pt-px text-right text-[13px] text-ink-3">
-                            {stepNumber}
-                          </span>
-                          <span className="text-[15px] leading-[1.55] text-ink">{line}</span>
-                        </li>
-                      )
+                      return <Step key={`${i}-${line}`} number={stepNumber} text={line} />
                     })}
                   </ol>
                 </div>
@@ -114,11 +132,18 @@ export function ImportDraft({
             )}
           </section>
         )}
+
+        {header?.description && (
+          <section className="mt-8">
+            <h2 className={HEADING}>About this video</h2>
+            <Description text={header.description} />
+          </section>
+        )}
       </div>
 
       {footer != null && (
         <div
-          className="flex-shrink-0 border-t border-rule px-5 pb-6 pt-4 text-[15px] text-ink-2"
+          className="flex-shrink-0 border-t border-home-rule bg-home-ground px-5 pb-6 pt-4 text-[15px] text-home-ink-2"
           role="status"
           aria-live="polite"
         >
@@ -129,21 +154,61 @@ export function ImportDraft({
   )
 }
 
-/** A section the source hasn't filled yet: one quiet line, no shimmer, no skeleton. */
+/** Home's tile / card title: 18 / 700 / 22. */
+const HEADING = 'text-[18px] font-bold leading-[22px] text-home-ink'
+
+/** A section heading, with the "Draft" label beside it only while the content is the draft. */
+function SectionHead({ title, draft }: { title: string; draft: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <h2 className={HEADING}>{title}</h2>
+      {draft && (
+        <span className="rounded-full border border-home-rule bg-home-surface px-2 py-0.5 text-[12px] font-semibold text-home-ink-2">
+          {DRAFT_LABEL}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function Step({ number, text }: { number: number; text: string }) {
+  return (
+    <li className="flex gap-3 py-2">
+      <span className="tabular w-5 flex-shrink-0 pt-px text-right text-[13px] text-home-ink-2">
+        {number}
+      </span>
+      <span className="text-[15px] leading-[1.55] text-home-ink">{text}</span>
+    </li>
+  )
+}
+
+/** Two static bars where a section will appear: no shimmer, no promise of how long. Kept to
+ * two so "About this video" is still on the first screen while the draft is being read. */
+const PENDING_WIDTHS = ['72%', '56%']
 function Pending() {
-  return <p className="mt-2 text-[13px] text-ink-3">Appears once the recipe is read.</p>
+  return (
+    <div className="mt-3 space-y-3" aria-hidden="true">
+      {PENDING_WIDTHS.map((width, i) => (
+        <div
+          key={width}
+          className={`h-3 rounded-full ${i % 2 === 0 ? 'bg-home-skeleton-1' : 'bg-home-skeleton-2'}`}
+          style={{ width }}
+        />
+      ))}
+    </div>
+  )
 }
 
 /**
  * 16:9, hidden outright if the image fails or is YouTube's grey placeholder. The box holds
- * its space (paper-sunk, a recessed band) while the image loads, so nothing shifts under
- * the cook's thumb when it paints.
+ * its space (the Home thumbnail ground) while the image loads, so nothing shifts under the
+ * cook's thumb when it paints.
  */
 function Thumbnail({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
   const [hidden, setHidden] = useState(false)
   if (hidden) return null
   return (
-    <div className="aspect-video w-full overflow-hidden border border-rule bg-paper-sunk">
+    <div className="aspect-video w-full overflow-hidden rounded-home-card border border-home-rule bg-home-thumb">
       <img
         key={url}
         src={url}
@@ -159,9 +224,9 @@ function Thumbnail({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
   )
 }
 
-/** The source's own description, clamped to four lines; "More" only when it is cut. */
+/** The source's own description, clamped to two lines; "More" only when it is cut. */
 function Description({ text: raw }: { text: string }) {
-  // Blank lines are collapsed: inside a four-line clamp each one would cost a whole line.
+  // Blank lines are collapsed: inside a two-line clamp each one would cost a whole line.
   const text = raw.replace(/\n\s*\n+/g, '\n').trim()
   const [expanded, setExpanded] = useState(false)
   const [clamped, setClamped] = useState(false)
@@ -173,10 +238,10 @@ function Description({ text: raw }: { text: string }) {
   }, [text, expanded])
 
   return (
-    <div className="mt-3">
+    <div className="mt-2">
       <p
         ref={ref}
-        className={`whitespace-pre-line break-words text-[15px] leading-[1.5] text-ink-2 ${expanded ? '' : 'line-clamp-4'}`}
+        className={`whitespace-pre-line break-words text-[15px] leading-[1.5] text-home-ink-2 ${expanded ? '' : 'line-clamp-2'}`}
       >
         {text}
       </p>
@@ -184,7 +249,7 @@ function Description({ text: raw }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-1 min-h-[44px] text-[13px] font-semibold text-ink underline underline-offset-4"
+          className="mt-1 min-h-[44px] text-[13px] font-semibold text-home-ink underline underline-offset-4"
         >
           More
         </button>
