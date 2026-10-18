@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.adapters.prompting import system_prompt
+from abc_cook.extract.adapters.prompting import model_schema, system_prompt
 from abc_cook.extract.normalize import load_prompt, render_source_text
 from abc_cook.extract.repair import RepairProposal, load_repair_prompt
 from abc_cook.schema.normalized import NormalizedRecipe
@@ -34,8 +34,15 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+@pytest.fixture(autouse=True)
+def _added_steps_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The pins below are the pre-FGC-3 bytes, i.e. the switched-off path; the switched-on bytes
+    are pinned in `test_added_steps.py`."""
+    monkeypatch.setenv("ABC_COOK_ADDED_STEPS", "0")
+
+
 def _schema_sha(model: type[NormalizedRecipe] | type[RepairProposal]) -> str:
-    return _sha(json.dumps(model.model_json_schema(), sort_keys=True, ensure_ascii=False))
+    return _sha(json.dumps(model_schema(model), sort_keys=True, ensure_ascii=False))
 
 
 def test_extraction_system_prompt_bytes() -> None:

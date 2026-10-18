@@ -23,7 +23,12 @@ from collections.abc import Callable
 
 import pydantic
 
-from abc_cook.extract.adapters.base import EffortLevel, ExtractResult, LLMAdapter
+from abc_cook.extract.adapters.base import (
+    EffortLevel,
+    ExtractResult,
+    LLMAdapter,
+    added_steps_enabled,
+)
 from abc_cook.extract.draft import DraftScanner
 from abc_cook.schema.api import DraftStep, StreamedDraft
 from abc_cook.schema.normalized import NormalizedIngredient, NormalizedRecipe
@@ -61,6 +66,7 @@ class DraftingAdapter:
         self._ingredients_call = 0  # the call that owns the ingredients; 0 = none yet
         self._ingredients_complete = False
         self._steps: list[str] = []
+        self._step_added: list[bool] = []
         self._steps_call = 0  # the call that owns the steps; 0 = none yet
         self._steps_complete = False
 
@@ -92,7 +98,7 @@ class DraftingAdapter:
 
         self._calls += 1
         call = self._calls
-        scanner = DraftScanner()
+        scanner = DraftScanner(origin_aware=added_steps_enabled())
         started = time.monotonic()
         marks: dict[str, float] = {}
         failed = False
@@ -175,6 +181,7 @@ class DraftingAdapter:
                 if not self._steps:
                     marks.setdefault("first_step", time.monotonic())
                 self._steps = list(scanner.steps)
+                self._step_added = list(scanner.step_added)
                 changed = True
             if scanner.steps_complete and not self._steps_complete and self._steps:
                 self._steps_complete = True
@@ -186,7 +193,10 @@ class DraftingAdapter:
         draft = StreamedDraft(
             ingredients=self._ingredients,
             ingredients_complete=self._ingredients_complete,
-            steps=[DraftStep(text=t) for t in self._steps],
+            steps=[
+                DraftStep(text=t, added=a)
+                for t, a in zip(self._steps, self._step_added, strict=True)
+            ],
             steps_complete=self._steps_complete,
             calls=self._calls,
         )

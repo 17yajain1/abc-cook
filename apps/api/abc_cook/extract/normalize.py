@@ -25,7 +25,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from abc_cook.extract.acquire import RawAcquisition
-from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult, LLMAdapter
+from abc_cook.extract.adapters.base import (
+    CallUsage,
+    EffortLevel,
+    ExtractResult,
+    LLMAdapter,
+    added_steps_enabled,
+)
 from abc_cook.extract.adapters.prompting import parse_failure_reason
 from abc_cook.schema.normalized import ImportFailure, ImportResult, NormalizedRecipe
 
@@ -91,6 +97,11 @@ def _is_runaway(raw_text: str) -> bool:
     return False
 
 
+_PROMPT_PATH_ADDED = Path(__file__).parent / "prompts" / "v8.md"
+"""v8 (FGC-3/4) is v7 plus the `origin="added"` exception to "never invent", the "Steps the source
+skips" section and two substitution/serving-way rules for `role`. Used only while
+`ABC_COOK_ADDED_STEPS` is on; with it off (the default) the request is v7, byte for byte."""
+
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "v7.md"
 """v7 (P1 #5 Commit 4) adds `yield_text` and tightens `servings` to mean people only,
 never a yield's item count. `graph.py` still verifies both independently: `yield_text`
@@ -148,8 +159,9 @@ class NormalizeOutcome:
 
 
 def load_prompt() -> str:
-    """The extraction system prompt (`extract/prompts/v1.md`), read fresh each call."""
-    return _PROMPT_PATH.read_text(encoding="utf-8")
+    """The extraction system prompt: v8, or v7 with `ABC_COOK_ADDED_STEPS` off. Read each call."""
+    path = _PROMPT_PATH_ADDED if added_steps_enabled() else _PROMPT_PATH
+    return path.read_text(encoding="utf-8")
 
 
 _TRANSCRIPT_KIND_LABEL = {"manual": "creator subtitles", "auto": "auto-generated captions"}
@@ -432,7 +444,10 @@ def normalize(
         )
 
     recipe = result.recipe
-    method_grounded = bool(recipe.steps)  # NEVER trust recipe.method_grounded as emitted.
+    # NEVER trust recipe.method_grounded as emitted. A step the model added is not the source's
+    # method (FGC-3): with none of the source's own, the recipe is Tier 0 and the added steps
+    # are discarded, so a missing method can never be written from nothing.
+    method_grounded = any(step.origin == "source" for step in recipe.steps)
     if not method_grounded:
         return NormalizeOutcome(
             recipe=None,

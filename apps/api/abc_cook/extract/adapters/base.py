@@ -91,6 +91,20 @@ def strict_extraction_enabled() -> bool:
     return value not in {"0", "false", "off"}
 
 
+ADDED_STEPS_ENV = "ABC_COOK_ADDED_STEPS"
+"""Switch (FGC-3). Default OFF: unset, `0`, `false` or `off` send exactly the request sent
+before FGC-3 (prompt v7, no `origin` in the pasted or the strict schema). `1`, `true` or `on`
+(any case) turn on "steps the source skips": prompt v8, an `origin` field on every step, labelled
+added steps. Off by default because the first measurement (v8, low, strict) elicited no added step
+in 15 runs."""
+
+
+def added_steps_enabled() -> bool:
+    """Whether the extraction may add labelled steps the source skips: default off."""
+    value = os.environ.get(ADDED_STEPS_ENV, "").strip().lower()
+    return value in {"1", "true", "on"}
+
+
 def exception_summary(exc: BaseException) -> str:
     """`"<ClassName> (HTTP <status>)"`, or just the class name when there is no status.
 

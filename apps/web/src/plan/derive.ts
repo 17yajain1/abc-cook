@@ -11,6 +11,7 @@ import type {
 } from '@abc-cook/schema'
 
 import { executionOrder } from '@/cooking/model'
+import { addedStepLabel } from '@/lib/addedStep'
 import { displayCue } from '@/lib/displayCue'
 import type { ServingsSource } from '@/lib/servings'
 
@@ -47,6 +48,10 @@ export interface RenderTask {
   homeStageIndex: number
   /** `Node.tip`, verbatim. `null` when the graph gave none. */
   tip: string | null
+  /** "Added by ABC Cook, not in the video" (or "…recipe") when the step's provenance origin
+   * is `added` (FGC-3); `null` for every step from the source. Its time is already an
+   * estimate: an added step is always hands-on, so it renders `~N min`. */
+  addedLabel: string | null
 }
 
 /** A task the scheduler placed inside a wait window — borrowed from another stage. */
@@ -202,6 +207,7 @@ function toTask(
   node: Node,
   homeStageIndex: number,
   provenance: GraphProvenance | null,
+  source: CookingGraph['source'],
 ): RenderTask {
   return {
     nodeId: node.id,
@@ -213,6 +219,7 @@ function toTask(
     durationProvenance: provenance?.nodes?.[node.id]?.fields?.duration ?? null,
     homeStageIndex,
     tip: node.tip ?? null,
+    addedLabel: provenance?.nodes?.[node.id]?.origin === 'added' ? addedStepLabel(source) : null,
   }
 }
 
@@ -354,7 +361,7 @@ export function derivePlan(
       tasks: window.assigned.map((nodeId) => {
         const node = nodes.get(nodeId)!
         return {
-          ...toTask(node, homeIndexOf(nodeId), provenance),
+          ...toTask(node, homeIndexOf(nodeId), provenance, graph.source),
           rankInWindow: scheduledByNode.get(nodeId)?.rank_in_window ?? 0,
         }
       }),
@@ -401,7 +408,7 @@ export function derivePlan(
       // a stage with no nodes at all.
       span: spanByStage.get(run.stageId)!,
       inlineTasks: run.nodeIds.map((nodeId) =>
-        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance),
+        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance, graph.source),
       ),
       windows: run.nodeIds
         .map((nodeId) => windowByHostNodeId.get(nodeId))

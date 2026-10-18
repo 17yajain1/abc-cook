@@ -36,5 +36,6 @@ def compute_provenance(build_result: GraphBuildResult) -> GraphProvenance:
             },
             freshness=decision.freshness,
             freshness_cue=decision.freshness_cue,
+            origin=decision.origin,
         )
     return GraphProvenance(nodes=nodes)

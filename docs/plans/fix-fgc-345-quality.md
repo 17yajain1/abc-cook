@@ -40,6 +40,15 @@ Where this section conflicts with the plan body below, this section wins.
    - `gh pr view fix/fgc-4-5-postprocess --json state` must say `MERGED`;
    - then `git fetch` and branch from the new `origin/main`.
 
+## PR 2 outcome (2026-10-18)
+
+- **Q6 (map view):** `apps/web/src/map/` is not reachable (nothing imports it outside itself), so FGC-30
+  stays a follow-up.
+- **A/B (28 calls, INR 14.88):** v8 added 0 steps in 15 B runs, so D3 rule 2 failed (0/3 on cupcakes) and
+  rule 5 failed (kadhi repair-would-fire 2/3 vs 0/3; edge agreement). Decision: ship the infrastructure
+  with `ABC_COOK_ADDED_STEPS` default OFF; no cupcakes golden. See FGC-3, FGC-4, FGC-39, FGC-40, FGC-41
+  in `followup-golden-corpus.md` and `notes/fgc-345/summary.md`.
+
 ---
 
 Read from `origin/main` @ ee5f63f (fetched 2026-10-18, PR #66 S3 merged; `POSTPROCESS_VERSION = 11`).

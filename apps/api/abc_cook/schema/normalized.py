@@ -121,6 +121,16 @@ class NormalizedStep(BaseModel):
     §10.C's independent-verification rule needs.
     """
 
+    origin: Literal["source", "added"] = Field(
+        default="source",
+        description=(
+            "source for every step the source describes, even when you reword it. added only "
+            "for a step you add because the source skips something the dish cannot be made "
+            "without (see the prompt section \"Steps the source skips\"); the cook is shown it "
+            "as added by the app, not by the source. Never added for a source with no method "
+            "of its own."
+        ),
+    )
     text: str = Field(description="The step, lightly normalized. Never invented.")
     label: str | None = Field(
         default=None,
@@ -324,6 +334,13 @@ class NodeProvenance(BaseModel):
     )
     freshness: Freshness = Field(default="none")
     freshness_cue: str | None = Field(default=None)
+    origin: Literal["source", "added"] = Field(
+        default="source",
+        description=(
+            "added when ABC Cook added this step because the source skips it (FGC-3); source "
+            "otherwise, including for a provenance record saved before this field existed."
+        ),
+    )
 
 
 class GraphProvenance(BaseModel):

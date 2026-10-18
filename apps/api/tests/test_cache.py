@@ -244,6 +244,7 @@ _ONE_CHANGE: dict[str, dict[str, Any]] = {
     "extraction_prompt": {"extraction_prompt": "a different extraction prompt"},
     "extraction_schema": {"extraction_output_type": _AlteredRecipe},
     "extraction_strict": {"extraction_strict": False},  # the default is on
+    "extraction_added_steps": {"extraction_added_steps": True},  # the default is off
     "repair_model": {"repair_model": "claude-other"},
     "repair_effort": {"repair_effort": "high"},
     "repair_prompt": {"repair_prompt": "a different repair prompt"},
@@ -305,6 +306,7 @@ def test_every_fingerprint_field_has_an_invalidation_case() -> None:
         "extraction_prompt_sha256",
         "extraction_strict",
         "extraction_response_format_sha256",
+        "extraction_added_steps",
         "repair_model",
         "repair_effort",
         "repair_prompt_sha256",

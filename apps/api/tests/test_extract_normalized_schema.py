@@ -69,10 +69,14 @@ def test_captured_replay_fixtures_still_parse_as_legacy_required_steps(slug: str
     assert all(step.role == "required" for step in recipe.steps)
 
 
-def test_production_extraction_uses_prompt_v7() -> None:
+def test_production_extraction_uses_prompt_v7_with_added_steps_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """P1 #5 Commit 4 switched production extraction to v7, which adds `yield_text`
     guidance and tightens `servings` to mean people only. v6 is kept on disk (a
-    prior prompt version stays reproducible), just no longer the production path."""
+    prior prompt version stays reproducible), just no longer the production path. FGC-3
+    adds v8 behind `ABC_COOK_ADDED_STEPS`; with it off the prompt is still v7."""
+    monkeypatch.setenv("ABC_COOK_ADDED_STEPS", "0")
     assert normalize._PROMPT_PATH.name == "v7.md"
     assert "extraction prompt (v7)" in normalize.load_prompt()
     assert (PROMPTS_DIR / "v6.md").exists()

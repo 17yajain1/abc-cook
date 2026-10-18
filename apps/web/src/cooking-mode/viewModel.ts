@@ -104,6 +104,9 @@ export interface CookingView {
    * amount + name, never parsed from the instruction). Only on `task`/`handsoff_pending`,
    * which no longer set `qty`; `[]` everywhere else. Display only — not controls. */
   chips: string[]
+  /** "Added by ABC Cook, not in the video" under the instruction when the step was added
+   * (FGC-3). `null` on every other screen and for every step from the source. */
+  addedNote: string | null
   note: string | null
   /** "Step n of N" (P1 #6 plan §C1) — only on `task`/`handsoff_pending`, where there is
    * a current step to count. `null` everywhere else. */
@@ -360,6 +363,7 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     instr: timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`,
     qty: null,
     chips: [],
+    addedNote: null,
     note: `${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
     step: null,
     next: null,
@@ -396,6 +400,7 @@ export function buildCookingView(
     instr: null,
     qty: null,
     chips: [],
+    addedNote: null,
     note: null,
     step: null,
     next: null,
@@ -416,6 +421,7 @@ export function buildCookingView(
     v.label = n.label
     v.title = n.instruction
     v.chips = quantityPhrases(n, ingredients)
+    v.addedNote = n.addedLabel
     v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
     v.strip = stripFor(model, session, now, cur)
     if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)

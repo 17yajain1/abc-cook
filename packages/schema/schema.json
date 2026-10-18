@@ -189,8 +189,13 @@
       "type": "object"
     },
     "DraftStep": {
-      "description": "One step of a streamed draft. The text only: never a duration field.",
+      "description": "One step of a streamed draft. The text and its origin: never a duration field.",
       "properties": {
+        "added": {
+          "default": false,
+          "description": "The model marked this step as one it added because the source skips it (`origin=\"added\"`, FGC-3). The draft labels it; the validated plan decides.",
+          "type": "boolean"
+        },
         "text": {
           "description": "The model's step text, as streamed (lightly normalized).",
           "type": "string"
@@ -883,6 +888,15 @@
             }
           ],
           "default": null
+        },
+        "origin": {
+          "default": "source",
+          "description": "added when ABC Cook added this step because the source skips it (FGC-3); source otherwise, including for a provenance record saved before this field existed.",
+          "enum": [
+            "source",
+            "added"
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -1248,6 +1262,15 @@
           ],
           "default": null,
           "description": "ONLY populated for stated_numeric. Never a guessed number."
+        },
+        "origin": {
+          "default": "source",
+          "description": "source for every step the source describes, even when you reword it. added only for a step you add because the source skips something the dish cannot be made without (see the prompt section \"Steps the source skips\"); the cook is shown it as added by the app, not by the source. Never added for a source with no method of its own.",
+          "enum": [
+            "source",
+            "added"
+          ],
+          "type": "string"
         },
         "produces_component": {
           "anyOf": [

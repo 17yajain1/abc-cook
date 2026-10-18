@@ -235,7 +235,7 @@ export default function App() {
   // `setView` is about to commit.
   const startCooking = useCallback(() => {
     if (view.kind !== 'plan') return
-    const model = deriveCookingModel(view.payload)
+    const model = deriveCookingModel(view.payload, view.importMeta?.provenance ?? null)
     const key = planKey(view.origin)
     startIfNone(sessionStore, model, key, Date.now(), view.payload.graph.title)
     setView({ kind: 'cooking', payload: view.payload, planKey: key, returnTo: view })
@@ -360,6 +360,9 @@ export default function App() {
         <CookingModeScreen
           key={view.planKey}
           payload={view.payload}
+          provenance={
+            view.returnTo.kind === 'plan' ? (view.returnTo.importMeta?.provenance ?? null) : null
+          }
           planKey={view.planKey}
           store={sessionStore}
           onExit={exitCooking}

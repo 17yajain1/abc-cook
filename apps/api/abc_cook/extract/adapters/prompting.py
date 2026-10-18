@@ -18,6 +18,8 @@ from typing import Any
 
 import pydantic
 
+from abc_cook.extract.adapters.base import added_steps_enabled
+
 CODE_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 
 OUTPUT_FORMAT_INSTRUCTIONS = """
@@ -40,9 +42,25 @@ the identical object.
 """
 
 
+def model_schema(output_type: type[pydantic.BaseModel]) -> dict[str, Any]:
+    """`output_type`'s JSON Schema as the model is shown it (FGC-3).
+
+    The Pydantic schema, except that `NormalizedStep.origin` is removed while
+    `ABC_COOK_ADDED_STEPS` is off, so the switched-off request is byte-identical to the one sent
+    before the field existed. A response without `origin` still parses (it defaults to
+    "source").
+    """
+    schema = copy.deepcopy(output_type.model_json_schema())
+    if not added_steps_enabled():
+        step = schema.get("$defs", {}).get("NormalizedStep")
+        if isinstance(step, dict):
+            step.get("properties", {}).pop("origin", None)
+    return schema
+
+
 def system_prompt(prompt: str, output_type: type[pydantic.BaseModel]) -> str:
     """The extraction/repair prompt with the output type's JSON Schema appended."""
-    schema = json.dumps(output_type.model_json_schema(), ensure_ascii=False)
+    schema = json.dumps(model_schema(output_type), ensure_ascii=False)
     return prompt + OUTPUT_FORMAT_INSTRUCTIONS.format(schema=schema)
 
 
@@ -56,7 +74,7 @@ def strict_json_schema(output_type: type[pydantic.BaseModel]) -> dict[str, Any]:
     is dropped (the nullable branch stays); non-null defaults stay; a `$ref` with sibling keys
     is unravelled. Property order is preserved, which is what keeps `text` first in a step.
     """
-    schema = copy.deepcopy(output_type.model_json_schema())
+    schema = model_schema(output_type)
     return _strictify(schema, root=schema)
 
 

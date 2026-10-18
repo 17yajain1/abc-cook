@@ -76,9 +76,14 @@ class AcquiredSource(BaseModel):
 
 
 class DraftStep(BaseModel):
-    """One step of a streamed draft. The text only: never a duration field."""
+    """One step of a streamed draft. The text and its origin: never a duration field."""
 
     text: str = Field(description="The model's step text, as streamed (lightly normalized).")
+    added: bool = Field(
+        default=False,
+        description="The model marked this step as one it added because the source skips it "
+        "(`origin=\"added\"`, FGC-3). The draft labels it; the validated plan decides.",
+    )
 
 
 class StreamedDraft(BaseModel):

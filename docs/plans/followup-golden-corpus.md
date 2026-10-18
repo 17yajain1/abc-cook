@@ -63,6 +63,14 @@ plan whose Bake step has no batter must be flagged or refused, not scheduled.
   `docs/plans/decisions-2026-10-16-incomplete-method.md`. Competitor ref: Copymenu fills gaps silently;
   ReciMe turned the notes into steps.
 - **Owned by** `docs/plans/fix-fgc-345-quality.md`, PR 2 (prompt v8 + `origin` field, measured A/B).
+- **Status after PR 2 (2026-10-18):** decision (b) stands. The infrastructure is merged with
+  `ABC_COOK_ADDED_STEPS` default OFF (`origin`, the guards, the labels, the draft scanner, prompt v8).
+  v8 (low, strict) elicited 0 added steps in 15 B runs; the model's notes cite "never invent".
+  Next attempt, before M5: rewrite the "never invent" passages (`v7.md:10-15`, `:63-67` and any
+  others) around the exception instead of appending one, and start with cupcakes + kadhi at n=3
+  (about ₹5), under the same D3 rule.
+- Label styling: in cooking mode the added-step line uses the same grey style and slot as a doneness cue;
+  revisit its prominence when the switch is turned on.
 
 ### FGC-4 (P2): notes and alternatives become steps
 
@@ -80,6 +88,9 @@ plan whose Bake step has no batter must be flagged or refused, not scheduled.
 - **After PR 1 (priority inverted):** pumpkin's classic serving way is now an optional tip on "Cook
   pancakes", while "Serve with chips" stays a required node (total 24 to 23). PR 2's prompt rule
   (later serving ways attach to the first) is meant to fix it.
+- **PR 2 result (2026-10-18): option M did not work.** In 6 pumpkin runs (v7 and v8, n=3 each), 0
+  attached the later way to the first way, and "Serve with chips" stayed a required node in all 6.
+  FGC-4 stays open (see FGC-39).
 
 ### FGC-5 (P2): "N minutes before serving" is not honoured
 
@@ -522,3 +533,29 @@ In cooking mode "Step N of M" counts finished plus running steps, so starting a 
 the number on (Cook kadi: "Step 3 of 12" to "Step 4 of 12"; kadhi's wait: 10 to 11). It is the
 existing live-count behaviour, not specific to the derived wait node. Decide whether a started step
 should keep its own number.
+
+### FGC-39 (P3, FGC-4 follow-up): a later serving way can stay required and chain
+
+A later serving way whose cue is a grounded optional phrase but not in the attach target's own text
+stays required and chains (borrowed-cue rule CP2 6.2b). Seen in the demoted-attach-target test
+(`tests/test_added_steps.py`, documented as today's behaviour). Candidate fix: honour when the cue is
+marker-bearing, grounded, `attach_to_step` points at an honoured step, and the cue equals or is
+grounded in the target's `role_cue`. Separate ₹0 PR with a golden re-check; only if the FGC-3 PR 2
+A/B shows it recurring.
+
+**Recurring (PR 2 A/B, 2026-10-18):** 3 of 6 pumpkin runs (A2, B2, B3) hit it, each with the later
+way attached to the cooking step rather than to the first way.
+
+### FGC-40 (P2): cupcakes-style imports degrade on ingredients_consumed
+
+A method with no mixing steps (the vanilla-cupcakes shape) degraded in 6 of 6 runs at `low` + strict,
+both arms (7-9 `ingredients_consumed` violations each: the model lists ingredients no step consumes).
+In production each such import pays a Sonnet repair call and, if that does not resolve it, falls back
+to the linear plan. Before M5: check what the real repair returns (₹ and the resulting plan) on one run.
+
+### FGC-41 (P2, measurement): prompt v8 was not neutral
+
+The v8 A/B (n=3 per arm, `notes/fgc-345/summary.md`) showed, with no added step anywhere: kadhi
+repair-would-fire 2/3 vs 0/3 (`produces_consumed`); cross-arm edge agreement below the within-A mean by
+0.13 on croissant and 0.10 on pumpkin; `depends_on_previous=false` choices 9 to 17. Small n, so partly
+noise, but v8 is off by default for this reason too. Any future prompt change re-measures all three.

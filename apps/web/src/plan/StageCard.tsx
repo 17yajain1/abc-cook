@@ -243,6 +243,9 @@ function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
           </span>
         )}
         {note && <span className="mt-0.5 block text-[13px] text-home-ink-2">{note}</span>}
+        {task.addedLabel != null && (
+          <span className="mt-0.5 block text-[13px] text-home-ink-2">{task.addedLabel}</span>
+        )}
         {task.tip != null && (
           <span className="mt-0.5 block text-[13px] text-home-ink-2">
             <span className="font-medium text-home-ink">Tip: </span>

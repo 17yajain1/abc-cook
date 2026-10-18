@@ -6,6 +6,11 @@ ingredient lines (each once its object closes) and each step's `text` (once its 
 quote arrives). Nothing else is read, so no duration, attention, offset, serving count or total
 can reach the draft: it is a transcript of what the model has said so far, not a plan.
 
+With `origin_aware` (FGC-3) it also reads each step's `origin`, so a step the model added is
+labelled as soon as its text shows. `origin` is the first key of a step; a step whose `origin`
+has not been read when its text closes (missing, or written after the text) is held until its
+object closes, and is never shown unlabelled.
+
 It is a reader, not a validator. The finished response still goes through `parse`,
 `normalize` and the graph invariants unchanged; a scanner that is wrong, or that breaks on
 malformed JSON, can only make the draft shorter. `feed` never raises.
@@ -50,7 +55,18 @@ def _sanitize(value: Any) -> Any:
 class _Frame:
     """One open JSON container on the scanner's stack."""
 
-    __slots__ = ("duplicate", "expect_key", "has_text", "is_item", "key", "kind", "role")
+    __slots__ = (
+        "duplicate",
+        "expect_key",
+        "has_text",
+        "is_item",
+        "is_step",
+        "key",
+        "kind",
+        "origin",
+        "pending",
+        "role",
+    )
 
     def __init__(self, kind: str, role: str | None = None) -> None:
         self.kind = kind  # "{" or "["
@@ -60,6 +76,9 @@ class _Frame:
         self.duplicate = False  # the current key already appeared at the top level
         self.has_text = False  # step objects only: the first `text` already counted
         self.is_item = False  # an object directly inside the ingredients array
+        self.is_step = False  # an object directly inside the steps array
+        self.origin: str | None = None  # step objects only: the `origin` value, once read
+        self.pending: str | None = None  # step objects only: text held until the object closes
 
 
 class DraftScanner:
@@ -71,16 +90,24 @@ class DraftScanner:
         ingredients_complete: The `ingredients` array has closed (`[]` plus complete is an
             empty list).
         steps: Each top-level `steps` element's `text`, in order, once that string closes.
+        step_added: Parallel to `steps`: whether the model marked that step `origin="added"`.
+            Always False unless `origin_aware`.
         steps_complete: The `steps` array has closed.
         broken: The text stopped being parseable as the expected shape. The scanner stops
             advancing but keeps every milestone already reached.
     """
 
-    def __init__(self) -> None:
-        """Start before the first character."""
+    def __init__(self, *, origin_aware: bool = False) -> None:
+        """Start before the first character.
+
+        Args:
+            origin_aware: Read each step's `origin` and hold a step until it is known.
+        """
+        self._origin_aware = origin_aware
         self.ingredients: list[NormalizedIngredient] = []
         self.ingredients_complete = False
         self.steps: list[str] = []
+        self.step_added: list[bool] = []
         self.steps_complete = False
         self.broken = False
 
@@ -175,11 +202,19 @@ class DraftScanner:
                 top.duplicate = decoded in self._seen_top_keys
                 self._seen_top_keys.add(decoded)
             return False
+        if kind == "origin":
+            top.origin = decoded
+            return False
         # kind == "text": a step's text value.
         if top.has_text or len(self.steps) >= MAX_DRAFT_STEPS:
             return False
         top.has_text = True
-        self.steps.append(decoded[:MAX_STEP_TEXT_CHARS])
+        text = decoded[:MAX_STEP_TEXT_CHARS]
+        if self._origin_aware and top.origin not in ("source", "added"):
+            top.pending = text  # `origin` not read yet: shown when the object closes
+            return False
+        self.steps.append(text)
+        self.step_added.append(top.origin == "added")
         return True
 
     def _structural(self, ch: str) -> bool:
@@ -192,12 +227,21 @@ class DraftScanner:
                 self._str_buf, self._str_kind = [], "key"
             elif top.kind == "{" and top.key == "text" and self._is_step_object():
                 self._str_buf, self._str_kind = [], "text"
+            elif (
+                self._origin_aware
+                and top.kind == "{"
+                and top.key == "origin"
+                and self._is_step_object()
+            ):
+                self._str_buf, self._str_kind = [], "origin"
             return False
         if ch == "{":
             frame = _Frame("{")
             if len(stack) == 2 and top.kind == "[" and top.role == "ingredients":
                 frame.is_item = True
                 self._capture = ["{"]
+            if len(stack) == 2 and top.kind == "[" and top.role == "steps":
+                frame.is_step = True
             stack.append(frame)
             return False
         if ch == "[":
@@ -234,6 +278,12 @@ class DraftScanner:
         if not stack:
             self._finished = True
             return False
+        if frame.is_step and frame.pending is not None:
+            if len(self.steps) >= MAX_DRAFT_STEPS:
+                return False
+            self.steps.append(frame.pending)
+            self.step_added.append(frame.origin == "added")
+            return True
         if frame.role == "steps":
             self.steps_complete = True
             return True

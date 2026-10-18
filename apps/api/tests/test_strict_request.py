@@ -36,6 +36,13 @@ _API = Path(__file__).resolve().parents[1]
 _BEFORE = Path(__file__).parent / "fixtures" / "request"
 
 
+@pytest.fixture(autouse=True)
+def _added_steps_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests pin the strict switch against the pre-FGC-3 body; `ABC_COOK_ADDED_STEPS` has its
+    own tests in `test_added_steps.py`."""
+    monkeypatch.setenv("ABC_COOK_ADDED_STEPS", "0")
+
+
 def _load_dump_script() -> Any:
     spec = importlib.util.spec_from_file_location(
         "dump_extraction_request_under_test", _API / "scripts" / "dump_extraction_request.py"

@@ -29,7 +29,11 @@ from typing import Literal, Protocol
 import pydantic
 
 from abc_cook.extract import normalize, repair
-from abc_cook.extract.adapters.base import EffortLevel, strict_extraction_enabled
+from abc_cook.extract.adapters.base import (
+    EffortLevel,
+    added_steps_enabled,
+    strict_extraction_enabled,
+)
 from abc_cook.extract.adapters.prompting import response_format, system_prompt
 from abc_cook.extract.source_key import SourceKey
 from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
@@ -205,7 +209,7 @@ class DiskResultCache:
 
 # --- Cache identity ------------------------------------------------------------------
 
-POSTPROCESS_VERSION = 12
+POSTPROCESS_VERSION = 13
 """Version of everything between the model's JSON and the final `ImportResult`: graph
 building, validation, repair, titling, corroboration, provenance, the orchestration in
 `import_pipeline.py`, and the scheduler. Part of the cache identity, so bumping it makes
@@ -234,6 +238,7 @@ class PipelineFingerprint:
     extraction_prompt_sha256: str
     extraction_strict: bool
     extraction_response_format_sha256: str | None
+    extraction_added_steps: bool
     repair_model: str
     repair_effort: str | None
     repair_prompt_sha256: str
@@ -252,6 +257,7 @@ def current_fingerprint(
     extraction_prompt: str | None = None,
     extraction_output_type: type[pydantic.BaseModel] = NormalizedRecipe,
     extraction_strict: bool | None = None,
+    extraction_added_steps: bool | None = None,
     repair_model: str | None = None,
     repair_effort: EffortLevel | Literal["default"] | None = "default",
     repair_prompt: str | None = None,
@@ -274,6 +280,9 @@ def current_fingerprint(
         extraction_strict: Test override; defaults to `strict_extraction_enabled()` (the
             `ABC_COOK_STRICT_EXTRACTION` switch), which decides whether the request carries a
             strict `response_format`.
+        extraction_added_steps: Test override; defaults to `added_steps_enabled()` (the
+            `ABC_COOK_ADDED_STEPS` switch), which decides the prompt and whether the
+            schema carries `origin`.
         repair_model: Test override; defaults to `repair.REPAIR_MODEL`.
         repair_effort: Test override; defaults to `repair.REPAIR_EFFORT`.
         repair_prompt: Test override; defaults to `repair.load_repair_prompt()`.
@@ -305,6 +314,11 @@ def current_fingerprint(
             _sha256(json.dumps(response_format(extraction_output_type), sort_keys=True))
             if strict
             else None
+        ),
+        extraction_added_steps=(
+            extraction_added_steps
+            if extraction_added_steps is not None
+            else added_steps_enabled()
         ),
         repair_model=repair_model or repair.REPAIR_MODEL,
         repair_effort=repair.REPAIR_EFFORT if repair_effort == "default" else repair_effort,
