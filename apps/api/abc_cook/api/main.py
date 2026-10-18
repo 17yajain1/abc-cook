@@ -5,9 +5,13 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from abc_cook import __version__
 from abc_cook.api.routes import health, import_, recipes
+
+GZIP_MINIMUM_SIZE = 1000
+"""Responses under ~1 KB are sent as they are: compressing them costs more than it saves."""
 
 DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 
@@ -55,6 +59,10 @@ def create_app() -> FastAPI:
     _configure_logging()
     app = FastAPI(title="ABC Cook API", version=__version__)
 
+    # The import poll now carries the streamed draft (about 20 KB of ingredients and steps),
+    # fetched every ~1.2 s for the length of an import. JSON compresses roughly 5x. Added
+    # before CORS so the CORS headers are applied to the compressed response too.
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins(),

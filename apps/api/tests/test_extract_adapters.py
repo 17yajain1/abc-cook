@@ -15,10 +15,11 @@ import httpx2
 import openai
 import pydantic
 import pytest
+from stream_fakes import NsStream, ns_chunks
 
 from abc_cook.extract.acquire import RawAcquisition
 from abc_cook.extract.adapters.anthropic import AnthropicAdapter
-from abc_cook.extract.adapters.base import MAX_RETRIES, request_timeout_s
+from abc_cook.extract.adapters.base import MAX_RETRIES, STREAM_READ_TIMEOUT_S, request_timeout_s
 from abc_cook.extract.adapters.openai import OpenAIAdapter
 from abc_cook.extract.adapters.prompting import parse_failure_reason
 from abc_cook.extract.normalize import ESCALATED_MAX_TOKENS, MAX_TOKENS, normalize
@@ -38,10 +39,13 @@ def _timing_out_transport(seen: list[Any], lib: Any = httpx) -> Any:
     return lib.MockTransport(handler)
 
 
-def _assert_bounded(seen: list[Any], max_tokens: int) -> None:
+def _assert_bounded(seen: list[Any], max_tokens: int, *, streaming: bool = False) -> None:
     assert len(seen) == 1 + MAX_RETRIES
+    # A streaming call is bounded by the httpx backstop plus the watchdog; the blocking
+    # call (anthropic, or openai with the kill switch) by `request_timeout_s`.
+    expected = STREAM_READ_TIMEOUT_S if streaming else request_timeout_s(max_tokens)
     for request in seen:
-        assert request.extensions["timeout"]["read"] == request_timeout_s(max_tokens)
+        assert request.extensions["timeout"]["read"] == expected
 
 
 def test_openai_adapter_times_out_into_an_error_result() -> None:
@@ -58,7 +62,7 @@ def test_openai_adapter_times_out_into_an_error_result() -> None:
     assert result.recipe is None
     assert result.error is not None
     assert "Timeout" in result.error
-    _assert_bounded(seen, 16_000)
+    _assert_bounded(seen, 16_000, streaming=True)
 
 
 def test_anthropic_adapter_times_out_into_an_error_result() -> None:
@@ -206,17 +210,11 @@ def test_anthropic_streaming_path_classifies_too() -> None:
 
 def _openai_returning(text: str, finish_reason: str = "stop") -> OpenAIAdapter:
     adapter = OpenAIAdapter(api_key=_SECRET)
-    message = types.SimpleNamespace(content=text)
-    choice = types.SimpleNamespace(message=message, finish_reason=finish_reason)
-    usage = types.SimpleNamespace(
-        prompt_tokens=10,
-        completion_tokens=20,
-        prompt_tokens_details=None,
-        completion_tokens_details=types.SimpleNamespace(reasoning_tokens=5),
-    )
-    response = types.SimpleNamespace(choices=[choice], usage=usage)
+    chunks = ns_chunks(text, finish_reason)
     adapter._client = types.SimpleNamespace(  # type: ignore[assignment]
-        chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=lambda **_: response))
+        chat=types.SimpleNamespace(
+            completions=types.SimpleNamespace(create=lambda **_: NsStream(chunks))
+        )
     )
     return adapter
 
@@ -319,20 +317,13 @@ def test_timeout_margin_over_a_legitimate_call() -> None:
 def _openai_exhausted(content: str | None, counter: list[int]) -> OpenAIAdapter:
     """finish_reason "length", all completion tokens spent on reasoning, no visible text."""
     adapter = OpenAIAdapter(api_key=_SECRET)
-    choice = types.SimpleNamespace(
-        message=types.SimpleNamespace(content=content), finish_reason="length"
+    chunks = ns_chunks(
+        content, "length", completion_tokens=16_000, reasoning_tokens=16_000
     )
-    usage = types.SimpleNamespace(
-        prompt_tokens=10,
-        completion_tokens=16_000,
-        prompt_tokens_details=None,
-        completion_tokens_details=types.SimpleNamespace(reasoning_tokens=16_000),
-    )
-    response = types.SimpleNamespace(choices=[choice], usage=usage)
 
     def create(**_: Any) -> Any:
         counter.append(1)
-        return response
+        return NsStream(chunks)
 
     adapter._client = types.SimpleNamespace(  # type: ignore[assignment]
         chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))

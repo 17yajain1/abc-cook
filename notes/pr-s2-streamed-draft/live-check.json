@@ -1,0 +1,90 @@
+{
+  "cap_inr": 5.0,
+  "spent_inr": 1.45,
+  "rows": [
+    {
+      "recipe": "kadhi-pakora",
+      "ok": true,
+      "tier0": null,
+      "calls": 1,
+      "total_s": 24.77,
+      "first_content_s": 10.42,
+      "ingredients_s": 15.47,
+      "first_step_s": 15.75,
+      "steps_complete_s": 23.89,
+      "stop_reason": "stop",
+      "reasoning_tokens": 960,
+      "output_tokens": 3269,
+      "input_tokens": 10001,
+      "cost_inr": 0.77,
+      "chunk_shapes": {
+        "role+content=''": 1,
+        "content": 2300,
+        "finish_reason=stop": 1,
+        "usage-only (choices=[])": 1
+      },
+      "notes": {
+        "request_keys": [
+          "max_completion_tokens",
+          "model",
+          "reasoning_effort",
+          "stream",
+          "stream_options",
+          "timeout"
+        ],
+        "finish_reason": "stop",
+        "usage_chunk": {
+          "choices": 0,
+          "prompt_tokens": 10001,
+          "completion_tokens": 3269,
+          "reasoning_tokens": 960,
+          "cached_tokens": 0
+        }
+      },
+      "recipe_ingredients": 30,
+      "recipe_steps": 7
+    },
+    {
+      "recipe": "croissant",
+      "ok": true,
+      "tier0": null,
+      "calls": 1,
+      "total_s": 33.67,
+      "first_content_s": 7.91,
+      "ingredients_s": 10.42,
+      "first_step_s": 10.64,
+      "steps_complete_s": 32.56,
+      "stop_reason": "stop",
+      "reasoning_tokens": 896,
+      "output_tokens": 3794,
+      "input_tokens": 1149,
+      "cost_inr": 0.68,
+      "chunk_shapes": {
+        "role+content=''": 1,
+        "content": 2889,
+        "finish_reason=stop": 1,
+        "usage-only (choices=[])": 1
+      },
+      "notes": {
+        "request_keys": [
+          "max_completion_tokens",
+          "model",
+          "reasoning_effort",
+          "stream",
+          "stream_options",
+          "timeout"
+        ],
+        "finish_reason": "stop",
+        "usage_chunk": {
+          "choices": 0,
+          "prompt_tokens": 8061,
+          "completion_tokens": 3794,
+          "reasoning_tokens": 896,
+          "cached_tokens": 6912
+        }
+      },
+      "recipe_ingredients": 8,
+      "recipe_steps": 16
+    }
+  ]
+}

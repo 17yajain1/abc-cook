@@ -29,11 +29,17 @@ from abc_cook.extract.acquire import MetadataCallback, RawAcquisition, SourceMet
 from abc_cook.extract.acquire.pipeline import acquire as default_acquire
 from abc_cook.extract.acquire.text import PastedTextError, from_pasted_text
 from abc_cook.extract.adapters.base import LLMAdapter
+from abc_cook.extract.adapters.drafting import DraftingAdapter
 from abc_cook.extract.adapters.routing import build_default_adapter
 from abc_cook.extract.cache import DiskResultCache, ResultCache
 from abc_cook.extract.import_pipeline import ImportTelemetry, run_import
 from abc_cook.extract.source_key import SourceKey, make_source_key
-from abc_cook.schema.api import AcquiredSource, ImportJobResponse, ImportStartResponse
+from abc_cook.schema.api import (
+    AcquiredSource,
+    ImportJobResponse,
+    ImportStartResponse,
+    StreamedDraft,
+)
 from abc_cook.schema.normalized import ImportResult, ImportStatus, SourcePreview
 
 router = APIRouter(tags=["import"])
@@ -79,6 +85,7 @@ class JobState:
     error: str | None = None
     preview: SourcePreview | None = None
     acquired: AcquiredSource | None = None
+    draft: StreamedDraft | None = None
 
 
 class AcquireFn(Protocol):
@@ -205,9 +212,20 @@ def _run_job(
     """
     preview: SourcePreview | None = None
     acquired: AcquiredSource | None = None
+    draft: StreamedDraft | None = None
+    current: ImportStatus = "acquiring"
 
     def on_status(status: ImportStatus) -> None:
-        store.put(job_id, JobState(status=status, preview=preview, acquired=acquired))
+        nonlocal current
+        current = status
+        store.put(job_id, JobState(status=status, preview=preview, acquired=acquired, draft=draft))
+
+    def on_draft(value: StreamedDraft) -> None:
+        # The extraction call is streaming: publish what it has said so far under the
+        # current status. Every later write keeps it, like `preview`.
+        nonlocal draft
+        draft = value
+        store.put(job_id, JobState(status=current, preview=preview, acquired=acquired, draft=draft))
 
     def on_metadata(meta: SourceMetadata) -> None:
         # yt-dlp has answered but captions and link probing have not run: publish the
@@ -241,7 +259,7 @@ def _run_job(
     try:
         result = run_import(
             url,
-            adapter,
+            DraftingAdapter(adapter, on_draft, graph_id=job_id),
             graph_id=job_id,
             acquire_fn=recording_acquire,
             on_status=on_status,
@@ -256,7 +274,11 @@ def _run_job(
         store.put(
             job_id,
             JobState(
-                status="failed", error=_LAST_RESORT_SENTENCE, preview=preview, acquired=acquired
+                status="failed",
+                error=_LAST_RESORT_SENTENCE,
+                preview=preview,
+                acquired=acquired,
+                draft=draft,
             ),
         )
         return
@@ -264,7 +286,12 @@ def _run_job(
     store.put(
         job_id,
         JobState(
-            status=result.status, result=result, error=error, preview=preview, acquired=acquired
+            status=result.status,
+            result=result,
+            error=error,
+            preview=preview,
+            acquired=acquired,
+            draft=draft,
         ),
     )
 
@@ -332,4 +359,5 @@ async def get_import(job_id: str, store: JobStore = Depends(get_job_store)) -> I
         error=job.error,
         preview=job.preview,
         acquired=job.acquired,
+        draft=job.draft,
     )

@@ -1,0 +1,472 @@
+{
+  "note": "Replay calibrated from REPORT T6 (kadhi, n=1). INR 0. Times are seconds since the POST, as first seen by a 1.2 s poll.",
+  "poll_s": 1.2,
+  "metadata_at_s": 3.5,
+  "done_at_s": 6.0,
+  "speed": 1.0,
+  "targets": {
+    "first_ingredient_s": 15.0,
+    "first_step_s": 20.0,
+    "done_s": 40.0
+  },
+  "rows": [
+    {
+      "fixture": "kadhi-pakora",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.78,
+        "first_ingredient_s": 14.64,
+        "ingredients_s": 19.45,
+        "first_step_s": 19.45,
+        "steps_complete_s": 31.52,
+        "done_s": 32.72
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 30,
+      "draft_steps": 11,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 9951,
+      "max_inflight_poll_bytes_gzip": 3113,
+      "terminal_poll_bytes_raw": 53299,
+      "terminal_poll_bytes_gzip": 8734,
+      "draft_only_bytes_raw": 4124,
+      "draft_only_bytes_gzip": 1127
+    },
+    {
+      "fixture": "kadhi-pakora",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.48,
+        "ingredients_s": 19.3,
+        "first_step_s": 19.3,
+        "steps_complete_s": 31.36,
+        "done_s": 32.56
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 30,
+      "draft_steps": 11,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 9951,
+      "max_inflight_poll_bytes_gzip": 3111,
+      "terminal_poll_bytes_raw": 53299,
+      "terminal_poll_bytes_gzip": 8733,
+      "draft_only_bytes_raw": 4124,
+      "draft_only_bytes_gzip": 1127
+    },
+    {
+      "fixture": "kadhi-pakora",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.48,
+        "ingredients_s": 19.31,
+        "first_step_s": 19.31,
+        "steps_complete_s": 31.39,
+        "done_s": 32.59
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 30,
+      "draft_steps": 11,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 9951,
+      "max_inflight_poll_bytes_gzip": 3111,
+      "terminal_poll_bytes_raw": 53299,
+      "terminal_poll_bytes_gzip": 8731,
+      "draft_only_bytes_raw": 4124,
+      "draft_only_bytes_gzip": 1127
+    },
+    {
+      "fixture": "croissant",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.48,
+        "ingredients_s": 15.69,
+        "first_step_s": 15.69,
+        "steps_complete_s": 31.36,
+        "done_s": 33.77
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 8,
+      "draft_steps": 18,
+      "polls": 29,
+      "max_inflight_poll_bytes_raw": 2902,
+      "max_inflight_poll_bytes_gzip": 1074,
+      "terminal_poll_bytes_raw": 37909,
+      "terminal_poll_bytes_gzip": 4918,
+      "draft_only_bytes_raw": 2024,
+      "draft_only_bytes_gzip": 713
+    },
+    {
+      "fixture": "croissant",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.47,
+        "ingredients_s": 15.69,
+        "first_step_s": 15.69,
+        "steps_complete_s": 31.38,
+        "done_s": 33.78
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 8,
+      "draft_steps": 18,
+      "polls": 29,
+      "max_inflight_poll_bytes_raw": 2902,
+      "max_inflight_poll_bytes_gzip": 1075,
+      "terminal_poll_bytes_raw": 37909,
+      "terminal_poll_bytes_gzip": 4920,
+      "draft_only_bytes_raw": 2024,
+      "draft_only_bytes_gzip": 713
+    },
+    {
+      "fixture": "croissant",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.48,
+        "ingredients_s": 15.69,
+        "first_step_s": 15.69,
+        "steps_complete_s": 31.38,
+        "done_s": 33.8
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 8,
+      "draft_steps": 18,
+      "polls": 29,
+      "max_inflight_poll_bytes_raw": 2902,
+      "max_inflight_poll_bytes_gzip": 1075,
+      "terminal_poll_bytes_raw": 37909,
+      "terminal_poll_bytes_gzip": 4920,
+      "draft_only_bytes_raw": 2024,
+      "draft_only_bytes_gzip": 713
+    },
+    {
+      "fixture": "pumpkin-pancakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.48,
+        "ingredients_s": 16.91,
+        "first_step_s": 16.91,
+        "steps_complete_s": 24.14,
+        "done_s": 32.58
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 17,
+      "draft_steps": 7,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 2677,
+      "max_inflight_poll_bytes_gzip": 908,
+      "terminal_poll_bytes_raw": 24999,
+      "terminal_poll_bytes_gzip": 4128,
+      "draft_only_bytes_raw": 2083,
+      "draft_only_bytes_gzip": 605
+    },
+    {
+      "fixture": "pumpkin-pancakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.5,
+        "ingredients_s": 16.91,
+        "first_step_s": 16.91,
+        "steps_complete_s": 24.14,
+        "done_s": 32.59
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 17,
+      "draft_steps": 7,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 2677,
+      "max_inflight_poll_bytes_gzip": 908,
+      "terminal_poll_bytes_raw": 24999,
+      "terminal_poll_bytes_gzip": 4127,
+      "draft_only_bytes_raw": 2083,
+      "draft_only_bytes_gzip": 605
+    },
+    {
+      "fixture": "pumpkin-pancakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.47,
+        "ingredients_s": 16.89,
+        "first_step_s": 16.89,
+        "steps_complete_s": 24.12,
+        "done_s": 32.58
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 17,
+      "draft_steps": 7,
+      "polls": 28,
+      "max_inflight_poll_bytes_raw": 2677,
+      "max_inflight_poll_bytes_gzip": 906,
+      "terminal_poll_bytes_raw": 24999,
+      "terminal_poll_bytes_gzip": 4127,
+      "draft_only_bytes_raw": 2083,
+      "draft_only_bytes_gzip": 605
+    },
+    {
+      "fixture": "vanilla-cupcakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.66,
+        "first_ingredient_s": 14.52,
+        "ingredients_s": 15.72,
+        "first_step_s": 15.72,
+        "steps_complete_s": 20.55,
+        "done_s": 20.55
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 10,
+      "draft_steps": 4,
+      "polls": 18,
+      "max_inflight_poll_bytes_raw": 4353,
+      "max_inflight_poll_bytes_gzip": 1555,
+      "terminal_poll_bytes_raw": 20151,
+      "terminal_poll_bytes_gzip": 3652,
+      "draft_only_bytes_raw": 1169,
+      "draft_only_bytes_gzip": 414
+    },
+    {
+      "fixture": "vanilla-cupcakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.62,
+        "first_ingredient_s": 14.5,
+        "ingredients_s": 15.7,
+        "first_step_s": 15.7,
+        "steps_complete_s": 19.31,
+        "done_s": 20.52
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 10,
+      "draft_steps": 4,
+      "polls": 18,
+      "max_inflight_poll_bytes_raw": 4352,
+      "max_inflight_poll_bytes_gzip": 1550,
+      "terminal_poll_bytes_raw": 20151,
+      "terminal_poll_bytes_gzip": 3652,
+      "draft_only_bytes_raw": 1169,
+      "draft_only_bytes_gzip": 414
+    },
+    {
+      "fixture": "vanilla-cupcakes",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.49,
+        "ingredients_s": 15.7,
+        "first_step_s": 15.7,
+        "steps_complete_s": 20.53,
+        "done_s": 20.53
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 10,
+      "draft_steps": 4,
+      "polls": 18,
+      "max_inflight_poll_bytes_raw": 4353,
+      "max_inflight_poll_bytes_gzip": 1555,
+      "terminal_poll_bytes_raw": 20151,
+      "terminal_poll_bytes_gzip": 3652,
+      "draft_only_bytes_raw": 1169,
+      "draft_only_bytes_gzip": 414
+    },
+    {
+      "fixture": "chole-bhature-low",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.5,
+        "ingredients_s": 20.52,
+        "first_step_s": 20.52,
+        "steps_complete_s": 38.62,
+        "done_s": 49.8
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 36,
+      "draft_steps": 16,
+      "polls": 42,
+      "max_inflight_poll_bytes_raw": 9377,
+      "max_inflight_poll_bytes_gzip": 2979,
+      "terminal_poll_bytes_raw": 87799,
+      "terminal_poll_bytes_gzip": 15025,
+      "draft_only_bytes_raw": 6896,
+      "draft_only_bytes_gzip": 2043
+    },
+    {
+      "fixture": "chole-bhature-low",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.5,
+        "ingredients_s": 20.53,
+        "first_step_s": 20.53,
+        "steps_complete_s": 38.64,
+        "done_s": 49.75
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 36,
+      "draft_steps": 16,
+      "polls": 42,
+      "max_inflight_poll_bytes_raw": 9377,
+      "max_inflight_poll_bytes_gzip": 2980,
+      "terminal_poll_bytes_raw": 87799,
+      "terminal_poll_bytes_gzip": 15026,
+      "draft_only_bytes_raw": 6896,
+      "draft_only_bytes_gzip": 2043
+    },
+    {
+      "fixture": "chole-bhature-low",
+      "script": [
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.52,
+        "ingredients_s": 20.55,
+        "first_step_s": 20.55,
+        "steps_complete_s": 38.69,
+        "done_s": 49.86
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 1,
+      "draft_ingredients": 36,
+      "draft_steps": 16,
+      "polls": 42,
+      "max_inflight_poll_bytes_raw": 9377,
+      "max_inflight_poll_bytes_gzip": 2980,
+      "terminal_poll_bytes_raw": 87799,
+      "terminal_poll_bytes_gzip": 15028,
+      "draft_only_bytes_raw": 6896,
+      "draft_only_bytes_gzip": 2043
+    },
+    {
+      "fixture": "kadhi-pakora",
+      "script": [
+        "invalid_json",
+        "ok"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.66,
+        "first_ingredient_s": 14.52,
+        "ingredients_s": 19.34,
+        "first_step_s": 19.34,
+        "done_s": 53.16
+      },
+      "status": "done",
+      "failure": null,
+      "draft_calls": 2,
+      "draft_ingredients": 30,
+      "draft_steps": 7,
+      "polls": 45,
+      "max_inflight_poll_bytes_raw": 9562,
+      "max_inflight_poll_bytes_gzip": 3024,
+      "terminal_poll_bytes_raw": 52911,
+      "terminal_poll_bytes_gzip": 8719,
+      "draft_only_bytes_raw": 3736,
+      "draft_only_bytes_gzip": 982
+    },
+    {
+      "fixture": "kadhi-pakora",
+      "script": [
+        "stall_after:3000"
+      ],
+      "speed": 1.0,
+      "marks": {
+        "acquired_s": 3.64,
+        "first_ingredient_s": 14.47,
+        "ingredients_s": 19.3,
+        "first_step_s": 19.3,
+        "done_s": 79.64
+      },
+      "status": "failed",
+      "failure": "unavailable",
+      "draft_calls": 1,
+      "draft_ingredients": 30,
+      "draft_steps": 1,
+      "polls": 67,
+      "max_inflight_poll_bytes_raw": 8633,
+      "max_inflight_poll_bytes_gzip": 2783,
+      "terminal_poll_bytes_raw": 9202,
+      "terminal_poll_bytes_gzip": 2989,
+      "draft_only_bytes_raw": 2807,
+      "draft_only_bytes_gzip": 584
+    }
+  ]
+}

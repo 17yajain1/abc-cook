@@ -21,30 +21,56 @@ bake-off (see the bake-off report for detail, not repeated here):
   `pricing.py`'s cost formula (written against Anthropic's accounting) stays correct
   unchanged -- the normalization happens once, here, at the provider boundary, not in
   the shared pricing formula.
-- No SDK-side non-streaming timeout ceiling analogous to Anthropic's -- this adapter
-  never needs to stream at the 8K-32K max_tokens this project uses. Untested above
-  that; not assumed safe.
+- No SDK-side non-streaming timeout ceiling analogous to Anthropic's, so the blocking
+  call was safe at the 8K-32K max_tokens this project uses.
+
+PR-S2: the call now streams (`stream=True`, `include_usage`), so a caller can read the
+ingredients and steps while the rest is still being written. Everything the model sees is
+byte-identical (same `messages`, `model`, `max_completion_tokens`, `reasoning_effort`);
+the deltas are joined into the same `text` that `parse` has always received. A watchdog
+thread closes a stream that goes quiet (idle) or runs past the per-call deadline, because
+a stalled stream would otherwise hold the job at its last status until httpx gave up.
+`ABC_COOK_STREAM_EXTRACTION=0` restores the blocking call exactly (`_extract_blocking`).
 """
 
 from __future__ import annotations
 
+import logging
 import os
+import threading
 import time
-from typing import Literal
+from typing import Any, Literal
 
+import httpx
 import openai
 import pydantic
 
 from abc_cook.extract.adapters.base import (
     MAX_RETRIES,
+    STREAM_CONNECT_TIMEOUT_S,
+    STREAM_IDLE_TIMEOUT_S,
+    STREAM_POOL_TIMEOUT_S,
+    STREAM_READ_TIMEOUT_S,
+    STREAM_WRITE_TIMEOUT_S,
     CallUsage,
     EffortLevel,
     ErrorKind,
     ExtractResult,
+    TextDeltaCallback,
     exception_summary,
     request_timeout_s,
+    stream_extraction_enabled,
 )
 from abc_cook.extract.adapters.prompting import parse, system_prompt
+
+_logger = logging.getLogger(__name__)
+
+_STREAM_TIMEOUT = httpx.Timeout(
+    connect=STREAM_CONNECT_TIMEOUT_S,
+    read=STREAM_READ_TIMEOUT_S,
+    write=STREAM_WRITE_TIMEOUT_S,
+    pool=STREAM_POOL_TIMEOUT_S,
+)
 
 _EFFORT_MAP: dict[EffortLevel, Literal["minimal", "low", "medium", "high"]] = {
     "minimal": "minimal",
@@ -79,6 +105,56 @@ def _error_kind(exc: openai.APIError) -> ErrorKind:
     return "request"
 
 
+class _StreamWatchdog:
+    """Closes a stream that is idle too long or past its deadline, from a daemon thread.
+
+    "Idle" is measured in SDK-yielded chunks, not bytes: SSE keep-alive comments are
+    filtered by the SDK, so httpx would never see a read timeout while the model is silent.
+    The iterating thread sees the closed stream as an exception (or a clean end); either
+    way `reason` says why, and the caller reports that instead.
+    """
+
+    def __init__(
+        self, stream: Any, *, idle_s: float, deadline_at: float, poll_s: float | None = None
+    ) -> None:
+        self._stream = stream
+        self._idle_s = idle_s
+        self._deadline_at = deadline_at
+        self._poll_s = poll_s if poll_s is not None else min(1.0, idle_s / 4)
+        self._last_chunk_at = time.monotonic()
+        self._stop = threading.Event()
+        self.reason: str | None = None
+        self._thread = threading.Thread(target=self._run, name="stream-watchdog", daemon=True)
+
+    def start(self) -> None:
+        """Start watching."""
+        self._thread.start()
+
+    def touch(self) -> None:
+        """A chunk arrived."""
+        self._last_chunk_at = time.monotonic()
+
+    def stop(self) -> None:
+        """Stop watching and wait for the thread."""
+        self._stop.set()
+        self._thread.join(timeout=5)
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._poll_s):
+            now = time.monotonic()
+            if now > self._deadline_at:
+                self.reason = "StreamDeadline"
+            elif now - self._last_chunk_at > self._idle_s:
+                self.reason = "StreamIdleTimeout"
+            else:
+                continue
+            try:
+                self._stream.close()
+            except Exception:  # the stream is being abandoned either way
+                _logger.debug("closing a stalled stream raised", exc_info=True)
+            return
+
+
 class OpenAIAdapter:
     """Adapter for OpenAI's Chat Completions API.
 
@@ -87,11 +163,32 @@ class OpenAIAdapter:
     callers that need it (tests, one-off scripts) load it themselves first.
     """
 
-    def __init__(self, api_key: str | None = None) -> None:
-        """Construct the adapter, defaulting the API key to `OPENAI_API_KEY`."""
+    def __init__(
+        self,
+        api_key: str | None = None,
+        *,
+        stream_idle_s: float = STREAM_IDLE_TIMEOUT_S,
+        stream_deadline_s: float | None = None,
+    ) -> None:
+        """Construct the adapter, defaulting the API key to `OPENAI_API_KEY`.
+
+        Args:
+            api_key: Overrides `OPENAI_API_KEY`.
+            stream_idle_s: Watchdog idle bound; a test override.
+            stream_deadline_s: Per-call total deadline, defaulting to `request_timeout_s`.
+                A test override.
+        """
         self._client = openai.OpenAI(
             api_key=api_key or os.environ.get("OPENAI_API_KEY"), max_retries=MAX_RETRIES
         )
+        self._stream = stream_extraction_enabled()  # read once, at construction (A1)
+        self._stream_idle_s = stream_idle_s
+        self._stream_deadline_s = stream_deadline_s
+
+    @property
+    def streams_text(self) -> bool:
+        """Whether `extract` streams, and so accepts `on_text` (the kill switch is off)."""
+        return self._stream
 
     def extract[T: pydantic.BaseModel](
         self,
@@ -102,8 +199,44 @@ class OpenAIAdapter:
         max_tokens: int,
         output_type: type[T],
         effort: EffortLevel | None = None,
+        on_text: TextDeltaCallback | None = None,
     ) -> ExtractResult[T]:
-        """Run one plain-text extraction call. Never raises — see `LLMAdapter.extract`."""
+        """Run one plain-text extraction call. Never raises — see `LLMAdapter.extract`.
+
+        `on_text` receives each non-empty piece of response text as it streams. If it
+        raises, the adapter logs once, stops calling it and keeps streaming: a draft can
+        never fail an import. It is ignored when streaming is off.
+        """
+        if not self._stream:
+            return self._extract_blocking(
+                prompt=prompt,
+                source_text=source_text,
+                model=model,
+                max_tokens=max_tokens,
+                output_type=output_type,
+                effort=effort,
+            )
+        return self._extract_streaming(
+            prompt=prompt,
+            source_text=source_text,
+            model=model,
+            max_tokens=max_tokens,
+            output_type=output_type,
+            effort=effort,
+            on_text=on_text,
+        )
+
+    def _extract_blocking[T: pydantic.BaseModel](
+        self,
+        *,
+        prompt: str,
+        source_text: str,
+        model: str,
+        max_tokens: int,
+        output_type: type[T],
+        effort: EffortLevel | None,
+    ) -> ExtractResult[T]:
+        """The pre-S2 call, unchanged: one blocking request, the whole response at once."""
         system = system_prompt(prompt, output_type)
         messages: list[openai.types.chat.ChatCompletionMessageParam] = [
             {"role": "system", "content": system},
@@ -150,6 +283,140 @@ class OpenAIAdapter:
         if choice.finish_reason == "length":
             # Same truncation contract as anthropic.py's `stop_reason == "max_tokens"`
             # branch -- retry-eligible, never at the same cap (M2.10 s18 F2).
+            return ExtractResult(
+                recipe=None,
+                truncated=True,
+                error="max_tokens",
+                error_kind="truncated",
+                usage=usage,
+                raw_text=text,
+            )
+
+        parsed = parse(text, output_type)
+        if parsed is None:
+            return ExtractResult(
+                recipe=None,
+                error=f"response was not valid {output_type.__name__} JSON",
+                error_kind="unparseable",
+                usage=usage,
+                raw_text=text,
+            )
+        return ExtractResult(recipe=parsed, usage=usage)
+
+    def _extract_streaming[T: pydantic.BaseModel](
+        self,
+        *,
+        prompt: str,
+        source_text: str,
+        model: str,
+        max_tokens: int,
+        output_type: type[T],
+        effort: EffortLevel | None,
+        on_text: TextDeltaCallback | None,
+    ) -> ExtractResult[T]:
+        """The same request as `_extract_blocking`, streamed, with a stall watchdog."""
+        system = system_prompt(prompt, output_type)
+        messages: list[openai.types.chat.ChatCompletionMessageParam] = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": source_text},
+        ]
+        reasoning_effort = _EFFORT_MAP[effort] if effort is not None else openai.omit
+
+        start = time.monotonic()
+        deadline_s = (
+            self._stream_deadline_s
+            if self._stream_deadline_s is not None
+            else request_timeout_s(max_tokens)
+        )
+        try:
+            stream = self._client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_completion_tokens=max_tokens,
+                reasoning_effort=reasoning_effort,
+                stream=True,
+                stream_options={"include_usage": True},
+                timeout=_STREAM_TIMEOUT,
+            )
+        except openai.APIError as exc:
+            return ExtractResult(
+                recipe=None, error=exception_summary(exc), error_kind=_error_kind(exc)
+            )
+
+        watchdog = _StreamWatchdog(
+            stream, idle_s=self._stream_idle_s, deadline_at=start + deadline_s
+        )
+        watchdog.start()
+        deltas: list[str] = []
+        finish_reason: str | None = None
+        usage_obj: Any = None
+        first_content_ms: float | None = None
+        callback = on_text
+        try:
+            for chunk in stream:
+                watchdog.touch()
+                if chunk.usage is not None:
+                    usage_obj = chunk.usage
+                if not chunk.choices:
+                    continue
+                choice = chunk.choices[0]
+                if choice.finish_reason is not None:
+                    finish_reason = choice.finish_reason
+                delta = choice.delta.content if choice.delta is not None else None
+                if not delta:
+                    continue
+                if first_content_ms is None:
+                    first_content_ms = (time.monotonic() - start) * 1000
+                deltas.append(delta)
+                if callback is not None:
+                    try:
+                        callback(delta)
+                    except Exception:
+                        _logger.warning("on_text raised; draft updates stop for this call")
+                        callback = None
+        except (openai.APIError, httpx.HTTPError, httpx.StreamError) as exc:
+            # A stall closed by the watchdog surfaces here as a read error: report why it
+            # was closed, not the transport's wording. Mid-stream failures carry no usage
+            # chunk, so their spend is unreported (FGC-19).
+            error = watchdog.reason or exception_summary(exc)
+            return ExtractResult(recipe=None, error=error, error_kind="infra")
+        finally:
+            watchdog.stop()
+            try:
+                stream.close()
+            except Exception:  # already closed or never opened: nothing to release
+                _logger.debug("closing the stream raised", exc_info=True)
+        if watchdog.reason is not None and finish_reason is None:
+            # The close ended iteration cleanly instead of raising. (A reason that fired after
+            # `finish_reason` arrived is a finished answer, not a stall.)
+            return ExtractResult(recipe=None, error=watchdog.reason, error_kind="infra")
+        latency_ms = (time.monotonic() - start) * 1000
+
+        text = "".join(deltas)
+        usage: CallUsage | None = None
+        if usage_obj is None:
+            _logger.warning("stream ended without a usage chunk; cost is unreported")
+        else:
+            cached = 0
+            if usage_obj.prompt_tokens_details is not None:
+                cached = usage_obj.prompt_tokens_details.cached_tokens or 0
+            reasoning: int | None = None
+            if usage_obj.completion_tokens_details is not None:
+                reasoning = usage_obj.completion_tokens_details.reasoning_tokens
+            usage = CallUsage(
+                model=model,
+                input_tokens=usage_obj.prompt_tokens - cached,
+                output_tokens=usage_obj.completion_tokens,
+                cache_read_input_tokens=cached,
+                cache_creation_input_tokens=None,  # no explicit cache-write field in this API
+                stop_reason=finish_reason,
+                latency_ms=latency_ms,
+                max_tokens_requested=max_tokens,
+                reasoning_tokens=reasoning,
+                first_content_ms=first_content_ms,
+            )
+
+        if finish_reason == "length":
             return ExtractResult(
                 recipe=None,
                 truncated=True,
