@@ -58,9 +58,11 @@ no step that makes the batter. Every step is grounded (nothing invented); the da
 plan whose Bake step has no batter must be flagged or refused, not scheduled.
 
 - Evidence: `known-wrong/vanilla-cupcakes.{raw,original}.json`.
-- **Owner decision pending:** (a) flag "method incomplete", or (b) fill standard steps, labelled
-  "added by ABC Cook, not in the source". Competitor ref: Copymenu fills gaps silently; ReciMe turned
-  the notes into steps.
+- **Owner decision (2026-10-16): (b)**, fill the standard missing steps, each labelled "Added by ABC
+  Cook, not in the video" (or "…not in the recipe"). Recorded verbatim in
+  `docs/plans/decisions-2026-10-16-incomplete-method.md`. Competitor ref: Copymenu fills gaps silently;
+  ReciMe turned the notes into steps.
+- **Owned by** `docs/plans/fix-fgc-345-quality.md`, PR 2 (prompt v8 + `origin` field, measured A/B).
 
 ### FGC-4 (P2): notes and alternatives become steps
 
@@ -72,6 +74,12 @@ plan whose Bake step has no batter must be flagged or refused, not scheduled.
   ways to eat these pancakes".
 - Evidence: `known-wrong/vanilla-cupcakes.original.json`; `pumpkin-pancakes.original.json`.
 - `pumpkin-pancakes` carries FGC-4 in `known_issues`.
+- **Owned by** `docs/plans/fix-fgc-345-quality.md`: PR 1 widens the markers and judges cue
+  ownership by token coverage (fixes cupcakes and pumpkin's first serving way); PR 2's prompt rule
+  covers pumpkin's second way, whose cue carries no marker.
+- **After PR 1 (priority inverted):** pumpkin's classic serving way is now an optional tip on "Cook
+  pancakes", while "Serve with chips" stays a required node (total 24 to 23). PR 2's prompt rule
+  (later serving ways attach to the first) is meant to fix it.
 
 ### FGC-5 (P2): "N minutes before serving" is not honoured
 
@@ -81,6 +89,12 @@ on a hands-on step is dropped (this is F1 in `followup-offset-not-duration.md`: 
 modelling), now with a real instance. The honest fix is a product/scheduler decision.
 
 - Evidence: `kadhi-pakora.original.json`. `kadhi-pakora` carries FGC-5.
+- **Owner decision (2026-10-18): option (d)**, owned by `docs/plans/fix-fgc-345-quality.md` PR 1.
+  `graph.py` inserts a source-stated "wait before serving" node (duration `extracted`) after a
+  hands-on step whose lead phrase is anchored to serving. No schema or scheduler change. The lead is
+  lost today in `_verify_duration`, which drops a lead on a hands-on step and records it nowhere.
+- **Fixed in PR 1** (`fix/fgc-4-5-postprocess`, PPV 12): kadhi now has a "Wait before serving" node
+  (10 min, `extracted`), Serve at 61, total 62. FGC-5 left `known_issues`.
 
 ### FGC-6 (P2): "half hour" (English) and Devanagari number words are not parsed
 
@@ -414,6 +428,9 @@ here, to be measured as a separate model-facing change:
   (8%) strict-off; of the 11 strict-on steps with no explicit `depends_on_steps`, graph.py kept 3
   independent and forced 8 sequential.
 
+**Not bundled with FGC-3/4 (2026-10-18).** `fix-fgc-345-quality.md` PR 2 ships prompt v8 with the
+FGC-3/4 deltas only, so its A/B isolates them. These items become prompt v9, measured on their own.
+
 ### FGC-28 (PR-S3): strict structured output — resolved: ships on
 
 PR-S3 built strict output (`ABC_COOK_STRICT_EXTRACTION`, a `response_format` with the strict
@@ -446,3 +463,62 @@ means unchanged, and only an empty-string replacement would drop it), so repair 
 resolves it and the plan degrades to a linear chain. PR-S3 fixed only the final-step case (nothing
 later can consume it). Consider a generic drop for a label no node consumes whose siblings carry no
 dependency on it, or a repair hint that allows clearing the label. Record only; not changed.
+
+### FGC-30 (FGC-3 PR 2): the Map view shows no "added" marker
+
+Added steps are labelled on the Plan, in cooking mode and in the streamed draft. Before PR 2's code,
+check whether `apps/web/src/map/` is reachable by users:
+- if it is, PR 2 labels added steps there too, and this item closes;
+- if it is dead code, this stays a follow-up. A Map marker is new visual grammar, so it needs a
+  render checkpoint.
+
+### FGC-31 (P3): lead times anchored to anything other than serving
+
+FGC-5's fix covers a hands-on step's "N before serving / eating" only. "Take the butter out 1 hour
+before baking" or "marinate 2 hours before cooking" on a hands-on step is still dropped as an
+offset. This generalises F1 in `followup-offset-not-duration.md`.
+
+### FGC-32 (P3): a tip that is not a step stays a required step
+
+Cupcakes: "Powdering the sugar will make the creaming easy" is advice, but its wording carries no
+optional/alternative marker, so it stays a required "Powder sugar" step. "Note:" / "Tip:" were
+deliberately not added as markers: a "Note: soak overnight" demoted to a tip would drop a required
+wait.
+
+### FGC-33 (metric only): the incomplete-method gap check has false positives
+
+The check flags an unattended step that consumes ≥ 2 non-staple raw ingredients no hands-on ancestor
+touched. It fires on cupcakes but also on add-and-simmer shapes (`synthetic-two-windows` "simmer
+stew": lentils + stock). It is a bench metric in FGC-3 PR 2, not user copy. Revisit before it is
+ever surfaced to users.
+
+### FGC-34 (FGC-3): when most of a method was added
+
+The owner chose no cap on added steps (2026-10-18), so cupcakes can get more added steps than source
+steps. Log the per-import added count. Consider a recipe-level line when added steps ≥ source steps.
+
+### FGC-35 (P3): the stated-total tolerance compares against the serial sum
+
+`build_graph` drops the source's stated total when the serial sum of typical durations is more than
+40% off it. The cook's elapsed time is the honest comparison. Kadhi after FGC-5: the source says 45
+min, the serial sum is 70 (dropped), the elapsed time is 62 (would pass the 40% rule). Fix later,
+generic.
+
+### FGC-36 (P2, scheduler): "immediately" / "just before serving" steps are not scheduled late
+
+A finishing step whose text says "immediately" or "just before serving" should be scheduled as late as
+possible before the sink. Kadhi's "Make tempering" ("immediately pour this tempering") sits in the
+wait window at 51-53, then waits about 8 minutes for Serve at 61. It already started at 51 before
+FGC-5's fix. Scheduler change, separate PR.
+
+### FGC-37 (P3, web copy): the hands-off button on waits and rests
+
+The cooking-mode button on a wait or rest step reads "I've started it". For a timed wait it should
+read like "Start 10-min timer". Kadhi's "Wait before serving" is the instance.
+
+### FGC-38 (P3, web): the step counter advances when a hands-off step starts
+
+In cooking mode "Step N of M" counts finished plus running steps, so starting a hands-off step moves
+the number on (Cook kadi: "Step 3 of 12" to "Step 4 of 12"; kadhi's wait: 10 to 11). It is the
+existing live-count behaviour, not specific to the derived wait node. Decide whether a started step
+should keep its own number.

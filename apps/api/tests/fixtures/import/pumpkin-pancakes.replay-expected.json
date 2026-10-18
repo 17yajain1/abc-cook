@@ -79,8 +79,8 @@
       "window": null
     },
     {
-      "label": "Serve classic",
-      "kind": "active",
+      "label": "Serve with chips",
+      "kind": "finish",
       "attention": "hands_on",
       "station": "counter",
       "duration_min": 1,
@@ -92,38 +92,22 @@
       ],
       "start_min": 22.0,
       "window": null
-    },
-    {
-      "label": "Serve with chips",
-      "kind": "finish",
-      "attention": "hands_on",
-      "station": "counter",
-      "duration_min": 1,
-      "duration_typical": 1,
-      "duration_max": 2,
-      "duration_source": "inferred",
-      "depends_on": [
-        "Cook pancakes",
-        "Serve classic"
-      ],
-      "start_min": 23.0,
-      "window": null
     }
   ],
   "windows": [],
   "totals": {
-    "total_min": 24.0,
-    "serial_min": 24.0,
+    "total_min": 23.0,
+    "serial_min": 23.0,
     "saved_min": 0.0,
-    "active_min": 24.0,
-    "elapsed_min": 24.0,
-    "elapsed_high_min": 34.0
+    "active_min": 23.0,
+    "elapsed_min": 23.0,
+    "elapsed_high_min": 32.0
   },
   "sessions": [
     {
       "start_min": 0.0,
-      "end_min": 24.0,
-      "active_min": 24.0,
+      "end_min": 23.0,
+      "active_min": 23.0,
       "preceded_by_wait_min": null,
       "nodes": [
         "Mix pumpkin",
@@ -131,7 +115,6 @@
         "Add baking powder",
         "Make batter",
         "Cook pancakes",
-        "Serve classic",
         "Serve with chips"
       ]
     }

@@ -576,6 +576,27 @@
         "tip": null
       },
       {
+        "id": "step_wait_before_serving",
+        "stage": "cook",
+        "label": "Wait before serving",
+        "instruction": "Wait 10 min, then serve. The recipe adds \"Add pakoras\" 10 min before serving.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 10,
+        "duration_typical": 10,
+        "duration_max": 10,
+        "station": "none",
+        "depends_on": [
+          "step_ten_minutes_before_serving_add_the"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
         "id": "step_serve_immediately",
         "stage": "finish",
         "label": "Serve",
@@ -587,10 +608,10 @@
         "duration_max": 2,
         "station": "counter",
         "depends_on": [
-          "step_ten_minutes_before_serving_add_the",
           "step_in_a_clean_pan_heat_desi",
           "step_add_the_kadi_mixture_to_the",
-          "step_check_the_cooked_kadi_for_salt"
+          "step_check_the_cooked_kadi_for_salt",
+          "step_wait_before_serving"
         ],
         "consumes": [
           "comp_cooked_kadi"
@@ -619,7 +640,7 @@
         "color_key": "finish"
       }
     ],
-    "stated_total_min": 45
+    "stated_total_min": null
   },
   "plan": {
     "graph_id": "g_https---www-youtube-com-watch-v-Oa2s0dklrRo__medium__0",
@@ -701,13 +722,21 @@
         "start_min": 51.0,
         "end_min": 53.0,
         "occupies_cook": true,
+        "window_id": "w2",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "step_wait_before_serving",
+        "start_min": 51.0,
+        "end_min": 61.0,
+        "occupies_cook": false,
         "window_id": null,
         "rank_in_window": null
       },
       {
         "node_id": "step_serve_immediately",
-        "start_min": 53.0,
-        "end_min": 54.0,
+        "start_min": 61.0,
+        "end_min": 62.0,
         "occupies_cook": true,
         "window_id": null,
         "rank_in_window": null
@@ -723,11 +752,21 @@
         ],
         "used_min": 5.0,
         "slack_min": 16.0
+      },
+      {
+        "id": "w2",
+        "host_node_id": "step_wait_before_serving",
+        "capacity_min": 9.0,
+        "assigned": [
+          "step_in_a_clean_pan_heat_desi"
+        ],
+        "used_min": 2.0,
+        "slack_min": 7.0
       }
     ],
-    "total_min": 54.0,
-    "serial_min": 60.0,
-    "saved_min": 6.0,
+    "total_min": 62.0,
+    "serial_min": 70.0,
+    "saved_min": 8.0,
     "critical_path": [
       "step_whisk_together_curd_besan_sliced_onions",
       "step_heat_a_pan_and_add_oil",
@@ -736,7 +775,7 @@
       "step_give_the_partially_fried_pakoras_a",
       "step_heat_the_oil_hotter_and_fry",
       "step_ten_minutes_before_serving_add_the",
-      "step_in_a_clean_pan_heat_desi",
+      "step_wait_before_serving",
       "step_serve_immediately"
     ],
     "warnings": []
@@ -759,13 +798,13 @@
     {
       "stage_id": "cook",
       "start_min": 5.0,
-      "end_min": 53.0,
-      "elapsed_min": 48.0,
-      "work_min": 54.0,
-      "windowed_work_min": 5.0,
-      "inline_work_min": 49.0,
-      "hands_on_min": 18.0,
-      "unattended_min": 31.0,
+      "end_min": 61.0,
+      "elapsed_min": 56.0,
+      "work_min": 64.0,
+      "windowed_work_min": 7.0,
+      "inline_work_min": 57.0,
+      "hands_on_min": 16.0,
+      "unattended_min": 41.0,
       "node_ids": [
         "step_heat_a_pan_and_add_oil",
         "step_add_the_kadi_mixture_to_the",
@@ -775,13 +814,14 @@
         "step_give_the_partially_fried_pakoras_a",
         "step_heat_the_oil_hotter_and_fry",
         "step_ten_minutes_before_serving_add_the",
-        "step_in_a_clean_pan_heat_desi"
+        "step_in_a_clean_pan_heat_desi",
+        "step_wait_before_serving"
       ]
     },
     {
       "stage_id": "finish",
-      "start_min": 53.0,
-      "end_min": 54.0,
+      "start_min": 61.0,
+      "end_min": 62.0,
       "elapsed_min": 1.0,
       "work_min": 1.0,
       "windowed_work_min": 0.0,
@@ -796,12 +836,12 @@
   "summary": {
     "active_min": 29.0,
     "attended_min": 57.0,
-    "elapsed_min": 54.0,
-    "elapsed_high_min": 71.0,
+    "elapsed_min": 62.0,
+    "elapsed_high_min": 77.0,
     "sessions": [
       {
         "start_min": 0.0,
-        "end_min": 54.0,
+        "end_min": 62.0,
         "active_min": 29.0,
         "node_ids": [
           "step_whisk_together_curd_besan_sliced_onions",
@@ -814,11 +854,12 @@
           "step_heat_the_oil_hotter_and_fry",
           "step_ten_minutes_before_serving_add_the",
           "step_in_a_clean_pan_heat_desi",
+          "step_wait_before_serving",
           "step_serve_immediately"
         ],
         "preceded_by_wait_min": null,
-        "elapsed_min": 54.0,
-        "elapsed_high_min": 71.0,
+        "elapsed_min": 62.0,
+        "elapsed_high_min": 77.0,
         "preceded_by_host_node_ids": []
       }
     ],
@@ -826,9 +867,9 @@
     "phases": [
       {
         "start_min": 0.0,
-        "end_min": 54.0,
-        "elapsed_min": 54.0,
-        "elapsed_high_min": 71.0,
+        "end_min": 62.0,
+        "elapsed_min": 62.0,
+        "elapsed_high_min": 77.0,
         "active_min": 29.0,
         "node_ids": [
           "step_whisk_together_curd_besan_sliced_onions",
@@ -841,6 +882,7 @@
           "step_heat_the_oil_hotter_and_fry",
           "step_ten_minutes_before_serving_add_the",
           "step_in_a_clean_pan_heat_desi",
+          "step_wait_before_serving",
           "step_serve_immediately"
         ],
         "preceded_by_wait_min": null,

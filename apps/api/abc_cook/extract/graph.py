@@ -64,9 +64,25 @@ _OPTIONAL_MARKERS = (
     "instead",
     "or you can",
     "method:",
+    # FGC-4: a substitution, or several ways to serve, is a note on the step it modifies.
+    "can be replaced",
+    "replaced with",
+    "replace with",
+    "substitute",
+    "in place of",
+    "different ways",
+    "another way",
+    "ways to eat",
+    "ways to serve",
+    "की जगह",
+    "ki jagah",
+    "चाहें तो",
+    "chahe to",
 )
 """CP2 decision B: an optional/alternative role is honored only when its grounded
-`role_cue` carries one of these. Same closed-list pattern as `_IMMEDIACY_MARKERS`."""
+`role_cue` carries one of these. Same closed-list pattern as `_IMMEDIACY_MARKERS`.
+Deliberately no "note:" / "tip:": a "Note: soak overnight" demoted to a tip would drop a
+required wait."""
 
 _ROLE_TIP_PREFIX = {"optional": "Optional: ", "alternative": "Alternative: "}
 
@@ -459,6 +475,11 @@ class _Roles:
     """Honored optional/alternative position -> the required position it annotates."""
 
 
+_CUE_TOKEN_RE = re.compile(r"\w+")
+_OWN_CUE_MIN_TOKENS = 3
+_OWN_CUE_COVERAGE = 0.8
+
+
 def _role_honored(step: NormalizedStep, corpus: str) -> bool:
     cue = step.role_cue or ""
     has_marker = any(marker in cue.lower() for marker in _OPTIONAL_MARKERS)
@@ -469,9 +490,19 @@ def _cue_is_own(step: NormalizedStep) -> bool:
     """Whether `step.role_cue` is grounded in `step`'s own text.
 
     Not just somewhere in the corpus (§6 item 2b, the owner's borrowed-cue
-    addendum).
+    addendum). An exact substring, or (FGC-4) a cue of at least `_OWN_CUE_MIN_TOKENS`
+    word tokens whose tokens the step's text covers by `_OWN_CUE_COVERAGE`: the model
+    lightly rewrites a quoted cue ("There is" -> "There are"), which an exact match
+    would call borrowed.
     """
-    return _is_grounded_substring(step.role_cue, step.text.lower())
+    text = step.text.lower()
+    if _is_grounded_substring(step.role_cue, text):
+        return True
+    tokens = _CUE_TOKEN_RE.findall((step.role_cue or "").lower())
+    if len(tokens) < _OWN_CUE_MIN_TOKENS:
+        return False
+    text_tokens = set(_CUE_TOKEN_RE.findall(text))
+    return sum(token in text_tokens for token in tokens) / len(tokens) >= _OWN_CUE_COVERAGE
 
 
 def _borrowed_cue_honored(
@@ -700,6 +731,24 @@ class _DurationExpr:
     lead: bool = False
     """"N before" / "N pehle": a lead time. A duration only on a verified
     unattended/periodic step; see `_verify_duration`."""
+    serving_anchored: bool = False
+    """A `lead` whose anchor is serving ("10 minutes before serving", "परोसने से 10 मिनट
+    पहले"). The only lead a hands-on step turns into a derived wait; see
+    `_serving_wait_expr`."""
+
+
+_SERVING_AFTER_RE = re.compile(r"\s*before\s+(?:serving|you\s+serve|eating)(?!\w)", re.IGNORECASE)
+_SERVING_BEFORE_RE = re.compile(r"(?:परोसने\s+से|serve\s+karne\s+se)\s*$", re.IGNORECASE)
+"""FGC-5: the closed list of serving anchors. English follows the number ("N min before
+serving"); Hindi/Hinglish precede it ("परोसने से N मिनट पहले"). Anything else ("before the
+end", "before baking") is not anchored and stays a dropped offset."""
+
+
+def _is_serving_anchored(text: str, match: re.Match[str]) -> bool:
+    return bool(
+        _SERVING_AFTER_RE.match(text, match.end())
+        or _SERVING_BEFORE_RE.search(text[: match.start()])
+    )
 
 
 def _duration_number(token: str) -> float:
@@ -765,9 +814,40 @@ def _duration_expressions(text: str) -> list[_DurationExpr]:
         low, high = (a, b) if a <= b else (b, a)
         ceiling = bool(match.group("ceiling"))
         exprs.append(
-            _DurationExpr(low_min=low, high_min=high, ceiling=ceiling, lead=role == "lead")
+            _DurationExpr(
+                low_min=low,
+                high_min=high,
+                ceiling=ceiling,
+                lead=role == "lead",
+                serving_anchored=role == "lead" and _is_serving_anchored(text, match),
+            )
         )
     return exprs
+
+
+def _serving_wait_expr(text: str, corpus: str) -> _DurationExpr | None:
+    """FGC-5: the serving-anchored lead in a hands-on step's text, if the source says it.
+
+    A hands-on step's lead is dropped as a duration (it says when to start, not how
+    long the step takes), which silently lost "10 minutes before serving". The number
+    is the source's own, so it is kept as a derived wait, but only when the step's
+    phrase AND a source phrase are both serving-anchored and the source's interval
+    contains the step's (the model rewrote the digits as a word and must not be able
+    to invent the lead). Several: the longest wait binds.
+    """
+    source = [
+        expr
+        for expr in _duration_expressions(corpus)
+        if expr.serving_anchored and not expr.ceiling
+    ]
+    grounded = [
+        expr
+        for expr in _duration_expressions(text)
+        if expr.serving_anchored
+        and not expr.ceiling
+        and any(s.low_min <= expr.low_min and expr.high_min <= s.high_min for s in source)
+    ]
+    return max(grounded, key=lambda expr: expr.low_min, default=None)
 
 
 def _grounded_duration_expressions(
@@ -1809,6 +1889,65 @@ def build_graph(
                 review_recommended = True
                 if decisions[-1].depends_on_previous_source == "extracted":
                     decisions[-1] = replace(decisions[-1], depends_on_previous_source="inferred")
+
+    # -- FGC-5: "N minutes before serving" on a hands-on step -> a derived wait ---------
+    # The step's own duration drops the lead (it says when, not how long), so the source's
+    # number would be lost. It becomes an unattended wait after the step and before the sink,
+    # which keeps the gap in the schedule and lets the scheduler place whatever can happen
+    # meanwhile. The number is the source's (`extracted`); the sink and a step on the sink
+    # itself are left alone, and so is the Tier 1 chain (it discards structure).
+    if not force_linear:
+        sink_index = len(nodes) - 1
+        for index in range(sink_index):
+            if attentions[index] != "hands_on":
+                continue
+            lead = _serving_wait_expr(steps[index].text, corpus)
+            if lead is None:
+                continue
+            lead_node, sink = nodes[index], nodes[-1]
+            wait_id, suffix = "step_wait_before_serving", 2
+            while wait_id in seen_node_ids:
+                wait_id = f"step_wait_before_serving_{suffix}"
+                suffix += 1
+            seen_node_ids.add(wait_id)
+            wait_min = max(round(lead.low_min), 1)
+            wait_max = max(round(lead.high_min), wait_min)
+            nodes.insert(
+                len(nodes) - 1,
+                Node(
+                    id=wait_id,
+                    stage=lead_node.stage,
+                    label="Wait before serving",
+                    instruction=(
+                        f'Wait {_format_duration(lead)}, then serve. The recipe adds '
+                        f'"{lead_node.label}" {_format_duration(lead)} before serving.'
+                    ),
+                    kind="passive",
+                    attention="unattended",
+                    duration_min=wait_min,
+                    duration_typical=wait_min,
+                    duration_max=wait_max,
+                    station="none",
+                    depends_on=[lead_node.id],
+                    interruptible=True,
+                ),
+            )
+            # The wait now carries the lead step's edge into the sink.
+            sink.depends_on = [dep for dep in sink.depends_on if dep != lead_node.id]
+            sink.depends_on.append(wait_id)
+            decisions.append(
+                NodeDecision(
+                    node_id=wait_id,
+                    attention_source="inferred",
+                    duration_source="extracted",
+                    depends_on_previous_source="inferred",
+                    freshness="none",
+                    freshness_cue=None,
+                )
+            )
+            warnings.append(
+                f'Added a {_format_duration(lead)} wait before serving, from "{steps[index].text}".'
+            )
 
     # -- Stages ----------------------------------------------------------------------
     used_stage_ids = list(dict.fromkeys(node.stage for node in nodes))

@@ -3124,3 +3124,242 @@ def test_trailing_garnish_stages_through_the_full_pipeline() -> None:
     assert result.graph is not None
     assert [n.stage for n in result.graph.nodes] == ["prep", "cook", "finish", "finish"]
     assert all(n.tip is None for n in result.graph.nodes)
+
+
+# ---------------------------------------------------------------------------
+# FGC-4 -- substitutions and "several ways to serve" are notes, not steps. The
+# closed marker list grows by substitution / serving-alternative phrasings (English
+# and Hindi/Hinglish); a cue is the step's own when its tokens are covered by the
+# step's text. "Note:" / "tip:" are deliberately NOT markers.
+# ---------------------------------------------------------------------------
+
+
+def _note_recipe(
+    note_text: str, role_cue: str, *, role: str = "alternative", ingredient: str = "Honey"
+) -> tuple[NormalizedRecipe, str]:
+    steps = [
+        _step(text="Cream the butter and sugar.", consumes_ingredients=["Butter", "Sugar"]),
+        _step(text="Mix in the flour.", consumes_ingredients=["Flour"]),
+        _step(
+            text=note_text,
+            role=role,
+            role_cue=role_cue,
+            attach_to_step=0,
+            consumes_ingredients=[ingredient],
+        ),
+        _step(text="Serve."),
+    ]
+    ingredients = [
+        NormalizedIngredient(name=name, qty="1", unit=None, prep_note=None)
+        for name in ("Butter", "Sugar", "Flour", ingredient)
+    ]
+    source = f"Cream the butter and sugar. Mix in the flour. {note_text} Serve."
+    return _recipe(steps, ingredients=ingredients), source
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "Sugar can be replaced with honey.",
+        "Sugar is replaced with honey for a vegan version.",
+        "You may replace with honey if you have no sugar.",
+        "You can substitute honey for the sugar.",
+        "Use honey in place of the sugar.",
+    ],
+)
+def test_substitution_cue_is_a_tip_on_its_target_and_the_ingredient_optional(
+    sentence: str,
+) -> None:
+    recipe, source = _note_recipe(sentence, sentence)
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert [n.instruction for n in result.graph.nodes] == [
+        "Cream the butter and sugar.",
+        "Mix in the flour.",
+        "Serve.",
+    ]
+    assert result.graph.nodes[0].tip == f"Alternative: {sentence}"
+    honey = next(i for i in result.graph.ingredients if i.name == "Honey")
+    assert honey.optional is True
+    assert not any("kept as a required step" in w for w in result.warnings)
+    assert validate(result.graph) == []
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "There are different ways to serve these.",
+        "There is another way to finish them.",
+        "There are two ways to eat these.",
+        "Here are three ways to serve them.",
+    ],
+)
+def test_serving_alternatives_cue_is_a_tip(sentence: str) -> None:
+    recipe, source = _note_recipe(sentence, sentence, role="optional")
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 3
+    assert result.graph.nodes[0].tip == f"Optional: {sentence}"
+    assert not any("kept as a required step" in w for w in result.warnings)
+
+
+def test_cue_covered_by_the_steps_own_tokens_is_the_steps_own_cue() -> None:
+    """The model's text says "are", the source's cue says "is": still the step's own."""
+    cue = "There is two different ways to eat these pancakes."
+    text = "There are two different ways to eat these pancakes."
+    recipe, source = _note_recipe(text, cue, role="optional")
+    result = _build(recipe, source.replace(text, cue))
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 3
+    assert result.graph.nodes[0].tip == f"Optional: {text}"
+    assert not any("borrowed" in w for w in result.warnings)
+
+
+def test_cue_with_little_token_overlap_stays_borrowed_and_required() -> None:
+    cue = "There are different ways to serve these."
+    recipe, source = _note_recipe("Fry the dumplings until golden.", cue, role="optional")
+    result = _build(recipe, f"{source} {cue}")
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert all(n.tip is None for n in result.graph.nodes)
+    assert any("borrowed" in w for w in result.warnings)
+    assert result.review_recommended is True
+
+
+@pytest.mark.parametrize(
+    ("sentence", "cue"),
+    [
+        ("चीनी की जगह शहद डालें।", "की जगह"),
+        ("cheeni ki jagah shahad daalein.", "ki jagah"),
+        ("चाहें तो ऊपर से शहद डालें।", "चाहें तो"),
+        ("chahe to upar se shahad daalein.", "chahe to"),
+    ],
+)
+def test_hindi_and_hinglish_substitution_markers_are_honoured(sentence: str, cue: str) -> None:
+    recipe, source = _note_recipe(sentence, cue)
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 3
+    assert result.graph.nodes[0].tip == f"Alternative: {sentence}"
+    assert not any("kept as a required step" in w for w in result.warnings)
+
+
+@pytest.mark.parametrize("cue", ["Note:", "Tip:"])
+def test_note_and_tip_are_not_markers(cue: str) -> None:
+    """A "Note: soak overnight" demoted to a tip would drop a required wait."""
+    text = f"{cue} soak the lentils overnight."
+    recipe, source = _note_recipe(text, cue, role="optional", ingredient="Lentils")
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert all(n.tip is None for n in result.graph.nodes)
+    assert result.review_recommended is True
+
+
+# ---------------------------------------------------------------------------
+# FGC-5 (d) -- a lead phrase anchored to serving on a hands-on step ("10 minutes
+# before serving, add ...") becomes a derived, source-stated wait node before the
+# sink. The anchor list is closed; every other lead stays dropped.
+# ---------------------------------------------------------------------------
+
+
+def _serving_lead_recipe(
+    lead_text: str,
+    *,
+    lead_overrides: dict[str, object] | None = None,
+    sink_text: str = "Serve.",
+) -> tuple[NormalizedRecipe, str]:
+    lead = {
+        "text": lead_text,
+        "station": "burner",
+        "duration_min": 0.5,
+        "duration_typical_min": 1,
+        "duration_max": 3,
+        "duration_stated": False,
+    }
+    lead.update(lead_overrides or {})
+    steps = [
+        _step(text="Prepare the sauce.", station="burner"),
+        _step(**lead),
+        _step(text="Make the tempering.", station="burner"),
+        _step(text=sink_text),
+    ]
+    source = f"Prepare the sauce. {lead_text} Make the tempering. {sink_text}"
+    return _recipe(steps, ingredients=[]), source
+
+
+@pytest.mark.parametrize(
+    "lead_text",
+    [
+        "Ten minutes before serving, add the fritters to the hot sauce.",
+        "Add the fritters to the hot sauce 10 minutes before you serve.",
+        "Add the fritters to the hot sauce 10 minutes before eating.",
+        "परोसने से 10 मिनट पहले पकोड़े गरम कढ़ी में डालें।",
+        "serve karne se 10 minute pehle pakode garam kadhi mein daalein.",
+    ],
+)
+def test_serving_anchored_lead_becomes_a_stated_wait_before_the_sink(lead_text: str) -> None:
+    recipe, source = _serving_lead_recipe(lead_text)
+    result = _build(recipe, source)
+    assert result.graph is not None
+    graph = result.graph
+    assert len(graph.nodes) == 5
+    _prepare, lead, _tempering, wait, serve = graph.nodes
+    assert lead.instruction == lead_text
+    assert wait.label == "Wait before serving"
+    assert wait.instruction == (
+        f'Wait 10 min, then serve. The recipe adds "{lead.label}" 10 min before serving.'
+    )
+    assert wait.attention == "unattended"
+    assert (wait.duration_min, wait.duration_typical, wait.duration_max) == (10, 10, 10)
+    assert wait.depends_on == [lead.id]
+    assert wait.id in serve.depends_on
+    assert serve.kind == "finish"
+    decisions = {d.node_id: d for d in result.node_decisions}
+    assert decisions[wait.id].duration_source == "extracted"
+    assert decisions[lead.id].duration_source != "extracted"  # the lead step itself is unchanged
+    assert validate(graph) == []
+
+
+def test_unanchored_lead_is_unchanged() -> None:
+    recipe, source = _serving_lead_recipe("Add the fritters to the sauce 2 minutes before the end.")
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert all(n.attention == "hands_on" for n in result.graph.nodes)
+
+
+def test_lead_on_an_unattended_step_stays_that_steps_own_stated_wait() -> None:
+    recipe, source = _serving_lead_recipe(
+        "Chill it 30 minutes before serving.",
+        lead_overrides={
+            "attention": "unattended",
+            "attention_cue": "chill it",
+            "duration_min": 30,
+            "duration_typical_min": 30,
+            "duration_max": 30,
+            "duration_stated": True,
+        },
+    )
+    result = _build(recipe, source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4
+    assert result.graph.nodes[1].duration_typical == 30
+
+
+def test_serving_lead_on_the_sink_itself_adds_nothing() -> None:
+    steps = [
+        _step(text="Prepare the sauce.", station="burner"),
+        _step(text="Garnish the sauce 5 minutes before serving."),
+    ]
+    source = "Prepare the sauce. Garnish the sauce 5 minutes before serving."
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 2
+
+
+def test_serving_lead_not_in_the_source_adds_nothing() -> None:
+    recipe, source = _serving_lead_recipe("Ten minutes before serving, add the fritters.")
+    result = _build(recipe, source.replace("Ten minutes", "A little while"))
+    assert result.graph is not None
+    assert len(result.graph.nodes) == 4

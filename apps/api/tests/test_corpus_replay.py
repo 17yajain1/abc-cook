@@ -122,10 +122,12 @@ def test_kadhi_par_fried_pakoras_rest_before_the_second_fry() -> None:
     assert finish["start_min"] >= rest["start_min"] + rest["duration_min"]
 
 
-def test_kadhi_serve_is_the_last_step_and_needs_the_pakoras_and_the_tempering() -> None:
+def test_kadhi_serve_is_the_last_step_and_waits_on_the_wait_and_the_tempering() -> None:
     snap = _snapshot("kadhi-pakora")
     serve = _node(snap, "Serve")
-    assert {"Add pakoras", "Make tempering"} <= set(serve["depends_on"])
+    wait = _node(snap, "Wait before serving")
+    assert {"Wait before serving", "Make tempering"} <= set(serve["depends_on"])
+    assert "Add pakoras" in wait["depends_on"]  # so Add pakoras reaches Serve through the wait
     assert all("Serve" not in n["depends_on"] for n in snap["nodes"])
     assert serve["start_min"] == max(n["start_min"] for n in snap["nodes"])
 

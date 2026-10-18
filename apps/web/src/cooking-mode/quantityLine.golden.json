@@ -71,6 +71,7 @@
     "step_check_the_cooked_kadi_for_salt": null,
     "step_ten_minutes_before_serving_add_the": null,
     "step_in_a_clean_pan_heat_desi": "2 tbsp desi ghee · 2 tsp coriander seeds · 1 tsp cumin · ½ tsp red chilly powder",
+    "step_wait_before_serving": null,
     "step_serve_immediately": null
   },
   "maggi-2min.plan-response.json": {
@@ -101,7 +102,6 @@
     "step_add_1_tsp_of_baking_powder": "1 tsp baking powder · 1 tsp baking soda",
     "step_add_1_4_cup_oil_2": "1/4 cup oil · 2 1/2 cups flour · 1 1/2 cups milk",
     "step_put_some_butter_on_a_pan": "butter",
-    "step_there_are_two_different_ways_to": "butter · maple syrup",
     "step_the_other_the_creator_s_favorite": "chocolate chips · chocolate syrup · homemade cool whip"
   },
   "sabudana-khichdi.plan-response.json": {
