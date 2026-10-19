@@ -66,11 +66,28 @@ const synthetic: Ingredient[] = [
   ing({ unit: 'pinch' }),
 ]
 
+// FGC-42: the chips now share the tab's quantity text. Every case not listed here is still
+// byte-identical to the frozen pre-R3 phrase; each listed one pins both its old and new text.
+const CHIP_CHANGES: Record<string, { old: string; new: string }> = {
+  'kadhi-pakora.plan-response.json ing_salt': { old: 'to taste salt', new: 'salt to taste' },
+  'kadhi-pakora.plan-response.json ing_salt_2': { old: 'to taste salt', new: 'salt to taste' },
+  'sabudana-khichdi.plan-response.json ing_sendha_namak': {
+    old: 'to taste sendha namak',
+    new: 'sendha namak to taste',
+  },
+  'synthetic 2': { old: '1 cup cup x', new: '1 cup x' },
+}
+
 describe('factor 1 is byte-identical to the pre-R3 formatters', () => {
   const all: Array<[string, Ingredient]> = [
     ...fixtureIngredients,
     ...synthetic.map((s, i): [string, Ingredient] => [`synthetic ${i}`, s]),
   ]
+
+  it('names only real cases in the FGC-42 chip exception map', () => {
+    const labels = new Set(all.map(([label]) => label))
+    for (const key of Object.keys(CHIP_CHANGES)) expect(labels.has(key), key).toBe(true)
+  })
 
   it('covers every web fixture ingredient', () => {
     expect(fixtureIngredients.length).toBeGreaterThan(100)
@@ -83,12 +100,15 @@ describe('factor 1 is byte-identical to the pre-R3 formatters', () => {
     expect(explicit.items[0].trailing).toBe(oldTabText(item))
   })
 
-  it.each(all)('%s: cooking-mode chip phrase and quantity line', (_label, item) => {
+  it.each(all)('%s: cooking-mode chip phrase and quantity line', (label, item) => {
     const node = { consumes: [item.id] } as CookingNodeInfo
     const byId = ingredientsById([item])
-    expect(quantityPhrases(node, byId)).toEqual([oldChipPhrase(item)])
-    expect(quantityPhrases(node, byId, 1)).toEqual([oldChipPhrase(item)])
-    expect(quantityLine(node, byId, 1)).toBe(oldChipPhrase(item))
+    const change = CHIP_CHANGES[label]
+    if (change) expect(oldChipPhrase(item)).toBe(change.old)
+    const expected = change ? change.new : oldChipPhrase(item)
+    expect(quantityPhrases(node, byId)).toEqual([expected])
+    expect(quantityPhrases(node, byId, 1)).toEqual([expected])
+    expect(quantityLine(node, byId, 1)).toBe(expected)
   })
 
   it.each(all)('%s: scaleQuantity returns the source text, unscaled', (_label, item) => {

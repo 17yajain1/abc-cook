@@ -1,13 +1,13 @@
 import type { Ingredient } from '@abc-cook/schema'
 
 import type { CookingNodeInfo } from '@/cooking/types'
-import { scaleQuantity } from '@/lib/scaleQuantity'
+import { quantityTrailing } from '@/lib/quantity'
 
 /**
  * One phrase per consumed ingredient, in `consumes` order: `ing_*` ids only (`comp_*`
  * never listed — a component has no ingredient row to quote), each rendered as
- * `qty unit name` lower-cased. The step screen's F2 ingredient chips show these
- * directly; `quantityLine` is their join, so the two can never disagree.
+ * the Ingredients tab's quantity text, then the lower-cased name ("salt to taste" when that text is
+ * exactly "to taste"). The step screen's F2 ingredient chips show these directly; `quantityLine` is their join, so the two can never disagree.
  *
  * `factor` (chosen/original servings, default 1) goes through `scaleQuantity`; no caller passes
  * one yet, and at 1 the phrase is the source's own text.
@@ -48,16 +48,19 @@ export function quantityLine(
   return phrases.length > 0 ? phrases.join(' · ') : null
 }
 
+// FGC-44: chips still print a bare number with `String`; the tab uses `formatQty`.
+const legacyNumber = (qty: number | null | undefined): string => (qty != null ? String(qty) : '')
+
 function quantityPhrase(ingredient: Ingredient, factor: number): string {
   const name = ingredient.name.toLowerCase()
-  if (ingredient.qty == null && ingredient.unit === 'to taste') return `${name} to taste`
-
-  let qty =
-    scaleQuantity(ingredient, factor).text ?? (ingredient.qty != null ? String(ingredient.qty) : null)
-  // The source already put the amount in the name ("A handful of fresh coriander" with
-  // qty_text "a handful") — print it once, not "a handful a handful of …".
-  if (qty != null && startsWithWords(name, qty.toLowerCase())) qty = null
-  return [qty, ingredient.unit, name].filter((part): part is string => !!part).join(' ')
+  const trailing = quantityTrailing(ingredient, factor, {
+    formatNumber: legacyNumber,
+    // The source already put the amount in the name ("A handful of fresh coriander" with
+    // qty_text "a handful") — print it once, not "a handful a handful of …".
+    omitAmount: (amount) => startsWithWords(name, amount.toLowerCase()),
+  })
+  if (!trailing) return name
+  return trailing.trim().toLowerCase() === 'to taste' ? `${name} ${trailing}` : `${trailing} ${name}`
 }
 
 /** `text` starts with `prefix` on a word boundary ("a handful of x" / "a handful"). */

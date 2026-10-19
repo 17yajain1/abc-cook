@@ -11,6 +11,7 @@ import golden from './quantityLine.golden.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import { deriveCookingModel } from '@/cooking/model'
 import type { CookingNodeInfo } from '@/cooking/types'
+import { panelIngredientGroups } from '@/plan/ingredientGroups'
 
 const KADAI = kadaiPaneer as RecipePlanResponse
 const model = deriveCookingModel(KADAI)
@@ -97,6 +98,11 @@ describe('quantityLine', () => {
 // Second documented exception: the croissant, kadhi-pakora and pumpkin-pancakes entries were
 // added with the widened golden corpus (docs/plans/golden-corpus-widen.md). They are generated from
 // the current quantity.ts over new fixtures, so they only guard against future change.
+//
+// Third documented exception: FGC-42 (docs/plans/fgc-42-chip-quantity.md): three entries edited by
+// hand, 'to taste salt' -> 'salt to taste' (kadhi x2) and 'to taste sendha namak' -> 'sendha namak
+// to taste' (sabudana). The chips now use the Ingredients tab's quantity text. Every other entry
+// is unchanged.
 // ---------------------------------------------------------------------------
 
 const FIXTURES = fileURLToPath(new URL('../__fixtures__/', import.meta.url))
@@ -200,5 +206,84 @@ describe('quantityPhrases (F2 chips)', () => {
     expect(quantityPhrases(model.nodes.chop_onion, new Map())).toEqual([])
     expect(quantityPhrases(nodeConsuming(), ingredients)).toEqual([])
     expect(quantityLine(nodeConsuming(), ingredients)).toBeNull()
+  })
+})
+
+describe('chips share the Ingredients tab quantity text (FGC-42)', () => {
+  const ing = (over: Partial<Ingredient>): Ingredient => ({
+    id: 'ing_x',
+    name: 'X',
+    group: null,
+    prep_note: null,
+    qty: null,
+    unit: null,
+    ...over,
+  })
+  const chipOf = (item: Ingredient, factor?: number) =>
+    quantityPhrases({ consumes: [item.id] } as CookingNodeInfo, ingredientsById([item]), factor)
+  const tabOf = (item: Ingredient, factor?: number) =>
+    panelIngredientGroups([{ group: null, items: [item] }], factor)[0].items[0].trailing
+
+  const cases: Array<{ label: string; item: Ingredient; factor?: number; chip: string; tab: string }> = [
+    {
+      label: 'duplicate unit',
+      item: ing({ name: 'Flour', qty_text: '1 cup', unit: 'cup', qty_amount: { low: 1, high: null, prefix: '', rest: ' cup' } }),
+      chip: '1 cup flour',
+      tab: '1 cup',
+    },
+    { label: 'duplicate unit, plural', item: ing({ name: 'Flour', qty_text: '2 cups', unit: 'cup' }), chip: '2 cups flour', tab: '2 cups' },
+    {
+      label: 'duplicate unit, glued',
+      item: ing({ name: 'Flour', qty_text: '250g', unit: 'g', qty_amount: { low: 250, high: null, prefix: '', rest: 'g' } }),
+      chip: '250g flour',
+      tab: '250g',
+    },
+    {
+      label: 'duplicate unit at 2/3',
+      item: ing({ name: 'Flour', qty_text: '1 cup', unit: 'cup', qty_amount: { low: 1, high: null, prefix: '', rest: ' cup' } }),
+      factor: 2 / 3,
+      chip: '⅔ cup flour',
+      tab: '⅔ cup',
+    },
+    { label: 'to-taste qty_text', item: ing({ name: 'Salt', qty_text: 'to taste' }), chip: 'salt to taste', tab: 'to taste' },
+    { label: 'to-taste unit', item: ing({ name: 'Salt', unit: 'to taste' }), chip: 'salt to taste', tab: 'to taste' },
+    {
+      // Equals-only (Q2): other text next to a to-taste unit is kept, amount first, like the tab.
+      label: 'to-taste unit with other text',
+      item: ing({ name: 'Salt', unit: 'to taste', qty_text: '1 tsp' }),
+      chip: '1 tsp to taste salt',
+      tab: '1 tsp to taste',
+    },
+    {
+      label: 'range',
+      item: ing({ qty_text: '2-3', unit: 'medium', qty_amount: { low: 2, high: 3, prefix: '', rest: '' } }),
+      chip: '2-3 medium x',
+      tab: '2-3 medium',
+    },
+    {
+      label: 'count with no unit',
+      item: ing({ name: 'Eggs', qty_text: '3', qty_amount: { low: 3, high: null, prefix: '', rest: '' } }),
+      chip: '3 eggs',
+      tab: '3',
+    },
+    {
+      label: 'unparsed amount, factor 1',
+      item: ing({ qty_text: '1 cup (240 ml)', qty_amount: null }),
+      factor: 1,
+      chip: '1 cup (240 ml) x',
+      tab: '1 cup (240 ml)',
+    },
+    {
+      label: 'unparsed amount, factor 2',
+      item: ing({ qty_text: '1 cup (240 ml)', qty_amount: null }),
+      factor: 2,
+      chip: '1 cup (240 ml) x',
+      tab: '1 cup (240 ml)',
+    },
+  ]
+
+  it.each(cases)('$label: chip and tab agree', ({ item, factor, chip, tab }) => {
+    expect(tabOf(item, factor)).toBe(tab)
+    expect(chipOf(item, factor)).toEqual([chip])
   })
 })

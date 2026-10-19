@@ -9,6 +9,10 @@
  * verbatim text alongside it (e.g. the golden fixtures, which predate `qty_text`).
  */
 
+import type { Ingredient } from '@abc-cook/schema'
+
+import { scaleQuantity } from './scaleQuantity'
+
 const FRACTION_DENOMINATORS = [2, 3, 4, 8]
 const FRACTION_TOLERANCE = 1e-6
 
@@ -63,4 +67,23 @@ export function joinQtyUnit(qty: string | null | undefined, unit: string | null 
     if (before === '' || /[\s\d]$/.test(before)) return q
   }
   return `${q} ${u}`
+}
+
+/**
+ * An ingredient's quantity column: its amount (scaled by `factor`, else the source's text, else the
+ * parsed number) joined with its unit by `joinQtyUnit`. `null` when the line states no amount and no
+ * unit. `omitAmount` drops the amount but keeps the unit (the chips' "a handful of ..." rule).
+ */
+export function quantityTrailing(
+  item: Pick<Ingredient, 'qty' | 'qty_text' | 'qty_amount' | 'unit'>,
+  factor = 1,
+  options: {
+    formatNumber?: (qty: number | null | undefined) => string
+    omitAmount?: (amount: string) => boolean
+  } = {},
+): string | null {
+  if (item.qty_text == null && item.qty == null && !item.unit) return null
+  let amount = scaleQuantity(item, factor).text ?? (options.formatNumber ?? formatQty)(item.qty)
+  if (amount && options.omitAmount?.(amount)) amount = ''
+  return joinQtyUnit(amount, item.unit)
 }

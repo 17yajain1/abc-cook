@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatQty, joinQtyUnit } from './quantity'
+import { formatQty, joinQtyUnit, quantityTrailing } from './quantity'
 
 describe('formatQty', () => {
   it('renders a whole number bare', () => {
@@ -90,5 +90,45 @@ describe('joinQtyUnit', () => {
     expect(joinQtyUnit('a pinch', 'pinch')).toBe('a pinch')
     expect(joinQtyUnit('salt to taste', 'to taste')).toBe('salt to taste')
     expect(joinQtyUnit('2', 'to taste')).toBe('2 to taste')
+  })
+})
+
+describe('quantityTrailing', () => {
+  const item = (over: Partial<Parameters<typeof quantityTrailing>[0]>) => ({
+    qty: null,
+    qty_text: null,
+    qty_amount: null,
+    unit: null,
+    ...over,
+  })
+
+  it('is null when the line states no amount and no unit', () => {
+    expect(quantityTrailing(item({}))).toBeNull()
+    expect(quantityTrailing(item({ qty_text: null, unit: '' }))).toBeNull()
+  })
+
+  it('prefers the source text, joined to its unit once', () => {
+    expect(quantityTrailing(item({ qty_text: '1 cup', unit: 'cup' }))).toBe('1 cup')
+    expect(quantityTrailing(item({ qty_text: '2', unit: 'tbsp' }))).toBe('2 tbsp')
+  })
+
+  it('falls back to formatQty for a bare number, and to a custom formatNumber when given', () => {
+    expect(quantityTrailing(item({ qty: 1.5, unit: 'cup' }))).toBe('1 1/2 cup')
+    expect(quantityTrailing(item({ qty: 1.5, unit: 'cup' }), 1, { formatNumber: String })).toBe('1.5 cup')
+  })
+
+  it('keeps a unit-only line', () => {
+    expect(quantityTrailing(item({ unit: 'to taste' }))).toBe('to taste')
+  })
+
+  it('omitAmount drops the amount but keeps the unit', () => {
+    const line = item({ qty_text: 'a handful', unit: 'bunch' })
+    expect(quantityTrailing(line, 1, { omitAmount: (a) => a === 'a handful' })).toBe('bunch')
+    expect(quantityTrailing(line, 1, { omitAmount: () => false })).toBe('a handful bunch')
+  })
+
+  it('scales through scaleQuantity', () => {
+    const line = item({ qty_text: '1', unit: 'cup', qty_amount: { low: 1, high: null, prefix: '', rest: '' } })
+    expect(quantityTrailing(line, 2 / 3)).toBe('⅔ cup')
   })
 })
