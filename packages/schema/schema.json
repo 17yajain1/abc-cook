@@ -1783,6 +1783,18 @@
           "format": "date-time",
           "type": "string"
         },
+        "servings_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServingsChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The cook's chosen servings for this recipe (R4b). Null or absent means as written. Additive in v2. The web app reconciles it against `payload` on read; nothing here checks it against the recipe."
+        },
         "source_key": {
           "description": "Canonical key derived from the source's URL/text; see module docstring.",
           "type": "string"
@@ -1876,6 +1888,75 @@
         "postprocess_version"
       ],
       "type": "object"
+    },
+    "ServingsByBatch": {
+      "description": "The recipe does not state its servings, so the cook picked a relative size (R4).",
+      "properties": {
+        "mode": {
+          "const": "batch",
+          "description": "Discriminator: a relative batch size.",
+          "type": "string"
+        },
+        "multiplier": {
+          "description": "Relative batch size: 0.5, 1, 1.5, 2 or 3.",
+          "enum": [
+            0.5,
+            1.0,
+            1.5,
+            2.0,
+            3.0
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "mode",
+        "multiplier"
+      ],
+      "type": "object"
+    },
+    "ServingsByCount": {
+      "description": "The recipe states how many it serves, so the cook picked a headcount (R4).",
+      "properties": {
+        "chosen": {
+          "description": "The headcount the cook picked.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "mode": {
+          "const": "servings",
+          "description": "Discriminator: a headcount choice.",
+          "type": "string"
+        },
+        "original": {
+          "description": "The servings the recipe stated when this was chosen; a mismatch voids it.",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode",
+        "chosen",
+        "original"
+      ],
+      "type": "object"
+    },
+    "ServingsChoice": {
+      "discriminator": {
+        "mapping": {
+          "batch": "#/$defs/ServingsByBatch",
+          "servings": "#/$defs/ServingsByCount"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ServingsByCount"
+        },
+        {
+          "$ref": "#/$defs/ServingsByBatch"
+        }
+      ]
     },
     "Session": {
       "description": "A contiguous sitting: cooking activity uninterrupted by a session-break wait.\n\nInternal name \u2014 never shown to the user (`CLAUDE.md` \u00a7 Vocabulary). The Plan and\nCooking Mode talk about the *situation* (\"start about 24 hr before you eat\"), never\nthe model.",

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Ingredient, RecipePlanResponse } from '@abc-cook/schema'
+import type {
+  Ingredient,
+  RecipePlanResponse,
+  ServingsByBatch,
+  ServingsByCount,
+  ServingsChoice as GeneratedServingsChoice,
+} from '@abc-cook/schema'
 
 import croissant from '@/__fixtures__/croissant.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
@@ -8,6 +14,7 @@ import kadhi from '@/__fixtures__/kadhi-pakora.plan-response.json'
 import pizza from '@/__fixtures__/pizza-dough.plan-response.json'
 
 import {
+  BATCH_LADDER,
   choiceFactor,
   parseChoice,
   reconcileChoice,
@@ -125,7 +132,7 @@ describe('reconcileChoice (A2)', () => {
   })
   it('clamps chosen into the bounds', () => {
     expect(reconcileChoice(S(99, 4), stated)).toEqual(S(8, 4))
-    expect(reconcileChoice(S(0, 4), stated)).toEqual(S(1, 4))
+    expect(reconcileChoice(S(0, 4), stated)).toBeNull() // a zero headcount is malformed (R4b), not clamped
   })
   it('drops anything malformed', () => {
     for (const bad of [null, undefined, 3, 'x', {}, { mode: 'servings' }, { mode: 'servings', chosen: 'a', original: 4 }, { mode: 'servings', chosen: 2.5, original: 4 }, { mode: 'other' }]) {
@@ -141,6 +148,28 @@ describe('parseChoice (shape only, for the stored session)', () => {
     expect(parseChoice({ mode: 'batch', multiplier: 7 })).toBeNull()
     expect(parseChoice('x')).toBeNull()
     expect(parseChoice(undefined)).toBeNull()
+  })
+  it('rejects a headcount below 1, as the generated schema does (R4b)', () => {
+    expect(parseChoice({ mode: 'servings', chosen: 0, original: 4 })).toBeNull()
+    expect(parseChoice({ mode: 'servings', chosen: -2, original: 4 })).toBeNull()
+    expect(parseChoice({ mode: 'servings', chosen: 1.5, original: 4 })).toBeNull()
+  })
+})
+
+describe('the generated ServingsChoice (R4b)', () => {
+  it('accepts both shapes, and the app re-exports that same type', () => {
+    const count: ServingsByCount = { mode: 'servings', chosen: 6, original: 4 }
+    const batch: ServingsByBatch = { mode: 'batch', multiplier: 1.5 }
+    const generated: GeneratedServingsChoice[] = [count, batch]
+    const app: ServingsChoice[] = generated
+    expect(app.map((c) => choiceFactor(c))).toEqual([1.5, 1.5])
+  })
+  it('BATCH_LADDER satisfies the generated multiplier set, value for value', () => {
+    const ladder: readonly ServingsByBatch['multiplier'][] = BATCH_LADDER
+    expect(ladder).toEqual([0.5, 1, 1.5, 2, 3])
+    // @ts-expect-error 4 is not a batch multiplier
+    const bad: ServingsByBatch = { mode: 'batch', multiplier: 4 }
+    expect(bad.mode).toBe('batch')
   })
 })
 

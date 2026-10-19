@@ -54,6 +54,7 @@ A6. W1 renders must include: A/B/C at original; A at ×½ and ×2 (times note); 
     STOP at W1 for my pick before tests and code.
 A7. R4a gap: between R4a and R4b merges, a saved recipe's choice resets on reopen. Say so in
     R4a's PR body. Keep the gap short.
+    Status: closed by R4b (docs/plans/r4b-servings-persist.md).
 
 ### W1 decisions (2026-10-19)
 

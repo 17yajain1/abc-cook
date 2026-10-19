@@ -642,3 +642,10 @@ unscalable, so dal makhni (stated servings) has 8 of 13 numbered lines unscaled 
 servings, and 0 corpus g/ml lines scale. Consider scaling both numbers when both parse cleanly. Package
 sizes (a measure unit followed by a container word, "15 oz can") stay unscalable. Evidence:
 `notes/r4/w0-table.md`.
+
+### FGC-50 (M5, perf): setServingsChoice rewrites the whole library per tap
+
+`Library.setServingsChoice` (R4b) serializes and writes every saved entry on each stepper tap. Desktop
+Chromium, 20 entries with `original` populated: 7 ms (12 KB source_text ×20) and 13 ms (40 KB ×20).
+Measure on a real phone during M5; debounce (~300 ms trailing, flush on visibilitychange) if a tap
+write exceeds ~16 ms there.
