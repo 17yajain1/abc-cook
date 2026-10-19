@@ -12,7 +12,7 @@ import type { Library } from './store'
  * and its effects are injected, so the whole table runs under Vitest. `App` only
  * renders the outcome.
  *
- * It never deletes anything and never makes an LLM call: the only network calls are
+ * It never deletes anything automatically and never makes an LLM call: the only network calls are
  * `/health` and `/recipes/reprocess`, both free, under one shared time budget.
  */
 

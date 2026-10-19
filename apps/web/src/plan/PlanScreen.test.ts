@@ -1,12 +1,19 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import type { ImportMeta } from '@abc-cook/schema'
+import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
+
+import croissant from '@/__fixtures__/croissant.plan-response.json'
+
+import { derivePlan } from './derive'
 
 import type { Ingredient } from '@abc-cook/schema'
 
 import {
   ingredientCount,
   isCompactHeader,
+  PlanScreen,
   statusLineFor,
   toggleStageSet,
 } from './PlanScreen'
@@ -109,5 +116,36 @@ describe('isCompactHeader (R1 sticky bar)', () => {
 
   it('never shows the bar at scroll 0, even on a page too short to have a header gap', () => {
     expect(isCompactHeader(0, 40, 56)).toBe(false)
+  })
+})
+
+describe('FGC-16 (F1): the status line sits under the title, before the outline', () => {
+  const LINE = 'Plan simplified — steps run one after another.'
+  const meta = { degraded: true, review_recommended: false, warnings: ['degraded'] } as unknown as ImportMeta
+  const html = (staleness?: { kind: 'stale' | 'unchecked' }) =>
+    renderToStaticMarkup(
+      createElement(PlanScreen, {
+        plan: derivePlan(croissant as RecipePlanResponse),
+        onBack: () => {},
+        onStartCooking: () => {},
+        importMeta: meta,
+        staleness,
+      }),
+    )
+
+  it('comes right after the title and before the outline and the tabs', () => {
+    const out = html()
+    const at = out.indexOf(LINE)
+    expect(at).toBeGreaterThan(out.indexOf('</h1>'))
+    expect(at).toBeLessThan(out.indexOf('How this cook goes'))
+    expect(at).toBeLessThan(out.indexOf('Ingredients'))
+  })
+
+  it('shows once', () => {
+    expect(html().split(LINE).length - 1).toBe(1)
+  })
+
+  it('is still absent while the staleness line shows (A5)', () => {
+    expect(html({ kind: 'stale' })).not.toContain(LINE)
   })
 })

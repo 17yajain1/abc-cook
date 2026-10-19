@@ -25,6 +25,11 @@ import { useHomeSurface } from './useHomeSurface'
  * returns to the tab the person was on. */
 let lastTab: Tab = 'home'
 
+/** The tab the shell opens on its next mount (R5: Remove lands on the Cookbook). */
+export function rememberTab(tab: Tab): void {
+  lastTab = tab
+}
+
 /**
  * The browsing shell: three tabs under a floating nav. `App` swaps the whole shell out for
  * a plan, an import or Cooking mode, so everything here is a browsing screen held for

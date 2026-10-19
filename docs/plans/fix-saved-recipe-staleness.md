@@ -17,7 +17,7 @@ All references are to `origin/main` @ 4c04f20.
 
 A bump of `POSTPROCESS_VERSION` (now 8) invalidates only the server result cache. Saved recipes live in `localStorage` and keep the graph and plan they were saved with, for good. Versions 6 and 7 changed `extract/graph.py` (ingredient-id resolution D3, Hindi units D5, offset ≠ duration). Version 8 changed `schedule/scheduler.py`. So a sabudana saved before v6 still shows the false Temper ← chutney edge. That is wrong advice, not approximate timing.
 
-Goal: a saved recipe either shows output from the current pipeline, or is clearly marked as possibly out of date. It is never deleted, and refreshing never costs an LLM call.
+Goal: a saved recipe either shows output from the current pipeline, or is clearly marked as possibly out of date. It is never deleted automatically, and refreshing never costs an LLM call.
 
 **Governing rule:** the version stamp never claims more than the refresh redid.
 

@@ -816,3 +816,57 @@ describe('createLibrary — the persisted servings choice (R4b)', () => {
     })
   })
 })
+
+describe('createLibrary — remove (R5)', () => {
+  function twoEntries() {
+    const storage = new MemoryStorage()
+    const library = createLibrary(storage, clock('2026-10-12T10:00:00Z'))
+    const a = library.save(KADAI)
+    const b = library.save(BIRYANI)
+    if (!a.ok || !b.ok) throw new Error('save failed')
+    return { storage, library, a: a.recipe, b: b.recipe }
+  }
+
+  it('removes by id: get, list and findBySource no longer return it', () => {
+    const { library, a, b } = twoEntries()
+    expect(library.remove(a.id)).toEqual({ ok: true })
+    expect(library.get(a.id)).toBeUndefined()
+    expect(library.list().map((r) => r.id)).toEqual([b.id])
+    expect(library.findBySource(a.source_key)).toBeUndefined()
+  })
+
+  it('an unknown id is a no-op and writes nothing', () => {
+    const { storage, library } = twoEntries()
+    const before = storage.raw('abc-cook:library:v1')
+    expect(library.remove('nope')).toEqual({ ok: true })
+    expect(storage.raw('abc-cook:library:v1')).toBe(before)
+  })
+
+  it('survives a reload', () => {
+    const { storage, library, a, b } = twoEntries()
+    library.remove(a.id)
+    const reopened = createLibrary(storage, clock('2026-10-13T10:00:00Z'))
+    expect(reopened.get(a.id)).toBeUndefined()
+    expect(reopened.get(b.id)).toEqual(b)
+  })
+
+  it('leaves every other entry byte-identical', () => {
+    const { storage, library, a, b } = twoEntries()
+    const before = JSON.stringify(b)
+    library.remove(a.id)
+    const stored = JSON.parse(storage.raw('abc-cook:library:v1') ?? '{}') as { recipes: unknown[] }
+    expect(stored.recipes.map((r) => JSON.stringify(r))).toEqual([before])
+  })
+
+  it('a failed write keeps the entry, in memory and in storage', () => {
+    const { storage, library, a } = twoEntries()
+    const before = storage.raw('abc-cook:library:v1')
+    storage.setItem = () => {
+      throw new Error('quota')
+    }
+    const r = library.remove(a.id)
+    expect(r.ok).toBe(false)
+    expect(library.get(a.id)).toBeDefined()
+    expect(storage.raw('abc-cook:library:v1')).toBe(before)
+  })
+})
