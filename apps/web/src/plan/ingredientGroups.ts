@@ -1,5 +1,4 @@
-import { formatQty, joinQtyUnit } from '../lib/quantity'
-import { scaleQuantity } from '../lib/scaleQuantity'
+import { quantityTrailing } from '../lib/quantity'
 import type { RenderIngredientGroup } from './derive'
 
 /** What `IngredientList` draws: plain strings, so every mapping onto it tests without a
@@ -33,10 +32,7 @@ export function panelIngredientGroups(
       key: item.id,
       name: item.name,
       optional: item.optional === true,
-      trailing:
-        item.qty_text != null || item.qty != null || item.unit
-          ? joinQtyUnit(scaleQuantity(item, factor).text ?? formatQty(item.qty), item.unit)
-          : null,
+      trailing: quantityTrailing(item, factor),
     })),
   }))
 }

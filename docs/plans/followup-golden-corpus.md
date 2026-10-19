@@ -408,6 +408,7 @@ In the frozen chole-bhature output, 23 of 36 ingredients have a `qty` that alrea
 (`apps/web/src/lib/quantity.ts`). That is a mask, not a fix: `_parse_qty` and the stored `unit` still carry
 the duplicate. Fix at the source in R3's `_parse_qty` work: strip a trailing unit from `qty` (or null `unit`)
 when they repeat, and decide whether `qty_text` keeps the model's wording. Re-run the goldens when it lands.
+Since FGC-42 the cooking-mode chips mask it too, through the same `joinQtyUnit` the tab uses.
 
 ### FGC-26 (docs): `DESIGN_SYSTEM.md` does not describe the Home reading screen
 
@@ -569,6 +570,11 @@ imported `qty_text` "to taste" reads "to taste salt" (pinned in `quantityLine.go
 sabudana). R3 keeps factor-1 output byte-identical, so the fix is its own small PR. It must land
 before or inside R4: at factor != 1 the chips would show "⅔ cup cup chole".
 
+**Status (2026-10-19): done.** Plan: docs/plans/fgc-42-chip-quantity.md. The chips and the Ingredients tab
+now build their amount text with one function, `quantityTrailing` (`lib/quantity.ts`). A bare "to taste"
+puts the name first ("salt to taste"); a doubled unit is dropped. Three golden lines were hand-edited.
+Web only: no API change, `POSTPROCESS_VERSION` stays 14.
+
 ### FGC-43 (R4 input): second amounts and package sizes are unscalable
 
 11 corpus lines carry a second amount in `unit` ("Cup (200g)", "cups (190 g)" in cupcakes; "gms / ½ cup",
@@ -584,6 +590,10 @@ On hand goldens with no `qty_text`, chips use `String(qty)` ("1.5 cup water", ma
 while the Ingredients tab uses `formatQty` ("1 1/2 cup"). Production imports always carry `qty_text`, so
 only fixtures show it. R3 keeps both fallbacks as they are.
 
+Since FGC-42 the fix is one argument: `quantityPhrase` passes `formatNumber: legacyNumber` to
+`quantityTrailing`. Dropping it switches the chips to `formatQty` and changes two golden entries (maggi
+`boil_water`, donuts `heat_oil`).
+
 ### FGC-45 (FGC-6 addendum): Hindi number words as quantities are unscalable
 
 आधा, डेढ़, सवा, ढाई (and Hinglish "paav", "sawa") as quantities are not parsed by R3's `parse_amount`: the
@@ -595,3 +605,13 @@ wrote digits). Parse them with FGC-6, which owns Hindi number words.
 Hand-authored goldens are loaded, not built, and most have no `qty_text` (sabudana has it), so their
 `qty_amount` is null and `scaleQuantity` leaves them as written. R4 screenshots need a recipe built through `build_graph`
 (an `ImportOriginal` fixture such as the widened-corpus recipes), not a hand golden.
+
+### FGC-47 (P3, web): the Ingredients tab has no handful rule
+
+The chips drop an amount the name already starts with ("A handful of fresh coriander leaves" with
+`qty_text` "a handful" reads "a handful of fresh coriander leaves"). The tab has no such rule, so the same
+line likely shows the amount twice: the name, then "a handful" in the trailing column. Evidence: a scan of
+every ingredient in the 14 `__fixtures__/*.plan-response.json` for a lower-cased name that equals or starts
+with its `qty_text` found 0 hits (the two API graph fixtures that say "handful" use `unit: "handful"`, not
+the amount-in-name shape). Only the synthetic chip test reaches it. Not fixed in FGC-42; if it matters, pass
+an `omitAmount` rule from `panelIngredientGroups` to `quantityTrailing`.
