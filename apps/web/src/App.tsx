@@ -17,6 +17,7 @@ import { canonicalSourceKey } from './library/sourceKey'
 import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
 import { servingsLocked, sessionBlocksRefresh } from './library/staleness'
 import { choiceFactor, reconcileChoice, servingsControlKind, type ServingsChoice } from './lib/servings'
+import { persistTargetId, shouldPersist, toStored } from './library/servingsPersist'
 import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
@@ -88,8 +89,8 @@ type View =
       staleness?: StalenessMarker
       /** Set only when a pasted URL matched this saved entry (the duplicate path). */
       alreadySaved?: AlreadySaved
-      /** R4: the cook's servings choice for this open recipe; absent or null is as written. It
-       * lives here, not in the library, until R4b: a saved recipe's choice resets on reopen. */
+      /** R4: the cook's servings choice for this open recipe; absent or null is as written. A
+       * saved recipe's choice is opened into it and written back to the library on each change. */
       servingsChoice?: ServingsChoice | null
     }
   | {
@@ -145,6 +146,7 @@ export default function App() {
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,
         payload: recipe.payload,
+        servingsChoice: recipe.servings_choice ?? null,
         staleness: stalenessFor(marker, recipe.payload.graph.source.value, () =>
           setView({
             kind: 'import',
@@ -231,6 +233,9 @@ export default function App() {
       saveState,
       importMeta,
       payload,
+      // The import was auto-saved just before this opens, so a re-import shows the choice
+      // its entry kept; an unsaved import has none.
+      servingsChoice: library.findBySource(canonicalSourceKey(payload.graph.source))?.servings_choice ?? null,
     })
   }, [])
   const importHandlers = useMemo<ImportHandlers>(
@@ -253,10 +258,19 @@ export default function App() {
     setView({ kind: 'cooking', payload: view.payload, planKey: key, returnTo: view, servingsChoice: choice })
   }, [view])
 
-  // R4: the servings control. A choice is tied to the open plan view and goes nowhere else.
-  const setServingsChoice = useCallback((choice: ServingsChoice | null) => {
-    setView((prev) => (prev.kind === 'plan' ? { ...prev, servingsChoice: choice } : prev))
-  }, [])
+  // R4: the servings control. The view updates at once; R4b then writes the choice through to
+  // the saved entry the plan resolves to, here in the handler and not inside the `setView`
+  // updater (StrictMode double-invokes those). A failed write is silent: the view keeps it.
+  const setServingsChoice = useCallback(
+    (choice: ServingsChoice | null) => {
+      if (view.kind !== 'plan') return
+      setView((prev) => (prev.kind === 'plan' ? { ...prev, servingsChoice: choice } : prev))
+      const id = persistTargetId(view.origin, (key) => library.findBySource(key))
+      const locked = servingsLocked(sessionStore.getState(), planKey(view.origin), Date.now())
+      if (shouldPersist(locked, id)) library.setServingsChoice(id, choice)
+    },
+    [view],
+  )
 
   const exitCooking = useCallback(() => {
     setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
@@ -289,6 +303,7 @@ export default function App() {
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,
         payload: recipe.payload,
+        servingsChoice: recipe.servings_choice ?? null,
       }
       setView({ kind: 'cooking', payload: recipe.payload, planKey: targetPlanKey, returnTo: planView })
       return
@@ -324,7 +339,11 @@ export default function App() {
       // A feed recipe stores `import_meta: null`, exactly as the card's "Add to cookbook"
       // does, so the staleness check can tell it from a real import.
       const { payload, importMeta, extras, fromFeed } = prev.origin
-      const result = library.save(payload, fromFeed ? null : importMeta, extras)
+      // Q4: what the open view shows is what gets saved, including on "Update saved copy".
+      const result = library.save(payload, fromFeed ? null : importMeta, {
+        ...extras,
+        servings_choice: toStored(prev.servingsChoice),
+      })
       if (!result.ok) {
         return { ...prev, saveState: { status: 'error', message: result.message } }
       }

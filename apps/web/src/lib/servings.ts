@@ -1,4 +1,4 @@
-import type { ImportMeta, Ingredient } from '@abc-cook/schema'
+import type { ImportMeta, Ingredient, ServingsByBatch, ServingsChoice } from '@abc-cook/schema'
 
 import { hasNumber } from './amountNumber'
 
@@ -73,18 +73,17 @@ export function servingsLine(graph: ServingsSource, importMeta?: ImportMeta | nu
 // ---------------------------------------------------------------------------------------
 
 /** The batch sizes a recipe with no stated servings can be scaled to (A2). */
-export const BATCH_LADDER = [0.5, 1, 1.5, 2, 3] as const
-export type BatchMultiplier = (typeof BATCH_LADDER)[number]
+export type BatchMultiplier = ServingsByBatch['multiplier']
+export const BATCH_LADDER = [0.5, 1, 1.5, 2, 3] as const satisfies readonly BatchMultiplier[]
 
 /**
  * The canonical servings state (A2), shared by the app's view state, `CookingSession` and
- * (R4b) `SavedRecipe`. `servings`: the recipe states how many it serves, so the cook picks
- * a headcount. `batch`: it doesn't, so the cook picks a relative size and no people are
+ * `SavedRecipe`. Generated from the Pydantic model (R4b), so the stored shape and this one
+ * cannot drift. `servings`: the recipe states how many it serves, so the cook picks a
+ * headcount. `batch`: it doesn't, so the cook picks a relative size and no people are
  * counted. `null` (or absent) everywhere means factor 1.
  */
-export type ServingsChoice =
-  | { mode: 'servings'; chosen: number; original: number }
-  | { mode: 'batch'; multiplier: BatchMultiplier }
+export type { ServingsChoice }
 
 /** Whether the recipe states its servings: the schema flag, minus the legacy default
  * `servingsLine` already detects through the import warning. */
@@ -132,8 +131,8 @@ const isCount = (value: unknown): value is number => typeof value === 'number' &
 export function parseChoice(value: unknown): ServingsChoice | null {
   if (typeof value !== 'object' || value === null) return null
   const v = value as Record<string, unknown>
-  if (v.mode === 'servings' && Number.isInteger(v.chosen) && isCount(v.original)) {
-    return { mode: 'servings', chosen: v.chosen as number, original: v.original }
+  if (v.mode === 'servings' && isCount(v.chosen) && isCount(v.original)) {
+    return { mode: 'servings', chosen: v.chosen, original: v.original }
   }
   if (v.mode === 'batch' && isBatchMultiplier(v.multiplier)) return { mode: 'batch', multiplier: v.multiplier }
   return null

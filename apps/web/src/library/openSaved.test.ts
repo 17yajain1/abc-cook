@@ -6,6 +6,7 @@ import { ApiError } from '@/api/client'
 import { createServerVersion } from '@/api/serverVersion'
 import type { CookingSession } from '@/cooking/types'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
+import type { ServingsChoice } from '@/lib/servings'
 
 import { openSavedChecked, openSavedNow, type OpenDeps, type OpenOutcome } from './openSaved'
 import { canonicalSourceKey } from './sourceKey'
@@ -275,5 +276,76 @@ describe('openSavedChecked — no original', () => {
     const s = setup({ meta: null, server: 9, feed: { payload: urlPayload('From feed'), postprocessVersion: 9 } })
     await open(s)
     expect(s.library.get(s.id)!.source_key).toBe(canonicalSourceKey(urlPayload().graph.source))
+  })
+})
+
+describe('openSaved — the saved servings choice survives a silent refresh (R4b)', () => {
+  const CHOICE: ServingsChoice = { mode: 'servings', chosen: 5, original: 3 }
+  const withServings = (title: string, servings: number): RecipePlanResponse => {
+    const p = urlPayload(title)
+    return { ...p, graph: { ...p.graph, servings } }
+  }
+  const choiceOf = (out: OpenOutcome) => ('recipe' in out ? out.recipe.servings_choice : undefined)
+
+  it('a reprocess keeps the choice when the servings are the same, and the opened recipe carries it', async () => {
+    const s = setup({ stamp: 8, original: ORIGINAL, server: 9, reprocess: () => Promise.resolve(reprocessed(9)) })
+    s.library.setServingsChoice(s.id, CHOICE)
+    const out = await open(s)
+    expect(choiceOf(out)).toEqual(CHOICE)
+    expect(s.library.get(s.id)!.servings_choice).toEqual(CHOICE)
+    expect(s.library.get(s.id)!.payload.graph.title).toBe('Refreshed')
+  })
+
+  it('a reprocess that changes the stated servings (3 to 4) reconciles the choice away', async () => {
+    const s = setup({
+      stamp: 8,
+      original: ORIGINAL,
+      server: 9,
+      reprocess: () => Promise.resolve({ ...reprocessed(9), payload: withServings('Refreshed', 4) }),
+    })
+    s.library.setServingsChoice(s.id, CHOICE)
+    const out = await open(s)
+    expect(choiceOf(out)).toBeNull()
+    expect(s.library.get(s.id)!.servings_choice).toBeNull()
+  })
+
+  it('a reprocess that makes the servings defaulted reconciles a servings choice away', async () => {
+    const defaulted = withServings('Refreshed', 3)
+    defaulted.graph.servings_stated = false
+    const s = setup({
+      stamp: 8,
+      original: ORIGINAL,
+      server: 9,
+      reprocess: () => Promise.resolve({ ...reprocessed(9), payload: defaulted }),
+    })
+    s.library.setServingsChoice(s.id, CHOICE)
+    expect(choiceOf(await open(s))).toBeNull()
+  })
+
+  it('a feed replacement keeps the choice, and reconciles it when the feed copy states other servings', async () => {
+    const kept = setup({ meta: null, server: 9, feed: { payload: urlPayload('From feed'), postprocessVersion: 9 } })
+    kept.library.setServingsChoice(kept.id, CHOICE)
+    expect(choiceOf(await open(kept))).toEqual(CHOICE)
+    expect(kept.library.get(kept.id)!.servings_choice).toEqual(CHOICE)
+
+    const changed = setup({ meta: null, server: 9, feed: { payload: withServings('From feed', 6), postprocessVersion: 9 } })
+    changed.library.setServingsChoice(changed.id, CHOICE)
+    expect(choiceOf(await open(changed))).toBeNull()
+    expect(changed.library.get(changed.id)!.servings_choice).toBeNull()
+  })
+
+  it('a stale or unchecked open writes nothing and still reads the saved choice', async () => {
+    const s = setup({ stamp: 8, original: ORIGINAL, server: 9, reprocess: () => Promise.reject(new ApiError(503, 'x')) })
+    s.library.setServingsChoice(s.id, CHOICE)
+    const raw = s.storage.raw()
+    expect(choiceOf(await open(s))).toEqual(CHOICE)
+    expect(s.storage.raw()).toBe(raw)
+  })
+
+  it('opens carry the choice with no server check at all (current stamp)', () => {
+    const s = setup({ stamp: 9 })
+    s.serverVersion.note(9)
+    s.library.setServingsChoice(s.id, CHOICE)
+    expect(choiceOf(openSavedNow(s.deps, s.id)!)).toEqual(CHOICE)
   })
 })

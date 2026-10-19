@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from abc_cook.api.main import create_app
 from abc_cook.schema import (
@@ -24,6 +24,9 @@ from abc_cook.schema import (
     SavedLibrary,
     SavedRecipe,
     ScheduledNode,
+    ServingsByBatch,
+    ServingsByCount,
+    ServingsChoice,
     SourceRef,
     Stage,
     StepRepair,
@@ -258,3 +261,93 @@ def test_saved_recipe_v2_round_trips_original_stamp_and_edits() -> None:
         ],
     )
     assert SavedRecipe.model_validate_json(saved.model_dump_json()) == saved
+
+
+def _kadai_saved(**extra: object) -> SavedRecipe:
+    client = TestClient(create_app())
+    payload = RecipePlanResponse.model_validate(client.get("/recipes/kadai-paneer/plan").json())
+    return SavedRecipe(
+        id="s1",
+        source_key="text:x",
+        saved_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        payload=payload,
+        **extra,  # type: ignore[arg-type]
+    )
+
+
+def test_saved_recipe_servings_choice_defaults_to_none_and_round_trips() -> None:
+    """R4b: the field is additive in v2; absent means factor 1."""
+    saved = _kadai_saved()
+    assert saved.servings_choice is None
+    assert SavedRecipe.model_validate_json(saved.model_dump_json()) == saved
+
+
+@pytest.mark.parametrize(
+    "choice",
+    [
+        ServingsByCount(mode="servings", chosen=6, original=4),
+        ServingsByBatch(mode="batch", multiplier=1.5),
+        ServingsByBatch(mode="batch", multiplier=0.5),
+        ServingsByBatch(mode="batch", multiplier=3.0),
+    ],
+)
+def test_saved_recipe_round_trips_a_servings_choice(
+    choice: ServingsByCount | ServingsByBatch,
+) -> None:
+    saved = _kadai_saved(servings_choice=choice)
+    again = SavedRecipe.model_validate_json(saved.model_dump_json())
+    assert again == saved
+    assert again.servings_choice == choice
+
+
+def test_servings_choice_is_discriminated_on_mode() -> None:
+    adapter = TypeAdapter(ServingsChoice)
+    count = adapter.validate_python({"mode": "servings", "chosen": 6, "original": 4})
+    batch = adapter.validate_python({"mode": "batch", "multiplier": 2})
+    assert isinstance(count, ServingsByCount)
+    assert isinstance(batch, ServingsByBatch)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"mode": "batch", "multiplier": 0.7},
+        {"mode": "batch", "multiplier": 4},
+        {"mode": "servings", "chosen": 0, "original": 4},
+        {"mode": "servings", "chosen": 6, "original": 0},
+        {"mode": "pinch", "chosen": 2, "original": 4},
+    ],
+)
+def test_servings_choice_rejects_values_outside_the_closed_set(bad: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        TypeAdapter(ServingsChoice).validate_python(bad)
+    with pytest.raises(ValidationError):
+        _kadai_saved(servings_choice=bad)
+
+
+@pytest.mark.parametrize("wire", ["1", "2", "1.0", "0.5", "3"])
+def test_batch_multiplier_accepts_js_written_integers(wire: str) -> None:
+    """Q1: `JSON.stringify(1)` is `1`, not `1.0`; the float field must take both."""
+    raw = f'{{"mode": "batch", "multiplier": {wire}}}'
+    parsed = TypeAdapter(ServingsChoice).validate_json(raw)
+    assert isinstance(parsed, ServingsByBatch)
+    assert parsed.multiplier == float(wire)
+
+
+def test_a_v2_library_without_the_field_still_validates() -> None:
+    saved = _kadai_saved()
+    body = saved.model_dump(mode="json", exclude={"servings_choice"})
+    assert "servings_choice" not in body
+    library = SavedLibrary.model_validate({"version": 2, "recipes": [body]})
+    assert library.recipes[0].servings_choice is None
+
+
+def test_servings_choice_json_schema_is_a_named_enum_def() -> None:
+    """The generated TS depends on this: its own `$def` and a closed multiplier set."""
+    schema = SavedLibrary.model_json_schema()
+    defs = schema["$defs"]
+    assert {"ServingsChoice", "ServingsByCount", "ServingsByBatch"} <= set(defs)
+    assert defs["ServingsByBatch"]["properties"]["multiplier"]["enum"] == [0.5, 1.0, 1.5, 2.0, 3.0]
+    field = defs["SavedRecipe"]["properties"]["servings_choice"]
+    assert field["anyOf"][0] == {"$ref": "#/$defs/ServingsChoice"}

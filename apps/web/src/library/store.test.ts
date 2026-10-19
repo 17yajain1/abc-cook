@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { ImportMeta, ImportOriginal, RecipePlanResponse } from '@abc-cook/schema'
 
+import { choiceFactor, SERVINGS_DEFAULTED_WARNING, type ServingsChoice } from '@/lib/servings'
+
 import { canonicalSourceKey } from './sourceKey'
 import { createLibrary, type StorageLike } from './store'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
@@ -544,5 +546,273 @@ describe('createLibrary — refresh in place (B1)', () => {
     const result = library.refresh(saved.recipe.id, { payload: refreshed, import_meta: null, postprocess_version: 9 })
     expect(result.ok).toBe(false)
     expect(library.get(saved.recipe.id)?.payload.graph.title).toBe(KADAI.graph.title)
+  })
+})
+
+describe('createLibrary — the persisted servings choice (R4b)', () => {
+  const S = (chosen: number, original: number): ServingsChoice => ({ mode: 'servings', chosen, original })
+  const B = (multiplier: 0.5 | 1 | 1.5 | 2 | 3): ServingsChoice => ({ mode: 'batch', multiplier })
+  // Same source as KADAI, so it is the same saved entry; only the servings facts differ.
+  const withServings = (servings: number, stated = true): RecipePlanResponse => ({
+    ...KADAI,
+    graph: { ...KADAI.graph, servings, servings_stated: stated },
+  })
+  const LEGACY_META: ImportMeta = { ...CLEAN_META, warnings: [SERVINGS_DEFAULTED_WARNING] }
+
+  function seeded(extra: Record<string, unknown>, payload: RecipePlanResponse = KADAI, meta: ImportMeta | null = CLEAN_META) {
+    const storage = new MemoryStorage()
+    seed(storage, {
+      version: 2,
+      recipes: [v1Entry('a', payload, { import_meta: meta, postprocess_version: 9, original: null, edits: [], ...extra })],
+    })
+    return { storage, library: createLibrary(storage, clock('2026-09-15T10:00:00Z')) }
+  }
+
+  describe('reading', () => {
+    it('an entry saved before the field reads as null, which is factor 1, and storage is not rewritten', () => {
+      const { storage, library } = seeded({})
+      const raw = storage.raw(KEY)
+      expect(library.get('a')!.servings_choice).toBeNull()
+      expect(choiceFactor(library.get('a')!.servings_choice)).toBe(1)
+      expect(storage.raw(KEY)).toBe(raw)
+    })
+
+    it('a valid stored choice is kept', () => {
+      expect(seeded({ servings_choice: S(5, 3) }).library.get('a')!.servings_choice).toEqual(S(5, 3))
+      expect(seeded({ servings_choice: B(2) }, withServings(4, false)).library.get('a')!.servings_choice).toEqual(B(2))
+    })
+
+    it.each([
+      ['a string', 'six'],
+      ['a number', 6],
+      ['an off-ladder multiplier', { mode: 'batch', multiplier: 4 }],
+      ['a zero headcount', { mode: 'servings', chosen: 0, original: 3 }],
+      ['an unknown mode', { mode: 'pinch', chosen: 2, original: 3 }],
+    ])('%s reads as null; the entry and every other field are kept', (_name, bad) => {
+      const stored = v1Entry('a', KADAI, {
+        import_meta: CLEAN_META,
+        postprocess_version: 9,
+        original: null,
+        edits: [],
+        servings_choice: bad,
+      })
+      const storage = new MemoryStorage()
+      seed(storage, { version: 2, recipes: [stored] })
+      const got = createLibrary(storage).get('a')! as unknown as Record<string, unknown>
+      expect(got).toBeDefined()
+      expect(got.servings_choice).toBeNull()
+      for (const [k, v] of Object.entries(stored)) if (k !== 'servings_choice') expect(got[k]).toEqual(v)
+    })
+
+    it('drops a choice whose original no longer matches the recipe servings', () => {
+      expect(seeded({ servings_choice: S(6, 4) }).library.get('a')!.servings_choice).toBeNull()
+    })
+
+    it('drops a servings choice when the recipe went from stated to defaulted, by flag or by the legacy warning', () => {
+      expect(seeded({ servings_choice: S(5, 3) }, withServings(3, false)).library.get('a')!.servings_choice).toBeNull()
+      expect(seeded({ servings_choice: S(5, 3) }, KADAI, LEGACY_META).library.get('a')!.servings_choice).toBeNull()
+    })
+
+    it('drops a batch choice when the recipe went from defaulted to stated', () => {
+      expect(seeded({ servings_choice: B(2) }).library.get('a')!.servings_choice).toBeNull()
+    })
+
+    it('clamps chosen into the bounds', () => {
+      expect(seeded({ servings_choice: S(99, 3) }).library.get('a')!.servings_choice).toEqual(S(7, 3))
+    })
+  })
+
+  describe('setServingsChoice', () => {
+    function two() {
+      const storage = new MemoryStorage()
+      let t = '2026-09-15T10:00:00Z'
+      const library = createLibrary(storage, () => new Date(t))
+      const first = library.save(KADAI)
+      t = '2026-09-15T11:00:00Z'
+      const second = library.save(BIRYANI)
+      if (!first.ok || !second.ok) throw new Error('save failed')
+      return { storage, library, first: first.recipe, second: second.recipe }
+    }
+
+    it('writes the choice and leaves updated_at, saved_at, everything else and the list order alone', () => {
+      const { library, first } = two()
+      const before = library.get(first.id)!
+      const orderBefore = library.list().map((r) => r.id)
+
+      const result = library.setServingsChoice(first.id, S(5, 3))
+      expect(result.ok).toBe(true)
+      const after = library.get(first.id)! as unknown as Record<string, unknown>
+      expect(after.servings_choice).toEqual(S(5, 3))
+      for (const [k, v] of Object.entries(before)) if (k !== 'servings_choice') expect(after[k]).toEqual(v)
+      expect(library.list().map((r) => r.id)).toEqual(orderBefore)
+    })
+
+    it('survives a reload', () => {
+      const { storage, library, first } = two()
+      library.setServingsChoice(first.id, S(5, 3))
+      expect(createLibrary(storage).get(first.id)!.servings_choice).toEqual(S(5, 3))
+    })
+
+    it('factor 1 writes null, both for the original headcount and for batch x1', () => {
+      const { storage, library, first, second } = two()
+      library.setServingsChoice(first.id, S(5, 3))
+      expect(library.setServingsChoice(first.id, S(3, 3))).toMatchObject({ ok: true, recipe: { servings_choice: null } })
+      expect(createLibrary(storage).get(first.id)!.servings_choice).toBeNull()
+      expect(library.setServingsChoice(second.id, null)).toMatchObject({ ok: true, recipe: { servings_choice: null } })
+    })
+
+    it('reconciles against the entry before writing: a choice for other servings is stored as null', () => {
+      const { library, first } = two()
+      library.setServingsChoice(first.id, S(6, 4))
+      expect(library.get(first.id)!.servings_choice).toBeNull()
+    })
+
+    it('an unknown id is {ok:false} and changes nothing', () => {
+      const { storage, library } = two()
+      const raw = storage.raw(KEY)
+      const list = library.list()
+      expect(library.setServingsChoice('nope', S(5, 3)).ok).toBe(false)
+      expect(storage.raw(KEY)).toBe(raw)
+      expect(library.list()).toEqual(list)
+    })
+
+    it('a failed write is {ok:false} and leaves the list unchanged', () => {
+      const { storage, library, first } = two()
+      const list = library.list()
+      storage.setItem = () => {
+        throw new Error('QuotaExceededError')
+      }
+      expect(library.setServingsChoice(first.id, S(5, 3)).ok).toBe(false)
+      expect(library.list()).toEqual(list)
+    })
+  })
+
+  describe('save', () => {
+    const savedFor = (library: ReturnType<typeof createLibrary>, id: string) => library.get(id)!.servings_choice
+
+    it('a new entry takes the provided choice, or null', () => {
+      const a = createLibrary(new MemoryStorage())
+      const withChoice = a.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!withChoice.ok) throw new Error('save failed')
+      expect(withChoice.recipe.servings_choice).toEqual(S(5, 3))
+
+      const b = createLibrary(new MemoryStorage())
+      const plain = b.save(KADAI)
+      if (!plain.ok) throw new Error('save failed')
+      expect(plain.recipe.servings_choice).toBeNull()
+    })
+
+    it('a replace with the extra undefined keeps the existing choice', () => {
+      const library = createLibrary(new MemoryStorage())
+      const first = library.save(KADAI)
+      if (!first.ok) throw new Error('save failed')
+      library.setServingsChoice(first.recipe.id, S(5, 3))
+
+      const again = library.save(KADAI, CLEAN_META, { postprocess_version: 9 })
+      expect(again.ok && again.replaced).toBe(true)
+      expect(savedFor(library, first.recipe.id)).toEqual(S(5, 3))
+    })
+
+    it('a replace with a provided choice wins over the existing one; null clears it', () => {
+      const library = createLibrary(new MemoryStorage())
+      const first = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!first.ok) throw new Error('save failed')
+
+      library.save(KADAI, CLEAN_META, { servings_choice: S(2, 3) })
+      expect(savedFor(library, first.recipe.id)).toEqual(S(2, 3))
+      library.save(KADAI, CLEAN_META, { servings_choice: null })
+      expect(savedFor(library, first.recipe.id)).toBeNull()
+    })
+
+    it('reconciles against the new payload, for a kept and for a provided choice', () => {
+      const library = createLibrary(new MemoryStorage())
+      const first = library.save(KADAI, CLEAN_META, { servings_choice: S(6, 3) })
+      if (!first.ok) throw new Error('save failed')
+
+      library.save(withServings(4), CLEAN_META)
+      expect(savedFor(library, first.recipe.id)).toBeNull()
+
+      library.save(withServings(4), CLEAN_META, { servings_choice: S(6, 3) })
+      expect(savedFor(library, first.recipe.id)).toBeNull()
+      library.save(withServings(4), CLEAN_META, { servings_choice: S(6, 4) })
+      expect(savedFor(library, first.recipe.id)).toEqual(S(6, 4))
+    })
+
+    it('drops the kept choice when the mode changes (stated to defaulted and back)', () => {
+      const library = createLibrary(new MemoryStorage())
+      const first = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!first.ok) throw new Error('save failed')
+      library.save(withServings(3, false), CLEAN_META)
+      expect(savedFor(library, first.recipe.id)).toBeNull()
+
+      library.save(withServings(3, false), CLEAN_META, { servings_choice: B(2) })
+      expect(savedFor(library, first.recipe.id)).toEqual(B(2))
+      library.save(KADAI, CLEAN_META)
+      expect(savedFor(library, first.recipe.id)).toBeNull()
+    })
+
+    it('the quota fallback without original still stores the choice', () => {
+      const storage = new MemoryStorage()
+      const library = createLibrary(storage)
+      const real = storage.setItem.bind(storage)
+      storage.setItem = (k, v) => {
+        if (k === KEY && /"original":\{/.test(v)) throw new Error('QuotaExceededError')
+        real(k, v)
+      }
+      const saved = library.save(KADAI, CLEAN_META, { original: ORIGINAL, servings_choice: S(5, 3) })
+      expect(saved.ok && saved.withoutOriginal).toBe(true)
+      expect(saved.ok && saved.recipe.servings_choice).toEqual(S(5, 3))
+    })
+  })
+
+  describe('refresh', () => {
+    const refreshInput = (payload: RecipePlanResponse, meta: ImportMeta | null = CLEAN_META) => ({
+      payload,
+      import_meta: meta,
+      postprocess_version: 10,
+    })
+
+    it('keeps the choice when the recipe is the same', () => {
+      const library = createLibrary(new MemoryStorage())
+      const saved = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!saved.ok) throw new Error('save failed')
+      const result = library.refresh(saved.recipe.id, refreshInput(KADAI))
+      expect(result.ok && result.recipe.servings_choice).toEqual(S(5, 3))
+    })
+
+    it('drops it when the servings change (3 to 4)', () => {
+      const library = createLibrary(new MemoryStorage())
+      const saved = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!saved.ok) throw new Error('save failed')
+      const result = library.refresh(saved.recipe.id, refreshInput(withServings(4)))
+      expect(result.ok && result.recipe.servings_choice).toBeNull()
+      expect(library.get(saved.recipe.id)!.servings_choice).toBeNull()
+    })
+
+    it('drops it when the mode changes, by flag or by the legacy warning', () => {
+      const library = createLibrary(new MemoryStorage())
+      const saved = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!saved.ok) throw new Error('save failed')
+      expect(library.refresh(saved.recipe.id, refreshInput(withServings(3, false)))).toMatchObject({
+        ok: true,
+        recipe: { servings_choice: null },
+      })
+
+      library.setServingsChoice(saved.recipe.id, null)
+      const again = library.save(KADAI, CLEAN_META, { servings_choice: S(5, 3) })
+      if (!again.ok) throw new Error('save failed')
+      expect(library.refresh(saved.recipe.id, refreshInput(KADAI, LEGACY_META))).toMatchObject({
+        ok: true,
+        recipe: { servings_choice: null },
+      })
+    })
+
+    it('a feed replacement (import_meta null) keeps a stated choice', () => {
+      const library = createLibrary(new MemoryStorage())
+      const saved = library.save(KADAI, null, { servings_choice: S(5, 3) })
+      if (!saved.ok) throw new Error('save failed')
+      const result = library.refresh(saved.recipe.id, refreshInput(KADAI, null))
+      expect(result.ok && result.recipe.servings_choice).toEqual(S(5, 3))
+    })
   })
 })

@@ -10,6 +10,11 @@
  * via the `definition` "JsonValue".
  */
 export type JsonValue = unknown;
+/**
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ServingsChoice".
+ */
+export type ServingsChoice = ServingsByCount | ServingsByBatch;
 
 export interface ABCCookSchema {
   [k: string]: unknown;
@@ -1290,6 +1295,10 @@ export interface SavedRecipe {
    */
   saved_at: string;
   /**
+   * The cook's chosen servings for this recipe (R4b). Null or absent means as written. Additive in v2. The web app reconciles it against `payload` on read; nothing here checks it against the recipe.
+   */
+  servings_choice?: ServingsChoice | null;
+  /**
    * Canonical key derived from the source's URL/text; see module docstring.
    */
   source_key: string;
@@ -1297,6 +1306,42 @@ export interface SavedRecipe {
    * When this entry's payload was last replaced. Equals saved_at on first save.
    */
   updated_at: string;
+}
+/**
+ * The recipe states how many it serves, so the cook picked a headcount (R4).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ServingsByCount".
+ */
+export interface ServingsByCount {
+  /**
+   * The headcount the cook picked.
+   */
+  chosen: number;
+  /**
+   * Discriminator: a headcount choice.
+   */
+  mode: 'servings';
+  /**
+   * The servings the recipe stated when this was chosen; a mismatch voids it.
+   */
+  original: number;
+}
+/**
+ * The recipe does not state its servings, so the cook picked a relative size (R4).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ServingsByBatch".
+ */
+export interface ServingsByBatch {
+  /**
+   * Discriminator: a relative batch size.
+   */
+  mode: 'batch';
+  /**
+   * Relative batch size: 0.5, 1, 1.5, 2 or 3.
+   */
+  multiplier: 0.5 | 1 | 1.5 | 2 | 3;
 }
 /**
  * `GET /health`: liveness plus the version stamp saved recipes are compared against.

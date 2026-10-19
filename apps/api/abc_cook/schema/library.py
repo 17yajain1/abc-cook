@@ -22,9 +22,9 @@ inputs, immutable), `postprocess_version` (which code produced the derived copy)
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, JsonValue
+from pydantic import AfterValidator, BaseModel, Field, JsonValue
 
 from abc_cook.schema.api import RecipePlanResponse
 from abc_cook.schema.normalized import ImportMeta, ImportOriginal
@@ -45,6 +45,41 @@ class RecipeEdit(BaseModel):
     op: str = Field(description="Operation name. The union is defined in R6.")
     anchor: JsonValue = Field(description="Where it applies: an index and the expected value.")
     value: JsonValue = Field(description="The new value.")
+
+
+BATCH_MULTIPLIERS = (0.5, 1.0, 1.5, 2.0, 3.0)
+
+
+def _closed_batch_set(value: float) -> float:
+    if value not in BATCH_MULTIPLIERS:
+        raise ValueError(f"multiplier must be one of {BATCH_MULTIPLIERS}")
+    return value
+
+
+class ServingsByCount(BaseModel):
+    """The recipe states how many it serves, so the cook picked a headcount (R4)."""
+
+    mode: Literal["servings"] = Field(description="Discriminator: a headcount choice.")
+    chosen: int = Field(ge=1, description="The headcount the cook picked.")
+    original: int = Field(
+        ge=1,
+        description="The servings the recipe stated when this was chosen; a mismatch voids it.",
+    )
+
+
+class ServingsByBatch(BaseModel):
+    """The recipe does not state its servings, so the cook picked a relative size (R4)."""
+
+    mode: Literal["batch"] = Field(description="Discriminator: a relative batch size.")
+    # A float, not `Literal[0.5, ...]`: mypy --strict rejects float literals, and JS writes
+    # `1` and `2` for whole numbers. The enum keeps the generated TS a closed union.
+    multiplier: Annotated[float, AfterValidator(_closed_batch_set)] = Field(
+        json_schema_extra={"enum": list(BATCH_MULTIPLIERS)},
+        description="Relative batch size: 0.5, 1, 1.5, 2 or 3.",
+    )
+
+
+type ServingsChoice = Annotated[ServingsByCount | ServingsByBatch, Field(discriminator="mode")]
 
 
 class SavedRecipe(BaseModel):
@@ -86,6 +121,14 @@ class SavedRecipe(BaseModel):
     edits: list[RecipeEdit] = Field(
         default_factory=list,
         description="Reserved for R6. Always empty for now; readers preserve items verbatim.",
+    )
+    servings_choice: ServingsChoice | None = Field(
+        default=None,
+        description=(
+            "The cook's chosen servings for this recipe (R4b). Null or absent means as written. "
+            "Additive in v2. The web app reconciles it against `payload` on read; nothing here "
+            "checks it against the recipe."
+        ),
     )
 
 
