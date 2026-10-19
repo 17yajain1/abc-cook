@@ -1,3 +1,5 @@
+import { isOriginalChoice, type ServingsChoice } from '@/lib/servings'
+
 import { EXTEND_MS } from './constants'
 import { current, foreignLifecycle, handover, lifecycle, skipAllowed } from './select'
 import type {
@@ -103,6 +105,7 @@ export function start(
   planKey: string,
   now: number,
   recipeTitle?: string,
+  servingsChoice?: ServingsChoice | null,
 ): CookingSession | Rejected {
   if (existing != null) return reject('session_exists')
   const nodes: Record<string, NodeState> = {}
@@ -119,6 +122,9 @@ export function start(
     lastTransition: null,
     recipeTitle,
     totalMin: model.totalMin,
+    // R4: only a choice that changes something is kept, so a factor-1 session is
+    // byte-identical to one from before the field existed.
+    ...(servingsChoice != null && !isOriginalChoice(servingsChoice) ? { servingsChoice } : {}),
   }
 }
 

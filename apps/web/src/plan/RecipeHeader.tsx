@@ -1,7 +1,8 @@
 import type { ImportMeta } from '@abc-cook/schema'
 
 import { formatMinutes } from '@/lib/duration'
-import { servingsLine } from '@/lib/servings'
+import { choiceFactor, servingsLine, type ServingsChoice } from '@/lib/servings'
+import { servingsCopy } from '@/lib/servingsCopy'
 import { sourceLink } from '@/lib/source'
 
 import { BackButton } from './BackButton'
@@ -41,6 +42,7 @@ export function RecipeHeader({
   onBack,
   staleness,
   alreadySaved,
+  servingsChoice,
 }: {
   plan: RenderPlan
   save?: SaveControl
@@ -53,8 +55,14 @@ export function RecipeHeader({
   staleness?: StalenessMarker
   /** A pasted link matched this saved recipe: "Already in your Cookbook" + Import again. */
   alreadySaved?: AlreadySaved
+  /** R4: the choice the amounts are drawn at. At a factor other than 1 it replaces the servings
+   * line, so the header never claims the recipe's own servings while the amounts say otherwise. */
+  servingsChoice?: ServingsChoice | null
 }) {
-    const servings = servingsLine(plan.servingsSource, importMeta)
+  const servings =
+    servingsChoice != null && choiceFactor(servingsChoice) !== 1
+      ? servingsCopy(servingsChoice).headerMeta
+      : servingsLine(plan.servingsSource, importMeta)
   const source = sourceLink(plan.sourceUrl)
   const card = plan.outline?.card ?? null
   const timing = headerMeta(plan.summary, plan.totalMin, card != null)

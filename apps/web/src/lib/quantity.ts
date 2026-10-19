@@ -11,6 +11,7 @@
 
 import type { Ingredient } from '@abc-cook/schema'
 
+import { hasNumber } from './amountNumber'
 import { scaleQuantity } from './scaleQuantity'
 
 const FRACTION_DENOMINATORS = [2, 3, 4, 8]
@@ -73,7 +74,28 @@ export function joinQtyUnit(qty: string | null | undefined, unit: string | null 
  * An ingredient's quantity column: its amount (scaled by `factor`, else the source's text, else the
  * parsed number) joined with its unit by `joinQtyUnit`. `null` when the line states no amount and no
  * unit. `omitAmount` drops the amount but keeps the unit (the chips' "a handful of ..." rule).
+ *
+ * `unscaled` is true when the cook asked for a factor other than 1 and this line carries a number
+ * the scaler could not scale (`qty_amount` absent: a second amount, a package size, a payload from
+ * before the field). It is never true for words ("to taste", "a pinch") and never at factor 1.
  */
+export function quantityTrailingScaled(
+  item: Pick<Ingredient, 'qty' | 'qty_text' | 'qty_amount' | 'unit'>,
+  factor = 1,
+  options: {
+    formatNumber?: (qty: number | null | undefined) => string
+    omitAmount?: (amount: string) => boolean
+  } = {},
+): { text: string | null; unscaled: boolean } {
+  if (item.qty_text == null && item.qty == null && !item.unit) return { text: null, unscaled: false }
+  const scaled = scaleQuantity(item, factor)
+  let amount = scaled.text ?? (options.formatNumber ?? formatQty)(item.qty)
+  const unscaled = factor !== 1 && !scaled.scaled && hasNumber(amount)
+  if (amount && options.omitAmount?.(amount)) amount = ''
+  return { text: joinQtyUnit(amount, item.unit), unscaled }
+}
+
+/** `quantityTrailingScaled`'s text: what every quantity render prints. */
 export function quantityTrailing(
   item: Pick<Ingredient, 'qty' | 'qty_text' | 'qty_amount' | 'unit'>,
   factor = 1,
@@ -82,8 +104,13 @@ export function quantityTrailing(
     omitAmount?: (amount: string) => boolean
   } = {},
 ): string | null {
-  if (item.qty_text == null && item.qty == null && !item.unit) return null
-  let amount = scaleQuantity(item, factor).text ?? (options.formatNumber ?? formatQty)(item.qty)
-  if (amount && options.omitAmount?.(amount)) amount = ''
-  return joinQtyUnit(amount, item.unit)
+  return quantityTrailingScaled(item, factor, options).text
+}
+
+/** How many lines at `factor` wear the unscaled marker (the K in "K amounts are for N servings"). */
+export function unscaledCount(
+  items: ReadonlyArray<Pick<Ingredient, 'qty' | 'qty_text' | 'qty_amount' | 'unit'>>,
+  factor: number,
+): number {
+  return items.filter((item) => quantityTrailingScaled(item, factor).unscaled).length
 }

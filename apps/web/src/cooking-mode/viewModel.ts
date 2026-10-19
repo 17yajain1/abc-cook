@@ -20,10 +20,13 @@ import {
 } from '@/cooking/select'
 import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/types'
 import type { HeaderTiming } from '@/lib/duration'
+import { choiceFactor, type ServingsChoice } from '@/lib/servings'
+import { servingsCopy } from '@/lib/servingsCopy'
+import { stepNeedsAmountNote } from '@/lib/stepNote'
 
 import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
-import { quantityPhrases } from './quantity'
+import { quantityChips } from './quantity'
 
 /**
  * The screen-selection and copy layer for Cooking Mode (M3.4), ported from the design
@@ -104,6 +107,18 @@ export interface CookingView {
    * amount + name, never parsed from the instruction). Only on `task`/`handsoff_pending`,
    * which no longer set `qty`; `[]` everywhere else. Display only — not controls. */
   chips: string[]
+  /** R4: `chips`, structured. `text` is exactly the `chips` string at the same index; `unscaled`
+   * marks an amount the scaler could not scale at this factor, drawn with a visual mark, and
+   * `label` is then its accessible name ("2 tsp salt — amount for 4 servings"). The shell
+   * draws these, not `chips`, which stays the string list tests and keys read. */
+  chipItems: Array<{ text: string; unscaled: boolean; label?: string }>
+  /** R4: "Amounts in this step's text are for N servings." — only at a factor other than 1,
+   * and only for a step whose label or instruction quotes an amount. */
+  servingsNote: string | null
+  /** R4 F1: "Times are for N servings. A bigger batch can take longer." Shown once per session,
+   * on its first step screen, when the factor is 2 or more. Later steps and a smaller factor
+   * get `null`. (The resume and conflict entry screen carries the same sentence in its `note`.) */
+  timesNote: string | null
   /** "Added by ABC Cook, not in the video" under the instruction when the step was added
    * (FGC-3). `null` on every other screen and for every step from the source. */
   addedNote: string | null
@@ -298,6 +313,8 @@ function stripFor(
 export interface CookingViewOptions {
   recipeTitle: string
   leaving: boolean
+  /** R4: the session's servings choice (`session.servingsChoice`); absent is factor 1. */
+  choice?: ServingsChoice | null
 }
 
 /** `nextPreview` (P1 #6 plan §C2): runs the current screen's own primary action
@@ -351,8 +368,15 @@ function applyUndoOverride(
 
 /** The entry screen (`open()` -> no stored session): the one screen that quotes a
  * timing figure (M3.4 handoff §1/§5 — corrections table row 5). */
-export function buildEntryView(model: CookingModel, recipeTitle: string, timing: HeaderTiming): CookingView {
+export function buildEntryView(
+  model: CookingModel,
+  recipeTitle: string,
+  timing: HeaderTiming,
+  choice?: ServingsChoice | null,
+): CookingView {
   const degraded = model.warnings.includes('degraded')
+  const scaled = choiceFactor(choice) !== 1
+  const copy = servingsCopy(choice ?? null)
   return {
     screenId: 'entry',
     shell: 'paper',
@@ -360,11 +384,14 @@ export function buildEntryView(model: CookingModel, recipeTitle: string, timing:
     showTopRight: false,
     label: null,
     title: recipeTitle,
-    instr: timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`,
+    instr: `${scaled ? `${copy.entry}. ` : ''}${timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`}`,
     qty: null,
     chips: [],
+    chipItems: [],
+    servingsNote: null,
+    timesNote: null,
     addedNote: null,
-    note: `${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
+    note: `${copy.timesNote && scaled ? `${copy.timesNote} ` : ''}${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
     step: null,
     next: null,
     waitTime: null,
@@ -400,6 +427,9 @@ export function buildCookingView(
     instr: null,
     qty: null,
     chips: [],
+    chipItems: [],
+    servingsNote: null,
+    timesNote: null,
     addedNote: null,
     note: null,
     step: null,
@@ -420,14 +450,22 @@ export function buildCookingView(
     // instruction follows it untruncated — no `splitCopy` on the task screen.
     v.label = n.label
     v.title = n.instruction
-    v.chips = quantityPhrases(n, ingredients)
+    const factor = choiceFactor(options.choice)
+    const copy = servingsCopy(options.choice ?? null)
+    const chips = quantityChips(n, ingredients, factor)
+    v.chips = chips.map((chip) => chip.text)
+    v.chipItems = chips.map((chip) =>
+      chip.unscaled ? { ...chip, label: copy.chipLabel(chip.text) } : chip,
+    )
+    v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
     v.addedNote = n.addedLabel
     v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
     v.strip = stripFor(model, session, now, cur)
     if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)
     v.showLink = running(model, session).length > 0
     const pos = stepPosition(model, session)
-    v.step = `Step ${pos.n} of ${pos.total}`
+    v.step = factor !== 1 ? copy.stepMeta(pos.n, pos.total) : `Step ${pos.n} of ${pos.total}`
+    v.timesNote = pos.n === 1 ? copy.timesNote : null
     const preview = nextPreview(model, session, now, cur)
     v.next = preview != null ? `Next: ${preview}` : null
     if (scr.id === 'task') {

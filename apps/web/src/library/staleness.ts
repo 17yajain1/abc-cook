@@ -83,6 +83,26 @@ function nodeTimestamp(node: NodeState): number {
   }
 }
 
+/** Whether a stored session is one the cook is in the middle of: a timer still running, or
+ * any activity inside `ACTIVE_SESSION_MS`. */
+function sessionIsActive(session: CookingSession, now: number): boolean {
+  for (const node of Object.values(session.nodes)) {
+    if (node.state === 'running' && node.endsAt > now) return true
+  }
+  return now - activityAt(session) < ACTIVE_SESSION_MS
+}
+
+/**
+ * Q9: the servings choice is locked while a cook is in progress on this plan: some amounts
+ * are already measured, and a change would mix two batch sizes on one stove. Finishing the
+ * session (or ending it) unlocks it, and so does a session nobody has touched for a day.
+ * Works for any plan key (`server:`, `library:`, `import:`), unlike the refresh rule below.
+ */
+export function servingsLocked(session: CookingSession | null, planKey: string, now: number): boolean {
+  if (session == null || session.planKey !== planKey || session.finishedAt != null) return false
+  return sessionIsActive(session, now)
+}
+
 /**
  * Whether a refresh of entry `id` must leave it alone because a cook is in progress on
  * it: the stored session is for this entry and either has a timer still running or was
@@ -91,8 +111,5 @@ function nodeTimestamp(node: NodeState): number {
  */
 export function sessionBlocksRefresh(session: CookingSession | null, id: string, now: number): boolean {
   if (session == null || session.planKey !== `library:${id}`) return false
-  for (const node of Object.values(session.nodes)) {
-    if (node.state === 'running' && node.endsAt > now) return true
-  }
-  return now - activityAt(session) < ACTIVE_SESSION_MS
+  return sessionIsActive(session, now)
 }

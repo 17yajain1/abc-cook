@@ -1,5 +1,7 @@
 import * as engine from './engine'
 import type { OpenResult } from './engine'
+import { parseChoice, type ServingsChoice } from '@/lib/servings'
+
 import type { CookingModel, CookingSession, Rejected } from './types'
 
 /**
@@ -33,7 +35,7 @@ interface StoredShape {
  * or caching one). `touch`/`end` need no model: neither reads plan/graph data.
  */
 export type SessionAction =
-  | { type: 'start'; model: CookingModel; planKey: string; now: number; recipeTitle?: string }
+  | { type: 'start'; model: CookingModel; planKey: string; now: number; recipeTitle?: string; servingsChoice?: ServingsChoice | null }
   | {
       type: 'replace'
       model: CookingModel
@@ -41,6 +43,7 @@ export type SessionAction =
       expectedPlanKey: string
       now: number
       recipeTitle?: string
+      servingsChoice?: ServingsChoice | null
     }
   | { type: 'startNode'; model: CookingModel; nodeId: string; now: number }
   | { type: 'markDone'; model: CookingModel; nodeId: string; now: number }
@@ -114,7 +117,7 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
     dispatch(action: SessionAction): DispatchResult {
       switch (action.type) {
         case 'start':
-          return applying(engine.start(session, action.model, action.planKey, action.now, action.recipeTitle))
+          return applying(engine.start(session, action.model, action.planKey, action.now, action.recipeTitle, action.servingsChoice))
         case 'replace': {
           // Guard: rejects if `session` no longer matches `expectedPlanKey`.
           // NOTE: this store never re-reads storage outside its own writes and has
@@ -123,7 +126,7 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
           // Pre-existing architectural limitation (verified via manual two-tab
           // test, CP-D), not something this guard is meant to solve.
           if (session?.planKey !== action.expectedPlanKey) return reject('conflict_changed')
-          return applying(engine.start(engine.end(), action.model, action.planKey, action.now, action.recipeTitle))
+          return applying(engine.start(engine.end(), action.model, action.planKey, action.now, action.recipeTitle, action.servingsChoice))
         }
         case 'end':
           return persist(engine.end())
@@ -185,7 +188,16 @@ function readSession(storage: StorageLike, now: () => number): CookingSession | 
     return null
   }
 
-  return parsed.session
+  return parsed.session == null ? null : withValidChoice(parsed.session)
+}
+
+/** A stored `servingsChoice` that isn't one of the two shapes is dropped (factor 1); the
+ * session itself is never lost over it. */
+function withValidChoice(session: CookingSession): CookingSession {
+  if (!('servingsChoice' in session)) return session
+  const { servingsChoice, ...rest } = session
+  const choice = parseChoice(servingsChoice)
+  return choice == null ? rest : { ...rest, servingsChoice: choice }
 }
 
 function writeSession(storage: StorageLike, session: CookingSession | null): { ok: true } | Rejected {

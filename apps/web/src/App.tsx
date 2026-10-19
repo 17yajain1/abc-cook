@@ -15,7 +15,8 @@ import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff
 import type { ImportExtras } from './import/importExtras'
 import { canonicalSourceKey } from './library/sourceKey'
 import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
-import { sessionBlocksRefresh } from './library/staleness'
+import { servingsLocked, sessionBlocksRefresh } from './library/staleness'
+import { choiceFactor, reconcileChoice, servingsControlKind, type ServingsChoice } from './lib/servings'
 import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
@@ -87,8 +88,18 @@ type View =
       staleness?: StalenessMarker
       /** Set only when a pasted URL matched this saved entry (the duplicate path). */
       alreadySaved?: AlreadySaved
+      /** R4: the cook's servings choice for this open recipe; absent or null is as written. It
+       * lives here, not in the library, until R4b: a saved recipe's choice resets on reopen. */
+      servingsChoice?: ServingsChoice | null
     }
-  | { kind: 'cooking'; payload: RecipePlanResponse; planKey: string; returnTo: View }
+  | {
+      kind: 'cooking'
+      payload: RecipePlanResponse
+      planKey: string
+      returnTo: View
+      /** R4: the choice a new session starts with; an open session carries its own. */
+      servingsChoice?: ServingsChoice | null
+    }
   | { kind: 'error'; message: string }
 
 export default function App() {
@@ -237,9 +248,15 @@ export default function App() {
     if (view.kind !== 'plan') return
     const model = deriveCookingModel(view.payload, view.importMeta?.provenance ?? null)
     const key = planKey(view.origin)
-    startIfNone(sessionStore, model, key, Date.now(), view.payload.graph.title)
-    setView({ kind: 'cooking', payload: view.payload, planKey: key, returnTo: view })
+    const choice = startChoiceFor(view)
+    startIfNone(sessionStore, model, key, Date.now(), view.payload.graph.title, choice)
+    setView({ kind: 'cooking', payload: view.payload, planKey: key, returnTo: view, servingsChoice: choice })
   }, [view])
+
+  // R4: the servings control. A choice is tied to the open plan view and goes nowhere else.
+  const setServingsChoice = useCallback((choice: ServingsChoice | null) => {
+    setView((prev) => (prev.kind === 'plan' ? { ...prev, servingsChoice: choice } : prev))
+  }, [])
 
   const exitCooking = useCallback(() => {
     setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
@@ -344,15 +361,13 @@ export default function App() {
       )
     case 'plan':
       return (
-        <PlanScreen
+        <PlanRoute
           key={planKey(view.origin)}
-          plan={view.plan}
+          view={view}
           onBack={backToHome}
           onStartCooking={startCooking}
-          save={saveControlFor(view.origin, view.saveState, saveCurrent)}
-          importMeta={view.importMeta}
-          staleness={view.staleness}
-          alreadySaved={view.alreadySaved}
+          onSave={saveCurrent}
+          onServingsChoiceChange={setServingsChoice}
         />
       )
     case 'cooking':
@@ -364,6 +379,7 @@ export default function App() {
             view.returnTo.kind === 'plan' ? (view.returnTo.importMeta?.provenance ?? null) : null
           }
           planKey={view.planKey}
+          servingsChoice={view.servingsChoice ?? null}
           store={sessionStore}
           onExit={exitCooking}
           onGoTo={goToConflict}
@@ -386,6 +402,54 @@ export default function App() {
         />
       )
   }
+}
+
+/**
+ * The recipe page, with the servings lock read once per mount. Q9: while a cook is in
+ * progress on this plan the choice is locked, and the amounts shown are the ones that
+ * session started with. `now` is read in a state initializer (never in render) and the page
+ * remounts whenever the cook comes back to it, so the lock is as fresh as the navigation.
+ */
+function PlanRoute({
+  view,
+  onBack,
+  onStartCooking,
+  onSave,
+  onServingsChoiceChange,
+}: {
+  view: Extract<View, { kind: 'plan' }>
+  onBack: () => void
+  onStartCooking: () => void
+  onSave: () => void
+  onServingsChoiceChange: (choice: ServingsChoice | null) => void
+}) {
+  const [now] = useState(() => Date.now())
+  const session = sessionStore.getState()
+  const locked = servingsLocked(session, planKey(view.origin), now)
+  return (
+    <PlanScreen
+      plan={view.plan}
+      onBack={onBack}
+      onStartCooking={onStartCooking}
+      save={saveControlFor(view.origin, view.saveState, onSave)}
+      importMeta={view.importMeta}
+      staleness={view.staleness}
+      alreadySaved={view.alreadySaved}
+      servingsChoice={locked ? (session?.servingsChoice ?? null) : (view.servingsChoice ?? null)}
+      servingsLocked={locked}
+      onServingsChoiceChange={onServingsChoiceChange}
+    />
+  )
+}
+
+/** R4: the choice a new session starts with: the view's, made safe for this plan, and none at
+ * all for a recipe whose amounts can't be scaled (gated) or a choice that changes nothing. */
+function startChoiceFor(view: Extract<View, { kind: 'plan' }>): ServingsChoice | null {
+  const source = view.plan.servingsSource
+  const lines = view.plan.ingredientGroups.flatMap((g) => g.items)
+  if (servingsControlKind(source, view.importMeta, lines) === 'gated') return null
+  const choice = reconcileChoice(view.servingsChoice, source, view.importMeta)
+  return choice != null && choiceFactor(choice) !== 1 ? choice : null
 }
 
 /** Maps the open path's marker to what `PlanScreen` renders. Re-import needs a URL to

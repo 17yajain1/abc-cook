@@ -2,12 +2,14 @@ import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
+import type { ServingsChoice } from '@/lib/servings'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
 import type { AlreadySaved } from './AlreadySavedNotice'
 import { IngredientsPanel } from './IngredientsPanel'
+import { panelServings } from './panelServings'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import type { StalenessMarker } from './staleness'
 import { StageCard } from './StageCard'
@@ -70,6 +72,9 @@ export function PlanScreen({
   importMeta,
   staleness,
   alreadySaved,
+  servingsChoice = null,
+  servingsLocked = false,
+  onServingsChoiceChange,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -81,9 +86,16 @@ export function PlanScreen({
   staleness?: StalenessMarker
   /** Set when a pasted link matched this saved recipe: offers Import again. */
   alreadySaved?: AlreadySaved
+  /** R4: the cook's servings choice for this open recipe (`null` = as written). Owned by `App`,
+   * because it travels into the cooking session. */
+  servingsChoice?: ServingsChoice | null
+  /** Q9: a cook is in progress on this plan, so the choice can't change. */
+  servingsLocked?: boolean
+  onServingsChoiceChange?: (choice: ServingsChoice | null) => void
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const statusLine = statusLineFor(importMeta)
+  const servings = panelServings(plan, importMeta, servingsChoice, servingsLocked, onServingsChoiceChange)
   // R1: the recipe page is a Home-register screen (DESIGN_SYSTEM.md § Register: Home and
   // browse screens), so the page behind it takes the Home ground too.
   useHomeSurface(true)
@@ -160,6 +172,7 @@ export function PlanScreen({
           onBack={onBack}
           staleness={staleness}
           alreadySaved={alreadySaved}
+          servingsChoice={servings?.choice}
         />
         {/* A6 stays here, and stays hidden while the staleness line shows under the title. */}
         {!staleness && statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
@@ -177,7 +190,7 @@ export function PlanScreen({
         )}
 
         {tab === 'ingredients' ? (
-          <IngredientsPanel groups={plan.ingredientGroups} />
+          <IngredientsPanel groups={plan.ingredientGroups} servings={servings} />
         ) : (
           <div className="px-5 pt-5">
             {(waitRowsAfter.get(-1) ?? []).map((row, i) => (

@@ -584,6 +584,13 @@ case. R3's `parse_amount` marks all of them unscalable; they show the source tex
 decides how an unscaled line is shown. 0 corpus g/ml lines are scalable (all dual-unit). R4 needs a
 visible "not scaled" marker per line and should report the share of scalable lines per recipe.
 
+**Status (2026-10-19):** R4 plan: docs/plans/r4-servings.md. Done in R4a (web, pending merge): a line
+with a number the scaler can't scale, at a factor other than 1, shows "for N servings" (or "as written" in
+batch mode) under its amount on the Ingredients tab, a recipe-level "K amounts are … — scale them
+yourself." line, and a dashed outline plus an accessible label on its cooking chip. W0 shares:
+cupcakes 4 of 10 numbered lines unscaled, dal makhni 8 of 13, croissant 1 of 7, pumpkin 1 of 12, kadhi and
+pizza 0. Scaling the dual-unit lines themselves is FGC-49.
+
 ### FGC-44 (P3, fixtures): chips print a legacy float where the tab prints a fraction
 
 On hand goldens with no `qty_text`, chips use `String(qty)` ("1.5 cup water", maggi; "1.5 l", donuts)
@@ -606,6 +613,10 @@ Hand-authored goldens are loaded, not built, and most have no `qty_text` (sabuda
 `qty_amount` is null and `scaleQuantity` leaves them as written. R4 screenshots need a recipe built through `build_graph`
 (an `ImportOriginal` fixture such as the widened-corpus recipes), not a hand golden.
 
+**Status (2026-10-19):** R4 plan: docs/plans/r4-servings.md. R4a's W0 table
+(`notes/r4/w0-table.md`) lists scalable and numbered lines for every web fixture and corpus recipe: all
+8 hand goldens are gated (no `qty_amount`), and R4a's renders use kadhi, pizza and croissant, which are built.
+
 ### FGC-47 (P3, web): the Ingredients tab has no handful rule
 
 The chips drop an amount the name already starts with ("A handful of fresh coriander leaves" with
@@ -615,3 +626,19 @@ every ingredient in the 14 `__fixtures__/*.plan-response.json` for a lower-cased
 with its `qty_text` found 0 hits (the two API graph fixtures that say "handful" use `unit: "handful"`, not
 the amount-in-name shape). Only the synthetic chip test reaches it. Not fixed in FGC-42; if it matters, pass
 an `omitAmount` rule from `panelIngredientGroups` to `quantityTrailing`.
+
+### FGC-48 (extraction): one ingredient line merges two uses of the same ingredient
+
+Croissant's butter line reads "5 tbsp (50g) for dough and 15 tbsp (150g) for grease", so its chip on the
+kneading step says the whole combined amount while that step's text says "5 tbsp soft butter (50g)". The
+chip is the line's real text, so R4's marker is right to flag it as unscaled, but the two disagree even at
+factor 1. The fix is in extraction: one line per use, or a per-step amount. Found in R4a's W1 renders
+(`notes/r4/a/08-cook-dashed-chip.png`).
+
+### FGC-49 (R5+, parser): dual-unit lines are the main reason Indian recipes don't scale
+
+Lines like "gms / ½ cup", "Cup (200g)", "ml / ¾ cup" carry two amounts. `parse_amount` marks them
+unscalable, so dal makhni (stated servings) has 8 of 13 numbered lines unscaled even at its stated
+servings, and 0 corpus g/ml lines scale. Consider scaling both numbers when both parse cleanly. Package
+sizes (a measure unit followed by a container word, "15 oz can") stay unscalable. Evidence:
+`notes/r4/w0-table.md`.

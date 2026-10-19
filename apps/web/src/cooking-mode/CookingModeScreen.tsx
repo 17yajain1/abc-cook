@@ -7,6 +7,7 @@ import type { SessionStore } from '@/cooking/store'
 import type { SessionConflict } from '@/cooking/types'
 import { useSession } from '@/cooking/useSession'
 import { headerTiming } from '@/lib/duration'
+import type { ServingsChoice } from '@/lib/servings'
 
 import { CookingShell } from './CookingShell'
 import { finishCooking, replaceSession, type SessionFinished } from './finalizeSession'
@@ -39,6 +40,7 @@ export function CookingModeScreen({
   payload,
   provenance = null,
   planKey,
+  servingsChoice = null,
   store,
   onExit,
   onGoTo,
@@ -50,6 +52,9 @@ export function CookingModeScreen({
   /** FGC-3: which steps ABC Cook added; `null` for a plan with no provenance (the label is simply absent). */
   provenance?: GraphProvenance | null
   planKey: string
+  /** R4: the choice a session started from this screen begins with (the plan view's). A session
+   * already in progress carries its own, and that one wins everywhere below. */
+  servingsChoice?: ServingsChoice | null
   store: SessionStore
   onExit: () => void
   /** CP1b: navigates to a conflicting session's own plan, App-level (`App.tsx`'s
@@ -118,6 +123,7 @@ export function CookingModeScreen({
           : buildCookingView(model, openResult.session, now, ingredients, {
               recipeTitle: payload.graph.title,
               leaving,
+              choice: openResult.session.servingsChoice ?? null,
             }).screenId
   useWakeLock(shouldHoldWakeLock(wakeScreenId))
 
@@ -132,7 +138,7 @@ export function CookingModeScreen({
       case 'start':
         runEngine(() => {
           if (pendingReplace == null) {
-            session.start(model, planKey, payload.graph.title)
+            session.start(model, planKey, payload.graph.title, servingsChoice)
             return
           }
           // The second tap: the one persisted write that both ends the blocking
@@ -149,6 +155,7 @@ export function CookingModeScreen({
             payload.graph.title,
             emitCompletion,
             Date.now(),
+            servingsChoice,
           )
           if (result.ok) {
             setPendingReplace(null)
@@ -218,7 +225,7 @@ export function CookingModeScreen({
   // only fires when this screen's own "Start cooking" is tapped (the `dispatchAction`
   // `'start'` case above).
   if (openResult.status === 'conflict' && pendingReplace === openResult.conflict.planKey) {
-    const view = buildEntryView(model, payload.graph.title, timing)
+    const view = buildEntryView(model, payload.graph.title, timing, servingsChoice)
     if (replaceError) view.note = 'Couldn’t save on this device — storage may be full.'
     return (
       <div className="relative h-full overflow-hidden">
@@ -257,10 +264,11 @@ export function CookingModeScreen({
 
   const view: CookingView =
     openResult.status === 'none'
-      ? buildEntryView(model, payload.graph.title, timing)
+      ? buildEntryView(model, payload.graph.title, timing, servingsChoice)
       : buildCookingView(model, openResult.session, now, ingredients, {
           recipeTitle: payload.graph.title,
           leaving,
+          choice: openResult.session.servingsChoice ?? null,
         })
 
   const sheet =

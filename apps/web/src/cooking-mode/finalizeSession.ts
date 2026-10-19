@@ -1,5 +1,6 @@
 import type { DispatchResult, SessionStore } from '@/cooking/store'
 import type { CookingModel, CookingSession } from '@/cooking/types'
+import type { ServingsChoice } from '@/lib/servings'
 import type { CompletionVia, SessionFinished } from '@/metrics/outbox'
 
 export type { CompletionVia, SessionFinished }
@@ -61,9 +62,10 @@ export function replaceSession(
   recipeTitle: string | undefined,
   emit: (event: SessionFinished) => void,
   now: number,
+  servingsChoice?: ServingsChoice | null,
 ): DispatchResult {
   const captured = store.getState()
-  const result = store.dispatch({ type: 'replace', model, planKey, expectedPlanKey, now, recipeTitle })
+  const result = store.dispatch({ type: 'replace', model, planKey, expectedPlanKey, now, recipeTitle, servingsChoice })
   if (result.ok) safeEmit(emit, completionEventFor(captured, 'replace', now))
   return result
 }
