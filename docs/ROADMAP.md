@@ -273,6 +273,9 @@ cooking session. That last number is the only one that matters — the honest qu
 this milestone answers is whether anyone actually cooks with a phone in this mode, or
 whether the plan is admired and then abandoned at the stove.
 
+*R5 decisions (cook history after M5, the Public toggle until H2, no "Took …"):
+`docs/plans/decisions-2026-10-19-r5-end-of-page.md`.*
+
 ---
 
 ## H2 — Public recipes  ·  scope not yet estimated

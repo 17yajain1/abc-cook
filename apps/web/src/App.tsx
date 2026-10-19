@@ -22,11 +22,12 @@ import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
+import { cookOnRecipe, endOfPageFor, removeSavedRecipe } from './plan/endOfPage'
 import type { StalenessMarker } from './plan/staleness'
 import type { AlreadySaved } from './plan/AlreadySavedNotice'
 import type { SaveControl } from './plan/RecipeHeader'
 import { NO_IMPORT_META } from './feed/saveFromFeed'
-import { AppShell } from './shell/AppShell'
+import { AppShell, rememberTab } from './shell/AppShell'
 
 /** Single instance for the app's lifetime — reads `localStorage` once, synchronously,
  * at module load; every save/read after that goes through this same closure (M2.12
@@ -199,6 +200,13 @@ export default function App() {
   // all — the shell's `seeAll` state is lost when it unmounts for the plan.
   const backToHome = useCallback(() => {
     navToken.current += 1
+    setView({ kind: 'home' })
+  }, [])
+  // R5: Remove from Cookbook has already deleted the entry and ended its cook; the person
+  // lands on the Cookbook tab.
+  const afterRemove = useCallback(() => {
+    navToken.current += 1
+    rememberTab('cookbook')
     setView({ kind: 'home' })
   }, [])
   const openImport = useCallback(() => {
@@ -387,6 +395,7 @@ export default function App() {
           onStartCooking={startCooking}
           onSave={saveCurrent}
           onServingsChoiceChange={setServingsChoice}
+          onRemoved={afterRemove}
         />
       )
     case 'cooking':
@@ -435,16 +444,54 @@ function PlanRoute({
   onStartCooking,
   onSave,
   onServingsChoiceChange,
+  onRemoved,
 }: {
   view: Extract<View, { kind: 'plan' }>
   onBack: () => void
   onStartCooking: () => void
   onSave: () => void
   onServingsChoiceChange: (choice: ServingsChoice | null) => void
+  onRemoved: () => void
 }) {
   const [now] = useState(() => Date.now())
   const session = sessionStore.getState()
   const locked = servingsLocked(session, planKey(view.origin), now)
+
+  // R5: the saved entry this page resolves to (`persistTargetId`, the `planKeyFor` rule), if
+  // any. A copied date and Remove exist only with one: an unsaved import has neither.
+  const entryId = persistTargetId(view.origin, (key) => library.findBySource(key))
+  const entry = entryId ? library.get(entryId) : undefined
+  const graphId = view.payload.graph.id
+  const original = entry?.original ?? (view.origin.kind === 'import' ? (view.origin.extras?.original ?? null) : null)
+  const block = endOfPageFor({
+    savedAt: entry?.saved_at ?? null,
+    source: view.payload.graph.source,
+    original,
+    now: new Date(now),
+  })
+  const endOfPage =
+    block || entry
+      ? {
+          block,
+          remove: entry
+            ? {
+                cookInProgress: cookOnRecipe(session, entry.id, graphId),
+                onRemove: () => {
+                  const result = removeSavedRecipe({
+                    library,
+                    sessions: sessionStore,
+                    entryId: entry.id,
+                    graphId,
+                    now: Date.now(),
+                  })
+                  if (!result.ok) return result.message
+                  onRemoved()
+                  return null
+                },
+              }
+            : null,
+        }
+      : undefined
   return (
     <PlanScreen
       plan={view.plan}
@@ -457,6 +504,7 @@ function PlanRoute({
       servingsChoice={locked ? (session?.servingsChoice ?? null) : (view.servingsChoice ?? null)}
       servingsLocked={locked}
       onServingsChoiceChange={onServingsChoiceChange}
+      endOfPage={endOfPage}
     />
   )
 }

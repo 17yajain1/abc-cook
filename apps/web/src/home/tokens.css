@@ -26,6 +26,9 @@
   --color-home-skeleton-2: #f6f0e9;
   --color-home-veg: #2f8a3e;
   --color-home-nonveg: #b3261e;
+  /* R5: the one destructive fill (the Remove confirm's button). Same value as the non-veg
+     mark and deliberately a separate token: that mark is a graphic, this is a label's ground. */
+  --color-home-destructive: #b3261e;
 
   --radius-home-tile: 20px;
   --radius-home-card: 16px;

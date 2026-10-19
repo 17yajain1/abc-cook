@@ -43,6 +43,7 @@ export function RecipeHeader({
   staleness,
   alreadySaved,
   servingsChoice,
+  statusLine,
 }: {
   plan: RenderPlan
   save?: SaveControl
@@ -58,6 +59,9 @@ export function RecipeHeader({
   /** R4: the choice the amounts are drawn at. At a factor other than 1 it replaces the servings
    * line, so the header never claims the recipe's own servings while the amounts say otherwise. */
   servingsChoice?: ServingsChoice | null
+  /** A6 (FGC-16): the import-status line. Sits in the staleness slot, and is hidden while the
+   * staleness line shows, so the two never compete for it. */
+  statusLine?: string | null
 }) {
   const servings =
     servingsChoice != null && choiceFactor(servingsChoice) !== 1
@@ -78,6 +82,7 @@ export function RecipeHeader({
         {plan.title}
       </h1>
       {staleness && <StalenessNotice marker={staleness} />}
+      {!staleness && statusLine && <p className="mt-2 text-[13px] leading-[18px] text-home-ink-2">{statusLine}</p>}
       {/* One action never shows twice: the stale marker's Re-import wins over Import again. */}
       {alreadySaved && !staleness?.onReimport && <AlreadySavedNotice alreadySaved={alreadySaved} />}
       {source && (

@@ -8,6 +8,8 @@ import { useHomeSurface } from '@/shell/useHomeSurface'
 import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
 import type { AlreadySaved } from './AlreadySavedNotice'
+import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
+import type { EndOfPageBlock } from './endOfPage'
 import { IngredientsPanel } from './IngredientsPanel'
 import { panelServings } from './panelServings'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
@@ -75,6 +77,7 @@ export function PlanScreen({
   servingsChoice = null,
   servingsLocked = false,
   onServingsChoiceChange,
+  endOfPage,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -92,6 +95,8 @@ export function PlanScreen({
   /** Q9: a cook is in progress on this plan, so the choice can't change. */
   servingsLocked?: boolean
   onServingsChoiceChange?: (choice: ServingsChoice | null) => void
+  /** R5: the end of the Plan tab. Absent when there is nothing to show. */
+  endOfPage?: { block: EndOfPageBlock | null; remove: RemoveControl | null }
 }) {
   const [tab, setTab] = useState<Tab>('plan')
   const statusLine = statusLineFor(importMeta)
@@ -173,9 +178,8 @@ export function PlanScreen({
           staleness={staleness}
           alreadySaved={alreadySaved}
           servingsChoice={servings?.choice}
+          statusLine={statusLine}
         />
-        {/* A6 stays here, and stays hidden while the staleness line shows under the title. */}
-        {!staleness && statusLine && <p className="px-5 pb-2 text-[13px] text-home-ink-2">{statusLine}</p>}
 
         <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
           {tabs}
@@ -216,6 +220,8 @@ export function PlanScreen({
                   : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
               </p>
             )}
+
+            {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
           </div>
         )}
       </div>

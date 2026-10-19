@@ -306,6 +306,7 @@ status bar, home indicator) is mock device furniture and is not specified here.
 | Thumbnail ground / inner border | `#F1E9E0` / `rgba(234,223,211,0.6)` 1px | Every thumbnail |
 | Skeleton | `#F3ECE4`, `#F6F0E9` | Feed loading bars (2h) |
 | Veg / non-veg mark | `#2F8A3E` / `#B3261E` | Meta row: 12px box, 1px border, 2px radius, 5px dot. **Unchanged**: it is a graphic with fixed, recognised colours, not text, and meets the 3:1 non-text requirement (green 4.35:1 and red 6.5:1 on white; green 4.1:1 on the ground) |
+| Destructive fill (`home-destructive`) | `#B3261E` | R5: the fill of the one irreversible-action button, "Remove" in the Remove-from-Cookbook confirm, with a `#FBF8F4` label: **6.17:1** (measured on the rendered pill). Same value as the non-veg mark and deliberately a **separate token** (`--color-home-destructive`, `home/tokens.css`): that mark is a graphic, this is a label's ground, and the two can diverge. Used nowhere else; the idle "Remove from Cookbook" text button is ink, not red |
 | Sheet scrim | `rgba(35,16,10,0.42)` | Behind the Copy sheet (2e) |
 | Shadow | `0 8px 24px rgba(35,16,10,0.08)` | **The bottom nav only.** Nothing else on Home carries one |
 
@@ -772,6 +773,11 @@ dot is local punctuation joining two clauses inside one of its cells.
 
 Resolved: **an arrow is permitted only where it encodes a dependency. Never as
 affordance, never as ornament.**
+
+*Recorded exception (R2, documented in R5):* the recipe page's "From YouTube ↗" link
+(`RecipeHeader.tsx`) uses `↗` to say the link leaves the app. It shipped in R2 without being
+recorded here. It is the only exception, R5 adds no new `↗`, and the end-of-page block has no
+"Open the original" link because the header already has this one.
 
 | Where | M2 | M2.5 |
 |---|---|---|
@@ -1469,6 +1475,19 @@ page, in the Home register. It adds no new visual grammar: the line is plain sec
 | Re-import | An inline text button below the line, semibold ink with an underline, `min-height` 44px. Shown **only** when the source is a URL import (text and image sources get the line alone), and never during a cook in progress, where no marker is shown at all. It opens the import screen with the URL prefilled; the person taps "Get the plan". | A tap target for a wet thumb, and the LLM spend stays an explicit tap. |
 | No marker | A current plan, a refreshed plan, and a plan with a cook in progress show no line. A refresh is silent. | A refresh that works is not news. |
 | Loading | "Scheduling <title>…", for at most 3 seconds. | The existing verb; the title, not an id. |
+
+## Resolved in R5 (end of the recipe page, 2026-10-19)
+Plan: `docs/plans/r5-end-of-page.md`. Web only; Home register tokens throughout, no new grammar beyond the inline confirm.
+
+| Question | Resolution | Why |
+|---|---|---|
+| End-of-page block | On the **Plan tab only**, after the last stage (or the `savedMin === 0` line): a 1px rule (`home-rule`), "Where this came from" (15px semibold ink), then one 13px secondary-ink line: "{YouTube \| Instagram \| host} · copied 12 Oct", "Pasted text · copied 12 Oct", "Pasted text" (unsaved) or "Copied 12 Oct" (a saved recipe with no link and no paste). The date is the saved entry's `saved_at` in the device's local zone, with the year when it is not this year (`copiedDate`). **Shown only when it has something the header lacks**: a copied date (a saved entry) or a paste. An unsaved link import, and a fixture recipe, show no block. No thumbnail, no creator, no "Open the original", no `↗`. | The header already names the source and links to it. The block adds only what the header cannot: when it was copied, and the text as pasted. |
+| As written | Pasted text only: "Show the recipe as written" / "Hide the recipe as written", a 13px underlined secondary-ink button with a 44px target. It expands in place into a white (`home-surface`) box, `home-mini` radius, 15px ink, `whitespace-pre-wrap`, **capped at 11rem** with an underlined "Show all" shown only when the text overflows the cap. No new screen. Absent for every link import: its `source_text` is grounding text (description, transcript), not the recipe as written (FGC-52). | The cap keeps a long paste from burying the Remove control. |
+| Remove from Cookbook | Only when the plan on screen **has a saved entry** (`persistTargetId`, the same rule as `planKeyFor`), including right after an import that was auto-saved. 15px **ink** text button with an underline, 44px target. Never red at rest (see the `home-destructive` row above). After a removal the person lands on the Cookbook tab. | The entry is found by source key, not by origin, so Remove works after a fresh import and is absent when the save failed. |
+| Inline confirm (pattern) | Tapping Remove replaces the button, in place, with the confirm line (15px ink: "Remove this recipe from your Cookbook? To get it back you'd copy it again.", plus " Your cook in progress ends too." when the stored cook is on this recipe) and two 44px pills: **"Remove"** (`home-destructive` fill, `home-ground` label) and **"Keep it"** (outlined: 1px ink border, ink label). No modal and no browser dialog. A failed write shows "Couldn't remove it. Try again." in terracotta text under the line and keeps the confirm open. The cook is "on this recipe" when its key is `library:<entry id>` or `import:<graph id>` (a cook started before Save keeps its `import:` key). | A destructive action in a kitchen needs a second tap, but a dialog steals focus from a screen that may be timing out. The line says what is lost: the original text goes with the entry. |
+| FGC-16: the "Plan simplified" slot | **F1.** The import-status line ("Plan simplified — steps run one after another.") now sits **directly under the title, in the staleness slot** (`text-[13px]`, secondary ink, 8px below the title), not below the header. It is still **exclusive with the staleness line**: while that shows, the status line is not rendered. Measured at 360 × 697 on a degraded long plan (croissant): the line was at y 635–662 behind the bottom bar (bar top y 561), and is now at y 110–128; at 390 × 844 it is 110–128 too. | The A6 slot below the whole header was below the fold on a long plan, the same reason the staleness line moved under the title (P1 #5). |
+| Bottom clearance | Last block bottom to the bar top, scrolled to the end: 105px with a 119px bar and 88px with the 136px bar (a CTA subline), at both 390 × 844 and 360 × 697. | The scroll padding is fixed, so the end block is never behind the bar. |
+| Drift, noted not fixed | "Finishing → Library" in *Resolved in P1 #6* says "Finished cooking" navigates to the Library, but the code goes Home (`App.tsx`, `onFinish={backToHome}`). Not changed in R5. | Out of scope; recorded so the next reader is not misled. |
 
 ## Still open — classified A (product contract) / B (design calibration) / C (implementation detail)
 

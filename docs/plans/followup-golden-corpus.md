@@ -286,6 +286,12 @@ investigation. One run per recipe can't tell a typical result from an unlucky on
 Check that the "Plan simplified" notice is visible without scrolling at 360 × 697. Do this in R5 at
 the latest.
 
+**Status (2026-10-19): closed by R5 (F1).** Plan: docs/plans/r5-end-of-page.md. Measured at 360 × 697 with
+`degraded` injected (test data only; no web fixture is degraded): on croissant the line was at y 635–662,
+behind the bottom bar (bar top y 561); on kadhi 439–467 and sabudana 553–580, above it. It now sits under
+the title in the staleness slot, at y 110–128 at both 360 × 697 and 390 × 844, and keeps its exclusivity with
+the staleness line (absent while that shows). See FGC-53 for the one case where the exclusivity hides it.
+
 ### FGC-17 (M5): cold-start pre-warm
 
 The first import on a fresh process spent 74 s in `extract`, a one-time cost of importing the
@@ -649,3 +655,28 @@ sizes (a measure unit followed by a container word, "15 oz can") stay unscalable
 Chromium, 20 entries with `original` populated: 7 ms (12 KB source_text ×20) and 13 ms (40 KB ×20).
 Measure on a real phone during M5; debounce (~300 ms trailing, flush on visibilitychange) if a tap
 write exceeds ~16 ms there.
+
+### FGC-51 (H2 prerequisite, backend): a trustworthy creator field on ImportOriginal
+
+Carry the acquisition channel into `ImportOriginal` as a trustworthy creator field. `PRODUCT.md:121-122`
+requires attribution (handle, platform, link back) before a recipe can be listed. Today the channel yt-dlp
+reports (`RawAcquisition.channel`, `acquire/__init__.py:54`) is internal and "never returned by the API";
+`AcquiredSource.channel` rides on `ImportJobResponse.acquired` only and is not persisted
+(`schema/api.py:63-75`); `ImportOriginal.recipe.channel` is LLM output that nothing reads
+(`schema/normalized.py:281`). A change to import post-processing bumps `POSTPROCESS_VERSION`. Not R5: R5
+omits the creator (docs/plans/r5-end-of-page.md, Q5).
+
+### FGC-52 (P3, idea): "what we read" for URL imports
+
+R5 shows the recipe as written only for pasted text (W-b). For URL imports, `ImportOriginal.source_text`
+is the grounding text (description, transcript and blog legs, with a `Channel:` header): it can be tens of
+KB, and a transcript is not "as written". A labelled "what we read" view (W-c) could still help a cook
+check a simplified plan. Revisit after M5.
+
+### FGC-53 (P3, web): a degraded plan hides "Plan simplified" while the staleness line shows
+
+A saved recipe whose plan is degraded and whose refresh fails or returns 422 shows the staleness line and
+hides "Plan simplified". Degraded is set from the `degraded` warning (`import/importMeta.ts:15`) and stored
+with the entry (`import_meta`, read at `App.tsx:147`); the staleness marker is set only on a library open
+(`App.tsx:150`, mapped at `:476-479`, from `library/openSaved.ts:89` and `:92`). R5 keeps the exclusivity as
+decided (FGC-16, A5): no fixture or test combines the two today. Decide later whether both lines should show.

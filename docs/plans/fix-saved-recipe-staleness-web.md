@@ -13,7 +13,7 @@ PR 1 shipped the server side:
 
 The web app still writes v1 (`library/store.ts:102-105`, the workaround), and it throws away `original` and `postprocess_version` on import (`useImportJob.ts:70-82`, `App.tsx:124`). As a result, every recipe saved today becomes needs_reimport later.
 
-PR 2 makes a saved recipe either current or honestly marked. It never deletes anything, and it never makes an LLM call without the user asking for it.
+PR 2 makes a saved recipe either current or honestly marked. It never deletes anything automatically, and it never makes an LLM call without the user asking for it.
 
 ## Step A: findings against current main
 

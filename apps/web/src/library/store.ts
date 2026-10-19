@@ -43,6 +43,8 @@ export interface RefreshInput {
   postprocess_version: number
 }
 
+export type RemoveResult = { ok: true } | { ok: false; message: string }
+
 export type RefreshResult = { ok: true; recipe: SavedRecipe } | { ok: false; message: string }
 
 export interface Library {
@@ -64,6 +66,9 @@ export interface Library {
    * the Cookbook order are untouched. Factor 1 is stored as null, and the value is
    * reconciled against the entry's own payload first. */
   setServingsChoice(id: string, choice: ServingsChoice | null): RefreshResult
+  /** Deletes entry `id` (R5). An unknown id is a no-op that writes nothing. On a failed write
+   * the entry stays, in memory and in storage. Nothing else is touched. */
+  remove(id: string): RemoveResult
 }
 
 /** Builds a `Library` backed by `storage` (`window.localStorage` by default) and reads
@@ -179,6 +184,16 @@ export function createLibrary(
 
       recipes = list
       return { ok: true, recipe }
+    },
+
+    remove(id: string): RemoveResult {
+      if (!recipes.some((r) => r.id === id)) return { ok: true }
+      const list = recipes.filter((r) => r.id !== id)
+      const written = writeLibrary(storage, list)
+      if (!written.ok) return { ok: false, message: "Couldn't remove it. Try again." }
+
+      recipes = list
+      return { ok: true }
     },
   }
 }
