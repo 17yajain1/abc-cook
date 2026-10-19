@@ -1,16 +1,58 @@
+import { choiceFactor, type ServingsChoice } from '@/lib/servings'
+import { servingsCopy } from '@/lib/servingsCopy'
+import { unscaledCount } from '@/lib/quantity'
+
 import type { RenderIngredientGroup } from './derive'
 import { IngredientList } from './IngredientList'
 import { panelIngredientGroups } from './ingredientGroups'
+import { ServingsControl } from './ServingsControl'
+
+/** R4: the servings control's state for this recipe. `choice` is the factor the amounts are
+ * drawn at; it is `null` when the control is gated, and the amounts stay as written. */
+export interface PanelServings {
+  kind: 'live' | 'locked' | 'gated'
+  choice: ServingsChoice | null
+  onChange: (choice: ServingsChoice) => void
+}
 
 /**
  * The Ingredients tab. A plain grouped list — a dead tab is worse than a quiet one.
  * Quantities sit in the same right-aligned tabular column the durations use on the Plan
- * tab, so the two tabs scan the same way.
+ * tab, so the two tabs scan the same way. With `servings`, the control sits above the list
+ * and every amount is drawn at the cook's factor (R4).
  */
-export function IngredientsPanel({ groups }: { groups: RenderIngredientGroup[] }) {
+export function IngredientsPanel({
+  groups,
+  servings,
+}: {
+  groups: RenderIngredientGroup[]
+  servings?: PanelServings
+}) {
+  const choice = servings?.kind === 'gated' ? null : (servings?.choice ?? null)
+  const factor = choiceFactor(choice)
+  const marker = choice != null && factor !== 1 ? servingsCopy(choice).marker : undefined
+  const unscaled = unscaledCount(
+    groups.flatMap((g) => g.items),
+    factor,
+  )
+
   return (
-    <div className="px-5 py-5">
-      <IngredientList groups={panelIngredientGroups(groups)} />
-    </div>
+    <>
+      {servings && (
+        <ServingsControl
+          state={
+            servings.kind === 'gated' || choice == null
+              ? { kind: 'gated' }
+              : servings.kind === 'locked'
+                ? { kind: 'locked', choice }
+                : { kind: 'live', choice, unscaled }
+          }
+          onChange={servings.onChange}
+        />
+      )}
+      <div className="px-5 py-5">
+        <IngredientList groups={panelIngredientGroups(groups, factor, marker)} />
+      </div>
+    </>
   )
 }

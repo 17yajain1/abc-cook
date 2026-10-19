@@ -1,5 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react'
 
+import type { ServingsChoice } from '@/lib/servings'
+
 import type { OpenResult } from './engine'
 import type { DispatchResult, SessionAction, SessionStore } from './store'
 import type { CookingModel, CookingSession } from './types'
@@ -23,8 +25,14 @@ import type { CookingModel, CookingSession } from './types'
 export interface UseSessionResult {
   session: CookingSession | null
   open(model: CookingModel, planKey: string): OpenResult
-  start(model: CookingModel, planKey: string, recipeTitle?: string): DispatchResult
-  replace(model: CookingModel, planKey: string, expectedPlanKey: string, recipeTitle?: string): DispatchResult
+  start(model: CookingModel, planKey: string, recipeTitle?: string, servingsChoice?: ServingsChoice | null): DispatchResult
+  replace(
+    model: CookingModel,
+    planKey: string,
+    expectedPlanKey: string,
+    recipeTitle?: string,
+    servingsChoice?: ServingsChoice | null,
+  ): DispatchResult
   startNode(model: CookingModel, nodeId: string): DispatchResult
   markDone(model: CookingModel, nodeId: string): DispatchResult
   acknowledge(model: CookingModel): DispatchResult
@@ -44,13 +52,13 @@ export function useSession(store: SessionStore): UseSessionResult {
 
   const open = useCallback((model: CookingModel, planKey: string) => store.open(model, planKey, Date.now()), [store])
   const start = useCallback(
-    (model: CookingModel, planKey: string, recipeTitle?: string) =>
-      dispatch({ type: 'start', model, planKey, now: Date.now(), recipeTitle }),
+    (model: CookingModel, planKey: string, recipeTitle?: string, servingsChoice?: ServingsChoice | null) =>
+      dispatch({ type: 'start', model, planKey, now: Date.now(), recipeTitle, servingsChoice }),
     [dispatch],
   )
   const replace = useCallback(
-    (model: CookingModel, planKey: string, expectedPlanKey: string, recipeTitle?: string) =>
-      dispatch({ type: 'replace', model, planKey, expectedPlanKey, now: Date.now(), recipeTitle }),
+    (model: CookingModel, planKey: string, expectedPlanKey: string, recipeTitle?: string, servingsChoice?: ServingsChoice | null) =>
+      dispatch({ type: 'replace', model, planKey, expectedPlanKey, now: Date.now(), recipeTitle, servingsChoice }),
     [dispatch],
   )
   const startNode = useCallback(

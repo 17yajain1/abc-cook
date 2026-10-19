@@ -1,5 +1,7 @@
 import type { Node, Session, WaitWindow } from '@abc-cook/schema'
 
+import type { ServingsChoice } from '@/lib/servings'
+
 /**
  * Session-core types for M3.3 (`s21-M3.3-session-core.md`, plan §D/§L1).
  *
@@ -38,6 +40,11 @@ export interface CookingSession {
    * the session itself to classify a *foreign* session as stale — `staleThresholdMs`
    * requires a `totalMin`, and a foreign open has no `CookingModel` for the other plan. */
   totalMin?: number
+  /** R4: the cook's servings choice, snapshotted at `start()` (A2). Optional and additive:
+   * absent on a session from before R4, on a factor-1 session, and when the stored value
+   * isn't one of the two shapes, all of which mean factor 1. Locked for the session's life
+   * (Q9), so cooking mode reads the amounts it started with, never the plan view's state. */
+  servingsChoice?: ServingsChoice
 }
 
 /** A hands-on node's lifecycle is `pending -> done` or `pending -> deferred -> done`,

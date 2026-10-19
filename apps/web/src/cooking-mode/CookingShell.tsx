@@ -8,10 +8,10 @@ import type { CookingView, Shell } from './viewModel'
  * accent — depth is ground value and rule weight only (`DESIGN_SYSTEM.md`).
  */
 
-const GROUND: Record<Shell, { bg: string; ink: string; ink2: string; meta: string; rule: string }> = {
-  paper: { bg: 'bg-paper', ink: 'text-ink', ink2: 'text-ink-2', meta: 'text-ink-3', rule: 'border-rule' },
-  field: { bg: 'bg-field', ink: 'text-ink', ink2: 'text-ink-2', meta: 'text-ink-2', rule: 'border-rule' },
-  dark: { bg: 'bg-ink', ink: 'text-paper', ink2: 'text-paper/60', meta: 'text-paper/60', rule: 'border-paper/25' },
+const GROUND: Record<Shell, { bg: string; ink: string; ink2: string; meta: string; rule: string; mark: string }> = {
+  paper: { bg: 'bg-paper', ink: 'text-ink', ink2: 'text-ink-2', meta: 'text-ink-3', rule: 'border-rule', mark: 'border-ink-2' },
+  field: { bg: 'bg-field', ink: 'text-ink', ink2: 'text-ink-2', meta: 'text-ink-2', rule: 'border-rule', mark: 'border-ink-2' },
+  dark: { bg: 'bg-ink', ink: 'text-paper', ink2: 'text-paper/60', meta: 'text-paper/60', rule: 'border-paper/25', mark: 'border-paper/60' },
 }
 
 /** The two screens that show a current step (V2.1 hierarchy, 1a order reweighted). */
@@ -82,18 +82,32 @@ export function CookingShell({
             {view.addedNote && (
               <p className={`mt-2 text-[13px] leading-[1.4] ${g.ink2}`}>{view.addedNote}</p>
             )}
+            {/* R4: at a servings factor other than 1, the step's own text still quotes the
+                source's amounts, while the chips below are scaled. Said once, quietly. */}
+            {view.servingsNote && (
+              <p className={`mt-2 text-[13px] leading-[1.4] ${g.ink2}`}>{view.servingsNote}</p>
+            )}
+            {view.timesNote && (
+              <p className={`mt-2 text-[13px] leading-[1.4] ${g.ink2}`}>{view.timesNote}</p>
+            )}
             {/* F2 ingredient chips: amount + name per ingredient, in the slot the quantity
                 line used (16px below the instruction). Display only — a list, not
                 controls: no handler, no button role, no focus. A chip wraps internally only
                 when its phrase cannot fit a full line on its own, so no amount is ever cut. */}
-            {view.chips.length > 0 && (
+            {view.chipItems.length > 0 && (
               <ul role="list" aria-label="Ingredients" className="mt-4 flex flex-wrap gap-x-1.5 gap-y-1">
-                {view.chips.map((chip) => (
+                {/* An amount the scaler could not scale keeps its own text and gets a dashed
+                    ink-2 outline (R4 W1-3) plus an accessible name that says so. The mark is
+                    visual, never text: the phrase itself is unchanged. */}
+                {view.chipItems.map((chip) => (
                   <li
-                    key={chip}
-                    className={`rounded-control border px-2.5 py-[2.25px] text-[14px] leading-[1.25] break-words ${g.rule} ${g.ink}`}
+                    key={chip.text}
+                    aria-label={chip.label}
+                    className={`rounded-control border px-2.5 py-[2.25px] text-[14px] leading-[1.25] break-words ${
+                      chip.unscaled ? `border-dashed ${g.mark}` : g.rule
+                    } ${g.ink}`}
                   >
-                    {chip}
+                    {chip.text}
                   </li>
                 ))}
               </ul>

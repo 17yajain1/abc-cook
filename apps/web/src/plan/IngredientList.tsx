@@ -27,7 +27,16 @@ export function IngredientList({ groups }: { groups: IngredientListGroup[] }) {
                     )}
                   </>
                 }
-                trailing={item.trailing}
+                trailing={
+                  item.note ? (
+                    <>
+                      {item.trailing}
+                      <span className="block text-[12px] font-normal">{item.note}</span>
+                    </>
+                  ) : (
+                    item.trailing
+                  )
+                }
               />
             ))}
           </ul>

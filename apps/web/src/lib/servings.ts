@@ -1,4 +1,6 @@
-import type { ImportMeta } from '@abc-cook/schema'
+import type { ImportMeta, Ingredient } from '@abc-cook/schema'
+
+import { hasNumber } from './amountNumber'
 
 /**
  * P1 #5 §R4 hardening: must match `graph.py`'s `SERVINGS_DEFAULTED_WARNING` verbatim.
@@ -64,4 +66,131 @@ export function servingsLine(graph: ServingsSource, importMeta?: ImportMeta | nu
     return `${servingsText} · ${yieldText}`
   }
   return yieldText ?? servingsText
+}
+
+// ---------------------------------------------------------------------------------------
+// R4: the cook's servings choice. One factor per open recipe; times and steps never change.
+// ---------------------------------------------------------------------------------------
+
+/** The batch sizes a recipe with no stated servings can be scaled to (A2). */
+export const BATCH_LADDER = [0.5, 1, 1.5, 2, 3] as const
+export type BatchMultiplier = (typeof BATCH_LADDER)[number]
+
+/**
+ * The canonical servings state (A2), shared by the app's view state, `CookingSession` and
+ * (R4b) `SavedRecipe`. `servings`: the recipe states how many it serves, so the cook picks
+ * a headcount. `batch`: it doesn't, so the cook picks a relative size and no people are
+ * counted. `null` (or absent) everywhere means factor 1.
+ */
+export type ServingsChoice =
+  | { mode: 'servings'; chosen: number; original: number }
+  | { mode: 'batch'; multiplier: BatchMultiplier }
+
+/** Whether the recipe states its servings: the schema flag, minus the legacy default
+ * `servingsLine` already detects through the import warning. */
+export function servingsStated(source: ServingsSource, importMeta?: ImportMeta | null): boolean {
+  const legacyDefaulted = importMeta?.warnings?.includes(SERVINGS_DEFAULTED_WARNING) ?? false
+  return (source.servings_stated ?? true) && !legacyDefaulted
+}
+
+/** The multiplier for a choice. Missing is 1. Passed on raw: `scaleQuantity` does the
+ * rounding, once, per line. */
+export function choiceFactor(choice: ServingsChoice | null | undefined): number {
+  if (choice == null) return 1
+  const factor = choice.mode === 'servings' ? choice.chosen / choice.original : choice.multiplier
+  return Number.isFinite(factor) && factor > 0 ? factor : 1
+}
+
+/** Q3: 1 up to the larger of double the original and the original plus four. */
+export function servingsBounds(original: number): { min: number; max: number } {
+  return { min: 1, max: Math.max(2 * original, original + 4) }
+}
+
+/** One tap of the stepper. Stops at the ends rather than wrapping. */
+export function stepChoice(choice: ServingsChoice, direction: 1 | -1): ServingsChoice {
+  if (choice.mode === 'servings') {
+    const { min, max } = servingsBounds(choice.original)
+    return { ...choice, chosen: Math.min(max, Math.max(min, choice.chosen + direction)) }
+  }
+  const at = BATCH_LADDER.indexOf(choice.multiplier)
+  const next = Math.min(BATCH_LADDER.length - 1, Math.max(0, at + direction))
+  return { mode: 'batch', multiplier: BATCH_LADDER[next] }
+}
+
+/** Whether the choice leaves every amount as written. */
+export function isOriginalChoice(choice: ServingsChoice | null | undefined): boolean {
+  return choiceFactor(choice) === 1
+}
+
+function isBatchMultiplier(value: unknown): value is BatchMultiplier {
+  return typeof value === 'number' && (BATCH_LADDER as readonly number[]).includes(value)
+}
+
+const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 1
+
+/** Shape check only: a stored value is either one of the two shapes or `null`. */
+export function parseChoice(value: unknown): ServingsChoice | null {
+  if (typeof value !== 'object' || value === null) return null
+  const v = value as Record<string, unknown>
+  if (v.mode === 'servings' && Number.isInteger(v.chosen) && isCount(v.original)) {
+    return { mode: 'servings', chosen: v.chosen as number, original: v.original }
+  }
+  if (v.mode === 'batch' && isBatchMultiplier(v.multiplier)) return { mode: 'batch', multiplier: v.multiplier }
+  return null
+}
+
+/**
+ * A saved or in-memory choice, made safe for the recipe it is about to be applied to (A2).
+ * It drops to `null` (factor 1) when its servings were for a different recipe version
+ * (`original` isn't the payload's `servings`), or when the recipe has since gone from
+ * defaulted to stated or back, which changes which mode applies. `chosen` is clamped into
+ * the Q3 bounds.
+ */
+export function reconcileChoice(
+  choice: unknown,
+  source: ServingsSource,
+  importMeta?: ImportMeta | null,
+): ServingsChoice | null {
+  const parsed = parseChoice(choice)
+  if (parsed == null) return null
+  const stated = servingsStated(source, importMeta)
+  if (parsed.mode === 'batch') return stated ? null : parsed
+  if (!stated || parsed.original !== source.servings) return null
+  const { min, max } = servingsBounds(parsed.original)
+  return { ...parsed, chosen: Math.min(max, Math.max(min, parsed.chosen)) }
+}
+
+/** A1: how many ingredient lines the scaler can act on, and how many carry a number. */
+export function scalability(ingredients: ReadonlyArray<Pick<Ingredient, 'qty_text' | 'qty' | 'qty_amount'>>): {
+  scalable: number
+  numbered: number
+} {
+  let scalable = 0
+  let numbered = 0
+  for (const line of ingredients) {
+    if (line.qty_amount != null) scalable += 1
+    if (hasNumber(line.qty_text)) numbered += 1
+  }
+  return { scalable, numbered }
+}
+
+/**
+ * Which control a recipe gets (A1/A2). `gated` when no line can be scaled (hand goldens,
+ * a payload from before `qty_amount`, a saved recipe whose refresh failed): there is
+ * nothing a factor could act on, so no working control is offered.
+ */
+export function servingsControlKind(
+  source: ServingsSource,
+  importMeta: ImportMeta | null | undefined,
+  ingredients: ReadonlyArray<Pick<Ingredient, 'qty_text' | 'qty' | 'qty_amount'>>,
+): 'servings' | 'batch' | 'gated' {
+  if (scalability(ingredients).scalable === 0) return 'gated'
+  return servingsStated(source, importMeta) ? 'servings' : 'batch'
+}
+
+/** The starting choice for a live control: the recipe as written. */
+export function originalChoice(source: ServingsSource, importMeta?: ImportMeta | null): ServingsChoice {
+  return servingsStated(source, importMeta)
+    ? { mode: 'servings', chosen: source.servings, original: source.servings }
+    : { mode: 'batch', multiplier: 1 }
 }

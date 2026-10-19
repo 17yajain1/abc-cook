@@ -1,5 +1,6 @@
 import type { DispatchResult, SessionStore } from '@/cooking/store'
 import type { CookingModel } from '@/cooking/types'
+import type { ServingsChoice } from '@/lib/servings'
 
 /**
  * P1 #6 (orientation/recovery plan §C5/E6): the one place "start a session if none is
@@ -17,8 +18,9 @@ export function startIfNone(
   planKey: string,
   now: number,
   recipeTitle: string,
+  servingsChoice?: ServingsChoice | null,
 ): DispatchResult {
   const opened = store.open(model, planKey, now)
   if (opened.status !== 'none') return { ok: true, session: store.getState() }
-  return store.dispatch({ type: 'start', model, planKey, now, recipeTitle })
+  return store.dispatch({ type: 'start', model, planKey, now, recipeTitle, servingsChoice })
 }
