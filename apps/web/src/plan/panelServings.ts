@@ -1,4 +1,4 @@
-import type { ImportMeta } from '@abc-cook/schema'
+import type { ImportMeta, Ingredient } from '@abc-cook/schema'
 
 import { choiceFactor, originalChoice, reconcileChoice, servingsControlKind, type ServingsChoice } from '@/lib/servings'
 
@@ -16,9 +16,12 @@ export function panelServings(
   choice: ServingsChoice | null,
   locked: boolean,
   onChange: ((choice: ServingsChoice | null) => void) | undefined,
+  gateLines?: ReadonlyArray<Pick<Ingredient, 'qty_text' | 'qty' | 'qty_amount'>>,
 ): (PanelServings & { choice: ServingsChoice | null }) | undefined {
   if (!onChange) return undefined
-  const lines = plan.ingredientGroups.flatMap((g) => g.items)
+  // A13: whether the control is gated is a fact about the imported recipe. `gateLines` are the
+  // imported rows, so an edit can never switch the control between gated and live.
+  const lines = gateLines ?? plan.ingredientGroups.flatMap((g) => g.items)
   const kind = servingsControlKind(plan.servingsSource, importMeta, lines)
   if (kind === 'gated') return { kind: 'gated', choice: null, onChange }
   const effective =

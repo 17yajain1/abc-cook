@@ -7,9 +7,14 @@
 
 /**
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "JsonValue".
+ * via the `definition` "Amount".
  */
-export type JsonValue = unknown;
+export type Amount = NumberAmount | ToTasteAmount;
+/**
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RecipeEdit".
+ */
+export type RecipeEdit = SetIngredientName | SetIngredientAmount | RemoveIngredient | AddIngredient | SetStepText;
 /**
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
  * via the `definition` "ServingsChoice".
@@ -42,6 +47,121 @@ export interface AcquiredSource {
    * Video or page title, as the source gives it.
    */
   title: string;
+}
+/**
+ * Add an ingredient line the recipe did not have.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "AddIngredient".
+ */
+export interface AddIngredient {
+  /**
+   * When the user made the edit.
+   */
+  created_at: string;
+  /**
+   * Stable id for this edit.
+   */
+  id: string;
+  /**
+   * Discriminator.
+   */
+  op: 'add_ingredient';
+  value: AddValue;
+}
+/**
+ * An ingredient the cook added. `step` links it to a step (R6b); null in R6a.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "AddValue".
+ */
+export interface AddValue {
+  /**
+   * Null for a line with no amount.
+   */
+  amount: Amount | null;
+  /**
+   * 1 to 80 characters, trimmed.
+   */
+  name: string;
+  /**
+   * The step that uses it, or null.
+   */
+  step: StepAnchor | null;
+  /**
+   * The unit as shown, or null.
+   */
+  unit: string | null;
+}
+/**
+ * An amount the cook typed: one number or a range.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NumberAmount".
+ */
+export interface NumberAmount {
+  /**
+   * The high end of a range; null for an exact amount. Always above `low`.
+   */
+  high?: number | null;
+  /**
+   * Discriminator: a number or a range.
+   */
+  kind: 'number';
+  /**
+   * The number, or the low end of a range.
+   */
+  low: number;
+}
+/**
+ * No quantity: the line reads "to taste".
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "ToTasteAmount".
+ */
+export interface ToTasteAmount {
+  /**
+   * Discriminator: no number.
+   */
+  kind: 'to_taste';
+}
+/**
+ * Where a step edit applies: the expected text, with the index as a tiebreak.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "StepAnchor".
+ */
+export interface StepAnchor {
+  expected: StepExpected;
+  /**
+   * Position in `payload.graph.nodes`; breaks a tie.
+   */
+  index: number;
+}
+/**
+ * What the step read when the edit was made.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "StepExpected".
+ */
+export interface StepExpected {
+  /**
+   * `Node.instruction` of the step.
+   */
+  text: string;
+}
+/**
+ * The new amount and unit. `unit` is null for "No unit" and always null for to-taste.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "AmountValue".
+ */
+export interface AmountValue {
+  amount: Amount;
+  /**
+   * The unit as shown, or null for no unit.
+   */
+  unit: string | null;
 }
 /**
  * The internal DAG of a recipe: what the LLM extracts, what the scheduler consumes.
@@ -1130,19 +1250,58 @@ export interface ImportStartResponse {
   job_id: string;
 }
 /**
- * Placeholder envelope for a user edit (R6 fills in the operation union).
- *
- * Edits target the *original* (`ImportOriginal.recipe` ingredient and step indices),
- * never graph node ids, which are derived and can change on a reprocess. `anchor` holds
- * the index plus the value expected there; an edit whose anchor no longer matches after
- * a refresh is kept and marked orphaned, never dropped and never force-applied. Nothing
- * writes these yet: readers preserve them verbatim.
+ * Where an ingredient edit applies: a position in `graph.ingredients` plus its guard.
  *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
- * via the `definition` "RecipeEdit".
+ * via the `definition` "IngredientAnchor".
  */
-export interface RecipeEdit {
-  anchor: JsonValue;
+export interface IngredientAnchor {
+  expected: IngredientExpected;
+  /**
+   * Position in `payload.graph.ingredients`.
+   */
+  index: number;
+}
+/**
+ * What the ingredient line looked like when the edit was made (its anchor's guard).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "IngredientExpected".
+ */
+export interface IngredientExpected {
+  /**
+   * `Ingredient.name` at that index.
+   */
+  name: string;
+  /**
+   * `Ingredient.qty_text` there, or null.
+   */
+  qty_text: string | null;
+  /**
+   * `Ingredient.unit` there, or null.
+   */
+  unit: string | null;
+}
+/**
+ * The new ingredient name.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "NameValue".
+ */
+export interface NameValue {
+  /**
+   * 1 to 80 characters, trimmed.
+   */
+  name: string;
+}
+/**
+ * Rename an ingredient line.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SetIngredientName".
+ */
+export interface SetIngredientName {
+  anchor: IngredientAnchor;
   /**
    * When the user made the edit.
    */
@@ -1152,10 +1311,87 @@ export interface RecipeEdit {
    */
   id: string;
   /**
-   * Operation name. The union is defined in R6.
+   * Discriminator.
    */
-  op: string;
-  value: JsonValue;
+  op: 'set_ingredient_name';
+  value: NameValue;
+}
+/**
+ * Change an ingredient line's amount and unit.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SetIngredientAmount".
+ */
+export interface SetIngredientAmount {
+  anchor: IngredientAnchor;
+  /**
+   * When the user made the edit.
+   */
+  created_at: string;
+  /**
+   * Stable id for this edit.
+   */
+  id: string;
+  /**
+   * Discriminator.
+   */
+  op: 'set_ingredient_amount';
+  value: AmountValue;
+}
+/**
+ * Take an ingredient line off the list.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "RemoveIngredient".
+ */
+export interface RemoveIngredient {
+  anchor: IngredientAnchor;
+  /**
+   * When the user made the edit.
+   */
+  created_at: string;
+  /**
+   * Stable id for this edit.
+   */
+  id: string;
+  /**
+   * Discriminator.
+   */
+  op: 'remove_ingredient';
+}
+/**
+ * Rewrite a step's text. The plan's timing is not recomputed (R6b).
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "SetStepText".
+ */
+export interface SetStepText {
+  anchor: StepAnchor;
+  /**
+   * When the user made the edit.
+   */
+  created_at: string;
+  /**
+   * Stable id for this edit.
+   */
+  id: string;
+  /**
+   * Discriminator.
+   */
+  op: 'set_step_text';
+  value: TextValue;
+}
+/**
+ * The new step text.
+ *
+ * This interface was referenced by `ABCCookSchema`'s JSON-Schema
+ * via the `definition` "TextValue".
+ */
+export interface TextValue {
+  /**
+   * 1 to 1000 characters, trimmed.
+   */
+  text: string;
 }
 /**
  * Every recipe the API can currently serve.
@@ -1270,7 +1506,7 @@ export interface SavedLibrary {
  */
 export interface SavedRecipe {
   /**
-   * Reserved for R6. Always empty for now; readers preserve items verbatim.
+   * The cook's edits (R6), as a patch over `payload`. Readers keep items they do not understand verbatim.
    */
   edits?: RecipeEdit[];
   /**

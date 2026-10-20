@@ -37,6 +37,125 @@
       ],
       "type": "object"
     },
+    "AddIngredient": {
+      "description": "Add an ingredient line the recipe did not have.",
+      "properties": {
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "const": "add_ingredient",
+          "description": "Discriminator.",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/AddValue"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "value"
+      ],
+      "type": "object"
+    },
+    "AddValue": {
+      "description": "An ingredient the cook added. `step` links it to a step (R6b); null in R6a.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Amount"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for a line with no amount."
+        },
+        "name": {
+          "description": "1 to 80 characters, trimmed.",
+          "type": "string"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StepAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The step that uses it, or null."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The unit as shown, or null."
+        }
+      },
+      "required": [
+        "name",
+        "amount",
+        "unit",
+        "step"
+      ],
+      "type": "object"
+    },
+    "Amount": {
+      "discriminator": {
+        "mapping": {
+          "number": "#/$defs/NumberAmount",
+          "to_taste": "#/$defs/ToTasteAmount"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NumberAmount"
+        },
+        {
+          "$ref": "#/$defs/ToTasteAmount"
+        }
+      ]
+    },
+    "AmountValue": {
+      "description": "The new amount and unit. `unit` is null for \"No unit\" and always null for to-taste.",
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/Amount"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The unit as shown, or null for no unit."
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "type": "object"
+    },
     "CookingGraph": {
       "description": "The internal DAG of a recipe: what the LLM extracts, what the scheduler consumes.",
       "properties": {
@@ -689,7 +808,61 @@
       ],
       "type": "object"
     },
-    "JsonValue": {},
+    "IngredientAnchor": {
+      "description": "Where an ingredient edit applies: a position in `graph.ingredients` plus its guard.",
+      "properties": {
+        "expected": {
+          "$ref": "#/$defs/IngredientExpected"
+        },
+        "index": {
+          "description": "Position in `payload.graph.ingredients`.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "index",
+        "expected"
+      ],
+      "type": "object"
+    },
+    "IngredientExpected": {
+      "description": "What the ingredient line looked like when the edit was made (its anchor's guard).",
+      "properties": {
+        "name": {
+          "description": "`Ingredient.name` at that index.",
+          "type": "string"
+        },
+        "qty_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "`Ingredient.qty_text` there, or null."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "`Ingredient.unit` there, or null."
+        }
+      },
+      "required": [
+        "name",
+        "qty_text",
+        "unit"
+      ],
+      "type": "object"
+    },
     "LongWait": {
       "description": "An idle stretch long enough to leave the kitchen.\n\nNot long enough to be a separate sitting (`LONG_WAIT_MIN` <= idle < `SESSION_BREAK_MIN`).",
       "properties": {
@@ -718,6 +891,19 @@
         "end_min",
         "idle_min",
         "host_node_ids"
+      ],
+      "type": "object"
+    },
+    "NameValue": {
+      "description": "The new ingredient name.",
+      "properties": {
+        "name": {
+          "description": "1 to 80 characters, trimmed.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
       ],
       "type": "object"
     },
@@ -1345,6 +1531,38 @@
       ],
       "type": "object"
     },
+    "NumberAmount": {
+      "description": "An amount the cook typed: one number or a range.",
+      "properties": {
+        "high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The high end of a range; null for an exact amount. Always above `low`."
+        },
+        "kind": {
+          "const": "number",
+          "description": "Discriminator: a number or a range.",
+          "type": "string"
+        },
+        "low": {
+          "description": "The number, or the low end of a range.",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "low"
+      ],
+      "type": "object"
+    },
     "Phase": {
       "description": "A stretch of the plan where the cook has to be in the kitchen.\n\nA new phase starts after a hands-free gap of >= `PHASE_BREAK_MIN`, where hands-free\nmeans no `hands_on` and no `periodic` node is running. Measured on the *attended*\ntimeline, independently of `Session`/`LongWait` (which use the cook-occupied one).\nInternal name -- UI copy is the renderer's job. Provisional threshold.",
       "properties": {
@@ -1535,36 +1753,33 @@
       "type": "object"
     },
     "RecipeEdit": {
-      "description": "Placeholder envelope for a user edit (R6 fills in the operation union).\n\nEdits target the *original* (`ImportOriginal.recipe` ingredient and step indices),\nnever graph node ids, which are derived and can change on a reprocess. `anchor` holds\nthe index plus the value expected there; an edit whose anchor no longer matches after\na refresh is kept and marked orphaned, never dropped and never force-applied. Nothing\nwrites these yet: readers preserve them verbatim.",
-      "properties": {
-        "anchor": {
-          "$ref": "#/$defs/JsonValue"
+      "discriminator": {
+        "mapping": {
+          "add_ingredient": "#/$defs/AddIngredient",
+          "remove_ingredient": "#/$defs/RemoveIngredient",
+          "set_ingredient_amount": "#/$defs/SetIngredientAmount",
+          "set_ingredient_name": "#/$defs/SetIngredientName",
+          "set_step_text": "#/$defs/SetStepText"
         },
-        "created_at": {
-          "description": "When the user made the edit.",
-          "format": "date-time",
-          "type": "string"
-        },
-        "id": {
-          "description": "Stable id for this edit.",
-          "type": "string"
-        },
-        "op": {
-          "description": "Operation name. The union is defined in R6.",
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/$defs/JsonValue"
-        }
+        "propertyName": "op"
       },
-      "required": [
-        "id",
-        "created_at",
-        "op",
-        "anchor",
-        "value"
-      ],
-      "type": "object"
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SetIngredientName"
+        },
+        {
+          "$ref": "#/$defs/SetIngredientAmount"
+        },
+        {
+          "$ref": "#/$defs/RemoveIngredient"
+        },
+        {
+          "$ref": "#/$defs/AddIngredient"
+        },
+        {
+          "$ref": "#/$defs/SetStepText"
+        }
+      ]
     },
     "RecipeListResponse": {
       "description": "Every recipe the API can currently serve.",
@@ -1658,6 +1873,35 @@
       ],
       "type": "object"
     },
+    "RemoveIngredient": {
+      "description": "Take an ingredient line off the list.",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/IngredientAnchor"
+        },
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "const": "remove_ingredient",
+          "description": "Discriminator.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "anchor"
+      ],
+      "type": "object"
+    },
     "RepairProposal": {
       "description": "The repair call's entire response shape.\n\nOne `StepRepair` per original step, in the same order. Matched back to the\noriginal steps by position \u2014 there is no id/index field because the count and\norder are already fixed by the request.",
       "properties": {
@@ -1729,7 +1973,7 @@
       "description": "One recipe a user has saved on this device.",
       "properties": {
         "edits": {
-          "description": "Reserved for R6. Always empty for now; readers preserve items verbatim.",
+          "description": "The cook's edits (R6), as a patch over `payload`. Readers keep items they do not understand verbatim.",
           "items": {
             "$ref": "#/$defs/RecipeEdit"
           },
@@ -2019,6 +2263,105 @@
       ],
       "type": "object"
     },
+    "SetIngredientAmount": {
+      "description": "Change an ingredient line's amount and unit.",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/IngredientAnchor"
+        },
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "const": "set_ingredient_amount",
+          "description": "Discriminator.",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/AmountValue"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "anchor",
+        "value"
+      ],
+      "type": "object"
+    },
+    "SetIngredientName": {
+      "description": "Rename an ingredient line.",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/IngredientAnchor"
+        },
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "const": "set_ingredient_name",
+          "description": "Discriminator.",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/NameValue"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "anchor",
+        "value"
+      ],
+      "type": "object"
+    },
+    "SetStepText": {
+      "description": "Rewrite a step's text. The plan's timing is not recomputed (R6b).",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/StepAnchor"
+        },
+        "created_at": {
+          "description": "When the user made the edit.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable id for this edit.",
+          "type": "string"
+        },
+        "op": {
+          "const": "set_step_text",
+          "description": "Discriminator.",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/TextValue"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "op",
+        "anchor",
+        "value"
+      ],
+      "type": "object"
+    },
     "SourcePreview": {
       "description": "The source's own recipe text, readable before any LLM call (A2).\n\nDeliberately a third layer, separate from `NormalizedRecipe` (LLM output) and\n`CookingGraph`/`CookingPlan` (validated, scheduled): it holds *strings only* --\nno parsed quantities, no durations, no computed numbers -- so nothing downstream\ncan mistake it for validated data, and rendering it never needs the scheduler.",
       "properties": {
@@ -2175,6 +2518,37 @@
       ],
       "type": "object"
     },
+    "StepAnchor": {
+      "description": "Where a step edit applies: the expected text, with the index as a tiebreak.",
+      "properties": {
+        "expected": {
+          "$ref": "#/$defs/StepExpected"
+        },
+        "index": {
+          "description": "Position in `payload.graph.nodes`; breaks a tie.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "index",
+        "expected"
+      ],
+      "type": "object"
+    },
+    "StepExpected": {
+      "description": "What the step read when the edit was made.",
+      "properties": {
+        "text": {
+          "description": "`Node.instruction` of the step.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    },
     "StepRepair": {
       "description": "The only three fields a repair pass may ever set, for one step.\n\nEvery field defaults to None, meaning \"leave the extracted value unchanged\" (CP2\ndecision D). A default of True/[] used to *overwrite* extraction: a response that\nsimply omitted `depends_on_previous` reset an extracted, verified independence\nclaim to sequential. See `_merge_repair` for how each field is applied -- repair\nfixes structure additively; it never resets a semantic decision to a default.",
       "properties": {
@@ -2255,6 +2629,33 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "TextValue": {
+      "description": "The new step text.",
+      "properties": {
+        "text": {
+          "description": "1 to 1000 characters, trimmed.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    },
+    "ToTasteAmount": {
+      "description": "No quantity: the line reads \"to taste\".",
+      "properties": {
+        "kind": {
+          "const": "to_taste",
+          "description": "Discriminator: no number.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
       "type": "object"
     },
     "WaitWindow": {

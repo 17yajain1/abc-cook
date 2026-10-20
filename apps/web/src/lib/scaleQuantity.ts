@@ -137,6 +137,44 @@ const FORMATTERS: Record<UnitClass, (value: number) => string> = {
   count: formatCount,
 }
 
+const near = (a: number, b: number, eps = 1e-9): boolean => Math.abs(a - b) <= eps
+
+/**
+ * R6 (A28): the amount a cook typed, with only the exact cooking-fraction equivalents snapped to
+ * their fraction (.25, .5, .75, .33 and .333 as a third, .67 and .667 as two thirds). Anything
+ * else is kept as typed, rounded to 2 decimals. Unlike the scaler's formatters it never rounds to
+ * a coarser measure: 12 g stays 12, not 10.
+ */
+export function snapAmount(value: number): number {
+  const whole = Math.floor(value + 1e-9)
+  const frac = value - whole
+  if (near(frac, 0.25) || near(frac, 0.5) || near(frac, 0.75)) return whole + Math.round(frac * 100) / 100
+  if (near(frac, 1 / 3, 1e-6) || near(frac, 0.33) || near(frac, 0.333)) return whole + 1 / 3
+  if (near(frac, 2 / 3, 1e-6) || near(frac, 0.67) || near(frac, 0.667)) return whole + 2 / 3
+  return Math.round(value * 100) / 100
+}
+
+/**
+ * R6: one amount as the editor writes `qty_text`: cooking fractions (½, never 0.5) for the exact
+ * equivalents, the number as typed otherwise. It shares the scaler's fraction table, so an edited
+ * line and a scaled line read the same way.
+ */
+export function formatAmount(value: number): string {
+  const snapped = snapAmount(value)
+  const whole = Math.floor(snapped + 1e-9)
+  const frac = snapped - whole
+  if (near(frac, 0)) return String(whole)
+  for (const [fraction, glyph] of FRACTIONS) {
+    if (glyph !== '' && near(frac, fraction, 1e-6)) return `${whole > 0 ? whole : ''}${glyph}`
+  }
+  return String(snapped)
+}
+
+/** R6: `low`, or `low–high` (an en dash) for a range. */
+export function formatAmountRange(low: number, high: number | null | undefined): string {
+  return high == null ? formatAmount(low) : `${formatAmount(low)}–${formatAmount(high)}`
+}
+
 /**
  * `ingredient`'s amount at `factor` (chosen servings / original servings).
  *

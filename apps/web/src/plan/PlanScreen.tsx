@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
@@ -11,6 +11,9 @@ import type { AlreadySaved } from './AlreadySavedNotice'
 import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
 import type { EndOfPageBlock } from './endOfPage'
 import { IngredientsPanel } from './IngredientsPanel'
+import { OrphanReview } from './OrphanReview'
+import { useIngredientEditing, type PlanEditing } from './useIngredientEditing'
+import { orphanNoticeLine } from '@/library/recipeEdits'
 import { panelServings } from './panelServings'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
 import type { StalenessMarker } from './staleness'
@@ -78,6 +81,7 @@ export function PlanScreen({
   servingsLocked = false,
   onServingsChoiceChange,
   endOfPage,
+  editing,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -97,10 +101,24 @@ export function PlanScreen({
   onServingsChoiceChange?: (choice: ServingsChoice | null) => void
   /** R5: the end of the Plan tab. Absent when there is nothing to show. */
   endOfPage?: { block: EndOfPageBlock | null; remove: RemoveControl | null }
+  /** R6a: the saved entry's edit context. Absent when there is no entry to edit (Q4). */
+  editing?: PlanEditing
 }) {
   const [tab, setTab] = useState<Tab>('plan')
+  const [reviewing, setReviewing] = useState(false)
   const statusLine = statusLineFor(importMeta)
-  const servings = panelServings(plan, importMeta, servingsChoice, servingsLocked, onServingsChoiceChange)
+  // A13: the servings gate reads the imported rows, never the edited ones.
+  const servings = panelServings(plan, importMeta, servingsChoice, servingsLocked, onServingsChoiceChange, editing?.gateLines)
+  const edit = useIngredientEditing(editing)
+  const orphans = editing?.ctx.overlay.orphans ?? []
+  // Every way out of the editor (a tab, back, Start cooking) goes through `edit.guard`, so a
+  // changed row is committed or kept open, never dropped (A24).
+  const latest = useRef({ onBack, onStartCooking })
+  useEffect(() => {
+    latest.current = { onBack, onStartCooking }
+  })
+  const guardedBack = () => edit.guard('back', () => latest.current.onBack())
+  const guardedStart = () => edit.guard('start', () => latest.current.onStartCooking())
   // R1: the recipe page is a Home-register screen (DESIGN_SYSTEM.md § Register: Home and
   // browse screens), so the page behind it takes the Home ground too.
   useHomeSurface(true)
@@ -114,6 +132,7 @@ export function PlanScreen({
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageTabsRef = useRef<HTMLDivElement>(null)
   const barSpacerRef = useRef<HTMLDivElement>(null)
+  const compactBarRef = useRef<HTMLDivElement>(null)
   const [compact, setCompact] = useState(false)
   const onScroll = () => {
     const el = scrollRef.current
@@ -123,14 +142,22 @@ export function PlanScreen({
     )
   }
 
+  // The edit toolbar sticks under the compact bar (A24: Done stays reachable on a long list), so it
+  // needs the bar's height: 0 while the bar is not showing.
+  useLayoutEffect(() => {
+    scrollRef.current?.style.setProperty('--plan-bar-h', compact ? `${compactBarRef.current?.offsetHeight ?? 0}px` : '0px')
+  }, [compact, tab])
+
   // Switching tabs while the bar is showing keeps the tabs pinned: the new tab's content
   // starts right under the bar instead of wherever the old tab was scrolled to. Runs
   // before paint (layout effect), so the old scroll position never flashes.
   const pinTabsRef = useRef(false)
   const switchTab = (next: Tab) => {
     if (next === tab) return
-    pinTabsRef.current = compact
-    setTab(next)
+    edit.guard('tab', () => {
+      pinTabsRef.current = compact
+      setTab(next)
+    })
   }
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -147,6 +174,8 @@ export function PlanScreen({
   }
 
   const nIngredients = ingredientCount(plan.ingredientGroups)
+  const noticeLine = orphanNoticeLine(orphans.length)
+  const ingredientsEdit = editing ? { editing, api: edit, choice: servings?.choice ?? null } : undefined
   const tabs = (
     <>
       <TabButton active={tab === 'plan'} onClick={() => switchTab('plan')}>
@@ -163,6 +192,16 @@ export function PlanScreen({
   // 390px column at any wider width.
   // `overflow-x-clip`: a guard against a sub-390px viewport.
   // `h-screen-dynamic` (index.css): 100dvh, so the page tracks Safari's toolbars.
+  if (reviewing) {
+    return (
+      <div className="h-screen-dynamic relative overflow-x-clip bg-home-ground text-home-ink">
+        <div className="no-scrollbar h-full overflow-y-auto">
+          <OrphanReview orphans={orphans} onBack={() => setReviewing(false)} onDiscard={edit.discard} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen-dynamic relative overflow-x-clip bg-home-ground text-home-ink">
       <div
@@ -174,12 +213,21 @@ export function PlanScreen({
           plan={plan}
           save={save}
           importMeta={importMeta}
-          onBack={onBack}
+          onBack={guardedBack}
           staleness={staleness}
           alreadySaved={alreadySaved}
           servingsChoice={servings?.choice}
           statusLine={statusLine}
         />
+
+        {noticeLine && (
+          <p className="px-5 pt-1 text-[13px] leading-[1.4] text-home-ink-2">
+            {noticeLine}{' '}
+            <button type="button" onClick={() => setReviewing(true)} className="relative font-medium text-home-ink underline underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']">
+              Review
+            </button>
+          </p>
+        )}
 
         <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
           {tabs}
@@ -194,7 +242,7 @@ export function PlanScreen({
         )}
 
         {tab === 'ingredients' ? (
-          <IngredientsPanel groups={plan.ingredientGroups} servings={servings} />
+          <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
         ) : (
           <div className="px-5 pt-5">
             {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
@@ -236,11 +284,12 @@ export function PlanScreen({
 
       {compact && (
         <div
+          ref={compactBarRef}
           data-testid="compact-bar"
           className="absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[var(--safe-top)]"
         >
           <div className="flex h-14 items-center gap-1 px-3">
-            <BackButton onClick={onBack} />
+            <BackButton onClick={guardedBack} />
             <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
               {plan.title}
             </p>
@@ -257,7 +306,7 @@ export function PlanScreen({
             register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
         <button
           type="button"
-          onClick={onStartCooking}
+          onClick={guardedStart}
           className="flex h-[52px] w-full items-center justify-center rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground"
         >
           Start cooking
