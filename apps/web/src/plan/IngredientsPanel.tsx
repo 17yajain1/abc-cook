@@ -54,7 +54,7 @@ export function IngredientsPanel({
           onChange={servings.onChange}
         />
       )}
-      {edit && <EditToolbar edit={edit} />}
+      {edit && <EditToolbar edit={edit} hint="Tap an ingredient to change it." />}
       <div className="px-5 py-5">
         {edit ? (
           <EditableIngredientList groups={panelIngredientGroups(groups, factor, marker)} edit={edit} />

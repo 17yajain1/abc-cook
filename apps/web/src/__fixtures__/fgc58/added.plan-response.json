@@ -1,0 +1,1100 @@
+{
+  "graph": {
+    "id": "g_https---www-youtube-com-watch-v-Oa2s0dklrRo__medium__0",
+    "title": "Home-Style Kadhi Pakora",
+    "servings": 4,
+    "servings_stated": true,
+    "yield_text": null,
+    "cuisine": "Indian",
+    "source": {
+      "kind": "url",
+      "value": "https://www.youtube.com/watch?v=Oa2s0dklrRo",
+      "imported_at": "2026-10-16T08:38:39.718546Z"
+    },
+    "ingredients": [
+      {
+        "id": "ing_curd",
+        "name": "Curd",
+        "qty": 1.5,
+        "qty_text": "1 ½",
+        "qty_amount": {
+          "low": 1.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cups",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_besan_gram_flour",
+        "name": "Besan (gram flour)",
+        "qty": 4.0,
+        "qty_text": "4",
+        "qty_amount": {
+          "low": 4.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_onion",
+        "name": "Onion",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cup",
+        "prep_note": "sliced",
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_garlic",
+        "name": "Garlic",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": "chopped",
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_ginger",
+        "name": "Ginger",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": "chopped",
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_turmeric",
+        "name": "Turmeric",
+        "qty": 0.75,
+        "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_red_chilly_powder",
+        "name": "Red chilly powder",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_coriander_powder",
+        "name": "Coriander powder",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_roasted_cumin_powder",
+        "name": "Roasted Cumin Powder",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_salt",
+        "name": "Salt",
+        "qty": null,
+        "qty_text": "to taste",
+        "qty_amount": null,
+        "unit": null,
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_water",
+        "name": "Water",
+        "qty": 10.0,
+        "qty_text": "10",
+        "qty_amount": {
+          "low": 10.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cups",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_oil",
+        "name": "Oil",
+        "qty": 3.0,
+        "qty_text": "3",
+        "qty_amount": {
+          "low": 3.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_methi_dana_fenugreek",
+        "name": "Methi dana (fenugreek)",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_cumin",
+        "name": "Cumin",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_dry_red_chilly",
+        "name": "Dry red chilly",
+        "qty": 2.0,
+        "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "nos",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_heeng_asafoetida",
+        "name": "Heeng (asafoetida)",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR KADI",
+        "optional": false
+      },
+      {
+        "id": "ing_besan_gram_flour_2",
+        "name": "Besan (gram flour)",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cup",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_salt_2",
+        "name": "Salt",
+        "qty": null,
+        "qty_text": "to taste",
+        "qty_amount": null,
+        "unit": null,
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_green_chilly",
+        "name": "Green chilly",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "no",
+        "prep_note": "chopped",
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_turmeric_2",
+        "name": "Turmeric",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_red_chilly_powder_2",
+        "name": "Red chilly powder",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_coriander_seeds",
+        "name": "Coriander seeds",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_cumin_2",
+        "name": "Cumin",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_baking_powder",
+        "name": "Baking Powder",
+        "qty": 0.75,
+        "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_spinach",
+        "name": "Spinach",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cup",
+        "prep_note": "chopped",
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_water_2",
+        "name": "Water",
+        "qty": 0.75,
+        "qty_text": "3/4",
+        "qty_amount": {
+          "low": 0.75,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "cup",
+        "prep_note": null,
+        "group": "FOR PAKORA",
+        "optional": false
+      },
+      {
+        "id": "ing_desi_ghee",
+        "name": "Desi Ghee",
+        "qty": 2.0,
+        "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING",
+        "optional": false
+      },
+      {
+        "id": "ing_coriander_seeds_2",
+        "name": "Coriander seeds",
+        "qty": 2.0,
+        "qty_text": "2",
+        "qty_amount": {
+          "low": 2.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING",
+        "optional": false
+      },
+      {
+        "id": "ing_cumin_3",
+        "name": "Cumin",
+        "qty": 1.0,
+        "qty_text": "1",
+        "qty_amount": {
+          "low": 1.0,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING",
+        "optional": false
+      },
+      {
+        "id": "ing_red_chilly_powder_3",
+        "name": "Red chilly powder",
+        "qty": 0.5,
+        "qty_text": "½",
+        "qty_amount": {
+          "low": 0.5,
+          "high": null,
+          "prefix": "",
+          "rest": ""
+        },
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "FOR TEMPERING",
+        "optional": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "step_whisk_together_curd_besan_sliced_onions",
+        "stage": "prep",
+        "label": "Mix kadi",
+        "instruction": "Whisk together curd, besan, sliced onions, garlic, ginger, turmeric, chilly powder, coriander powder, cumin powder, salt and water to make the kadi mixture.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 8,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_curd",
+          "ing_besan_gram_flour",
+          "ing_onion",
+          "ing_garlic",
+          "ing_ginger",
+          "ing_turmeric",
+          "ing_red_chilly_powder",
+          "ing_coriander_powder",
+          "ing_roasted_cumin_powder",
+          "ing_salt",
+          "ing_water"
+        ],
+        "produces": "comp_kadi_mixture",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_heat_a_pan_and_add_oil",
+        "stage": "cook",
+        "label": "Temper spices",
+        "instruction": "Heat a pan and add oil. When the oil heats up add methi dana, cumin and dry red chilly; stir and add heeng, give a quick stir.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 3,
+        "station": "burner",
+        "depends_on": [
+          "step_whisk_together_curd_besan_sliced_onions"
+        ],
+        "consumes": [
+          "ing_oil",
+          "ing_methi_dana_fenugreek",
+          "ing_cumin",
+          "ing_dry_red_chilly",
+          "ing_heeng_asafoetida"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_add_the_kadi_mixture_to_the",
+        "stage": "cook",
+        "label": "Cook kadi",
+        "instruction": "Add the kadi mixture to the pan, stir continuously till it comes to a boil. Now lower the heat and let it cook for half hour; keep stirring in between so that it does not stick to the bottom.",
+        "kind": "combine",
+        "attention": "periodic",
+        "duration_min": 28,
+        "duration_typical": 28,
+        "duration_max": 32,
+        "station": "burner",
+        "depends_on": [
+          "step_whisk_together_curd_besan_sliced_onions",
+          "step_heat_a_pan_and_add_oil"
+        ],
+        "consumes": [
+          "comp_kadi_mixture"
+        ],
+        "produces": "comp_cooked_kadi",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "nicely thickened, rawness of the flour has completely disappeared",
+        "tip": null
+      },
+      {
+        "id": "step_mix_together_besan_salt_chopped_green",
+        "stage": "cook",
+        "label": "Make pakora batter",
+        "instruction": "Mix together besan, salt, chopped green chilly, turmeric, red chilly powder, coriander seeds, cumin, baking powder, chopped spinach and water to make a thick pakora batter.",
+        "kind": "prep",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 10,
+        "station": "counter",
+        "depends_on": [],
+        "consumes": [
+          "ing_besan_gram_flour_2",
+          "ing_salt_2",
+          "ing_green_chilly",
+          "ing_turmeric_2",
+          "ing_red_chilly_powder_2",
+          "ing_coriander_seeds",
+          "ing_cumin_2",
+          "ing_baking_powder",
+          "ing_spinach",
+          "ing_water_2"
+        ],
+        "produces": "comp_pakora_batter",
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_heat_oil_in_a_deep_pan",
+        "stage": "cook",
+        "label": "Fry pakoras (first)",
+        "instruction": "Heat oil in a deep pan and drop small dollops of the batter to make pakoras; fry them on mild flame patiently so they cook through (first fry until partially cooked).",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 6,
+        "duration_typical": 8,
+        "duration_max": 12,
+        "station": "burner",
+        "depends_on": [
+          "step_mix_together_besan_salt_chopped_green",
+          "step_add_the_kadi_mixture_to_the"
+        ],
+        "consumes": [
+          "comp_pakora_batter"
+        ],
+        "produces": "comp_par_fried_pakoras",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "half done",
+        "tip": null
+      },
+      {
+        "id": "step_give_the_partially_fried_pakoras_a",
+        "stage": "cook",
+        "label": "Rest pakoras",
+        "instruction": "Give the partially fried pakoras a little rest so the heat penetrates to the insides.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 3,
+        "duration_typical": 3,
+        "duration_max": 15,
+        "station": "none",
+        "depends_on": [
+          "step_heat_oil_in_a_deep_pan"
+        ],
+        "consumes": [
+          "comp_par_fried_pakoras"
+        ],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_heat_the_oil_hotter_and_fry",
+        "stage": "cook",
+        "label": "Finish fry",
+        "instruction": "Heat the oil hotter and fry the rested pakoras again until evenly cooked and light brown on the outside (finish fry).",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 3,
+        "duration_typical": 5,
+        "duration_max": 8,
+        "station": "burner",
+        "depends_on": [
+          "step_heat_oil_in_a_deep_pan",
+          "step_give_the_partially_fried_pakoras_a"
+        ],
+        "consumes": [
+          "comp_par_fried_pakoras"
+        ],
+        "produces": "comp_fried_pakoras",
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "light brown on the outside",
+        "tip": null
+      },
+      {
+        "id": "step_check_the_cooked_kadi_for_salt",
+        "stage": "cook",
+        "label": "Finish kadi",
+        "instruction": "Check the cooked kadi for salt and transfer it to a serving bowl.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 3,
+        "station": "counter",
+        "depends_on": [
+          "step_add_the_kadi_mixture_to_the"
+        ],
+        "consumes": [
+          "comp_cooked_kadi"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_ten_minutes_before_serving_add_the",
+        "stage": "cook",
+        "label": "Add pakoras",
+        "instruction": "Ten minutes before serving, add the fried pakoras to the piping hot kadi.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 3,
+        "station": "burner",
+        "depends_on": [
+          "step_heat_the_oil_hotter_and_fry",
+          "step_check_the_cooked_kadi_for_salt",
+          "step_add_the_kadi_mixture_to_the",
+          "step_heat_oil_in_a_deep_pan",
+          "step_give_the_partially_fried_pakoras_a"
+        ],
+        "consumes": [
+          "comp_cooked_kadi",
+          "comp_par_fried_pakoras",
+          "comp_fried_pakoras"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_in_a_clean_pan_heat_desi",
+        "stage": "cook",
+        "label": "Make tempering",
+        "instruction": "In a clean pan heat desi ghee, add coriander and cumin seeds; once they crackle, turn off the heat, add red chilly powder, stir and immediately pour this tempering over the kadi pakora.",
+        "kind": "combine",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 2,
+        "duration_max": 4,
+        "station": "burner",
+        "depends_on": [
+          "step_ten_minutes_before_serving_add_the"
+        ],
+        "consumes": [
+          "ing_desi_ghee",
+          "ing_coriander_seeds_2",
+          "ing_cumin_3",
+          "ing_red_chilly_powder_3"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": "Once they crackle",
+        "tip": null
+      },
+      {
+        "id": "step_wipe_the_pan_with_a_thin",
+        "stage": "cook",
+        "label": "Grease the pan",
+        "instruction": "Wipe the pan with a thin film of fat before each batch.",
+        "kind": "active",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "burner",
+        "depends_on": [
+          "step_in_a_clean_pan_heat_desi"
+        ],
+        "consumes": [
+          "ing_oil"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_wait_before_serving",
+        "stage": "cook",
+        "label": "Wait before serving",
+        "instruction": "Wait 10 min, then serve. The recipe adds \"Add pakoras\" 10 min before serving.",
+        "kind": "passive",
+        "attention": "unattended",
+        "duration_min": 10,
+        "duration_typical": 10,
+        "duration_max": 10,
+        "station": "none",
+        "depends_on": [
+          "step_ten_minutes_before_serving_add_the"
+        ],
+        "consumes": [],
+        "produces": null,
+        "interruptible": true,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      },
+      {
+        "id": "step_serve_immediately",
+        "stage": "finish",
+        "label": "Serve",
+        "instruction": "Serve immediately.",
+        "kind": "finish",
+        "attention": "hands_on",
+        "duration_min": 1,
+        "duration_typical": 1,
+        "duration_max": 2,
+        "station": "counter",
+        "depends_on": [
+          "step_in_a_clean_pan_heat_desi",
+          "step_add_the_kadi_mixture_to_the",
+          "step_check_the_cooked_kadi_for_salt",
+          "step_wipe_the_pan_with_a_thin",
+          "step_wait_before_serving"
+        ],
+        "consumes": [
+          "comp_cooked_kadi"
+        ],
+        "produces": null,
+        "interruptible": false,
+        "max_lead_min": null,
+        "doneness_cue": null,
+        "tip": null
+      }
+    ],
+    "stages": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "color_key": "prep"
+      },
+      {
+        "id": "cook",
+        "label": "Cook",
+        "color_key": "cook"
+      },
+      {
+        "id": "finish",
+        "label": "Finish",
+        "color_key": "finish"
+      }
+    ],
+    "stated_total_min": null
+  },
+  "plan": {
+    "graph_id": "g_https---www-youtube-com-watch-v-Oa2s0dklrRo__medium__0",
+    "scheduled": [
+      {
+        "node_id": "step_whisk_together_curd_besan_sliced_onions",
+        "start_min": 0.0,
+        "end_min": 5.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_heat_a_pan_and_add_oil",
+        "start_min": 5.0,
+        "end_min": 6.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_add_the_kadi_mixture_to_the",
+        "start_min": 6.0,
+        "end_min": 34.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_mix_together_besan_salt_chopped_green",
+        "start_min": 6.0,
+        "end_min": 11.0,
+        "occupies_cook": true,
+        "window_id": "w1",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "step_heat_oil_in_a_deep_pan",
+        "start_min": 34.0,
+        "end_min": 42.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_check_the_cooked_kadi_for_salt",
+        "start_min": 42.0,
+        "end_min": 43.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_give_the_partially_fried_pakoras_a",
+        "start_min": 42.0,
+        "end_min": 45.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_heat_the_oil_hotter_and_fry",
+        "start_min": 45.0,
+        "end_min": 50.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_ten_minutes_before_serving_add_the",
+        "start_min": 50.0,
+        "end_min": 51.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_in_a_clean_pan_heat_desi",
+        "start_min": 51.0,
+        "end_min": 53.0,
+        "occupies_cook": true,
+        "window_id": "w2",
+        "rank_in_window": 0
+      },
+      {
+        "node_id": "step_wait_before_serving",
+        "start_min": 51.0,
+        "end_min": 61.0,
+        "occupies_cook": false,
+        "window_id": null,
+        "rank_in_window": null
+      },
+      {
+        "node_id": "step_wipe_the_pan_with_a_thin",
+        "start_min": 53.0,
+        "end_min": 54.0,
+        "occupies_cook": true,
+        "window_id": "w2",
+        "rank_in_window": 1
+      },
+      {
+        "node_id": "step_serve_immediately",
+        "start_min": 61.0,
+        "end_min": 62.0,
+        "occupies_cook": true,
+        "window_id": null,
+        "rank_in_window": null
+      }
+    ],
+    "windows": [
+      {
+        "id": "w1",
+        "host_node_id": "step_add_the_kadi_mixture_to_the",
+        "capacity_min": 21.0,
+        "assigned": [
+          "step_mix_together_besan_salt_chopped_green"
+        ],
+        "used_min": 5.0,
+        "slack_min": 16.0
+      },
+      {
+        "id": "w2",
+        "host_node_id": "step_wait_before_serving",
+        "capacity_min": 9.0,
+        "assigned": [
+          "step_in_a_clean_pan_heat_desi",
+          "step_wipe_the_pan_with_a_thin"
+        ],
+        "used_min": 3.0,
+        "slack_min": 6.0
+      }
+    ],
+    "total_min": 62.0,
+    "serial_min": 71.0,
+    "saved_min": 9.0,
+    "critical_path": [
+      "step_whisk_together_curd_besan_sliced_onions",
+      "step_heat_a_pan_and_add_oil",
+      "step_add_the_kadi_mixture_to_the",
+      "step_heat_oil_in_a_deep_pan",
+      "step_give_the_partially_fried_pakoras_a",
+      "step_heat_the_oil_hotter_and_fry",
+      "step_ten_minutes_before_serving_add_the",
+      "step_wait_before_serving",
+      "step_serve_immediately"
+    ],
+    "warnings": []
+  },
+  "stages": [
+    {
+      "stage_id": "prep",
+      "start_min": 0.0,
+      "end_min": 5.0,
+      "elapsed_min": 5.0,
+      "work_min": 5.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 5.0,
+      "hands_on_min": 5.0,
+      "unattended_min": 0.0,
+      "node_ids": [
+        "step_whisk_together_curd_besan_sliced_onions"
+      ]
+    },
+    {
+      "stage_id": "cook",
+      "start_min": 5.0,
+      "end_min": 61.0,
+      "elapsed_min": 56.0,
+      "work_min": 65.0,
+      "windowed_work_min": 8.0,
+      "inline_work_min": 57.0,
+      "hands_on_min": 16.0,
+      "unattended_min": 41.0,
+      "node_ids": [
+        "step_heat_a_pan_and_add_oil",
+        "step_add_the_kadi_mixture_to_the",
+        "step_mix_together_besan_salt_chopped_green",
+        "step_heat_oil_in_a_deep_pan",
+        "step_check_the_cooked_kadi_for_salt",
+        "step_give_the_partially_fried_pakoras_a",
+        "step_heat_the_oil_hotter_and_fry",
+        "step_ten_minutes_before_serving_add_the",
+        "step_in_a_clean_pan_heat_desi",
+        "step_wait_before_serving",
+        "step_wipe_the_pan_with_a_thin"
+      ]
+    },
+    {
+      "stage_id": "finish",
+      "start_min": 61.0,
+      "end_min": 62.0,
+      "elapsed_min": 1.0,
+      "work_min": 1.0,
+      "windowed_work_min": 0.0,
+      "inline_work_min": 1.0,
+      "hands_on_min": 1.0,
+      "unattended_min": 0.0,
+      "node_ids": [
+        "step_serve_immediately"
+      ]
+    }
+  ],
+  "summary": {
+    "active_min": 30.0,
+    "attended_min": 58.0,
+    "elapsed_min": 62.0,
+    "elapsed_high_min": 77.0,
+    "sessions": [
+      {
+        "start_min": 0.0,
+        "end_min": 62.0,
+        "active_min": 30.0,
+        "node_ids": [
+          "step_whisk_together_curd_besan_sliced_onions",
+          "step_heat_a_pan_and_add_oil",
+          "step_add_the_kadi_mixture_to_the",
+          "step_mix_together_besan_salt_chopped_green",
+          "step_heat_oil_in_a_deep_pan",
+          "step_check_the_cooked_kadi_for_salt",
+          "step_give_the_partially_fried_pakoras_a",
+          "step_heat_the_oil_hotter_and_fry",
+          "step_ten_minutes_before_serving_add_the",
+          "step_in_a_clean_pan_heat_desi",
+          "step_wait_before_serving",
+          "step_wipe_the_pan_with_a_thin",
+          "step_serve_immediately"
+        ],
+        "preceded_by_wait_min": null,
+        "elapsed_min": 62.0,
+        "elapsed_high_min": 77.0,
+        "preceded_by_host_node_ids": []
+      }
+    ],
+    "long_waits": [],
+    "phases": [
+      {
+        "start_min": 0.0,
+        "end_min": 62.0,
+        "elapsed_min": 62.0,
+        "elapsed_high_min": 77.0,
+        "active_min": 30.0,
+        "node_ids": [
+          "step_whisk_together_curd_besan_sliced_onions",
+          "step_heat_a_pan_and_add_oil",
+          "step_add_the_kadi_mixture_to_the",
+          "step_mix_together_besan_salt_chopped_green",
+          "step_heat_oil_in_a_deep_pan",
+          "step_check_the_cooked_kadi_for_salt",
+          "step_give_the_partially_fried_pakoras_a",
+          "step_heat_the_oil_hotter_and_fry",
+          "step_ten_minutes_before_serving_add_the",
+          "step_in_a_clean_pan_heat_desi",
+          "step_wait_before_serving",
+          "step_wipe_the_pan_with_a_thin",
+          "step_serve_immediately"
+        ],
+        "preceded_by_wait_min": null,
+        "preceded_by_host_node_ids": [],
+        "starts_new_session": false
+      }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import type { Ingredient, RecipeEdit, RecipePlanResponse, SavedRecipe } from '@abc-cook/schema'
+import type { Ingredient, Node, RecipeEdit, RecipePlanResponse, SavedRecipe, StepAnchor } from '@abc-cook/schema'
 
 import { joinQtyUnit, quantityTrailingScaled } from '@/lib/quantity'
 import { formatAmountRange } from '@/lib/scaleQuantity'
@@ -8,15 +8,19 @@ export type { RecipeEdit } from '@abc-cook/schema'
 /**
  * R6: the cook's edits, applied as an overlay on a finished plan.
  *
- * Pure, and never mutates what it is given. An edit changes ingredient rows only (R6a): the
- * plan, the stages, the summary and every node (ids, edges, durations) come back untouched,
- * which is what keeps a cook in progress, the timers and the scheduler's figures valid. Edits
- * are anchored by index into `graph.ingredients` plus the line expected there. One whose anchor
- * no longer matches (the imported recipe was refreshed and a line moved) is *orphaned*: kept,
- * counted, shown as the imported row, never dropped and never forced onto another line.
+ * Pure, and never mutates what it is given. An edit changes ingredient rows (R6a) and the text
+ * of a step, and links an added ingredient to a step (R6b). The plan, the stages, the summary and
+ * every node's id, edges and durations come back untouched, which is what keeps a cook in
+ * progress, the timers and the scheduler's figures valid: of a node, only `instruction` (an edited
+ * step) and `consumes` (a linked add) can differ. Ingredient edits are anchored by index into
+ * `graph.ingredients` plus the line expected there. A step edit is anchored by the text it was made
+ * on (`resolveStep`). One whose anchor no longer matches (the imported recipe was refreshed and a
+ * line moved) is *orphaned*: kept, counted, shown as the imported row, never dropped and never
+ * forced onto another line.
  *
- * Anything this does not recognise (an unknown op, a malformed item, a step edit before R6b)
- * is *ignored*: not applied, not counted, and left in the stored array verbatim.
+ * Anything this does not recognise (an unknown op, a malformed item) is *ignored*: not applied,
+ * not counted, and left in the stored array verbatim. A stored step text is applied verbatim;
+ * only the editor normalises whitespace (B2).
  */
 
 export const ADDED_GROUP = 'Added by you'
@@ -29,12 +33,16 @@ export type EditStatus = 'applied' | 'orphaned' | 'ignored'
 export interface Orphan {
   id: string
   edit: RecipeEdit
-  /** The name of the line it was made on. */
+  /** An ingredient edit, a step edit, or the link of an added ingredient to a step that is gone (Q3 (a)). */
+  kind: 'ingredient' | 'step' | 'link'
+  /** The name of the line it was made on (a link: the added ingredient). */
   label: string
-  /** "1 tbsp", "Fresh ginger" or "Remove". */
+  /** "1 tbsp", "Fresh ginger" or "Remove"; a step: the cook's text, in full. */
   yourChange: string
   /** What the imported recipe has at that position now (an amount, or a name), or null if nothing. */
   nowSays: string | null
+  /** A step or a link: the step text the edit was made on, in full (B17); otherwise null. */
+  importedText: string | null
 }
 
 export interface OverlayResult {
@@ -50,6 +58,12 @@ export interface OverlayResult {
   importedRows: ReadonlyMap<string, Ingredient>
   /** A26: the rows the cook removed, with the id of the remove edit, so each can be restored. */
   removed: ReadonlyArray<{ editId: string; row: Ingredient }>
+  /** R6b: ids of the nodes whose text an edit changed. */
+  editedSteps: ReadonlySet<string>
+  /** R6b: for each edited node, its instruction as imported, for the "Imported: ..." line. */
+  importedSteps: ReadonlyMap<string, string>
+  /** R6b: for each added row linked to a step that resolved, the id of that node (the picker's prefill). */
+  linkedSteps: ReadonlyMap<string, string>
 }
 
 type Amount = { kind: 'number'; low: number; high?: number | null } | { kind: 'to_taste' }
@@ -79,12 +93,21 @@ function parseAmount(v: unknown): Amount | null {
   return null
 }
 
+function parseStepAnchor(v: unknown): StepAnchor | null {
+  if (!isObject(v) || !Number.isInteger(v.index) || (v.index as number) < 0 || !isObject(v.expected)) return null
+  if (typeof v.expected.text !== 'string') return null
+  return { index: v.index as number, expected: { text: v.expected.text } }
+}
+
+/** The longest step text an edit may carry, in code points (Pydantic counts the same way). */
+export const STEP_TEXT_MAX = 1000
+
 type Parsed =
   | { kind: 'name'; id: string; anchor: Anchor; name: string }
   | { kind: 'amount'; id: string; anchor: Anchor; amount: Amount; unit: string | null }
   | { kind: 'remove'; id: string; anchor: Anchor }
-  | { kind: 'add'; id: string; name: string; amount: Amount | null; unit: string | null }
-  | { kind: 'step'; id: string }
+  | { kind: 'add'; id: string; name: string; amount: Amount | null; unit: string | null; step: StepAnchor | null }
+  | { kind: 'step'; id: string; anchor: StepAnchor; text: string }
 
 /** `null` for anything this version does not understand. */
 function parseEdit(item: unknown): Parsed | null {
@@ -113,11 +136,19 @@ function parseEdit(item: unknown): Parsed | null {
       const amount = value.amount == null ? null : parseAmount(value.amount)
       if (value.amount != null && amount == null) return null
       if (value.unit != null && typeof value.unit !== 'string') return null
-      return { kind: 'add', id, name: value.name.trim(), amount, unit: (value.unit as string | null) ?? null }
+      // A link that is not a valid anchor makes the whole add ignored, like a malformed amount: nothing is guessed.
+      const step = value.step == null ? null : parseStepAnchor(value.step)
+      if (value.step != null && step == null) return null
+      return { kind: 'add', id, name: value.name.trim(), amount, unit: (value.unit as string | null) ?? null, step }
     }
-    case 'set_step_text':
-      // Step editing is R6b. Kept, not applied, not counted.
-      return null
+    case 'set_step_text': {
+      const anchor = parseStepAnchor(item.anchor)
+      const text = isObject(item.value) && typeof item.value.text === 'string' ? item.value.text : null
+      // Validated, never rewritten (B2): the stored text is applied byte for byte.
+      if (!anchor || text == null) return null
+      const length = [...text.trim()].length
+      return length >= 1 && length <= STEP_TEXT_MAX ? { kind: 'step', id, anchor, text } : null
+    }
     default:
       return null
   }
@@ -148,12 +179,45 @@ function amountFieldsOf(amount: Amount | null, unit: string | null): Pick<Ingred
   }
 }
 
+/** The generated "Wait before serving" node: ABC Cook's statement of a scheduled wait, never editable (Q2). */
+export function isServingWaitNode(node: string | { id: string }): boolean {
+  const id = typeof node === 'string' ? node : node.id
+  return /^step_wait_before_serving(?:_\d+)?$/.test(id)
+}
+
+/** The anchor an edit on the step at `index` of the raw payload carries: the index and the text it reads now. */
+export function stepAnchor(payload: RecipePlanResponse, index: number): StepAnchor {
+  const node = (payload.graph.nodes as Node[])[index]
+  if (!node) throw new Error(`no step at index ${index}`)
+  return { index, expected: { text: node.instruction } }
+}
+
 /**
- * `payload` with `edits` applied. Edits are applied against the imported rows by index, so a
- * remove never shifts another edit's anchor. See the module comment for the rules.
+ * D2, which node a step anchor means now, or null (an orphan).
+ * Candidates are the editable nodes whose text is exactly the anchor's: no trim, no case folding,
+ * both sides come from the same server pipeline. One candidate is it, wherever it moved. Several
+ * candidates (two steps that read the same): the one at the anchor's index if that is a candidate,
+ * else none; there is no counting. With twins this can land on an identical-text sibling, never on
+ * a step that reads differently (B9). The serving-wait node is never a candidate.
+ */
+export function resolveStep(nodes: ReadonlyArray<Pick<Node, 'id' | 'instruction'>>, anchor: StepAnchor): number | null {
+  const candidates: number[] = []
+  nodes.forEach((n, i) => {
+    if (n.instruction === anchor.expected.text && !isServingWaitNode(n)) candidates.push(i)
+  })
+  if (candidates.length === 0) return null
+  if (candidates.length === 1) return candidates[0]
+  return candidates.includes(anchor.index) ? anchor.index : null
+}
+
+/**
+ * `payload` with `edits` applied. Ingredient edits are applied against the imported rows by index,
+ * so a remove never shifts another edit's anchor; step edits and links are resolved against the
+ * imported nodes by text (`resolveStep`). See the module comment for the rules.
  */
 export function applyEdits(payload: RecipePlanResponse, edits: readonly unknown[]): OverlayResult {
   const base = payload.graph.ingredients as Ingredient[]
+  const baseNodes = payload.graph.nodes as Node[]
   const statuses: Record<string, EditStatus> = {}
   const edited = new Set<string>()
   const added = new Set<string>()
@@ -163,6 +227,11 @@ export function applyEdits(payload: RecipePlanResponse, edits: readonly unknown[
   const removedRows: { editId: string; row: Ingredient }[] = []
   const patches = new Map<number, Partial<Ingredient>>()
   const adds: Ingredient[] = []
+  const stepPatches = new Map<number, string>()
+  const links: { nodeIndex: number; rowId: string }[] = []
+  const editedSteps = new Set<string>()
+  const importedSteps = new Map<string, string>()
+  const linkedSteps = new Map<string, string>()
 
   edits.forEach((item, position) => {
     const key = isObject(item) && typeof item.id === 'string' ? item.id : `#${position}`
@@ -183,10 +252,45 @@ export function applyEdits(payload: RecipePlanResponse, edits: readonly unknown[
       })
       added.add(id)
       statuses[edit.id] = 'applied'
+      if (edit.step) {
+        const at = resolveStep(baseNodes, edit.step)
+        if (at == null) {
+          // Q3 (a): the add stays, unlinked, and the link is listed as its own orphan.
+          orphans.push({
+            id: edit.id,
+            edit: item as RecipeEdit,
+            kind: 'link',
+            label: edit.name,
+            yourChange: `was on "${edit.step.expected.text}"`,
+            nowSays: null,
+            importedText: edit.step.expected.text,
+          })
+        } else {
+          links.push({ nodeIndex: at, rowId: id })
+          linkedSteps.set(id, baseNodes[at].id)
+        }
+      }
       return
     }
     if (edit.kind === 'step') {
-      statuses[edit.id] = 'ignored'
+      const at = resolveStep(baseNodes, edit.anchor)
+      if (at == null) {
+        statuses[edit.id] = 'orphaned'
+        orphans.push({
+          id: edit.id,
+          edit: item as RecipeEdit,
+          kind: 'step',
+          label: edit.anchor.expected.text,
+          yourChange: edit.text,
+          nowSays: null,
+          importedText: edit.anchor.expected.text,
+        })
+        return
+      }
+      statuses[edit.id] = 'applied'
+      stepPatches.set(at, edit.text)
+      editedSteps.add(baseNodes[at].id)
+      importedSteps.set(baseNodes[at].id, baseNodes[at].instruction)
       return
     }
     const row = base[edit.anchor.index]
@@ -208,8 +312,8 @@ export function applyEdits(payload: RecipePlanResponse, edits: readonly unknown[
     patches.set(edit.anchor.index, patch)
   })
 
-  if (patches.size === 0 && removed.size === 0 && adds.length === 0) {
-    return { payload, statuses, edited, added, orphans, importedRows, removed: removedRows }
+  if (patches.size === 0 && removed.size === 0 && adds.length === 0 && stepPatches.size === 0) {
+    return { payload, statuses, edited, added, orphans, importedRows, removed: removedRows, editedSteps, importedSteps, linkedSteps }
   }
 
   const out = structuredClone(payload)
@@ -221,14 +325,18 @@ export function applyEdits(payload: RecipePlanResponse, edits: readonly unknown[
   out.graph.ingredients = [...rows.filter((_, i) => !removed.has(i)), ...adds]
   for (const index of removed) importedRows.delete(base[index].id)
   for (const id of [...importedRows.keys()]) if (!edited.has(id)) importedRows.delete(id)
-  return { payload: out, statuses, edited, added, orphans, importedRows, removed: removedRows }
+  const nodes = out.graph.nodes as Node[]
+  for (const [index, text] of stepPatches) nodes[index].instruction = text
+  for (const { nodeIndex, rowId } of links) nodes[nodeIndex].consumes = [...(nodes[nodeIndex].consumes ?? []), rowId]
+  return { payload: out, statuses, edited, added, orphans, importedRows, removed: removedRows, editedSteps, importedSteps, linkedSteps }
 }
 
 function describeOrphan(item: RecipeEdit, edit: Exclude<Parsed, { kind: 'add' } | { kind: 'step' }>, row: Ingredient | undefined): Orphan {
   const label = edit.anchor.expected.name
-  if (edit.kind === 'name') return { id: edit.id, edit: item, label, yourChange: edit.name, nowSays: row ? row.name : null }
-  if (edit.kind === 'remove') return { id: edit.id, edit: item, label, yourChange: 'Remove', nowSays: row ? row.name : null }
-  return { id: edit.id, edit: item, label, yourChange: amountText(edit.amount, edit.unit), nowSays: row ? importedLine(row) : null }
+  const orphan = { id: edit.id, edit: item, kind: 'ingredient' as const, label, importedText: null }
+  if (edit.kind === 'name') return { ...orphan, yourChange: edit.name, nowSays: row ? row.name : null }
+  if (edit.kind === 'remove') return { ...orphan, yourChange: 'Remove', nowSays: row ? row.name : null }
+  return { ...orphan, yourChange: amountText(edit.amount, edit.unit), nowSays: row ? importedLine(row) : null }
 }
 
 /** The anchor an edit on imported row `index` carries: the index and the line as it reads now. */
@@ -282,7 +390,26 @@ export function discardEdit(edits: readonly RecipeEdit[], id: string): RecipeEdi
   return restoreEdit(edits, id)
 }
 
-const addedEditId = (rowId: string): string | null => (rowId.startsWith(ADDED_ID_PREFIX) ? rowId.slice(ADDED_ID_PREFIX.length) : null)
+/** "Remove the link" on a link orphan: rewrites the add with no step. The ingredient itself stays (Q3). */
+export function unlinkAdd(edits: readonly RecipeEdit[], addEditId: string): RecipeEdit[] {
+  return edits.map((e) => {
+    const loose = asLoose(e)
+    if (loose.op !== 'add_ingredient' || loose.id !== addEditId || !isObject(loose.value)) return e
+    return { ...e, value: { ...loose.value, step: null } } as RecipeEdit
+  })
+}
+
+/**
+ * The id of the add edit behind added row `rowId`, or null when `rowId` is an imported row. Decided by
+ * membership in `edits`, not by the prefix: an imported id can start `ing_user_` ("User's choice
+ * greens" slugs to `ing_user_s_choice`), and a prefix test sent such a row down the added-row path,
+ * where Save and Remove found no add and silently did nothing (Q10).
+ */
+const addedEditId = (edits: readonly RecipeEdit[], rowId: string): string | null => {
+  if (!rowId.startsWith(ADDED_ID_PREFIX)) return null
+  const id = rowId.slice(ADDED_ID_PREFIX.length)
+  return edits.some((e) => asLoose(e).op === 'add_ingredient' && asLoose(e).id === id) ? id : null
+}
 
 /** Deletes every edit on imported row `rowId` (its name, its amount, a removal). An added row has none. */
 export function restoreRow(edits: readonly RecipeEdit[], payload: RecipePlanResponse, rowId: string): RecipeEdit[] {
@@ -298,7 +425,7 @@ export function removeRow(
   rowId: string,
   meta: { id: string; now: string },
 ): RecipeEdit[] {
-  const addId = addedEditId(rowId)
+  const addId = addedEditId(edits, rowId)
   if (addId != null) return edits.filter((e) => !(asLoose(e).op === 'add_ingredient' && asLoose(e).id === addId))
   const index = (payload.graph.ingredients as Ingredient[]).findIndex((r) => r.id === rowId)
   if (index < 0) return [...edits]
@@ -339,6 +466,14 @@ export function orphanNoticeLine(count: number): string | null {
   if (count <= 0) return null
   return count === 1 ? "1 of your changes couldn't be applied." : `${count} of your changes couldn't be applied.`
 }
+
+/** R6b D5: the review's honest lines for a step and for a link, and the link's button. A step keeps "Discard this change". */
+export const ORPHAN_COPY = {
+  step: 'This step changed in the imported recipe, or is gone.',
+  link: 'The step it was on changed in the imported recipe, or is gone. The ingredient stays.',
+  discard: 'Discard this change',
+  removeLink: 'Remove the link',
+} as const
 
 /** A22/A30: the review's second line for an orphan: what the imported recipe has there now. */
 export function orphanNowLine(nowSays: string | null): string {

@@ -1,0 +1,134 @@
+{
+  "nodes": {
+    "step_whisk_together_curd_besan_sliced_onions": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_heat_a_pan_and_add_oil": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_add_the_kadi_mixture_to_the": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_mix_together_besan_salt_chopped_green": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_heat_oil_in_a_deep_pan": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "inferred"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_give_the_partially_fried_pakoras_a": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_heat_the_oil_hotter_and_fry": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_check_the_cooked_kadi_for_salt": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_ten_minutes_before_serving_add_the": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_in_a_clean_pan_heat_desi": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    },
+    "step_wipe_the_pan_with_a_thin": {
+      "fields": {
+        "attention": "inferred",
+        "duration": "inferred",
+        "depends_on_previous": "inferred"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "added"
+    },
+    "step_serve_immediately": {
+      "fields": {
+        "attention": "extracted",
+        "duration": "inferred",
+        "depends_on_previous": "extracted"
+      },
+      "freshness": "stated_unbounded",
+      "freshness_cue": "Serve immediately.",
+      "origin": "source"
+    },
+    "step_wait_before_serving": {
+      "fields": {
+        "attention": "inferred",
+        "duration": "extracted",
+        "depends_on_previous": "inferred"
+      },
+      "freshness": "none",
+      "freshness_cue": null,
+      "origin": "source"
+    }
+  }
+}

@@ -23,7 +23,7 @@ import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
-import type { PlanEditing } from './plan/useIngredientEditing'
+import type { PlanEditing } from './plan/useRecipeEditing'
 import { cookOnRecipe, endOfPageFor, removeSavedRecipe } from './plan/endOfPage'
 import type { StalenessMarker } from './plan/staleness'
 import type { AlreadySaved } from './plan/AlreadySavedNotice'
@@ -435,6 +435,7 @@ export default function App() {
           provenance={
             view.returnTo.kind === 'plan' ? (view.returnTo.importMeta?.provenance ?? null) : null
           }
+          {...editedStepsOf(view.returnTo)}
           planKey={view.planKey}
           servingsChoice={view.servingsChoice ?? null}
           store={sessionStore}
@@ -547,6 +548,14 @@ function PlanRoute({
       editing={editing}
     />
   )
+}
+
+/** R6b: the steps whose text the cook edited, for cooking mode's quiet timer note. From the plan view's raw
+ * payload and edits; any other view has none. */
+function editedStepsOf(view: View) {
+  if (view.kind !== 'plan') return {}
+  const { editedSteps, importedSteps } = applyEdits(view.rawPayload, view.edits)
+  return { editedSteps, importedSteps }
 }
 
 /** R4: the choice a new session starts with: the view's, made safe for this plan, and none at

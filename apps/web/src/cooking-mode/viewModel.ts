@@ -22,7 +22,7 @@ import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/ty
 import type { HeaderTiming } from '@/lib/duration'
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { servingsCopy } from '@/lib/servingsCopy'
-import { stepNeedsAmountNote } from '@/lib/stepNote'
+import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE, stepAmountHint, stepNeedsAmountNote, textHasTimePhrase } from '@/lib/stepNote'
 
 import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
@@ -119,6 +119,12 @@ export interface CookingView {
    * on its first step screen, when the factor is 2 or more. Later steps and a smaller factor
    * get `null`. (The resume and conflict entry screen carries the same sentence in its `note`.) */
   timesNote: string | null
+  /** R6b B3 (ii): "Timers stay as planned. Changing times comes later." Only on the task screen of a step the
+   * cook edited whose text now has a time phrase. No "Edited" mark anywhere; the timer is still the scheduler's. */
+  stepTimeNote: string | null
+  /** R6b B26: "Ingredient amounts don't change with the step." when the edited text's amounts moved and the step
+   * lists an ingredient (the page's B20 condition, one helper). Shown after the time note. No "Edited" mark. */
+  stepAmountNote: string | null
   /** "Added by ABC Cook, not in the video" under the instruction when the step was added
    * (FGC-3). `null` on every other screen and for every step from the source. */
   addedNote: string | null
@@ -315,6 +321,10 @@ export interface CookingViewOptions {
   leaving: boolean
   /** R4: the session's servings choice (`session.servingsChoice`); absent is factor 1. */
   choice?: ServingsChoice | null
+  /** R6b: ids of the steps whose text the cook edited (`OverlayResult.editedSteps`). Absent is none. */
+  editedSteps?: ReadonlySet<string>
+  /** R6b: for each edited step, its instruction as imported (`OverlayResult.importedSteps`). */
+  importedSteps?: ReadonlyMap<string, string>
 }
 
 /** `nextPreview` (P1 #6 plan §C2): runs the current screen's own primary action
@@ -390,6 +400,8 @@ export function buildEntryView(
     chipItems: [],
     servingsNote: null,
     timesNote: null,
+    stepTimeNote: null,
+    stepAmountNote: null,
     addedNote: null,
     note: `${copy.timesNote && scaled ? `${copy.timesNote} ` : ''}${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
     step: null,
@@ -430,6 +442,8 @@ export function buildCookingView(
     chipItems: [],
     servingsNote: null,
     timesNote: null,
+    stepTimeNote: null,
+    stepAmountNote: null,
     addedNote: null,
     note: null,
     step: null,
@@ -459,6 +473,10 @@ export function buildCookingView(
     )
     v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
     v.addedNote = n.addedLabel
+    v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? STEP_TIME_NOTE : null
+    const imported = options.importedSteps?.get(cur)
+    v.stepAmountNote =
+      options.editedSteps?.has(cur) && imported != null && stepAmountHint(imported, n.instruction, n.consumes) ? STEP_AMOUNT_NOTE : null
     v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
     v.strip = stripFor(model, session, now, cur)
     if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)
