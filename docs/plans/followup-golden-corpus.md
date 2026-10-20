@@ -702,6 +702,15 @@ them to the list only if testers ask. Plan: A12.
 
 ### FGC-57 (R6b): step text, "Which step uses it?" and the rename note
 
+**Status (2026-10-20): done (R6b), awaiting PR.** Plan: docs/plans/r6b-step-text-editing.md (branch
+`feat/r6b-step-text-editing`). Shipped as: one Edit control on the Plan tab, a pencil and an in-row editor
+per editable step, the time note, "Which step uses it?" on the Add form and on an added row, and the rename
+note with "Edit the step".
+
+Before M5, with the cooking-mode check (B6): the step picker is a native `<select>`. W1 and A2 saw it only in
+headless Chromium (a listbox rendition). Check the iOS wheel on a real iPhone: long option text, the duplicate
+label disambiguation, Devanagari.
+
 R6a edits ingredients only. R6b needs R6a and adds:
 - step-text editing inside the expanded stage cards, with the same pattern as the ingredient rows
   (a row-level Save, an "Edited" tag, "Restore original");
@@ -720,9 +729,34 @@ No capture in the corpus has "Added by ABC Cook" steps, so R6a could not observe
 behaves on one (W0, A18). The FGC-3 PR, and R6b, must test a step-text edit on an added step: that the
 anchor resolves, survives a refresh, and orphans honestly when the step is dropped.
 
+**Status (2026-10-20): tested on the web side (R6b).** The fixtures are `apps/web/src/__fixtures__/fgc58/`
+(`added`, `dropped`, `dropped-time`, each with its `.provenance.json`); `library/stepEdits.test.ts` resolves,
+refreshes and orphans against them. The API side (`reprocess()` on an added step) stays with the FGC-3 PR.
+
+R6b W0 (2026-10-20, B14): adding a step to pumpkin's original took it to `degraded`. A step-count change in
+the original breaks the stored repair replay (15 of 58 W0 runs). Not R6b work; the FGC-3 PR must look at both.
+
+### FGC-61 (R6b, only if reported): optional label on `StepAnchor`
+
+D2 can apply a step edit to an identical-text twin or copy when duplicates plus an upstream change exist
+(W0 item 3; croissant is the only recipe with a duplicate pair). If a mis-target is ever reported, add an
+optional `expected.label` to `StepAnchor` (labels never change, Q8). Backward compatible, so deferring costs
+nothing. No schema change in R6b (B9).
+
+### FGC-60 (R6b, P3): tips are not editable
+
+`set_step_text` writes `instruction` only. A tip (`Node.tip`, an optional or alternative step attached with
+`attach_to_step`) is another field on another node and has no op, so R6b does not edit it (Q12). Add an op only
+if testers ask.
+
+### FGC-62 (R6b, P3): numbers in a step label move with the text when times become editable
+
+R6b never changes a label (Q8, B22), so "Soak 2 hours" stays when the text says 4 hours; the page and cooking
+mode explain it with the time note. When times become editable, a number in the label must move with them.
+
 ### FGC-59 (P3, web): no DOM test for the editing hook
 
-`plan/useIngredientEditing.ts` and the editor components have no DOM test, because the repo has no
+`plan/useRecipeEditing.ts` (renamed from `useIngredientEditing.ts` in R6b, B7) and the editor components have no DOM test, because the repo has no
 jsdom. The rules live in `library/ingredientEditor.ts` and are tested as pure state transitions (what a
 fraction button does, when an edit is written, the four exits of A24). The wiring was proven in the
 real app with Playwright frames (HARD STOP A and A2). A tab-switch and back exit were run there; if the

@@ -4,7 +4,7 @@ import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
 
 import kadhi from '@/__fixtures__/kadhi-pakora.plan-response.json'
 
-import { applyEdits, ingredientAnchor, type RecipeEdit } from './recipeEdits'
+import { applyEdits, ingredientAnchor, stepAnchor, type RecipeEdit } from './recipeEdits'
 import { createLibrary, type StorageLike } from './store'
 
 const RAW = kadhi as RecipePlanResponse
@@ -199,5 +199,57 @@ describe('A6 guard: an edited value never reaches a stored payload', () => {
     expect(overlaid.payload).not.toBe(entry.payload)
     expect(JSON.stringify(overlaid.payload)).toContain('Unique-Name')
     expect(JSON.stringify(entry.payload)).toBe(snapshot)
+  })
+})
+
+describe('R6b: a step edit and a linked add never reach a stored payload', () => {
+  const MARKS = ['ing_user_', 'Unique-Step-Text', 'Zzz-Linked']
+  const stepEdits = (): RecipeEdit[] => [
+    { id: 's1', created_at: AT, op: 'set_step_text', anchor: stepAnchor(RAW, 2), value: { text: 'Unique-Step-Text: cook for 40 minutes.' } } as RecipeEdit,
+    {
+      id: 'k1',
+      created_at: AT,
+      op: 'add_ingredient',
+      value: { name: 'Zzz-Linked', amount: null, unit: null, step: stepAnchor(RAW, 2) },
+    } as RecipeEdit,
+  ]
+
+  it('setEdits stores the edits beside the payload, which stays raw through setEdits, servings and refresh', () => {
+    const { library, id, storage } = seeded()
+    const check = (label: string) => {
+      const body = JSON.parse(storage.data.get(KEY) ?? '{"recipes":[]}') as { recipes: { payload: unknown }[] }
+      for (const r of body.recipes) for (const mark of MARKS) expect(JSON.stringify(r.payload), `${label}: ${mark}`).not.toContain(mark)
+    }
+    library.setEdits(id, stepEdits())
+    check('setEdits')
+    expect(storage.data.get(KEY)).toContain('Unique-Step-Text')
+    library.setServingsChoice(id, { mode: 'servings', chosen: 6, original: 4 })
+    check('setServingsChoice')
+    library.refresh(id, { payload: raw(), import_meta: META, postprocess_version: 15 })
+    check('refresh')
+    expect(library.get(id)!.edits).toHaveLength(2)
+  })
+
+  it('applying them never changes the raw payload the library holds', () => {
+    const { library, id } = seeded()
+    library.setEdits(id, stepEdits())
+    const entry = library.get(id)!
+    const snapshot = JSON.stringify(entry.payload)
+    const overlaid = applyEdits(entry.payload, entry.edits ?? [])
+    expect(overlaid.payload).not.toBe(entry.payload)
+    expect(JSON.stringify(overlaid.payload)).toContain('Unique-Step-Text')
+    expect(JSON.stringify(entry.payload)).toBe(snapshot)
+  })
+
+  it('a refresh that rewrites the step orphans its edit, keeps both in the store, and lists the link as its own orphan', () => {
+    const { library, id } = seeded()
+    library.setEdits(id, stepEdits())
+    const rewritten = raw()
+    ;(rewritten.graph.nodes as unknown as { instruction: string }[])[2].instruction = 'The recipe was rewritten.'
+    library.refresh(id, { payload: rewritten, import_meta: META, postprocess_version: 15 })
+    const recipe = library.get(id)!
+    expect(recipe.edits).toHaveLength(2)
+    const result = applyEdits(recipe.payload, recipe.edits ?? [])
+    expect(result.orphans.map((o) => `${o.kind}:${o.id}`)).toEqual(['step:s1', 'link:k1'])
   })
 })

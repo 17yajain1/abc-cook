@@ -39,6 +39,8 @@ import { WhatsCookingSheet } from './WhatsCookingSheet'
 export function CookingModeScreen({
   payload,
   provenance = null,
+  editedSteps,
+  importedSteps,
   planKey,
   servingsChoice = null,
   store,
@@ -51,6 +53,10 @@ export function CookingModeScreen({
   payload: RecipePlanResponse
   /** FGC-3: which steps ABC Cook added; `null` for a plan with no provenance (the label is simply absent). */
   provenance?: GraphProvenance | null
+  /** R6b: ids of the steps whose text the cook edited; a time phrase in one earns the quiet timer note (B3 ii). */
+  editedSteps?: ReadonlySet<string>
+  /** R6b B26: those steps as imported, to tell whether the amounts in an edited step moved. */
+  importedSteps?: ReadonlyMap<string, string>
   planKey: string
   /** R4: the choice a session started from this screen begins with (the plan view's). A session
    * already in progress carries its own, and that one wins everywhere below. */
@@ -269,6 +275,8 @@ export function CookingModeScreen({
           recipeTitle: payload.graph.title,
           leaving,
           choice: openResult.session.servingsChoice ?? null,
+          editedSteps,
+          importedSteps,
         })
 
   const sheet =

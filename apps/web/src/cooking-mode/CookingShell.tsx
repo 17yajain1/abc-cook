@@ -113,6 +113,9 @@ export function CookingShell({
               </ul>
             )}
             {view.note && <p className={`mt-3 text-[15px] leading-[1.5] ${g.ink2}`}>{view.note}</p>}
+            {/* R6b B3 (ii), B21: said in the doneness-cue line's own style, after it. No "Edited" mark. */}
+            {view.stepTimeNote && <p className={`mt-3 text-[15px] leading-[1.5] ${g.ink2}`}>{view.stepTimeNote}</p>}
+            {view.stepAmountNote && <p className={`mt-3 text-[15px] leading-[1.5] ${g.ink2}`}>{view.stepAmountNote}</p>}
           </div>
         ) : (
           <div className="shrink-0">

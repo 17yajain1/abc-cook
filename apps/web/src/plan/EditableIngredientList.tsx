@@ -1,38 +1,37 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, type ReactNode } from 'react'
 
 import type { ServingsChoice } from '@/lib/servings'
 import { asWrittenLine, importedLines, removeWarning, type FieldState } from '@/library/ingredientEditor'
 import { importedLine, stepUsage } from '@/library/recipeEdits'
+import { EDIT_THE_STEP, RENAME_NOTE_COPY, renameNoteSteps } from '@/library/renameNote'
 
+import { EditedTag } from './EditedTag'
+import { PencilIcon } from './editorParts'
 import { IngredientEditorBody } from './IngredientEditorBody'
 import { IngredientRow } from './IngredientRow'
 import type { IngredientListGroup } from './ingredientGroups'
-import type { PlanEditing, useIngredientEditing } from './useIngredientEditing'
+import type { StepChoiceGroup } from './stepRows'
+import type { PlanEditing, useRecipeEditing } from './useRecipeEditing'
 
 /** What the Ingredients tab needs to draw editing: the saved entry's context and the session. */
 export interface IngredientsEdit {
   editing: PlanEditing
-  api: ReturnType<typeof useIngredientEditing>
+  api: ReturnType<typeof useRecipeEditing>
   /** The page's servings choice, for the A1 line. */
   choice: ServingsChoice | null
+  /** R6b D8: the picker's options, one group per stage card in page order. */
+  stepGroups: StepChoiceGroup[]
+  /** R6b B4: the rename note's "Edit the step": leaves for the Plan tab with that step open. Blocked exits stay put. */
+  goToStep: (nodeId: string) => void
 }
 
-function PencilIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z" />
-      <path d="M14.5 6.5l3 3" />
-    </svg>
-  )
-}
-
-/** "Edit" / "Done" and the hint, above the list. */
-export function EditToolbar({ edit }: { edit: IngredientsEdit }) {
+/** "Edit" / "Done" and the hint, above the list. One control for both tabs; only the hint differs. */
+export function EditToolbar({ edit, hint }: { edit: IngredientsEdit; hint: string }) {
   const { api } = edit
   const editing = api.session.mode === 'edit'
   return (
     <div className="sticky top-[var(--plan-bar-h,0px)] z-10 flex items-center justify-between gap-3 bg-home-ground px-5 pb-2 pt-3">
-      <p className="min-w-0 flex-1 text-[13px] leading-[1.4] text-home-ink-2">{editing ? 'Tap an ingredient to change it.' : ''}</p>
+      <p className="min-w-0 flex-1 text-[13px] leading-[1.4] text-home-ink-2">{editing ? hint : ''}</p>
       <button
         type="button"
         onClick={() => (editing ? api.guard('done', () => {}) : api.enter())}
@@ -43,18 +42,6 @@ export function EditToolbar({ edit }: { edit: IngredientsEdit }) {
         {editing ? 'Done' : 'Edit'}
       </button>
     </div>
-  )
-}
-
-function EditedTag({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative ml-2 align-baseline text-[13px] font-normal text-home-ink-2 underline underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
-    >
-      Edited
-    </button>
   )
 }
 
@@ -75,13 +62,34 @@ function RowEditor({ edit, field, rowId }: { edit: IngredientsEdit; field: Field
         warning: removeWarning(steps),
         // A removed imported row can be restored, so it only needs a confirm when a step uses it;
         // an added row is deleted for good, so it always does.
-        confirm: steps > 0 || rowId.startsWith('ing_user_'),
+        confirm: steps > 0 || overlay.added.has(rowId),
         onRemove: () => api.remove(rowId),
       }}
       writeError={api.session.writeError}
       onDone={api.commitOpen}
       doneLabel="Save"
+      stepPicker={overlay.added.has(rowId) ? { groups: edit.stepGroups, value: field.stepNodeId, onChange: (stepNodeId) => api.change({ stepNodeId }) } : null}
     />
+  )
+}
+
+/** D9: under a row that was just renamed, when a step that uses it still says the old name. */
+function RenameNote({ edit, rowId, oldNames }: { edit: IngredientsEdit; rowId: string; oldNames: string[] }) {
+  const steps = renameNoteSteps(edit.editing.ctx, rowId, oldNames)
+  if (steps.length === 0) return null
+  return (
+    <li className="my-1 rounded-home-mini bg-home-surface px-3 py-2">
+      <p className="text-[13px] leading-[1.4] text-home-ink-2">{RENAME_NOTE_COPY}</p>
+      {steps.length === 1 && (
+        <button
+          type="button"
+          onClick={() => edit.goToStep(steps[0])}
+          className="flex h-11 items-center text-[13px] font-medium text-home-ink underline underline-offset-2"
+        >
+          {EDIT_THE_STEP}
+        </button>
+      )}
+    </li>
   )
 }
 
@@ -117,6 +125,7 @@ export function EditableIngredientList({ groups, edit }: { groups: IngredientLis
         writeError={session.writeError}
         onDone={api.commitOpen}
         doneLabel="Add ingredient"
+        stepPicker={{ groups: edit.stepGroups, value: session.add.stepNodeId, onChange: (stepNodeId) => api.change({ stepNodeId }) }}
       />
     </div>
   ) : inEdit ? (
@@ -144,41 +153,44 @@ export function EditableIngredientList({ groups, edit }: { groups: IngredientLis
                 )
               }
               const edited = overlay.edited.has(item.key)
+              const note = session.renameNote?.rowId === item.key ? session.renameNote : null
               return (
-                <IngredientRow
-                  key={item.key}
-                  primary={
-                    <>
-                      {inEdit ? (
-                        <button type="button" onClick={() => api.openRowById(item.key)} className="text-left">
-                          {item.name}
-                        </button>
-                      ) : (
-                        item.name
-                      )}
-                      {item.optional && <span className="ml-2 text-[13px] text-home-ink-2">optional</span>}
-                      {edited && <EditedTag onClick={() => api.openRowById(item.key)} />}
-                    </>
-                  }
-                  trailing={
-                    <span className="inline-flex items-center gap-1">
-                      <span className="text-right">
-                        {item.trailing}
-                        {item.note && <span className="block text-[12px] font-normal">{item.note}</span>}
+                <Fragment key={item.key}>
+                  <IngredientRow
+                    primary={
+                      <>
+                        {inEdit ? (
+                          <button type="button" onClick={() => api.openRowById(item.key)} className="text-left">
+                            {item.name}
+                          </button>
+                        ) : (
+                          item.name
+                        )}
+                        {item.optional && <span className="ml-2 text-[13px] text-home-ink-2">optional</span>}
+                        {edited && <EditedTag onClick={() => api.openRowById(item.key)} />}
+                      </>
+                    }
+                    trailing={
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-right">
+                          {item.trailing}
+                          {item.note && <span className="block text-[12px] font-normal">{item.note}</span>}
+                        </span>
+                        {inEdit && (
+                          <button
+                            type="button"
+                            aria-label={`Edit ${item.name}`}
+                            onClick={() => api.openRowById(item.key)}
+                            className="flex h-11 w-9 items-center justify-end text-home-ink"
+                          >
+                            <PencilIcon />
+                          </button>
+                        )}
                       </span>
-                      {inEdit && (
-                        <button
-                          type="button"
-                          aria-label={`Edit ${item.name}`}
-                          onClick={() => api.openRowById(item.key)}
-                          className="flex h-11 w-9 items-center justify-end text-home-ink"
-                        >
-                          <PencilIcon />
-                        </button>
-                      )}
-                    </span>
-                  }
-                />
+                    }
+                  />
+                  {note && inEdit && <RenameNote edit={edit} rowId={item.key} oldNames={note.oldNames} />}
+                </Fragment>
               )
             })}
           </ul>

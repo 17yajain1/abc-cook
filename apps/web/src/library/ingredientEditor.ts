@@ -3,7 +3,9 @@ import type { Ingredient, RecipeEdit, RecipePlanResponse } from '@abc-cook/schem
 import { formatAmount, snapAmount } from '@/lib/scaleQuantity'
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 
-import { importedLine, ingredientAnchor, upsertEdit, type OverlayResult } from './recipeEdits'
+import { importedLine, ingredientAnchor, stepAnchor, upsertEdit, type OverlayResult } from './recipeEdits'
+import { renameOldNames } from './renameNote'
+import { commitStep, isStepDirty, openStep, type StepFieldState } from './stepEditor'
 import { EDITS_WRITE_FAILED } from './store'
 
 /**
@@ -54,12 +56,14 @@ export interface FieldState {
   /** The unit the recipe was imported with, which the picker shows first (A15). */
   importedUnit: string | null
   errors: FieldErrors
+  /** R6b: the step the added ingredient is used in (the node id), or null for "None". Only the Add form and an added row use it. */
+  stepNodeId: string | null
   /** A snapshot of the editable fields when the editor opened, to tell if the cook changed any. */
   initial: string
 }
 
-type Editable = Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit'>
-const snapshot = (f: Editable): string => JSON.stringify([f.name, f.mode, f.amount, f.rangeOpen, f.range, f.unit])
+type Editable = Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit'> & Partial<Pick<FieldState, 'stepNodeId'>>
+const snapshot = (f: Editable): string => JSON.stringify([f.name, f.mode, f.amount, f.rangeOpen, f.range, f.unit, f.stepNodeId ?? null])
 
 export function isDirty(f: FieldState): boolean {
   return snapshot(f) !== f.initial
@@ -183,6 +187,8 @@ export function openRow(ctx: EditContext, rowId: string): FieldState {
     name: row.name,
     ...amountFields(row),
     importedUnit: amountFields(imported).unit,
+    // An added row opens on the step it is linked to; an orphaned link opens on None (D8).
+    stepNodeId: ctx.overlay.linkedSteps.get(rowId) ?? null,
     errors: {},
   })
 }
@@ -198,6 +204,7 @@ export function openAdd(): FieldState {
     range: '',
     unit: null,
     importedUnit: null,
+    stepNodeId: null,
     errors: {},
   })
 }
@@ -244,7 +251,8 @@ export interface CommitDeps {
   newId: () => string
 }
 
-const isAdded = (id: string): boolean => id.startsWith('ing_user_')
+/** Whether row `id` is one the cook added. Membership in the overlay, not the id prefix: an imported id can start `ing_user_` (Q10). */
+const isAdded = (ctx: EditContext, id: string): boolean => ctx.overlay.added.has(id)
 
 /**
  * The edits array after the cook commits `f`: `ctx.edits` itself when nothing changed, or the
@@ -255,21 +263,21 @@ export function commitFields(ctx: EditContext, f: FieldState, deps: CommitDeps):
   const errors = validateFields(f)
   // A unit chosen for a line that has no amount has nothing to attach to.
   const unitMoved = f.unit !== amountFieldsOfInitial(f).unit
-  if (f.mode === 'number' && f.amount.trim() === '' && unitMoved && f.target.kind === 'row' && !isAdded(f.target.id)) {
+  if (f.mode === 'number' && f.amount.trim() === '' && unitMoved && f.target.kind === 'row' && !isAdded(ctx, f.target.id)) {
     errors.amount = errors.amount ?? EDITOR_COPY.amountError
   }
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
-  if (f.target.kind === 'add') return { ok: true, edits: upsertEdit(ctx.edits, addEdit(f, deps, null)) }
+  if (f.target.kind === 'add') return { ok: true, edits: upsertEdit(ctx.edits, addEdit(ctx, f, deps, null)) }
   const rowId = f.target.id
-  if (isAdded(rowId)) return { ok: true, edits: rewriteAdded(ctx, f, rowId) }
+  if (isAdded(ctx, rowId)) return { ok: true, edits: rewriteAdded(ctx, f, rowId) }
 
   const base = rowsOf(ctx.payload)
   const index = base.findIndex((r) => r.id === rowId)
   if (index < 0) return { ok: true, edits: ctx.edits }
   const imported = base[index]
   const anchor = ingredientAnchor(ctx.payload, index)
-  const was = JSON.parse(f.initial) as [string, string, string, boolean, string, string | null]
+  const was = JSON.parse(f.initial) as InitialTuple
   let edits = ctx.edits
 
   // name
@@ -305,8 +313,10 @@ export function commitFields(ctx: EditContext, f: FieldState, deps: CommitDeps):
   return { ok: true, edits: sameEdits(edits, ctx.edits) ? ctx.edits : edits }
 }
 
+type InitialTuple = [string, string, string, boolean, string, string | null, string | null]
+
 function amountFieldsOfInitial(f: FieldState): { unit: string | null } {
-  const was = JSON.parse(f.initial) as [string, string, string, boolean, string, string | null]
+  const was = JSON.parse(f.initial) as InitialTuple
   return { unit: was[5] }
 }
 
@@ -322,12 +332,23 @@ function addValueOf(f: FieldState, step: unknown): { name: string; amount: Amoun
   return { name: f.name.trim(), amount, unit: amount?.kind === 'to_taste' ? null : f.unit, step }
 }
 
-function addEdit(f: FieldState, deps: CommitDeps, keep: { id: string; created_at: string; step: unknown } | null): RecipeEdit {
+/** The anchor for the step the cook picked, built from the RAW payload, or null for None (or a node that is not there). */
+function pickedStep(ctx: EditContext, nodeId: string | null): unknown {
+  if (nodeId == null) return null
+  const index = ctx.payload.graph.nodes.findIndex((n) => n.id === nodeId)
+  return index < 0 ? null : stepAnchor(ctx.payload, index)
+}
+
+function addEdit(ctx: EditContext, f: FieldState, deps: CommitDeps, keep: { id: string; created_at: string; step: unknown } | null): RecipeEdit {
+  // An existing add keeps the link it has unless the cook moved the picker: so an orphaned link, which opens on
+  // None, is not dropped by a save that only renamed the ingredient.
+  const was = (JSON.parse(f.initial) as InitialTuple)[6]
+  const step = keep && f.stepNodeId === was ? keep.step : pickedStep(ctx, f.stepNodeId)
   return {
     id: keep?.id ?? deps.newId(),
     created_at: keep?.created_at ?? deps.now,
     op: 'add_ingredient',
-    value: addValueOf(f, keep?.step ?? null),
+    value: addValueOf(f, step),
   } as RecipeEdit
 }
 
@@ -338,25 +359,47 @@ function rewriteAdded(ctx: EditContext, f: FieldState, rowId: string): RecipeEdi
   if (at < 0) return ctx.edits
   const old = ctx.edits[at] as unknown as { id: string; created_at: string; value: { step?: unknown } }
   const next = [...ctx.edits]
-  next[at] = addEdit(f, { now: old.created_at, newId: () => old.id }, { id: old.id, created_at: old.created_at, step: old.value?.step ?? null })
+  next[at] = addEdit(ctx, f, { now: old.created_at, newId: () => old.id }, { id: old.id, created_at: old.created_at, step: old.value?.step ?? null })
   return sameEdits(next, ctx.edits) ? ctx.edits : next
 }
 
 // ---- the session: what a tap away does ---------------------------------------------------
 
-export interface EditSession {
-  mode: 'view' | 'edit'
-  /** The open ingredient row. At most one of `open` and `add` is set. */
-  open: FieldState | null
-  add: FieldState | null
-  /** Set when the last write failed (A8). The editor stays open with its input. */
-  writeError: string | null
+/** D9: set when a rename was saved, so the page can say the step text may still have the old name. */
+export interface RenameNote {
+  rowId: string
+  /** The imported name and the name before the save (B4), minus the name the row has now. */
+  oldNames: string[]
 }
 
-export type LeaveKind = 'done' | 'tab' | 'start' | 'back' | 'row'
+/** B20: set when a step was saved. `amountHint` is whether the saved text's amounts moved while its ingredient rows did not. */
+export interface SavedStep {
+  nodeId: string
+  amountHint: boolean
+}
+
+export interface EditSession {
+  mode: 'view' | 'edit'
+  /** The open ingredient row. At most one of `open`, `add` and `step` is set. */
+  open: FieldState | null
+  add: FieldState | null
+  /** R6b: the open step. */
+  step: StepFieldState | null
+  /** Set when the last write failed (A8). The editor stays open with its input. */
+  writeError: string | null
+  /** The note under the last renamed row, while edit mode stays on. */
+  renameNote: RenameNote | null
+  /** The hint under the last saved step, while edit mode stays on. */
+  savedStep: SavedStep | null
+}
+
+/** `collapse`: a stage card with the open step in it is being closed (D3). Like `row`, it keeps edit mode on. */
+export type LeaveKind = 'done' | 'tab' | 'start' | 'back' | 'row' | 'collapse'
+
+const CLOSED: EditSession = { mode: 'view', open: null, add: null, step: null, writeError: null, renameNote: null, savedStep: null }
 
 export function startEditing(): EditSession {
-  return { mode: 'edit', open: null, add: null, writeError: null }
+  return { ...CLOSED, mode: 'edit' }
 }
 
 /** A4: tapping an "Edited" tag enters edit mode with that row open. */
@@ -364,12 +407,22 @@ export function startEditingAt(ctx: EditContext, rowId: string): EditSession {
   return { ...startEditing(), open: openRow(ctx, rowId) }
 }
 
-/** Opens the Add form at the end of the list, closing any open row. */
-export function openAddForm(session: EditSession): EditSession {
-  return { ...session, open: null, add: openAdd(), writeError: null }
+/** R6b: tapping a step's "Edited" tag, or the rename note's "Edit the step", enters edit mode with that step open (B4). */
+export function startEditingAtStep(ctx: EditContext, nodeId: string): EditSession {
+  return { ...startEditing(), step: openStep(ctx, nodeId) }
 }
 
-type Patch = Partial<Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit'>>
+/** Opens the Add form at the end of the list, closing any open row or step. */
+export function openAddForm(session: EditSession): EditSession {
+  return { ...session, open: null, add: openAdd(), step: null, writeError: null, renameNote: null, savedStep: null }
+}
+
+/** Opens step `nodeId` in the page, closing any open row or the Add form. The caller commits what was open first (`leave('row')`). */
+export function openStepForm(session: EditSession, ctx: EditContext, nodeId: string): EditSession {
+  return { ...session, open: null, add: null, step: openStep(ctx, nodeId), writeError: null, renameNote: null, savedStep: null }
+}
+
+type Patch = Partial<Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit' | 'stepNodeId'>>
 
 /** The fields with `patch` applied. The inline errors clear as soon as the cook types. */
 export function editField(f: FieldState, patch: Patch): FieldState
@@ -382,6 +435,12 @@ export function editField(target: FieldState | EditSession, patch: Patch): Field
   return { ...target, [key]: { ...field, ...patch, errors: {} }, writeError: null }
 }
 
+/** What the cook typed into the open step, exactly as typed (it is normalised only at commit). Clears the inline error. */
+export function editStepText(session: EditSession, text: string): EditSession {
+  if (!session.step) return session
+  return { ...session, step: { ...session.step, text, errors: {} }, writeError: null }
+}
+
 export interface LeaveResult {
   proceed: boolean
   session: EditSession
@@ -391,21 +450,46 @@ export interface LeaveResult {
 
 export type WriteEdits = (edits: RecipeEdit[]) => { ok: boolean }
 
+/** The note after `field` (an ingredient row) was committed with a rename, or null. */
+function renameNoteAfter(ctx: EditContext, field: FieldState): RenameNote | null {
+  if (field.target.kind !== 'row') return null
+  const rowId = field.target.id
+  const before = (JSON.parse(field.initial) as InitialTuple)[0].trim()
+  const now = field.name.trim()
+  if (before === now) return null
+  const imported = (ctx.payload.graph.ingredients as Ingredient[]).find((r) => r.id === rowId)?.name ?? null
+  const oldNames = renameOldNames(imported, before).filter((n) => n.toLocaleLowerCase('en') !== now.toLocaleLowerCase('en'))
+  return oldNames.length > 0 ? { rowId, oldNames } : null
+}
+
 /**
- * A24: the cook leaves the editor by Done, a tab, Start cooking, going back, or opening another
- * row. Nothing typed is lost silently: a changed, valid field is committed (through `write`) and
- * the cook goes on; invalid input stays open with its inline error and the cook does not; a
- * failed write keeps the row open with its input and the A8 message.
+ * A24: the cook leaves the editor by Done, a tab, Start cooking, going back, opening another row or
+ * closing the card the open step is in. Nothing typed is lost silently: a changed, valid field is
+ * committed (through `write`) and the cook goes on; invalid input stays open with its inline error
+ * and the cook does not; a failed write keeps the editor open with its input and the A8 message.
  */
 export function leave(session: EditSession, kind: LeaveKind, ctx: EditContext, write: WriteEdits, deps: CommitDeps): LeaveResult {
-  const closed: EditSession = kind === 'row' ? { ...session, open: null, add: null, writeError: null } : { mode: 'view', open: null, add: null, writeError: null }
-  const key = session.open ? 'open' : session.add ? 'add' : null
-  const field = key ? session[key] : null
-  if (!key || !field || !isDirty(field)) return { proceed: true, session: closed }
+  const stays = kind === 'row' || kind === 'collapse'
+  const closed: EditSession = stays ? { ...session, open: null, add: null, step: null, writeError: null } : { ...CLOSED }
+  const key = session.open ? 'open' : session.add ? 'add' : session.step ? 'step' : null
+  if (!key) return { proceed: true, session: closed }
 
+  if (key === 'step') {
+    const field = session.step as StepFieldState
+    if (!isStepDirty(field)) return { proceed: true, session: closed }
+    const res = commitStep(ctx, field, deps)
+    if (!res.ok) return { proceed: false, session: { ...session, step: { ...field, errors: res.errors }, writeError: null } }
+    if (res.edits === ctx.edits) return { proceed: true, session: closed }
+    if (!write(res.edits).ok) return { proceed: false, session: { ...session, writeError: EDITOR_COPY.writeFailed } }
+    const saved: SavedStep = { nodeId: field.target.nodeId, amountHint: res.amountHint }
+    return { proceed: true, session: stays ? { ...closed, renameNote: null, savedStep: saved } : closed, edits: res.edits }
+  }
+
+  const field = session[key] as FieldState
+  if (!isDirty(field)) return { proceed: true, session: closed }
   const res = commitFields(ctx, field, deps)
   if (!res.ok) return { proceed: false, session: { ...session, [key]: { ...field, errors: res.errors }, writeError: null } }
   if (res.edits === ctx.edits) return { proceed: true, session: closed }
   if (!write(res.edits).ok) return { proceed: false, session: { ...session, writeError: EDITOR_COPY.writeFailed } }
-  return { proceed: true, session: closed, edits: res.edits }
+  return { proceed: true, session: stays ? { ...closed, renameNote: renameNoteAfter(ctx, field), savedStep: null } : closed, edits: res.edits }
 }

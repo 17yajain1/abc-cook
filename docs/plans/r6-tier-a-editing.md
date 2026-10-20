@@ -1,8 +1,8 @@
 # R6 — Tier A editing (ingredients and step text, no timing change)
 
-**Status (2026-10-20): R6a implemented** (ingredient editing, branch `feat/r6-tier-a-editing`, not yet
-merged). **R6b not started** (step text, "Which step uses it?", the A5 rename note). Follow-ups: FGC-54 to
-FGC-59 in `docs/plans/followup-golden-corpus.md`.
+**Status (2026-10-20): R6a merged** in #74 (`f2413f2`). **R6b planned** in
+`docs/plans/r6b-step-text-editing.md` (step text, "Which step uses it?", the A5 rename note): R6b
+implemented in feat/r6b-step-text-editing, awaiting PR. Follow-ups: FGC-54 to FGC-59 in `docs/plans/followup-golden-corpus.md`.
 
 ## Owner answers and amendments
 
@@ -392,6 +392,12 @@ set_step_text          {anchor: StepAnchor, value: {text: str (1..1000, trimmed)
   whenever an original exists; W0 verifies it (A11).
 - A step anchor resolves to the node whose `instruction` equals `expected.text`. With duplicates,
   the k-th match, where k is the number of duplicates before `index`. Not found → orphan.
+- Amendment (2026-10-20, R6b Q1): R6b replaces the k-th-duplicate rule with D2
+  (`docs/plans/r6b-step-text-editing.md`):
+  - an exact text match, wherever the step moved, when the text is unique;
+  - with duplicates, only the node at `index`, else orphan.
+
+  The `RecipeEdit` docstring ("index as a tiebreak") still holds, so there is no API change.
 
 **One edit per target.**
 - A new `set_*` replaces the same op on the same anchor, in place.

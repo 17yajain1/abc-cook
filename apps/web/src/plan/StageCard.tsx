@@ -8,6 +8,8 @@ import { formatMinutes } from '@/lib/duration'
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderStage, RenderTask } from './derive'
+import { useStepEdit, useStepOpen } from './stepEditContext'
+import { StepInstruction, StepPencil } from './StepRow'
 import { WaitWindowBlock } from './WaitWindowBlock'
 
 /**
@@ -36,6 +38,9 @@ export function StageCard({
 }) {
   const tint = stageColor(stage.index)
   const ordinal = stageOrdinal(stage)
+  // R6b (W1 pick f): a collapsed card says so when it holds an edited step, window tasks included.
+  const edited = useStepEdit()?.edited
+  const holdsEdit = edited != null && stageHoldsEdit(stage, edited)
 
   const windowByHost = new Map(stage.windows.map((w) => [w.hostNodeId, w]))
   const chain = stage.inlineTasks.map((t) => t.label).join(' → ')
@@ -80,6 +85,9 @@ export function StageCard({
             </span>
           )}
         </span>
+        {!expanded && holdsEdit && (
+          <span className="flex-shrink-0 pt-[3px] text-[13px] font-normal leading-[18px] text-home-ink-2">Edited</span>
+        )}
         {!expanded && showsStageDuration && (
           <span className="tabular flex-shrink-0 pt-[3px] text-[13px] font-medium leading-[18px] text-home-ink-2">
             {collapsedStageDurationText(stage.span)}
@@ -129,6 +137,11 @@ export function StageCard({
       )}
     </div>
   )
+}
+
+/** Whether any step this card draws (inline or in a window) is one of the `edited` ids. */
+export function stageHoldsEdit(stage: RenderStage, edited: ReadonlySet<string>): boolean {
+  return stage.inlineTasks.some((t) => edited.has(t.nodeId)) || stage.windows.some((w) => w.tasks.some((t) => edited.has(t.nodeId)))
 }
 
 /** Badge number and badge tint both come from `stage.index` — the M2 defect the doc
@@ -219,6 +232,8 @@ export function taskDurationText(task: RenderTask): string {
  */
 function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
   const note = attentionNote(task.attention)
+  // B25: with the editor open the duration moves to the corner and the text column takes the whole row.
+  const open = useStepOpen(task.nodeId)
   return (
     <div
       className={`relative flex items-baseline gap-3 border-b border-home-rule py-3 last:border-b-0 ${foreign ? 'pl-3' : ''}`}
@@ -230,13 +245,9 @@ function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
           style={{ background: stageColor(task.homeStageIndex) }}
         />
       )}
-      <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <span className="block text-[15px] font-medium text-home-ink">{task.label}</span>
-        {task.instruction && (
-          <span className="mt-0.5 block text-[15px] leading-[1.5] text-home-ink-2">
-            {task.instruction}
-          </span>
-        )}
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+        <span className={`block text-[15px] font-medium text-home-ink ${open ? 'pr-16' : ''}`}>{task.label}</span>
+        <StepInstruction task={task} />
         {task.donenessCue && (
           <span className="mt-0.5 block text-[13px] leading-[1.42] text-home-ink-2">
             until {task.donenessCue}
@@ -252,9 +263,12 @@ function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
             {task.tip}
           </span>
         )}
-      </span>
-      <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
+      </div>
+      <span
+        className={`tabular flex flex-shrink-0 flex-col items-end text-[13px] font-medium text-home-ink-2 ${open ? 'absolute right-0 top-3' : ''}`}
+      >
         {taskDurationText(task)}
+        <StepPencil task={task} />
       </span>
     </div>
   )

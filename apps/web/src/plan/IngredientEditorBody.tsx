@@ -2,29 +2,16 @@ import { useId, useState, type ReactNode } from 'react'
 
 import { NO_UNIT_CHIP, pressFraction, unitChoices, unitSelected, type FieldState } from '@/library/ingredientEditor'
 
-type Patch = Partial<Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit'>>
+import { ErrorLine, Label, LinkButton } from './editorParts'
+import { NO_STEP_LABEL, type StepChoiceGroup } from './stepRows'
+
+type Patch = Partial<Pick<FieldState, 'name' | 'mode' | 'amount' | 'rangeOpen' | 'range' | 'unit' | 'stepNodeId'>>
 
 const FIELD =
   'h-11 rounded-home-mini border bg-home-surface px-3 text-[16px] text-home-ink outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-home-ink'
 const FRACTIONS = ['½', '¼', '¾', '⅓'] as const
 
 const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(' ')
-
-function Label({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) {
-  return (
-    <label htmlFor={htmlFor} className="mb-1 block text-[13px] text-home-ink-2">
-      {children}
-    </label>
-  )
-}
-
-function ErrorLine({ id, children }: { id?: string; children: ReactNode }) {
-  return (
-    <p id={id} role="alert" className="mt-1 text-[13px] text-home-terracotta-text">
-      {children}
-    </p>
-  )
-}
 
 function Pill({ on, onClick, children, label }: { on: boolean; onClick: () => void; children: ReactNode; label?: string }) {
   return (
@@ -36,21 +23,6 @@ function Pill({ on, onClick, children, label }: { on: boolean; onClick: () => vo
       className={cx(
         'inline-flex h-11 items-center justify-center rounded-full px-4 text-[13px] font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-home-ink',
         on ? 'bg-home-ink text-home-ground' : 'border border-home-rule bg-home-surface text-home-ink',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
-function LinkButton({ onClick, children, small }: { onClick: () => void; children: ReactNode; small?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        'flex h-11 items-center font-medium text-home-ink underline underline-offset-2',
-        small ? 'text-[13px]' : 'text-[15px]',
       )}
     >
       {children}
@@ -72,6 +44,8 @@ export interface IngredientEditorBodyProps {
   writeError: string | null
   onDone: () => void
   doneLabel: string
+  /** R6b D8: the "Which step uses it?" picker, on the Add form and an added row. Absent for an imported row. */
+  stepPicker?: { groups: StepChoiceGroup[]; value: string | null; onChange: (nodeId: string | null) => void } | null
 }
 
 /**
@@ -187,6 +161,31 @@ export function IngredientEditorBody(p: IngredientEditorBodyProps) {
           ))}
         </div>
       </div>
+
+      {p.stepPicker && (
+        <div>
+          <Label htmlFor={`${id}-step`}>Which step uses it? (optional)</Label>
+          {/* A native select: the phone's own picker, accessible, no popup code to carry, and Devanagari draws in the OS font.
+              "None" first and the default (Q9); then one group per stage card, in the order the Plan tab shows them. */}
+          <select
+            id={`${id}-step`}
+            value={p.stepPicker.value ?? ''}
+            onChange={(e) => p.stepPicker?.onChange(e.target.value === '' ? null : e.target.value)}
+            className={cx(FIELD, 'w-full border-home-rule')}
+          >
+            <option value="">{NO_STEP_LABEL}</option>
+            {p.stepPicker.groups.map((g) => (
+              <optgroup key={g.key} label={g.stageLabel}>
+                {g.choices.map((c) => (
+                  <option key={c.nodeId} value={c.nodeId}>
+                    {c.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      )}
 
       {p.imported && (p.imported.name != null || p.imported.line != null) && (
         <div>

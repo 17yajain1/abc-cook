@@ -248,12 +248,12 @@ describe('applyEdits: anchors, orphans and the unknown', () => {
     expect(junk).toEqual(before)
   })
 
-  it('R6a ignores a step-text edit (step editing is R6b), keeping it', () => {
+  it('R6b: a step-text edit whose step is gone is an orphan (it was ignored in R6a), kept and listed', () => {
     const p = byName('kadhi-pakora')
     const step = { id: 's1', created_at: AT, op: 'set_step_text', anchor: { index: 0, expected: { text: 'x' } }, value: { text: 'y' } } as RecipeEdit
     const res = applyEdits(p, [step])
-    expect(res.statuses.s1).toBe('ignored')
-    expect(res.orphans).toEqual([])
+    expect(res.statuses.s1).toBe('orphaned')
+    expect(res.orphans.map((o) => o.id)).toEqual(['s1'])
     expect(res.payload.graph.nodes).toEqual(p.graph.nodes)
   })
 })

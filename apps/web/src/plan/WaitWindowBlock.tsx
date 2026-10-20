@@ -2,6 +2,8 @@ import { attentionLine } from '@/lib/attention'
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderWindow } from './derive'
+import { useStepOpen } from './stepEditContext'
+import { StepInstruction, StepPencil } from './StepRow'
 import { taskDurationText } from './StageCard'
 
 // Re-exported: this was `attentionLine`'s home before the pure outline code needed it.
@@ -85,6 +87,7 @@ function WindowTask({
   primary: boolean
   showTintBar: boolean
 }) {
+  const open = useStepOpen(task.nodeId)
   return (
     <li
       className={`relative flex items-baseline gap-3 py-3 ${
@@ -100,28 +103,27 @@ function WindowTask({
           style={{ background: stageColor(task.homeStageIndex) }}
         />
       )}
-      <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
         {primary && (
           <span className="mb-0.5 block text-[12px] font-semibold text-home-terracotta-text">
             Start with this
           </span>
         )}
         <span
-          className={`block text-[15px] text-home-ink ${primary ? 'font-semibold' : 'font-medium'}`}
+          className={`block text-[15px] text-home-ink ${primary ? 'font-semibold' : 'font-medium'} ${open ? 'pr-16' : ''}`}
         >
           {task.label}
         </span>
-        {task.instruction && (
-          <span className="mt-0.5 block text-[15px] leading-[1.5] text-home-ink-2">
-            {task.instruction}
-          </span>
-        )}
+        <StepInstruction task={task} />
         {task.addedLabel != null && (
           <span className="mt-0.5 block text-[13px] text-home-ink-2">{task.addedLabel}</span>
         )}
-      </span>
-      <span className="tabular flex-shrink-0 text-[13px] font-medium text-home-ink-2">
+      </div>
+      <span
+        className={`tabular flex flex-shrink-0 flex-col items-end text-[13px] font-medium text-home-ink-2 ${open ? `absolute top-3 ${primary ? 'right-3' : 'right-0'}` : ''}`}
+      >
         {taskDurationText(task)}
+        <StepPencil task={task} />
       </span>
     </li>
   )

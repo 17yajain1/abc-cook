@@ -19,7 +19,7 @@ import { panelIngredientGroups } from '@/plan/ingredientGroups'
 import { panelServings } from '@/plan/panelServings'
 
 import { openSavedChecked, openSavedNow, type OpenDeps } from './openSaved'
-import { applyEdits, ingredientAnchor, overlayForRecipe, viewParts, type RecipeEdit } from './recipeEdits'
+import { applyEdits, ingredientAnchor, overlayForRecipe, stepAnchor, viewParts, type RecipeEdit } from './recipeEdits'
 import { canonicalSourceKey } from './sourceKey'
 import { createLibrary, type StorageLike } from './store'
 
@@ -295,5 +295,101 @@ describe('A6 guard: keys, metrics and sessions never see an edited value', () =>
   it('cooking mode reads the edited values from the overlaid payload only', () => {
     expect(JSON.stringify(raw)).not.toContain('Unique-Name')
     expect(JSON.stringify(overlaid)).toContain('Unique-Name')
+  })
+})
+
+describe('R6b: step edits and linked adds keep the same guarantees', () => {
+  const raw = structuredClone(KADHI)
+  const COOK = 2
+  const stepText = 'Unique-Step-Text: cook for 40 minutes.'
+  const edits: RecipeEdit[] = [
+    { id: 's1', created_at: AT, op: 'set_step_text', anchor: stepAnchor(raw, COOK), value: { text: stepText } } as RecipeEdit,
+    {
+      id: 'k1',
+      created_at: AT,
+      op: 'add_ingredient',
+      value: { name: 'Zzz-Linked', amount: null, unit: null, step: stepAnchor(raw, COOK) },
+    } as RecipeEdit,
+  ]
+  const overlaid = applyEdits(raw, edits).payload
+
+  it('N3 extended: a session started before the edit resumes with the same node ids, order and endsAt', () => {
+    const model0 = deriveCookingModel(raw)
+    const key = 'library:abc'
+    let session = must(engine.start(null, model0, key, NOW, raw.graph.title))
+    for (const id of model0.order) {
+      const info = model0.nodes[id]
+      session = must(info.attention === 'hands_on' ? engine.markDone(session, model0, id, NOW) : engine.startNode(session, model0, id, NOW))
+      if (info.attention !== 'hands_on') break
+    }
+    const running = Object.entries(session.nodes).find(([, n]) => n.state === 'running')
+    expect(running).toBeDefined()
+    const endsAtBefore = (running![1] as { endsAt: number }).endsAt
+
+    const model1 = deriveCookingModel(overlaid)
+    expect(model1.order).toEqual(model0.order)
+    expect(Object.keys(model1.nodes)).toEqual(Object.keys(model0.nodes))
+    const cookId = (raw.graph.nodes as unknown as { id: string }[])[COOK].id
+    expect(model1.nodes[cookId].instruction).toBe(stepText)
+    expect(model0.nodes[cookId].instruction).not.toBe(stepText)
+    const opened = engine.open(session, model1, key, NOW + 60_000)
+    expect(opened.status).toBe('ok')
+    if (opened.status !== 'ok') return
+    expect(opened.session.graphId).toBe(model1.graphId)
+    const after = Object.entries(opened.session.nodes).find(([, n]) => n.state === 'running')
+    expect((after![1] as { endsAt: number }).endsAt).toBe(endsAtBefore)
+  })
+
+  it('the source key, graph id, plan key and the scheduler figures are the same for the raw and the overlaid payload', () => {
+    expect(canonicalSourceKey(overlaid.graph.source)).toBe(canonicalSourceKey(raw.graph.source))
+    expect(overlaid.graph.id).toBe(raw.graph.id)
+    expect(deriveCookingModel(overlaid).graphId).toBe(deriveCookingModel(raw).graphId)
+    expect(JSON.stringify(overlaid.plan)).toBe(JSON.stringify(raw.plan))
+    expect(JSON.stringify(overlaid.summary)).toBe(JSON.stringify(raw.summary))
+  })
+
+  it('a stored session and a completion event hold no edited step text and no synthetic id', () => {
+    const storage = memoryStorage()
+    const store = createSessionStore(storage, () => NOW)
+    store.dispatch({ type: 'start', model: deriveCookingModel(overlaid), planKey: 'library:abc', now: NOW, recipeTitle: overlaid.graph.title, servingsChoice: null })
+    const stored = storage.getItem('abc-cook:session:v1') ?? ''
+    expect(stored.length).toBeGreaterThan(0)
+    for (const mark of ['ing_user_', 'Unique-Step-Text', 'Zzz-Linked']) expect(stored).not.toContain(mark)
+    const model = deriveCookingModel(overlaid)
+    const started = must(engine.start(null, model, 'library:abc', NOW, overlaid.graph.title))
+    const text = JSON.stringify(completionEventFor({ ...started, finishedAt: NOW + 1 }, 'finish', NOW + 2))
+    for (const mark of ['ing_user_', 'Unique-Step-Text', 'Zzz-Linked']) expect(text).not.toContain(mark)
+  })
+
+  it('the /recipes/reprocess body is the stored original, never an edited step', async () => {
+    const s = setup({
+      original: ORIGINAL,
+      reprocess: () => Promise.resolve({ payload: urlPayload(KADAI), import_meta: META, postprocess_version: 14 } as ReprocessResponse),
+    })
+    s.library.setEdits(s.id, [
+      { id: 's1', created_at: AT, op: 'set_step_text', anchor: stepAnchor(s.raw, 0), value: { text: stepText } } as RecipeEdit,
+    ])
+    await open(s)
+    const [sent] = s.reprocess.mock.calls[0]
+    expect(sent).toBe(ORIGINAL)
+    expect(JSON.stringify({ original: sent })).not.toContain('Unique-Step-Text')
+  })
+
+  it('opening a saved recipe applies a step edit and counts a gone step as one orphan', async () => {
+    const s = setup({ original: null, busy: true })
+    s.library.setEdits(s.id, [
+      { id: 's1', created_at: AT, op: 'set_step_text', anchor: stepAnchor(s.raw, 0), value: { text: stepText } } as RecipeEdit,
+      {
+        id: 's2',
+        created_at: AT,
+        op: 'set_step_text',
+        anchor: { index: 1, expected: { text: 'A step that no longer exists.' } },
+        value: { text: 'x' },
+      } as RecipeEdit,
+    ])
+    const recipe = await open(s)
+    const view = overlayForRecipe(recipe)
+    expect((view.payload.graph.nodes as unknown as { instruction: string }[])[0].instruction).toBe(stepText)
+    expect(view.orphans.map((o) => o.id)).toEqual(['s2'])
   })
 })

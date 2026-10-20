@@ -1,18 +1,22 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import type { ImportMeta } from '@abc-cook/schema'
 
 import type { ServingsChoice } from '@/lib/servings'
+import { asWrittenLine } from '@/library/ingredientEditor'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { BackButton } from './BackButton'
-import type { RenderIngredientGroup, RenderPlan, RenderWaitRow } from './derive'
+import type { RenderIngredientGroup, RenderPlan, RenderStage, RenderWaitRow } from './derive'
 import type { AlreadySaved } from './AlreadySavedNotice'
 import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
 import type { EndOfPageBlock } from './endOfPage'
+import { EditToolbar, type IngredientsEdit } from './EditableIngredientList'
 import { IngredientsPanel } from './IngredientsPanel'
 import { OrphanReview } from './OrphanReview'
-import { useIngredientEditing, type PlanEditing } from './useIngredientEditing'
+import { StepEditContext, type StepEditApi } from './stepEditContext'
+import { stepChoiceGroups } from './stepRows'
+import { useRecipeEditing, type PlanEditing } from './useRecipeEditing'
 import { orphanNoticeLine } from '@/library/recipeEdits'
 import { panelServings } from './panelServings'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
@@ -109,7 +113,8 @@ export function PlanScreen({
   const statusLine = statusLineFor(importMeta)
   // A13: the servings gate reads the imported rows, never the edited ones.
   const servings = panelServings(plan, importMeta, servingsChoice, servingsLocked, onServingsChoiceChange, editing?.gateLines)
-  const edit = useIngredientEditing(editing)
+  const edit = useRecipeEditing(editing)
+  const editMode = edit.session.mode === 'edit'
   const orphans = editing?.ctx.overlay.orphans ?? []
   // Every way out of the editor (a tab, back, Start cooking) goes through `edit.guard`, so a
   // changed row is committed or kept open, never dropped (A24).
@@ -127,7 +132,25 @@ export function PlanScreen({
   // P1 #5: keyed by `stage.key` (the run), not `stage.stageId` — a stage rendered as
   // more than one card (plan §D) expands each card independently.
   const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
-  const toggleStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
+  const flipStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
+  // R6b D6: closing the card that holds the open step goes through the editor's one door, so a typed
+  // step is committed or kept open with its error, never dropped (A24). Any other card just flips.
+  const toggleStage = (key: string) => {
+    const open = edit.session.step?.target.nodeId
+    const stage = plan.stages.find((s) => s.key === key)
+    const holdsOpen = open != null && stage != null && expandedStages.has(key) && stageTaskIds(stage).includes(open)
+    if (holdsOpen) edit.guard('collapse', () => flipStage(key))
+    else flipStage(key)
+  }
+  // R6b D6: Edit on the Plan tab opens every card, like "Show full recipe". It runs when edit mode starts
+  // or the cook arrives on this tab in it, and not again, so a card the cook closes by hand stays closed.
+  const stageKeys = useRef<string[]>([])
+  useEffect(() => {
+    stageKeys.current = plan.stages.map((s) => s.key)
+  })
+  useEffect(() => {
+    if (editMode && tab === 'plan') setExpandedStages(new Set(stageKeys.current))
+  }, [editMode, tab])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageTabsRef = useRef<HTMLDivElement>(null)
@@ -159,6 +182,10 @@ export function PlanScreen({
       setTab(next)
     })
   }
+  const showPlanTab = () => {
+    pinTabsRef.current = compact
+    setTab('plan')
+  }
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el || !pinTabsRef.current) return
@@ -175,7 +202,35 @@ export function PlanScreen({
 
   const nIngredients = ingredientCount(plan.ingredientGroups)
   const noticeLine = orphanNoticeLine(orphans.length)
-  const ingredientsEdit = editing ? { editing, api: edit, choice: servings?.choice ?? null } : undefined
+  const stepGroups = useMemo(() => stepChoiceGroups(plan), [plan])
+  // B4: the rename note's "Edit the step". It goes through the same door as a tab switch, so a blocked
+  // exit stays put (the open row keeps its error and scrolls into view); otherwise it lands on the Plan
+  // tab with that step open.
+  const goToStep = (nodeId: string) =>
+    edit.guard('tab', () => {
+      showPlanTab()
+      edit.enterAtStep(nodeId)
+    })
+  const choice = servings?.choice ?? null
+  const ingredientsEdit: IngredientsEdit | undefined = editing ? { editing, api: edit, choice, stepGroups, goToStep } : undefined
+  const stepApi: StepEditApi | null = editing
+    ? {
+        inEdit: editMode,
+        edited: editing.ctx.overlay.editedSteps,
+        importedSteps: editing.ctx.overlay.importedSteps,
+        step: edit.session.step,
+        savedStep: edit.session.savedStep,
+        factorLine: asWrittenLine(choice),
+        writeError: edit.session.writeError,
+        blocked: edit.blocked,
+        landing: edit.landing,
+        onLanded: edit.clearLanding,
+        open: edit.openStepById,
+        change: edit.changeStep,
+        save: edit.commitOpen,
+        restore: edit.restoreStepText,
+      }
+    : null
   const tabs = (
     <>
       <TabButton active={tab === 'plan'} onClick={() => switchTab('plan')}>
@@ -244,33 +299,36 @@ export function PlanScreen({
         {tab === 'ingredients' ? (
           <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
         ) : (
-          <div className="px-5 pt-5">
-            {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
-              <WaitRow key={`wait-pre-${i}`} row={row} />
-            ))}
-            {plan.stages.map((stage, index) => (
-              <Fragment key={stage.key}>
-                <StageCard
-                  stage={stage}
-                  expanded={expandedStages.has(stage.key)}
-                  onToggle={() => toggleStage(stage.key)}
-                />
-                {(waitRowsAfter.get(index) ?? []).map((row, i) => (
-                  <WaitRow key={`wait-${index}-${i}`} row={row} />
-                ))}
-              </Fragment>
-            ))}
+          <StepEditContext.Provider value={stepApi}>
+            {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap a step to change it." />}
+            <div className={ingredientsEdit ? 'px-5 pt-2' : 'px-5 pt-5'}>
+              {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
+                <WaitRow key={`wait-pre-${i}`} row={row} />
+              ))}
+              {plan.stages.map((stage, index) => (
+                <Fragment key={stage.key}>
+                  <StageCard
+                    stage={stage}
+                    expanded={expandedStages.has(stage.key)}
+                    onToggle={() => toggleStage(stage.key)}
+                  />
+                  {(waitRowsAfter.get(index) ?? []).map((row, i) => (
+                    <WaitRow key={`wait-${index}-${i}`} row={row} />
+                  ))}
+                </Fragment>
+              ))}
 
-            {plan.savedMin === 0 && (
-              <p className="pb-4 pt-2 text-[13px] text-home-ink-2">
-                {plan.hasUnattendedWork
-                  ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
-                  : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
-              </p>
-            )}
+              {plan.savedMin === 0 && (
+                <p className="pb-4 pt-2 text-[13px] text-home-ink-2">
+                  {plan.hasUnattendedWork
+                    ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
+                    : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
+                </p>
+              )}
 
-            {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
-          </div>
+              {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
+            </div>
+          </StepEditContext.Provider>
         )}
       </div>
 
@@ -343,6 +401,11 @@ function TabButton({
       {children}
     </button>
   )
+}
+
+/** Every node id a card draws: its inline tasks and its windows' tasks. */
+function stageTaskIds(stage: RenderStage): string[] {
+  return [...stage.inlineTasks.map((t) => t.nodeId), ...stage.windows.flatMap((w) => w.tasks.map((t) => t.nodeId))]
 }
 
 /** "uses 2 burners" -> "Uses 2 burners". */
