@@ -18,7 +18,6 @@ from abc_cook.schema import (
     Ingredient,
     Node,
     NormalizedRecipe,
-    RecipeEdit,
     RecipePlanResponse,
     RepairProposal,
     SavedLibrary,
@@ -27,11 +26,14 @@ from abc_cook.schema import (
     ServingsByBatch,
     ServingsByCount,
     ServingsChoice,
+    SetStepText,
     SourceRef,
     Stage,
+    StepAnchor,
     StepRepair,
     WaitWindow,
 )
+from abc_cook.schema.library import StepExpected, TextValue
 
 
 def _graph() -> CookingGraph:
@@ -251,12 +253,12 @@ def test_saved_recipe_v2_round_trips_original_stamp_and_edits() -> None:
         original=original,
         postprocess_version=8,
         edits=[
-            RecipeEdit(
+            SetStepText(
                 id="e1",
                 created_at=datetime.now(UTC),
                 op="set_step_text",
-                anchor={"step": 2, "expected": "old"},
-                value="new",
+                anchor=StepAnchor(index=2, expected=StepExpected(text="old")),
+                value=TextValue(text="new"),
             )
         ],
     )

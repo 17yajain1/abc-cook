@@ -1,4 +1,4 @@
-import type { ImportMeta, ImportOriginal, RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
+import type { ImportMeta, ImportOriginal, RecipeEdit, RecipePlanResponse, SavedLibrary, SavedRecipe } from '@abc-cook/schema'
 
 import { reconcileChoice, type ServingsChoice } from '@/lib/servings'
 
@@ -13,6 +13,9 @@ import { canonicalSourceKey } from './sourceKey'
  */
 
 const STORAGE_KEY = 'abc-cook:library:v1'
+
+/** A8: the one message for a failed edit write. */
+export const EDITS_WRITE_FAILED = "Couldn't save your change. Try again."
 
 /** The subset of the `Storage` interface this module needs — real `localStorage`
  * satisfies it, and tests inject an in-memory fake. */
@@ -66,6 +69,11 @@ export interface Library {
    * the Cookbook order are untouched. Factor 1 is stored as null, and the value is
    * reconciled against the entry's own payload first. */
   setServingsChoice(id: string, choice: ServingsChoice | null): RefreshResult
+  /** Stores the cook's edits on entry `id` (R6) and nothing else: `payload`, both timestamps and
+   * the Cookbook order are untouched, so the stored plan stays the one the scheduler made. The
+   * array is written as given, items this version does not understand included. A failed write
+   * leaves the entry, in memory and in storage, exactly as it was. */
+  setEdits(id: string, edits: RecipeEdit[]): RefreshResult
   /** Deletes entry `id` (R5). An unknown id is a no-op that writes nothing. On a failed write
    * the entry stays, in memory and in storage. Nothing else is touched. */
   remove(id: string): RemoveResult
@@ -181,6 +189,19 @@ export function createLibrary(
       const list = recipes.map((r) => (r.id === id ? recipe : r))
       const written = writeLibrary(storage, list)
       if (!written.ok) return written
+
+      recipes = list
+      return { ok: true, recipe }
+    },
+
+    setEdits(id: string, edits: RecipeEdit[]): RefreshResult {
+      const existing = recipes.find((r) => r.id === id)
+      if (!existing) return { ok: false, message: 'That recipe is no longer saved.' }
+
+      const recipe: SavedRecipe = { ...existing, edits }
+      const list = recipes.map((r) => (r.id === id ? recipe : r))
+      const written = writeLibrary(storage, list)
+      if (!written.ok) return { ok: false, message: EDITS_WRITE_FAILED }
 
       recipes = list
       return { ok: true, recipe }

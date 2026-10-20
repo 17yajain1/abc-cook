@@ -166,6 +166,15 @@ RecipeEdit (placeholder envelope, R6 fills the op union)
 - Edits will target **the original** (`NormalizedRecipe` ingredient and step indices plus expected values), not graph nodes. Node ids are derived (`graph.py:1508-1518`) and can change on reprocess.
 - Each edit carries an **anchor** (index + expected current value). An edit whose anchor no longer matches after a reprocess or re-import is **kept and marked orphaned, never dropped and never force-applied**. The user sees "1 of your changes couldn't be applied". Edits on entries without `original` wait for R6.
 - Now: `edits: list[RecipeEdit] = []`, the placeholder envelope in B1. Readers preserve items verbatim, and nothing writes them.
+- **Amended 2026-10-20 (R6, owner Q1 and Q2; `docs/plans/r6-tier-a-editing.md`):** the first bullet's
+  `postprocess(apply(edits, original))` is not used. Edits are applied as a web overlay **after** the
+  schedule, to the stored payload and never to `original`, so node ids, edges and durations cannot move
+  (measured: applying an edit to the original and reprocessing degraded the plan on every added ingredient,
+  and changed durations when a step's existing time was edited). `payload` stays the server-derived copy;
+  the overlay goes into the view only. Anchors follow Q2: an ingredient edit is an index into
+  `payload.graph.ingredients` plus the expected line (this equals the original's index, verified on every
+  fixture and corpus recipe with an `original`); a step edit (R6b) is the expected text against
+  `node.instruction`, with the index as the tiebreak. The orphan rule above is unchanged.
 
 ### B6. SavedLibrary v1 → v2 migration (web `store.ts`), PR 2
 

@@ -276,6 +276,11 @@ whether the plan is admired and then abandoned at the stove.
 *R5 decisions (cook history after M5, the Public toggle until H2, no "Took …"):
 `docs/plans/decisions-2026-10-19-r5-end-of-page.md`.*
 
+*R6 (Tier A editing, before M5, decision 2 of `docs/plans/decisions-2026-10-15-servings-edit.md`):
+R6a (ingredient editing, no timing change) is implemented. R6b (step text, "Which step uses it?",
+the rename note) is next and needs R6a. Plan: `docs/plans/r6-tier-a-editing.md`. Follow-ups:
+FGC-54 to FGC-59 in `docs/plans/followup-golden-corpus.md`.*
+
 ---
 
 ## H2 — Public recipes  ·  scope not yet estimated

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 
-import type { ImportMeta, RecipePlanResponse } from '@abc-cook/schema'
+import type { ImportMeta, RecipeEdit, RecipePlanResponse } from '@abc-cook/schema'
 
 import { ApiError, fetchPlan, fetchServerInfo, reprocess } from './api/client'
 import { createServerVersion } from './api/serverVersion'
@@ -13,6 +13,7 @@ import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
 import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff'
 import type { ImportExtras } from './import/importExtras'
+import { applyEdits, viewParts } from './library/recipeEdits'
 import { canonicalSourceKey } from './library/sourceKey'
 import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
 import { servingsLocked, sessionBlocksRefresh } from './library/staleness'
@@ -22,6 +23,7 @@ import { createLibrary } from './library/store'
 import { createOutbox, type SessionFinished } from './metrics/outbox'
 import { derivePlan, type RenderPlan } from './plan/derive'
 import { PlanScreen } from './plan/PlanScreen'
+import type { PlanEditing } from './plan/useIngredientEditing'
 import { cookOnRecipe, endOfPageFor, removeSavedRecipe } from './plan/endOfPage'
 import type { StalenessMarker } from './plan/staleness'
 import type { AlreadySaved } from './plan/AlreadySavedNotice'
@@ -82,10 +84,16 @@ type View =
       saveState: SaveState
       /** A6: null for a fixture recipe (never went through `/import`). */
       importMeta: ImportMeta | null
-      /** The raw payload `plan` was derived from — Cooking Mode's
-       * `deriveCookingModel` needs the full graph (`depends_on`, `consumes`,
-       * `interruptible`…), which `RenderPlan` doesn't retain. */
+      /** The payload `plan` was derived from, with the saved entry's edits applied (R6) —
+       * Cooking Mode's `deriveCookingModel` needs the full graph (`depends_on`, `consumes`,
+       * `interruptible`…), which `RenderPlan` doesn't retain. Never saved, never sent: those
+       * read `rawPayload` (and `origin.payload`). */
       payload: RecipePlanResponse
+      /** The imported payload, as the scheduler made it. The servings gate and the edit anchors
+       * read it; nothing edited ever reaches it (R6, A13). */
+      rawPayload: RecipePlanResponse
+      /** The saved entry's edits, as last written. Empty when there is no saved entry. */
+      edits: RecipeEdit[]
       /** Set when the open path found the saved plan stale or couldn't check. */
       staleness?: StalenessMarker
       /** Set only when a pasted URL matched this saved entry (the duplicate path). */
@@ -104,6 +112,13 @@ type View =
     }
   | { kind: 'error'; message: string }
 
+/** What a plan view holds for `raw` and the saved entry's `edits`: the overlaid payload and the
+ * plan drawn from it, plus the raw payload beside them. */
+function planFields(raw: RecipePlanResponse, edits: readonly RecipeEdit[], provenance: ImportMeta['provenance'] | null) {
+  const parts = viewParts(raw, edits)
+  return { plan: derivePlan(parts.payload, provenance ?? null), payload: parts.payload, rawPayload: raw, edits: [...edits] }
+}
+
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'home' })
 
@@ -118,11 +133,10 @@ export default function App() {
       .then((payload) =>
         setView({
           kind: 'plan',
-          plan: derivePlan(payload),
+          ...planFields(payload, [], null),
           origin: { kind: 'server', recipeId },
           saveState: { status: 'idle' },
           importMeta: null,
-          payload,
         }),
       )
       .catch((err: unknown) => setView({ kind: 'error', message: messageFor(err) }))
@@ -142,11 +156,10 @@ export default function App() {
       const { recipe, marker } = outcome
       setView({
         kind: 'plan',
-        plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
+        ...planFields(recipe.payload, recipe.edits ?? [], recipe.import_meta?.provenance ?? null),
         origin: { kind: 'library', id },
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,
-        payload: recipe.payload,
         servingsChoice: recipe.servings_choice ?? null,
         staleness: stalenessFor(marker, recipe.payload.graph.source.value, () =>
           setView({
@@ -185,13 +198,15 @@ export default function App() {
   // saved) — H2 must decide whether feed opens get their own key.
   const openFeedRecipe = useCallback((payload: RecipePlanResponse) => {
     navToken.current += 1
+    // A feed recipe is the imported plan (Q10). If its source is already saved, the saved entry's
+    // edits apply to it, as they do on every other way in; `origin.payload` stays raw.
+    const edits = library.findBySource(canonicalSourceKey(payload.graph.source))?.edits ?? []
     setView({
       kind: 'plan',
-      plan: derivePlan(payload),
+      ...planFields(payload, edits, null),
       origin: { kind: 'import', payload, importMeta: NO_IMPORT_META, fromFeed: true },
       saveState: { status: 'idle' },
       importMeta: NO_IMPORT_META,
-      payload,
     })
   }, [])
 
@@ -234,13 +249,16 @@ export default function App() {
     [],
   )
   const openImported = useCallback(({ plan, payload, importMeta, extras, saveState }: FinishedImport) => {
+    // A re-import replaces its entry and keeps the cook's edits, so they apply here too.
+    const edits = library.findBySource(canonicalSourceKey(payload.graph.source))?.edits ?? []
     setView({
       kind: 'plan',
-      plan,
+      ...(edits.length > 0
+        ? planFields(payload, edits, importMeta.provenance ?? null)
+        : { plan, payload, rawPayload: payload, edits: [] }),
       origin: { kind: 'import', payload, importMeta, extras },
       saveState,
       importMeta,
-      payload,
       // The import was auto-saved just before this opens, so a re-import shows the choice
       // its entry kept; an unsaved import has none.
       servingsChoice: library.findBySource(canonicalSourceKey(payload.graph.source))?.servings_choice ?? null,
@@ -280,6 +298,17 @@ export default function App() {
     [view],
   )
 
+  // R6: writes the cook's edits to the saved entry and, once the write succeeded, redraws the view
+  // from the raw payload and the new edits. A failed write changes nothing on screen (A8).
+  const setEdits = useCallback((entryId: string, edits: RecipeEdit[]): { ok: boolean } => {
+    const result = library.setEdits(entryId, edits)
+    if (!result.ok) return { ok: false }
+    setView((prev) =>
+      prev.kind === 'plan' ? { ...prev, ...planFields(prev.rawPayload, edits, prev.importMeta?.provenance ?? null) } : prev,
+    )
+    return { ok: true }
+  }, [])
+
   const exitCooking = useCallback(() => {
     setView((prev) => (prev.kind === 'cooking' ? prev.returnTo : prev))
   }, [])
@@ -304,16 +333,16 @@ export default function App() {
     if (target.kind === 'library') {
       const recipe = library.get(target.id)
       if (!recipe) return
+      const fields = planFields(recipe.payload, recipe.edits ?? [], recipe.import_meta?.provenance ?? null)
       const planView: View = {
         kind: 'plan',
-        plan: derivePlan(recipe.payload, recipe.import_meta?.provenance ?? null),
+        ...fields,
         origin: { kind: 'library', id: target.id },
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,
-        payload: recipe.payload,
         servingsChoice: recipe.servings_choice ?? null,
       }
-      setView({ kind: 'cooking', payload: recipe.payload, planKey: targetPlanKey, returnTo: planView })
+      setView({ kind: 'cooking', payload: fields.payload, planKey: targetPlanKey, returnTo: planView })
       return
     }
 
@@ -324,11 +353,10 @@ export default function App() {
         .then((payload) => {
           const planView: View = {
             kind: 'plan',
-            plan: derivePlan(payload),
+            ...planFields(payload, [], null),
             origin: { kind: 'server', recipeId: target.recipeId },
             saveState: { status: 'idle' },
             importMeta: null,
-            payload,
           }
           setView({ kind: 'cooking', payload, planKey: targetPlanKey, returnTo: planView })
         })
@@ -396,6 +424,7 @@ export default function App() {
           onSave={saveCurrent}
           onServingsChoiceChange={setServingsChoice}
           onRemoved={afterRemove}
+          onSetEdits={setEdits}
         />
       )
     case 'cooking':
@@ -445,6 +474,7 @@ function PlanRoute({
   onSave,
   onServingsChoiceChange,
   onRemoved,
+  onSetEdits,
 }: {
   view: Extract<View, { kind: 'plan' }>
   onBack: () => void
@@ -452,6 +482,7 @@ function PlanRoute({
   onSave: () => void
   onServingsChoiceChange: (choice: ServingsChoice | null) => void
   onRemoved: () => void
+  onSetEdits: (entryId: string, edits: RecipeEdit[]) => { ok: boolean }
 }) {
   const [now] = useState(() => Date.now())
   const session = sessionStore.getState()
@@ -492,6 +523,14 @@ function PlanRoute({
             : null,
         }
       : undefined
+  // R6: editing needs a saved entry to write to (Q4); an unsaved view offers none.
+  const editing: PlanEditing | undefined = entryId
+    ? {
+        ctx: { payload: view.rawPayload, edits: view.edits, overlay: applyEdits(view.rawPayload, view.edits) },
+        gateLines: view.rawPayload.graph.ingredients,
+        write: (edits) => onSetEdits(entryId, edits as RecipeEdit[]),
+      }
+    : undefined
   return (
     <PlanScreen
       plan={view.plan}
@@ -505,6 +544,7 @@ function PlanRoute({
       servingsLocked={locked}
       onServingsChoiceChange={onServingsChoiceChange}
       endOfPage={endOfPage}
+      editing={editing}
     />
   )
 }
@@ -513,8 +553,8 @@ function PlanRoute({
  * all for a recipe whose amounts can't be scaled (gated) or a choice that changes nothing. */
 function startChoiceFor(view: Extract<View, { kind: 'plan' }>): ServingsChoice | null {
   const source = view.plan.servingsSource
-  const lines = view.plan.ingredientGroups.flatMap((g) => g.items)
-  if (servingsControlKind(source, view.importMeta, lines) === 'gated') return null
+  // A13: the gate is a fact about the imported recipe, so an edit can't change it.
+  if (servingsControlKind(source, view.importMeta, view.rawPayload.graph.ingredients) === 'gated') return null
   const choice = reconcileChoice(view.servingsChoice, source, view.importMeta)
   return choice != null && choiceFactor(choice) !== 1 ? choice : null
 }

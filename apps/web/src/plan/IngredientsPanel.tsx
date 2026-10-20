@@ -3,6 +3,7 @@ import { servingsCopy } from '@/lib/servingsCopy'
 import { unscaledCount } from '@/lib/quantity'
 
 import type { RenderIngredientGroup } from './derive'
+import { EditableIngredientList, EditToolbar, type IngredientsEdit } from './EditableIngredientList'
 import { IngredientList } from './IngredientList'
 import { panelIngredientGroups } from './ingredientGroups'
 import { ServingsControl } from './ServingsControl'
@@ -24,9 +25,12 @@ export interface PanelServings {
 export function IngredientsPanel({
   groups,
   servings,
+  edit,
 }: {
   groups: RenderIngredientGroup[]
   servings?: PanelServings
+  /** R6a: the saved recipe's edit session. Absent when the recipe has no saved entry to edit. */
+  edit?: IngredientsEdit
 }) {
   const choice = servings?.kind === 'gated' ? null : (servings?.choice ?? null)
   const factor = choiceFactor(choice)
@@ -50,8 +54,13 @@ export function IngredientsPanel({
           onChange={servings.onChange}
         />
       )}
+      {edit && <EditToolbar edit={edit} />}
       <div className="px-5 py-5">
-        <IngredientList groups={panelIngredientGroups(groups, factor, marker)} />
+        {edit ? (
+          <EditableIngredientList groups={panelIngredientGroups(groups, factor, marker)} edit={edit} />
+        ) : (
+          <IngredientList groups={panelIngredientGroups(groups, factor, marker)} />
+        )}
       </div>
     </>
   )

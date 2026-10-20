@@ -19,12 +19,22 @@ from abc_cook.schema.api import (
 from abc_cook.schema.graph import CookingGraph, Edge, EdgeKind, SourceKind, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient, QtyAmount
 from abc_cook.schema.library import (
+    AddIngredient,
+    Amount,
+    IngredientAnchor,
+    NumberAmount,
     RecipeEdit,
+    RemoveIngredient,
     SavedLibrary,
     SavedRecipe,
     ServingsByBatch,
     ServingsByCount,
     ServingsChoice,
+    SetIngredientAmount,
+    SetIngredientName,
+    SetStepText,
+    StepAnchor,
+    ToTasteAmount,
 )
 from abc_cook.schema.node import Attention, Node, NodeKind, Station
 from abc_cook.schema.normalized import (
@@ -55,6 +65,8 @@ from abc_cook.schema.plan import (
 )
 
 __all__ = [
+    "AddIngredient",
+    "Amount",
     "Attention",
     "CookingGraph",
     "CookingPlan",
@@ -69,6 +81,7 @@ __all__ = [
     "ImportStartResponse",
     "ImportStatus",
     "Ingredient",
+    "IngredientAnchor",
     "LongWait",
     "Node",
     "NodeKind",
@@ -77,6 +90,7 @@ __all__ = [
     "NormalizedIngredient",
     "NormalizedRecipe",
     "NormalizedStep",
+    "NumberAmount",
     "Phase",
     "PlanSummary",
     "ProvenanceSource",
@@ -85,6 +99,7 @@ __all__ = [
     "RecipeListResponse",
     "RecipePlanResponse",
     "RecipeSummary",
+    "RemoveIngredient",
     "RepairProposal",
     "ReprocessRequest",
     "ReprocessResponse",
@@ -96,11 +111,16 @@ __all__ = [
     "ServingsByCount",
     "ServingsChoice",
     "Session",
+    "SetIngredientAmount",
+    "SetIngredientName",
+    "SetStepText",
     "SourceKind",
     "SourceRef",
     "Stage",
     "StageSpan",
     "Station",
+    "StepAnchor",
     "StepRepair",
+    "ToTasteAmount",
     "WaitWindow",
 ]

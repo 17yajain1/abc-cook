@@ -680,3 +680,50 @@ hides "Plan simplified". Degraded is set from the `degraded` warning (`import/im
 with the entry (`import_meta`, read at `App.tsx:147`); the staleness marker is set only on a library open
 (`App.tsx:150`, mapped at `:476-479`, from `library/openSaved.ts:89` and `:92`). R5 keeps the exclusivity as
 decided (FGC-16, A5): no fixture or test combines the two today. Decide later whether both lines should show.
+
+### FGC-54 (M5, idea): edit count as a trust signal
+
+R6a stores the cook's edits per saved recipe (`SavedRecipe.edits`). How many a tester makes, and on which
+kind of line (amount, name, add, remove), says where the extraction is wrong, and is the cheapest
+signal of whether the plan is trusted. Add it to the M5 usage log (counts only, never the values).
+Plan: docs/plans/r6-tier-a-editing.md, A12.
+
+### FGC-55 (P3, web): "Save to edit" for unsaved views
+
+R6 offers the Edit control only on a recipe page that resolves to a saved entry (Q4). An unsaved feed
+plan, a `server:` fixture and a failed auto-save show none. Decide whether those views should offer
+"Save to edit", which saves the recipe and then opens it in edit mode. Plan: A12.
+
+### FGC-56 (P3, idea): kg, l, oz and lb in the unit list
+
+The R6 unit picker is the imported unit, then `tsp tbsp cup g ml pinch piece inch clove`, then "No
+unit" (A15). `UNIT_CLASSES` already scales `kg`, `l`, `katori` and similar when they are imported. Add
+them to the list only if testers ask. Plan: A12.
+
+### FGC-57 (R6b): step text, "Which step uses it?" and the rename note
+
+R6a edits ingredients only. R6b needs R6a and adds:
+- step-text editing inside the expanded stage cards, with the same pattern as the ingredient rows
+  (a row-level Save, an "Edited" tag, "Restore original");
+- the time note under an edited step, shown only when the new text has a time phrase
+  (`textHasTimePhrase`, N1; timers stay as planned and times change later);
+- "Which step uses it?" on the Add form, which links an added ingredient to a step (`add_ingredient.step`);
+- the A5 rename note ("Step text still says the old name. Edit the step if you like."), which A21 holds
+  back until a step can actually be edited.
+
+R6a's overlay ignores `set_step_text` edits (kept, not applied, not counted), so R6b starts from a
+schema that already has the op. Plan: docs/plans/r6-tier-a-editing.md, B4.
+
+### FGC-58 (FGC-3): test an edit on an added step
+
+No capture in the corpus has "Added by ABC Cook" steps, so R6a could not observe how a step anchor
+behaves on one (W0, A18). The FGC-3 PR, and R6b, must test a step-text edit on an added step: that the
+anchor resolves, survives a refresh, and orphans honestly when the step is dropped.
+
+### FGC-59 (P3, web): no DOM test for the editing hook
+
+`plan/useIngredientEditing.ts` and the editor components have no DOM test, because the repo has no
+jsdom. The rules live in `library/ingredientEditor.ts` and are tested as pure state transitions (what a
+fraction button does, when an edit is written, the four exits of A24). The wiring was proven in the
+real app with Playwright frames (HARD STOP A and A2). A tab-switch and back exit were run there; if the
+hook grows, a small Playwright check in `apps/web/e2e/` is the proportionate test.
