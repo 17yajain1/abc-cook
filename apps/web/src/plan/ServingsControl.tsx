@@ -123,7 +123,7 @@ function resolve(state: Exclude<ServingsControlState, { kind: 'gated' }>) {
   return { choice, copy, original: factor === 1, atMin: level <= bounds.min, atMax: level >= bounds.max }
 }
 
-const tile = 'rounded-home-mini border border-home-rule bg-home-surface'
+const tile = 'min-h-[62px] rounded-home-mini border border-home-rule bg-home-surface'
 
 /**
  * The servings fact tile on the recipe page (D7): the same control as above, with its minus, plus and
@@ -143,29 +143,34 @@ export function ServingsTile({
   if (state.kind === 'gated') {
     if (!staticLine) return null
     return (
-      <div className={`${tile} flex min-w-0 flex-col justify-center px-3 py-2.5`}>
-        <div className="text-[17px] font-bold leading-[1.15] text-home-ink">{staticLine}</div>
+      <div className={`${tile} flex min-w-0 flex-col justify-center px-2 py-2`}>
+        <div className="text-[15px] font-bold leading-[1.15] text-home-ink">{staticLine}</div>
       </div>
     )
   }
   const { choice, copy, atMin, atMax } = resolve(state)
   const locked = state.kind === 'locked'
   const button =
-    'relative flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full border border-home-rule bg-home-ground text-[16px] leading-none text-home-ink outline-none after:absolute after:-inset-2 after:content-[""] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-home-ink disabled:text-home-rule'
+    'relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-home-rule bg-home-ground text-[16px] leading-none text-home-ink outline-none after:absolute after:-inset-2 after:content-[""] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-home-ink disabled:text-home-rule'
+  // A container query picks the layout from the tile's own width: with room, the buttons flank the value
+  // and its label; without it (360 px beside a long range), the value and label share a line and the
+  // buttons sit under them, so the label is never cut. One set of buttons either way.
   return (
-    <div className={`${tile} flex min-w-0 items-center justify-between px-1.5 py-1.5`}>
-      <button type="button" aria-label={copy.dec} disabled={locked || atMin} onClick={() => onChange(stepChoice(choice, -1))} className={button}>
-        −
-      </button>
-      <div className="min-w-0 text-center">
-        <div aria-live="polite" className={`tabular text-[17px] font-bold leading-[1.15] ${locked ? 'text-home-ink-2' : 'text-home-ink'}`}>
-          {copy.value}
+    <div className={`${tile} @container min-w-0`}>
+      <div className="flex h-full flex-wrap content-center items-center justify-between gap-x-1 gap-y-1 px-1.5 py-1.5 @min-[108px]:flex-nowrap">
+        <div className="order-first flex w-full min-w-0 items-baseline justify-center gap-1 text-center @min-[108px]:order-none @min-[108px]:w-auto @min-[108px]:flex-col @min-[108px]:items-stretch @min-[108px]:gap-0">
+          <div aria-live="polite" className={`tabular text-[15px] font-bold leading-[1.15] ${locked ? 'text-home-ink-2' : 'text-home-ink'}`}>
+            {copy.value}
+          </div>
+          <div className="text-[11px] leading-[1.25] text-home-ink-2">{copy.label.toLowerCase()}</div>
         </div>
-        <div className="text-[12px] leading-[1.25] text-home-ink-2">{copy.label.toLowerCase()}</div>
+        <button type="button" aria-label={copy.dec} disabled={locked || atMin} onClick={() => onChange(stepChoice(choice, -1))} className={`${button} @min-[108px]:order-first`}>
+          −
+        </button>
+        <button type="button" aria-label={copy.inc} disabled={locked || atMax} onClick={() => onChange(stepChoice(choice, 1))} className={button}>
+          +
+        </button>
       </div>
-      <button type="button" aria-label={copy.inc} disabled={locked || atMax} onClick={() => onChange(stepChoice(choice, 1))} className={button}>
-        +
-      </button>
     </div>
   )
 }

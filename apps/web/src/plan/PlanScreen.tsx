@@ -272,16 +272,7 @@ export function PlanScreen({
             <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
               Steps
             </h2>
-            {/* When something can be done while waiting, "How this cook goes" says so; with nothing to
-                slot in, the one scheduler-derived sentence says that instead. */}
-            {!plan.hasParallelWork && (
-              <p className="mb-3 mt-1 text-[13px] leading-[1.4] text-home-ink-2">
-                {plan.hasUnattendedWork
-                  ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
-                  : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
-              </p>
-            )}
-            <div className={plan.hasParallelWork ? 'mt-3' : ''}>
+            <div className="mt-3">
               {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
                 <WaitRow key={`wait-pre-${i}`} row={row} />
               ))}
@@ -335,10 +326,12 @@ export function PlanScreen({
       <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-3.5">
         {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
             register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
+        {/* While editing, Done is the way forward: Start cooking waits until the edits are committed. */}
         <button
           type="button"
           onClick={guardedStart}
-          className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground"
+          disabled={editMode}
+          className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground disabled:bg-home-disabled disabled:text-home-disabled-ink"
         >
           Start cooking
         </button>

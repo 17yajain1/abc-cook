@@ -11,8 +11,8 @@ import { ServingsSubline, ServingsTile, type ServingsControlState } from './Serv
 
 function Tile({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-0 rounded-home-mini border border-home-rule bg-home-surface px-3 py-2.5">
-      <div className="tabular text-[17px] font-bold leading-[1.15] text-home-ink">{value}</div>
+    <div className="flex min-h-[62px] min-w-0 flex-col justify-center rounded-home-mini border border-home-rule bg-home-surface px-2 py-2">
+      <div className="tabular whitespace-nowrap text-[15px] font-bold leading-[1.15] text-home-ink">{value}</div>
       <div className="mt-0.5 text-[12px] leading-[1.25] text-home-ink-2">{label}</div>
     </div>
   )
@@ -45,7 +45,7 @@ export function RecipeFacts({
   /** The plan-ahead card is showing, so the multi-sitting range is its job. */
   hasCard: boolean
 }) {
-  const timing = headerMeta(plan.summary, plan.totalMin, hasCard)
+  const timing = headerMeta(plan.summary, plan.totalMin, hasCard, true)
   const handsOn = handsOnTileText(plan.summary)
   const state = servings ? controlState(servings, plan) : null
   const staticLine = servingsLine(plan.servingsSource, importMeta)
@@ -56,10 +56,10 @@ export function RecipeFacts({
   return (
     <div className="mt-3.5">
       <div
-        className="grid gap-2"
+        className="grid gap-1.5"
         style={{
           gridTemplateColumns:
-            count === 3 ? 'minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr)' : `repeat(${count}, minmax(0,1fr))`,
+            count === 3 ? 'minmax(max-content,1.15fr) minmax(max-content,0.9fr) minmax(0,1.1fr)' : `repeat(${count}, minmax(max-content,1fr))`,
         }}
       >
         {timing.primary && <Tile value={timing.primary} label="start to finish" />}

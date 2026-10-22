@@ -30,6 +30,11 @@
      mark and deliberately a separate token: that mark is a graphic, this is a label's ground. */
   --color-home-destructive: #b3261e;
 
+  /* A disabled primary action (Start cooking while editing, the import footer): the same values the
+     Planner and copy sheet draw raw. */
+  --color-home-disabled: #f1e7de;
+  --color-home-disabled-ink: #8c7a6f;
+
   --radius-home-tile: 20px;
   --radius-home-card: 16px;
   --radius-home-mini: 12px;

@@ -137,6 +137,18 @@ describe('allStageKeys (D2: every card starts open)', () => {
   })
 })
 
+describe('the steps subline (owner decision A)', () => {
+  it('is gone: no "nothing cooks unattended" copy, with or without parallel work', () => {
+    for (const fx of [croissant]) {
+      const out = renderToStaticMarkup(
+        createElement(PlanScreen, { plan: derivePlan(fx as RecipePlanResponse), onBack: () => {}, onStartCooking: () => {} }),
+      )
+      expect(out).not.toContain('cooks unattended')
+      expect(out).not.toContain('nothing else in the plan can be done')
+    }
+  })
+})
+
 describe('FGC-16 (F1): the status line sits under the title, before What you need', () => {
   const LINE = 'Plan simplified — steps run one after another.'
   const meta = { degraded: true, review_recommended: false, warnings: ['degraded'] } as unknown as ImportMeta
