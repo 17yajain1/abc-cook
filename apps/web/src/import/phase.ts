@@ -1,4 +1,3 @@
-import type { FinishedImport } from './handOff'
 import type {
   AcquiredSource,
   ImportJobResponse,
@@ -24,15 +23,6 @@ export type Phase =
       acquired: AcquiredSource | null
       /** What the extraction has streamed so far; kept on every later phase. */
       draft: StreamedDraft | null
-    }
-  /** The plan is built and already saved; the reading screen stays as it was and offers a tap
-   * to open it. Carries what the screen last showed, so the draft stays readable. */
-  | {
-      kind: 'ready'
-      preview: SourcePreview | null
-      acquired: AcquiredSource | null
-      draft: StreamedDraft | null
-      finished: FinishedImport
     }
   | { kind: 'not_grounded'; job: ImportJobResponse }
   | { kind: 'no_recipe' }

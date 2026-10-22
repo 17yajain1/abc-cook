@@ -6,6 +6,7 @@ import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { asWrittenLine } from '@/library/ingredientEditor'
 import { useNow } from '@/lib/useNow'
 import { useHomeSurface } from '@/shell/useHomeSurface'
+import { measureSections, scrollTopFor, type ScrollAnchor } from '@/import/scrollAnchor'
 
 import { BackButton } from './BackButton'
 import type { RenderIngredientGroup, RenderPlan, RenderStage, RenderWaitRow } from './derive'
@@ -22,7 +23,10 @@ import { stageOrdinals, stepNumbers } from './stepNumbers'
 import { useRecipeEditing, type PlanEditing } from './useRecipeEditing'
 import { orphanNoticeLine } from '@/library/recipeEdits'
 import { panelServings } from './panelServings'
+import { ReadyPill } from './ReadyPill'
 import { RecipeHeader, type SaveControl } from './RecipeHeader'
+import { RecipePage } from './RecipePage'
+import { useReadyNotice } from './useReadyNotice'
 import type { StalenessMarker } from './staleness'
 import { StageCard } from './StageCard'
 import { WaitRow } from './WaitRow'
@@ -92,6 +96,8 @@ export function PlanScreen({
   endOfPage,
   editing,
   now: frozenNow,
+  fromImport = false,
+  scrollAnchor = null,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -115,6 +121,10 @@ export function PlanScreen({
   editing?: PlanEditing
   /** Freezes the clock behind "ready around" (tests, screenshots). Absent in the app: it ticks every minute. */
   now?: Date
+  /** This plan was just built by a live import: "Your plan is ready" shows briefly. A Cookbook open never sets it. */
+  fromImport?: boolean
+  /** Where the cook was reading on the importing page; applied once, before the first paint. */
+  scrollAnchor?: ScrollAnchor | null
 }) {
   const now = useNow(frozenNow)
   const [reviewing, setReviewing] = useState(false)
@@ -165,12 +175,32 @@ export function PlanScreen({
   const barSpacerRef = useRef<HTMLDivElement>(null)
   const compactBarRef = useRef<HTMLDivElement>(null)
   const [compact, setCompact] = useState(false)
+  const ready = useReadyNotice(fromImport)
+  // The position the swap landed on: a scroll event for any other position is the cook's own.
+  const appliedTop = useRef<number | null>(null)
   const onScroll = () => {
     const el = scrollRef.current
+    if (el && (appliedTop.current == null || Math.abs(el.scrollTop - appliedTop.current) > 2)) ready.dismiss()
     const title = titleRef.current
     if (!el || !title || !barSpacerRef.current) return
     setCompact(isCompactHeader(el.scrollTop, title.offsetTop + title.offsetHeight, barSpacerRef.current.offsetHeight))
   }
+
+  // The swap from the importing page: open at the section the cook was reading, once, before paint.
+  // The first render's anchor is the only one that counts, so later renders never move the page.
+  const initialAnchor = useRef(scrollAnchor)
+  useLayoutEffect(() => {
+    const anchor = initialAnchor.current
+    const el = scrollRef.current
+    if (!anchor || !el) return
+    const measured = measureSections(el)
+    if (!measured) return
+    // The compact bar covers the top of the page by the spacer's height once the page has scrolled.
+    el.scrollTop = scrollTopFor(anchor, measured.tops, measured.heights, barSpacerRef.current?.offsetHeight ?? 0)
+    appliedTop.current = el.scrollTop
+    onScroll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // The edit toolbar sticks under the compact bar (A24: Done stays reachable on a long page), so it
   // needs the bar's height: 0 while the bar is not showing.
@@ -251,126 +281,127 @@ export function PlanScreen({
   }
 
   return (
-    <div className="h-screen-dynamic relative overflow-x-clip bg-home-ground text-home-ink">
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="no-scrollbar h-full overflow-y-auto pb-[calc(14rem+var(--safe-bottom))]"
-      >
-        <RecipeHeader
-          plan={plan}
-          save={save}
-          importMeta={importMeta}
-          onBack={guardedBack}
-          staleness={staleness}
-          alreadySaved={alreadySaved}
-          servings={servings}
-          statusLine={statusLine}
-          edit={editPill}
-          titleRef={titleRef}
-          multitask={note ? { bold: note.bold, detail: note.detail } : null}
-          onSeeWhich={seeWhich}
-          now={now}
-        />
+    <RecipePage
+      mode="plan"
+      scrollRef={scrollRef}
+      onScroll={onScroll}
+      bottomPad="pb-[calc(14rem+var(--safe-bottom))]"
+      overlay={
+        <>
+          {/* Measures the compact bar's height: the top inset plus the 56px title row. Empty and
+              invisible, so it has nothing to paint. */}
+          <div
+            ref={barSpacerRef}
+            aria-hidden
+            className="pointer-events-none invisible absolute left-0 top-0 h-[calc(var(--safe-top)+56px)] w-px"
+          />
 
-        {noticeLine && (
-          <p className="px-5 pb-2 text-[13px] leading-[1.4] text-home-ink-2">
-            {noticeLine}{' '}
-            <button type="button" onClick={() => setReviewing(true)} className="relative font-medium text-home-ink underline underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']">
-              Review
-            </button>
-          </p>
-        )}
-
-        {plan.warnings.length > 0 && (
-          <div className="mx-5 mb-2 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
-            {plan.warnings.map((w) => (
-              <p key={w}>{sentence(w)}</p>
-            ))}
-          </div>
-        )}
-
-        {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
-
-        <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
-
-        <StepEditContext.Provider value={stepApi}>
-          <section className="px-5 pt-[18px]" aria-labelledby="steps-heading">
-            <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
-              Steps
-            </h2>
-            <div className="mt-3">
-              {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
-                <WaitRow key={`wait-pre-${i}`} row={row} />
-              ))}
-              {plan.stages.map((stage, index) => (
-                <Fragment key={stage.key}>
-                  <StageCard
-                    stage={stage}
-                    expanded={expandedStages.has(stage.key)}
-                    onToggle={() => toggleStage(stage.key)}
-                    ordinal={ordinals.get(stage.stageId) ?? stage.index + 1}
-                    numbers={numbers}
-                    factor={factor}
-                  />
-                  {(waitRowsAfter.get(index) ?? []).map((row, i) => (
-                    <WaitRow key={`wait-${index}-${i}`} row={row} />
-                  ))}
-                </Fragment>
-              ))}
-
-              {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
+          {compact && (
+            <div
+              ref={compactBarRef}
+              data-testid="compact-bar"
+              className="absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[var(--safe-top)]"
+            >
+              <div className="flex h-14 items-center gap-1 px-3">
+                <BackButton onClick={guardedBack} />
+                <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
+                  {plan.title}
+                </p>
+              </div>
             </div>
-          </section>
-        </StepEditContext.Provider>
-      </div>
-
-      {/* Measures the compact bar's height: the top inset plus the 56px title row. Empty and
-          invisible, so it has nothing to paint. */}
-      <div
-        ref={barSpacerRef}
-        aria-hidden
-        className="pointer-events-none invisible absolute left-0 top-0 h-[calc(var(--safe-top)+56px)] w-px"
+          )}
+        </>
+      }
+      footer={
+        <>
+          {fromImport && <ReadyPill visible={ready.visible} />}
+          {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
+              register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
+          {/* While editing, Done is the way forward: Start cooking waits until the edits are committed. */}
+          <button
+            type="button"
+            onClick={guardedStart}
+            disabled={editMode}
+            className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground disabled:bg-home-disabled disabled:text-home-disabled-ink"
+          >
+            Start cooking
+          </button>
+          {/* R2: what "Start cooking" begins, in one line. Absent without `summary.phases`. */}
+          {plan.outline && (
+            <p className="mt-1.5 line-clamp-2 text-balance text-center text-[12px] leading-[1.35] text-home-ink-2">
+              {plan.outline.ctaSubline}
+            </p>
+          )}
+        </>
+      }
+    >
+      <RecipeHeader
+        plan={plan}
+        save={save}
+        importMeta={importMeta}
+        onBack={guardedBack}
+        staleness={staleness}
+        alreadySaved={alreadySaved}
+        servings={servings}
+        statusLine={statusLine}
+        edit={editPill}
+        titleRef={titleRef}
+        multitask={note ? { bold: note.bold, detail: note.detail } : null}
+        onSeeWhich={seeWhich}
+        now={now}
       />
 
-      {compact && (
-        <div
-          ref={compactBarRef}
-          data-testid="compact-bar"
-          className="absolute left-0 right-0 top-0 z-30 border-b border-home-rule bg-home-ground pt-[var(--safe-top)]"
-        >
-          <div className="flex h-14 items-center gap-1 px-3">
-            <BackButton onClick={guardedBack} />
-            <p className="min-w-0 flex-1 truncate text-[18px] font-bold leading-[24px] text-home-ink">
-              {plan.title}
-            </p>
-          </div>
+      {noticeLine && (
+        <p className="px-5 pb-2 text-[13px] leading-[1.4] text-home-ink-2">
+          {noticeLine}{' '}
+          <button type="button" onClick={() => setReviewing(true)} className="relative font-medium text-home-ink underline underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']">
+            Review
+          </button>
+        </p>
+      )}
+
+      {plan.warnings.length > 0 && (
+        <div className="mx-5 mb-2 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
+          {plan.warnings.map((w) => (
+            <p key={w}>{sentence(w)}</p>
+          ))}
         </div>
       )}
 
-      {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. The
-          bottom padding is at least the home-indicator inset, so the pill clears Safari's
-          bottom toolbar and the home indicator. */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-3.5">
-        {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
-            register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
-        {/* While editing, Done is the way forward: Start cooking waits until the edits are committed. */}
-        <button
-          type="button"
-          onClick={guardedStart}
-          disabled={editMode}
-          className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground disabled:bg-home-disabled disabled:text-home-disabled-ink"
-        >
-          Start cooking
-        </button>
-        {/* R2: what "Start cooking" begins, in one line. Absent without `summary.phases`. */}
-        {plan.outline && (
-          <p className="mt-1.5 line-clamp-2 text-balance text-center text-[12px] leading-[1.35] text-home-ink-2">
-            {plan.outline.ctaSubline}
-          </p>
-        )}
-      </div>
-    </div>
+      {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
+
+      <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
+
+      <StepEditContext.Provider value={stepApi}>
+        <section className="px-5 pt-[18px]" aria-labelledby="steps-heading" data-anchor="steps">
+          <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
+            Steps
+          </h2>
+          <div className="mt-3">
+            {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
+              <WaitRow key={`wait-pre-${i}`} row={row} />
+            ))}
+            {plan.stages.map((stage, index) => (
+              <Fragment key={stage.key}>
+                <StageCard
+                  stage={stage}
+                  expanded={expandedStages.has(stage.key)}
+                  onToggle={() => toggleStage(stage.key)}
+                  ordinal={ordinals.get(stage.stageId) ?? stage.index + 1}
+                  numbers={numbers}
+                  factor={factor}
+                />
+                {(waitRowsAfter.get(index) ?? []).map((row, i) => (
+                  <WaitRow key={`wait-${index}-${i}`} row={row} />
+                ))}
+              </Fragment>
+            ))}
+
+            {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
+          </div>
+        </section>
+      </StepEditContext.Provider>
+    </RecipePage>
   )
 }
 

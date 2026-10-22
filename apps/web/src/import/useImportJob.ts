@@ -9,10 +9,10 @@ import type { FindSaved } from './duplicate'
 import { completeImport, type ImportHandlers } from './handOff'
 import { importExtrasFrom } from './importExtras'
 import { importMetaFrom } from './importMeta'
-import { hasReadable, importViewFor } from './importView'
 import { createImportTimer } from './importTiming'
 import type { InstantHeader } from './instantPreview'
 import { phaseFor, type Phase } from './phase'
+import type { ScrollAnchor } from './scrollAnchor'
 import { runSubmit } from './submitFlow'
 
 export type { ImportStatus, Phase } from './phase'
@@ -27,8 +27,8 @@ const MAX_POLLS = 250
 
 /**
  * The import state machine, shared by `ImportScreen` and the Home Copy sheet: submit a
- * URL or pasted text, poll the job, and hand a finished plan to `handlers` (saved at done,
- * opened at the cook's tap, or at once when nothing was on screen to read). The token
+ * URL or pasted text, poll the job, and hand a finished plan to `handlers` (saved, then opened
+ * at once: the importing page is the recipe page, so nothing waits for a tap). The token
  * and timer refs make a stale poll chain (previous submit, or one outliving the
  * component) unable to overwrite newer state.
  */
@@ -69,8 +69,9 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
 
   // What Try again resubmits: the URL of the last URL submit, or null for a pasted text.
   const lastUrlRef = useRef<string | null>(null)
-  // Whether the reading screen has shown any recipe text yet: it decides tap vs auto at done.
-  const shownRef = useRef(false)
+  // Where the cook is reading on the importing page; the plan page opens at the same place. Written by
+  // the page on scroll, read once when the job is done.
+  const anchorRef = useRef<ScrollAnchor | null>(null)
   // The last poll's source text and draft, so a network error mid-poll keeps what was read.
   const lastRef = useRef<Pick<Extract<Phase, { kind: 'polling' }>, 'preview' | 'acquired' | 'draft'>>({
     preview: null,
@@ -80,7 +81,7 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
   const [isText, setIsText] = useState(false)
 
   const resetRead = (text: boolean) => {
-    shownRef.current = false
+    anchorRef.current = null
     lastRef.current = { preview: null, acquired: null, draft: null }
     setIsText(text)
   }
@@ -115,35 +116,19 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
             summary: result.summary ?? null,
           }
           timerObj.current.mark('plan')
-          const outcome = completeImport(
+          completeImport(
             {
               plan: derivePlan(payload, result.provenance ?? null),
               payload,
               importMeta: importMetaFrom(result),
               extras: importExtrasFrom(result),
+              scrollAnchor: anchorRef.current,
             },
-            shownRef.current,
             handlers,
           )
-          if (outcome.kind === 'opened') {
-            timerObj.current.mark('open')
-          } else {
-            timerObj.current.mark('ready')
-            setPhase({
-              kind: 'ready',
-              preview: lastRef.current.preview,
-              acquired: lastRef.current.acquired,
-              draft: lastRef.current.draft,
-              finished: outcome.finished,
-            })
-          }
+          timerObj.current.mark('open')
           console.info('[import-timing]', timerObj.current.report())
           return
-        }
-        if (decision.phase.kind === 'polling' || decision.phase.kind === 'slow') {
-          const { preview, acquired, draft } = decision.phase
-          const view = importViewFor({ instant: null, acquired, preview, draft, status: decision.phase.status })
-          if (hasReadable(view)) shownRef.current = true
         }
         setPhase(decision.phase)
         if (decision.keepPolling) {
@@ -209,12 +194,19 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
     start(trimmed, options.skipDuplicateCheck)
   }
 
-  /** Try again after an `unavailable` failure: the same input, resubmitted. Nothing was
-   * saved, so it skips the duplicate check. A pasted text resubmits the text. */
+  /** Try again after a failure: the same input, resubmitted as a new import. Nothing was saved, so it
+   * skips the duplicate check. A pasted text resubmits the text. An `error` (a lost connection, a server
+   * fault) retries the last link or text; with neither known there is nothing to resubmit, so it starts over. */
   const retry = () => {
-    if (phase.kind !== 'failed') return
-    if (phase.url) start(phase.url, true)
-    else submitText()
+    if (phase.kind === 'failed') {
+      if (phase.url) start(phase.url, true)
+      else submitText()
+      return
+    }
+    if (phase.kind !== 'error') return
+    if (lastUrlRef.current) start(lastUrlRef.current, true)
+    else if (text.trim()) submitText()
+    else reset()
   }
 
   const submitText = () => {
@@ -262,21 +254,13 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
 
   const markThumbnail = () => timerObj.current.mark('thumbnail')
 
-  /** The tap on "Your plan is ready": open the plan that was saved when the job finished. */
-  const openReady = () => {
-    if (phase.kind !== 'ready') return
-    timerObj.current.mark('open')
-    console.info('[import-timing]', timerObj.current.report())
-    handlers.open(phase.finished)
-  }
-
   return {
     phase,
     setPhase,
     instant,
     isText,
     markThumbnail,
-    openReady,
+    anchorRef,
     url,
     setUrl,
     text,

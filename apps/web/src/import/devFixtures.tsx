@@ -37,7 +37,7 @@ const DESCRIPTION = [
   'Serve with butter and maple syrup, or with yoghurt and toasted pecans.',
 ].join('\n')
 
-type FixtureName = 'instant' | 'description' | 'blog' | 'unavailable' | 'incomplete'
+type FixtureName = 'instant' | 'description' | 'draft' | 'blog' | 'unavailable' | 'incomplete'
 
 const acquired = { title: TITLE, channel: CHANNEL, description: DESCRIPTION }
 
@@ -51,6 +51,33 @@ const JOBS: Record<FixtureName, { url: string; job: ImportJobResponse; oembed: b
     url: VIDEO,
     oembed: true,
     job: { job_id: 'fx', status: 'extracting', acquired },
+  },
+  // Mid-extraction: the source is read, five ingredients and three steps have streamed in.
+  draft: {
+    url: VIDEO,
+    oembed: true,
+    job: {
+      job_id: 'fx',
+      status: 'extracting',
+      acquired,
+      draft: {
+        ingredients: [
+          { name: 'All-purpose flour', group: null, prep_note: null, qty: '1 1/2', unit: 'cups' },
+          { name: 'Brown sugar', group: null, prep_note: null, qty: '2', unit: 'tablespoons' },
+          { name: 'Baking powder', group: null, prep_note: null, qty: '1', unit: 'tablespoon' },
+          { name: 'Canned pumpkin purÃ©e', group: null, prep_note: null, qty: '1/2', unit: 'cup' },
+          { name: 'Milk', group: null, prep_note: null, qty: '1', unit: 'cup' },
+        ],
+        ingredients_complete: true,
+        steps: [
+          { text: 'Whisk the flour, sugar and baking powder in a large bowl.' },
+          { text: 'In a second bowl, whisk the milk and pumpkin, then pour it into the dry mix.' },
+          { text: 'Cook a quarter cup of batter per pancake in a buttered pan until bubbles form, then flip.' },
+        ],
+        steps_complete: false,
+        calls: 1,
+      },
+    },
   },
   blog: {
     url: BLOG,

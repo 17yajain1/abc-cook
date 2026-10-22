@@ -36,7 +36,7 @@ export function IngredientsPanel({
   const listGroups = panelIngredientGroups(groups, factor, marker)
 
   return (
-    <section className="px-5 pt-[22px]" aria-labelledby="need-heading">
+    <section className="px-5 pt-[22px]" aria-labelledby="need-heading" data-anchor="need">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="need-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
           What you need

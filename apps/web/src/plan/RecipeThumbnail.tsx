@@ -9,9 +9,9 @@ const YT_PLACEHOLDER_WIDTH = 120
  * The recipe's picture at the top of the page (D4): 16:9, card radius. YouTube only, derived from the
  * source key (`thumbnailUrlFor`), never stored. With no key, a key that isn't YouTube's, a failed image
  * or the grey placeholder it renders nothing at all, so the title sits where it always did, with no gap.
- * Not a link and no play glyph: real thumbnails carry none, and it would imply tap-to-play.
+ * `onLoaded` marks the import timer when a real picture has painted. Not a link and no play glyph: real thumbnails carry none, and it would imply tap-to-play.
  */
-export function RecipeThumbnail({ sourceKey }: { sourceKey: string | null }) {
+export function RecipeThumbnail({ sourceKey, onLoaded }: { sourceKey: string | null; onLoaded?: () => void }) {
   const url = sourceKey ? thumbnailUrlFor(sourceKey) : null
   const [hidden, setHidden] = useState(false)
   if (!url || hidden) return null
@@ -25,6 +25,7 @@ export function RecipeThumbnail({ sourceKey }: { sourceKey: string | null }) {
         onError={() => setHidden(true)}
         onLoad={(e) => {
           if (e.currentTarget.naturalWidth === YT_PLACEHOLDER_WIDTH) setHidden(true)
+          else onLoaded?.()
         }}
       />
     </div>

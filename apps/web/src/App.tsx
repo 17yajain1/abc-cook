@@ -13,6 +13,7 @@ import { startIfNone } from './cooking-mode/startCooking'
 import { ImportScreen } from './import/ImportScreen'
 import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff'
 import type { ImportExtras } from './import/importExtras'
+import type { ScrollAnchor } from './import/scrollAnchor'
 import { applyEdits, viewParts } from './library/recipeEdits'
 import { canonicalSourceKey } from './library/sourceKey'
 import { openSavedChecked, openSavedNow, type Marker, type OpenDeps } from './library/openSaved'
@@ -101,6 +102,9 @@ type View =
       /** R4: the cook's servings choice for this open recipe; absent or null is as written. A
        * saved recipe's choice is opened into it and written back to the library on each change. */
       servingsChoice?: ServingsChoice | null
+      /** Set only by `openImported`: the plan was just built by a live import. Shows "Your plan is ready" and
+       * opens at the section the cook was reading on the importing page. A Cookbook open never sets either. */
+      fromImport?: { scrollAnchor: ScrollAnchor | null }
     }
   | {
       kind: 'cooking'
@@ -233,9 +237,8 @@ export default function App() {
   }, [])
   // Every finished import lands in the library as soon as the job is done (`saveImported`),
   // whether or not the cook has opened it yet; re-importing the same source replaces its
-  // entry (`library.save` dedups by source key). Opening it (`openImported`) is a separate
-  // step: the cook's tap on "Your plan is ready", or at once when nothing was on screen to
-  // read. On a failed write the origin stays `import`, so the header's Save control still
+  // entry (`library.save` dedups by source key). Opening it (`openImported`) follows at once:
+  // the importing page is the recipe page, and the plan replaces its draft in place. On a failed write the origin stays `import`, so the header's Save control still
   // offers a retry.
   const saveImported = useCallback(
     (payload: RecipePlanResponse, importMeta: ImportMeta, extras: ImportExtras): SaveState => {
@@ -251,7 +254,7 @@ export default function App() {
     },
     [],
   )
-  const openImported = useCallback(({ plan, payload, importMeta, extras, saveState }: FinishedImport) => {
+  const openImported = useCallback(({ plan, payload, importMeta, extras, saveState, scrollAnchor }: FinishedImport) => {
     // A re-import replaces its entry and keeps the cook's edits, so they apply here too.
     const edits = library.findBySource(canonicalSourceKey(payload.graph.source))?.edits ?? []
     setView({
@@ -265,6 +268,7 @@ export default function App() {
       // The import was auto-saved just before this opens, so a re-import shows the choice
       // its entry kept; an unsaved import has none.
       servingsChoice: library.findBySource(canonicalSourceKey(payload.graph.source))?.servings_choice ?? null,
+      fromImport: { scrollAnchor },
     })
   }, [])
   const importHandlers = useMemo<ImportHandlers>(
@@ -549,6 +553,8 @@ function PlanRoute({
       onServingsChoiceChange={onServingsChoiceChange}
       endOfPage={endOfPage}
       editing={editing}
+      fromImport={view.fromImport != null}
+      scrollAnchor={view.fromImport?.scrollAnchor ?? null}
     />
   )
 }
