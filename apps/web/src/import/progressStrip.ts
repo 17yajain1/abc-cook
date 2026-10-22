@@ -41,7 +41,8 @@ const READ_LABEL: Record<SourceKind, string> = { video: 'Video read', page: 'Pag
  * there is no time: a segment is done when its content is complete or came whole from the source,
  * and the first segment that is not done is the one in progress.
  *
- * - read: the server has acquired the source (or a blog page gave its recipe), or has moved on.
+ * - read: the job has left `acquiring`, or a blog page gave its recipe. The job's `acquired` title and channel are
+ *   NOT the signal: the server publishes them as soon as yt-dlp answers, while captions and link probing still run.
  * - ingredients / steps: the draft marked the section complete, or the source's own lines gave it whole.
  *   Ingredients are also done once steps have begun (the draft streams them in that order), and both are done
  *   once the job is past extraction (a cache hit streams nothing).
@@ -50,9 +51,9 @@ const READ_LABEL: Record<SourceKind, string> = { video: 'Video read', page: 'Pag
 export function progressStripFor(
   view: ImportViewModel,
   status: ImportStatus,
-  source: { kind: SourceKind; acquired: boolean; preview: boolean },
+  source: { kind: SourceKind; preview: boolean },
 ): ProgressStrip {
-  const readDone = source.acquired || source.preview || status !== 'acquiring'
+  const readDone = source.preview || status !== 'acquiring'
   const pastExtraction = status === 'validating' || status === 'plan_building' || status === 'done'
   const stepsStarted = view.method.kind === 'steps' || view.method.kind === 'sections'
   const ingredientsDone =

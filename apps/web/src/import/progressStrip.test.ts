@@ -30,7 +30,7 @@ function strip(
   const p = over.preview === undefined ? null : over.preview
   const d = over.draft === undefined ? null : over.draft
   const view = importViewFor({ instant: null, acquired: a, preview: p, draft: d, status })
-  return progressStripFor(view, status, { kind: over.kind ?? 'video', acquired: a != null, preview: p != null })
+  return progressStripFor(view, status, { kind: over.kind ?? 'video', preview: p != null })
 }
 const states = (s: ReturnType<typeof strip>) => s.segments.map((x) => x.state)
 
@@ -41,6 +41,13 @@ describe('progressStripFor', () => {
 
   it('acquiring: reading the source is the part in progress', () => {
     const s = strip('acquiring')
+    expect(states(s)).toEqual(['active', 'pending', 'pending', 'pending'])
+    expect(s.headline).toBe('Getting the recipe…')
+  })
+
+  it('a title and channel from the job do not end the read: captions and link probing are still running', () => {
+    // The server publishes `acquired` as soon as yt-dlp answers, still `acquiring`.
+    const s = strip('acquiring', { acquired })
     expect(states(s)).toEqual(['active', 'pending', 'pending', 'pending'])
     expect(s.headline).toBe('Getting the recipe…')
   })

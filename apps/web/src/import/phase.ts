@@ -61,7 +61,7 @@ export const GENERIC_ERROR = 'Something went wrong reading this recipe.'
 /** The screen's own sentence for each failure kind. The server sends an equivalent one in
  * `job.error` for older web builds; this build reads `failure` and writes its own. */
 export const FAILURE_COPY: Record<ImportFailure, string> = {
-  unavailable: 'We couldn’t reach our recipe reader. Try again in a minute.',
+  unavailable: 'We couldn’t reach our recipe reader. Give it a minute.',
   incomplete: 'We couldn’t finish reading this recipe.',
   refused: 'We couldn’t read this recipe.',
 }
@@ -69,6 +69,19 @@ export const FAILURE_COPY: Record<ImportFailure, string> = {
 /** A second line under the sentence, for the failure kinds that have one. */
 export const FAILURE_HINT: Partial<Record<ImportFailure, string>> = {
   refused: 'Paste the recipe text, or try another link.',
+}
+
+/** What the footer's retry button can actually do. `none`: there is no link or text to resubmit, so the button
+ * must say it goes back to the entry form rather than promise a retry. */
+export type RetryTarget = { kind: 'url'; url: string } | { kind: 'text' } | { kind: 'none' }
+
+/** A `failed` job retries the link it came from, or a pasted text. An `error` retries the last link, else the
+ * text in the box. Anything else, or nothing to resubmit, is `none`. */
+export function retryTargetFor(phase: Phase, lastUrl: string | null, text: string): RetryTarget {
+  if (phase.kind !== 'failed' && phase.kind !== 'error') return { kind: 'none' }
+  const url = phase.kind === 'failed' ? phase.url : lastUrl
+  if (url) return { kind: 'url', url }
+  return text.trim() ? { kind: 'text' } : { kind: 'none' }
 }
 
 export type PollDecision =

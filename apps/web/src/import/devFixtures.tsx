@@ -118,7 +118,7 @@ const JOBS: Record<FixtureName, { url: string; job: ImportJobResponse; oembed: b
     job: {
       job_id: 'fx',
       status: 'failed',
-      error: "We couldn't reach our recipe reader. Try again in a minute.",
+      error: "We couldn't reach our recipe reader. Give it a minute.",
       result: { status: 'failed', failure: 'unavailable', warnings: [], ingredients: [] },
       acquired,
     },

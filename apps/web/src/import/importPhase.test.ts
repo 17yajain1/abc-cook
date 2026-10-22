@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ImportJobResponse } from '@abc-cook/schema'
 
 import { importMetaFrom } from './importMeta'
-import { FAILURE_COPY, FAILURE_HINT, GENERIC_ERROR, phaseFor, type Phase } from './phase'
+import { FAILURE_COPY, FAILURE_HINT, GENERIC_ERROR, phaseFor, retryTargetFor, type Phase } from './phase'
 import { statusLineFor } from '../plan/PlanScreen'
 
 const ctx: { jobId: string; token: number; attempt: number; maxPolls: number; url: string | null } = {
@@ -161,7 +161,7 @@ describe('phaseFor — the streamed draft', () => {
 
 describe('failure copy', () => {
   it('has one sentence per failure kind, and neither offers a retry for incomplete', () => {
-    expect(FAILURE_COPY.unavailable).toBe('We couldn’t reach our recipe reader. Try again in a minute.')
+    expect(FAILURE_COPY.unavailable).toBe('We couldn’t reach our recipe reader. Give it a minute.')
     expect(FAILURE_COPY.incomplete).toBe('We couldn’t finish reading this recipe.')
     expect(FAILURE_COPY.refused).toBe('We couldn’t read this recipe.')
     expect(FAILURE_HINT.refused).toBe('Paste the recipe text, or try another link.')
@@ -181,5 +181,29 @@ describe('the Plan simplified notice fires for a repair outage', () => {
   it('repair_unavailable alone does not claim a simplified plan', () => {
     const meta = importMetaFrom({ status: 'done', warnings: ['repair_unavailable'] })
     expect(meta.degraded).toBe(false)
+  })
+})
+
+describe('retryTargetFor', () => {
+  const failed = (url: string | null): Phase => ({ kind: 'failed', failure: 'unavailable', url, preview: null, acquired: null, draft: null })
+  const error: Phase = { kind: 'error', message: 'x', preview: null, acquired: null, draft: null }
+
+  it('a failed link retries that link, whatever is in the text box', () => {
+    expect(retryTargetFor(failed('https://a.example/r'), null, 'pasted')).toEqual({ kind: 'url', url: 'https://a.example/r' })
+  })
+
+  it('a failed pasted text retries the text, and has nothing to retry once the box is empty', () => {
+    expect(retryTargetFor(failed(null), null, 'some recipe')).toEqual({ kind: 'text' })
+    expect(retryTargetFor(failed(null), null, '   ')).toEqual({ kind: 'none' })
+  })
+
+  it('an error retries the last link, else the text, else there is nothing to retry', () => {
+    expect(retryTargetFor(error, 'https://a.example/r', '')).toEqual({ kind: 'url', url: 'https://a.example/r' })
+    expect(retryTargetFor(error, null, 'some recipe')).toEqual({ kind: 'text' })
+    expect(retryTargetFor(error, null, '')).toEqual({ kind: 'none' })
+  })
+
+  it('any other phase has no retry', () => {
+    expect(retryTargetFor({ kind: 'entry' } as Phase, 'https://a.example/r', 'x')).toEqual({ kind: 'none' })
   })
 })

@@ -11,7 +11,7 @@ import { importExtrasFrom } from './importExtras'
 import { importMetaFrom } from './importMeta'
 import { createImportTimer } from './importTiming'
 import type { InstantHeader } from './instantPreview'
-import { phaseFor, type Phase } from './phase'
+import { phaseFor, retryTargetFor, type Phase } from './phase'
 import type { ScrollAnchor } from './scrollAnchor'
 import { runSubmit } from './submitFlow'
 
@@ -196,18 +196,13 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
   }
 
   /** Try again after a failure: the same input, resubmitted as a new import. Nothing was saved, so it
-   * skips the duplicate check. A pasted text resubmits the text. An `error` (a lost connection, a server
-   * fault) retries the last link or text; with neither known there is nothing to resubmit, so it starts over. */
+   * skips the duplicate check. A pasted text resubmits the text. With neither a link nor a text to resubmit
+   * (`canRetry` is false) it goes back to the entry form, and the button is labelled for that. */
+  const retryTarget = retryTargetFor(phase, lastUrlRef.current, text)
   const retry = () => {
-    if (phase.kind === 'failed') {
-      if (phase.url) start(phase.url, true)
-      else submitText()
-      return
-    }
-    if (phase.kind !== 'error') return
-    if (lastUrlRef.current) start(lastUrlRef.current, true)
-    else if (text.trim()) submitText()
-    else reset()
+    if (retryTarget.kind === 'url') start(retryTarget.url, true)
+    else if (retryTarget.kind === 'text') submitText()
+    else if (phase.kind === 'failed' || phase.kind === 'error') reset()
   }
 
   const submitText = () => {
@@ -268,6 +263,8 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
     setText,
     submit,
     retry,
+    /** False when Try again has nothing to resubmit: the button then reads "Back to import" and resets. */
+    canRetry: retryTarget.kind !== 'none',
     submitText,
     keepWaiting,
     reset,

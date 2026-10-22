@@ -55,7 +55,7 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset, retry, keepWaiting, instant, isText, markThumbnail, anchorRef, url } =
+  const { phase, setPhase, text, setText, submitText, reset, retry, canRetry, keepWaiting, instant, isText, markThumbnail, anchorRef, url } =
     job
   // FGC-3: the line under a step the model added; the wording follows the source being read.
   const addedLabel = addedStepLabel(isText ? { kind: 'text', value: '' } : { kind: 'url', value: url })
@@ -76,7 +76,6 @@ export function ImportProgress({
     })
     const strip = progressStripFor(view, phase.status, {
       kind: sourceKindFor(url, isText),
-      acquired: phase.acquired != null,
       preview: phase.preview != null,
     })
     if (phase.kind === 'polling' && !(view.header || phase.preview || phase.draft || isText)) {
@@ -126,8 +125,8 @@ export function ImportProgress({
     })
     const { card, footer } =
       phase.kind === 'failed'
-        ? failureFor(phase.failure, { retry, paste: () => setPhase({ kind: 'paste', error: null }), another: reset })
-        : errorFor(phase.message, retry)
+        ? failureFor(phase.failure, { retry, canRetry, paste: () => setPhase({ kind: 'paste', error: null }), another: reset })
+        : errorFor(phase.message, retry, canRetry)
     return (
       <ImportingPage
         view={view}
@@ -187,7 +186,7 @@ const CARD = 'mt-4 rounded-home-card border border-home-rule bg-home-surface px-
  * routes in: paste the text (the footer's button) or another link (under the message). */
 function failureFor(
   failure: ImportFailure,
-  on: { retry: () => void; paste: () => void; another: () => void },
+  on: { retry: () => void; canRetry: boolean; paste: () => void; another: () => void },
 ): { card: ReactNode; footer: ImportingFooter } {
   const card = (
     <div role="alert" className={CARD}>
@@ -204,20 +203,26 @@ function failureFor(
   )
   const footer: ImportingFooter =
     failure === 'unavailable'
-      ? { kind: 'action', label: 'Try again', onClick: on.retry }
+      ? { kind: 'action', ...retryAction(on.canRetry), onClick: on.retry }
       : { kind: 'action', label: 'Paste the recipe text', onClick: on.paste }
   return { card, footer }
 }
 
+/** The footer's label for `retry`: it only says "Try again" when there is something to resubmit. Otherwise the
+ * same handler resets to the entry form, and the label says so (a primary button is never a no-op). */
+function retryAction(canRetry: boolean): { label: string } {
+  return { label: canRetry ? 'Try again' : 'Back to import' }
+}
+
 /** A broken import with something read (a lost connection, a server fault): the message, and Try again. */
-function errorFor(message: string, retry: () => void): { card: ReactNode; footer: ImportingFooter } {
+function errorFor(message: string, retry: () => void, canRetry: boolean): { card: ReactNode; footer: ImportingFooter } {
   return {
     card: (
       <div role="alert" className={CARD}>
         <p className="text-[15px] leading-[1.45] text-home-ink">{message}</p>
       </div>
     ),
-    footer: { kind: 'action', label: 'Try again', onClick: retry },
+    footer: { kind: 'action', ...retryAction(canRetry), onClick: retry },
   }
 }
 
