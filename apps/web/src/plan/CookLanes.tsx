@@ -1,5 +1,3 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
-
 import { stageColor } from '@/lib/stageColor'
 
 import { hostAttentionSentence, joinLabels, type LaneBar } from './laneGeometry'
@@ -8,40 +6,29 @@ import { taskDurationText } from './StageCard'
 
 const pct = (n: number): string => `${(n * 100).toFixed(2)}%`
 
-/** A host's bar with its step name inside, over up to two lines, shown only when the whole name fits: a
- * clipped "Coâ€¦" says nothing, and the sentence below names every host anyway. */
-function HostBar({ bar, place }: { bar: LaneBar; place: CSSProperties }) {
-  const label = useRef<HTMLSpanElement>(null)
-  const [fits, setFits] = useState(true)
-  useLayoutEffect(() => {
-    const el = label.current
-    if (el) setFits(el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight + 1)
-  }, [bar.label, bar.from, bar.to])
-  return (
-    <span
-      title={bar.label}
-      className="absolute inset-y-0 flex items-center overflow-hidden rounded-[8px] bg-field px-2 text-[12px] font-bold leading-[13px] text-home-ink"
-      style={place}
-    >
-      <span ref={label} className={`block max-h-[26px] min-w-0 flex-1 overflow-hidden ${fits ? '' : 'invisible'}`}>
-        {bar.label}
-      </span>
-    </span>
-  )
-}
-
 function Bar({ bar }: { bar: LaneBar }) {
   const place = { left: pct(bar.from), width: pct(bar.to - bar.from), minWidth: 4 }
   if (bar.kind === 'meanwhile') {
     return <span className="absolute inset-y-0 rounded-[8px] border-2 border-home-terracotta bg-home-peach" style={place} />
   }
-  if (bar.kind === 'host') return <HostBar bar={bar} place={place} />
+  if (bar.kind === 'running') {
+    // One line, cut off with an ellipsis when the name is longer than the bar, never blank.
+    return (
+      <span
+        title={bar.label}
+        className="absolute inset-y-0 flex items-center overflow-hidden rounded-[8px] bg-field px-1.5 text-[12px] font-bold text-home-ink"
+        style={place}
+      >
+        <span className="min-w-0 flex-1 truncate">{bar.label}</span>
+      </span>
+    )
+  }
   return <span className="absolute inset-y-0 rounded-[8px]" style={{ ...place, background: stageColor(bar.stageIndex) }} />
 }
 
 /**
  * D5 "How this cook goes": shown only when the scheduler put something in a wait window
- * (`plan.lanes` is `null` otherwise). A two-lane picture, "You" above the host steps that are going, and
+ * (`plan.lanes` is `null` otherwise). A two-lane picture, "You" above every step that runs without you, and
  * one sentence per window naming what to do meanwhile. The picture is geometry from the scheduler's own
  * times (`cookLanes.ts`); the words name no stove, since the graph can't say what is on a heat.
  */
@@ -65,8 +52,8 @@ export function CookLanes({ plan }: { plan: RenderPlan }) {
                 <Bar key={`${bar.kind}-${bar.id}`} bar={bar} />
               ))}
             </div>
-            {lanes.hosts.map((row, i) => (
-              <div key={i} className="relative h-9">
+            {lanes.running.map((row, i) => (
+              <div key={i} className="relative h-7">
                 {row.map((bar) => (
                   <Bar key={bar.id} bar={bar} />
                 ))}

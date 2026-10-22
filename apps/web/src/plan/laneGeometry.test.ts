@@ -38,7 +38,7 @@ describe('deriveCookLanes (D5 geometry)', () => {
     for (const [file, p] of entries) {
       const lanes = lanesOf(p)
       if (!lanes) continue
-      for (const bar of [...lanes.you, ...lanes.hosts.flat()]) {
+      for (const bar of [...lanes.you, ...lanes.running.flat()]) {
         expect(bar.from, `${file} ${bar.id}`).toBeGreaterThanOrEqual(0)
         expect(bar.to, `${file} ${bar.id}`).toBeLessThanOrEqual(1)
         expect(bar.to, `${file} ${bar.id}`).toBeGreaterThanOrEqual(bar.from)
@@ -50,7 +50,7 @@ describe('deriveCookLanes (D5 geometry)', () => {
     for (const [file, p] of entries) {
       const lanes = lanesOf(p)
       if (!lanes) continue
-      const hosts = new Map(lanes.hosts.flat().map((h) => [h.id, h]))
+      const hosts = new Map(lanes.running.flat().map((h) => [h.id, h]))
       for (const w of p.plan.windows.filter((w) => w.assigned.length > 0)) {
         const block = lanes.you.find((b) => b.kind === 'meanwhile' && b.id === w.id)!
         const host = hosts.get(w.host_node_id)!
@@ -64,7 +64,7 @@ describe('deriveCookLanes (D5 geometry)', () => {
     for (const [file, p] of entries) {
       const lanes = lanesOf(p)
       if (!lanes) continue
-      for (const row of lanes.hosts) {
+      for (const row of lanes.running) {
         row.forEach((bar, i) => {
           if (i > 0) expect(bar.from, file).toBeGreaterThanOrEqual(row[i - 1].to)
         })
@@ -72,18 +72,47 @@ describe('deriveCookLanes (D5 geometry)', () => {
     }
   })
 
-  it('kadai: three busy steps before the window, a block for the three meanwhile tasks, one host', () => {
+  it('shows every step exactly once across the two lanes (a window task inside its meanwhile block)', () => {
+    for (const [file, p] of entries) {
+      const lanes = lanesOf(p)
+      if (!lanes) continue
+      const inYou = lanes.you.filter((b) => b.kind === 'step').map((b) => b.id)
+      const inBlocks = p.plan.windows.flatMap((w) => w.assigned)
+      const running = lanes.running.flat().map((b) => b.id)
+      const all = [...inYou, ...inBlocks, ...running]
+      expect(new Set(all).size, file).toBe(all.length)
+      expect([...all].sort(), file).toEqual(p.plan.scheduled.map((s) => s.node_id).sort())
+    }
+  })
+
+  it('keeps every host of a window in the second lane', () => {
+    for (const [file, p] of entries) {
+      const lanes = lanesOf(p)
+      if (!lanes) continue
+      const running = new Set(lanes.running.flat().map((b) => b.id))
+      for (const w of p.plan.windows.filter((w) => w.assigned.length > 0)) expect(running.has(w.host_node_id), `${file} ${w.id}`).toBe(true)
+    }
+  })
+
+  it('kadai: unchanged, one running step under the window block', () => {
     const lanes = lanesOf(named('kadai-paneer'))!
-    expect(lanes.hosts.length).toBe(1)
-    expect(lanes.hosts[0].map((b) => b.label)).toEqual(['Cook tomato base'])
+    expect(lanes.running.length).toBe(1)
+    expect(lanes.running[0].map((b) => b.label)).toEqual(['Cook tomato base'])
     expect(lanes.you.filter((b) => b.kind === 'meanwhile').length).toBe(1)
     expect(lanes.you.filter((b) => b.kind === 'step').length).toBe(6)
   })
 
-  it('biryani: two windows, two hosts, two blocks', () => {
+  it('biryani: every step that runs without the cook has a bar', () => {
     const lanes = lanesOf(named('chicken-biryani'))!
-    expect(lanes.hosts.flat().map((b) => b.label)).toEqual(['Soak rice', 'Cook chicken'])
+    expect(lanes.running.flat().map((b) => b.label).sort()).toEqual(
+      ['Boil spiced water', 'Cook chicken', 'Dum cook', 'Fry birista', 'Marinate chicken', 'Parboil rice', 'Soak rice'].sort(),
+    )
     expect(lanes.you.filter((b) => b.kind === 'meanwhile').length).toBe(2)
+  })
+
+  it('kadhi: its waits are shown', () => {
+    const lanes = lanesOf(named('kadhi-pakora'))!
+    expect(lanes.running.flat().length).toBeGreaterThan(0)
   })
 })
 

@@ -17,8 +17,8 @@ export interface LaneBar {
   /** 0..1 along `plan.total_min`. */
   from: number
   to: number
-  kind: 'step' | 'meanwhile' | 'host'
-  /** A host bar's step name; a step bar's too (for a tooltip). */
+  kind: 'step' | 'meanwhile' | 'running'
+  /** The step's name (a meanwhile block's tasks, joined): the bar's text and its tooltip. */
   label: string
   /** Position of the step's stage in `graph.stages`: the bar's tint. For a meanwhile block, its first task's. */
   stageIndex: number
@@ -28,8 +28,8 @@ export interface CookLanes {
   /** The top lane, "You": the steps that keep the cook busy, and one outlined block per window for the
    * meanwhile tasks, in time order. */
   you: LaneBar[]
-  /** The second lane: the host steps of the windows. Rows only when two hosts overlap in time. */
-  hosts: LaneBar[][]
+  /** The second lane: every step that runs without the cook, in rows (a new row only where two overlap). */
+  running: LaneBar[][]
 }
 
 interface LaneInput {
@@ -69,42 +69,44 @@ export function deriveCookLanes({ graph, scheduled, windows, totalMin }: LaneInp
     })
   }
 
-  const hostBars: LaneBar[] = []
   for (const w of used) {
     const tasks = w.assigned.flatMap((id) => (byNode.has(id) ? [byNode.get(id)!] : []))
-    if (tasks.length > 0) {
-      you.push({
-        id: w.id,
-        from: at(Math.min(...tasks.map((t) => t.start_min))),
-        to: at(Math.max(...tasks.map((t) => t.end_min))),
-        kind: 'meanwhile',
-        label: tasks.map((t) => nodes.get(t.node_id)?.label ?? t.node_id).join(', '),
-        stageIndex: stageOf(tasks[0].node_id),
-      })
-    }
-    const host = byNode.get(w.host_node_id)
-    if (host) {
-      hostBars.push({
-        id: w.host_node_id,
-        from: at(host.start_min),
-        to: at(host.end_min),
-        kind: 'host',
-        label: nodes.get(w.host_node_id)?.label ?? w.host_node_id,
-        stageIndex: stageOf(w.host_node_id),
-      })
-    }
+    if (tasks.length === 0) continue
+    you.push({
+      id: w.id,
+      from: at(Math.min(...tasks.map((t) => t.start_min))),
+      to: at(Math.max(...tasks.map((t) => t.end_min))),
+      kind: 'meanwhile',
+      label: tasks.map((t) => nodes.get(t.node_id)?.label ?? t.node_id).join(', '),
+      stageIndex: stageOf(tasks[0].node_id),
+    })
+  }
+
+  // The second lane: every step that runs without the cook (`occupies_cook` false: hands-off and low
+  // attention), so each gap in the "You" lane has a bar under it. Real idle time stays empty.
+  const runningBars: LaneBar[] = []
+  for (const s of scheduled) {
+    if (s.occupies_cook) continue
+    runningBars.push({
+      id: s.node_id,
+      from: at(s.start_min),
+      to: at(s.end_min),
+      kind: 'running',
+      label: nodes.get(s.node_id)?.label ?? s.node_id,
+      stageIndex: stageOf(s.node_id),
+    })
   }
 
   you.sort((a, b) => a.from - b.from || a.to - b.to)
-  hostBars.sort((a, b) => a.from - b.from || a.to - b.to)
-  // Hosts that overlap in time go on their own row, so no bar is drawn over another.
-  const hosts: LaneBar[][] = []
-  for (const bar of hostBars) {
-    const row = hosts.find((r) => r[r.length - 1].to <= bar.from)
+  runningBars.sort((a, b) => a.from - b.from || a.to - b.to)
+  // Steps that overlap in time go on their own row, so no bar is drawn over another.
+  const running: LaneBar[][] = []
+  for (const bar of runningBars) {
+    const row = running.find((r) => r[r.length - 1].to <= bar.from)
     if (row) row.push(bar)
-    else hosts.push([bar])
+    else running.push([bar])
   }
-  return { you, hosts }
+  return { you, running }
 }
 
 /** "A", "A and B", "A, B and C". */
