@@ -8,6 +8,8 @@ import { sourceLink } from '@/lib/source'
 import { BackButton } from './BackButton'
 import { AlreadySavedNotice, type AlreadySaved } from './AlreadySavedNotice'
 import type { PanelServings } from './IngredientsPanel'
+import { readyAroundText } from '@/lib/readyAround'
+
 import { PlanAheadCard } from './PlanAheadCard'
 import { RecipeFacts } from './RecipeFacts'
 import { RecipeThumbnail } from './RecipeThumbnail'
@@ -52,6 +54,8 @@ export function RecipeHeader({
   edit,
   titleRef,
   multitask,
+  onSeeWhich,
+  now,
 }: {
   plan: RenderPlan
   save?: SaveControl
@@ -73,7 +77,11 @@ export function RecipeHeader({
   /** The title's element, for the compact bar's threshold. */
   titleRef?: Ref<HTMLHeadingElement>
   /** D5: the multitask note, when something can be done while waiting. Shares the plan-ahead card. */
-  multitask?: { text: string; onSeeWhere: () => void } | null
+  multitask?: { bold: string; detail: string | null } | null
+  /** Scrolls to the first Meanwhile block (the card's "See which" link). */
+  onSeeWhich?: () => void
+  /** The clock for "ready around": passed in so a test or a screenshot can freeze it. */
+  now: Date
 }) {
   const source = sourceLink(plan.sourceUrl)
   const card = plan.outline?.card ?? null
@@ -116,7 +124,11 @@ export function RecipeHeader({
       {/* One action never shows twice: the stale marker's Re-import wins over Import again. */}
       {alreadySaved && !staleness?.onReimport && <AlreadySavedNotice alreadySaved={alreadySaved} />}
       {/* R2: the plan-ahead card replaces the multi-sitting "Start about … before you eat". */}
-      <PlanAheadCard card={card} multitask={multitask} />
+      <PlanAheadCard
+        ahead={card ? { bold: readyAroundText(now, card.readyInMin), detail: card.detail } : null}
+        multitask={multitask ?? null}
+        onSeeWhich={onSeeWhich ?? (() => {})}
+      />
 
       {/* A plan with no phases (saved before POSTPROCESS_VERSION 3) keeps its one-line saving. */}
       {!plan.outline && plan.savedMin > 0 && (

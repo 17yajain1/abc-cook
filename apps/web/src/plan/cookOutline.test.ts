@@ -44,13 +44,9 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
     ])
     expect(o.waits).toEqual([{ text: 'Hands free for ~1 hr 45 min', barLabel: '~1 hr 45 min' }])
     expect(o.stretches.map((s) => s.barWeight)).toEqual([18, 45])
-    expect(o.card).toEqual({
-      title: 'Plan ahead: ~1 hr 45 min hands free in the middle',
-      body: 'Start ~3 hr 30 min before you want to eat.',
-    })
-    expect(o.ctaSubline).toBe(
-      'First 20–30 min: Soak sabudana → Roast peanuts → Make chutney. The rest is ~1 hr 45 min later.',
-    )
+    expect(o.card?.detail).toBe("You're free for most of it: one long break, about 1 hr 45 min.")
+    expect(o.card?.readyInMin).toBeGreaterThan(0)
+    expect(o.ctaSubline).toBe('First stretch: about 20–30 min.')
   })
 
   it('donuts: two stretches, one wait — the frying gap is not split', () => {
@@ -61,11 +57,9 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       ['Then', 'Roll and cut → Glaze donuts', '60–75 min'],
     ])
     expect(o.waits).toEqual([{ text: 'Hands free for ~55 min', barLabel: '~55 min' }])
-    expect(o.card).toEqual({
-      title: 'Plan ahead: ~55 min hands free in the middle',
-      body: 'Start ~2 hr 45 min before you want to eat.',
-    })
-    expect(o.ctaSubline).toBe('First 20–35 min: Bloom yeast → Grease tray. The rest is ~55 min later.')
+    expect(o.card?.detail).toBe("You're free for most of it: one long break, about 55 min.")
+    expect(o.card?.readyInMin).toBeGreaterThan(0)
+    expect(o.ctaSubline).toBe('First stretch: about 20–35 min.')
   })
 
   it('donuts: Grease tray is in the title, so the first stretch has no task line', () => {
@@ -87,13 +81,9 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       'Hands free for ~1 hr',
     ])
     expect(o.waits.map((w) => w.barLabel)).toEqual(['~4 hr 30 min', '~18 hr', '~1 hr'])
-    expect(o.card).toEqual({
-      title: 'Plan ahead: this cook spans 3 sittings',
-      body: 'Start ~25 hr before you want to eat.',
-    })
-    expect(o.ctaSubline).toBe(
-      'First ~10 min: Small bowl stir together → Cover the bowl. Then 3 more stretches over ~25 hr.',
-    )
+    expect(o.card?.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
+    expect(o.card?.readyInMin).toBeGreaterThan(0)
+    expect(o.ctaSubline).toBe('First stretch: about 10 min.')
   })
 
   it('kadai: one solid stretch, no wait, periodic lead on the task line', () => {
@@ -121,11 +111,9 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       ['Then', 'Saute and add beans → Serve', '50–60 min'],
     ])
     expect(o.waits).toEqual([{ text: 'Come back ~8 hr later', barLabel: '~8 hr' }])
-    expect(o.card).toEqual({
-      title: 'Plan ahead: come back ~8 hr later',
-      body: 'Start ~9 hr 15 min before you want to eat.',
-    })
-    expect(o.ctaSubline).toBe('First ~3 min: Rinse beans → Soak beans. The rest is ~8 hr later.')
+    expect(o.card?.detail).toBe("You're free for most of it: one long break, about 8 hr.")
+    expect(o.card?.readyInMin).toBeGreaterThan(0)
+    expect(o.ctaSubline).toBe('First stretch: about 3 min.')
   })
 })
 
@@ -151,8 +139,7 @@ describe('deriveCookOutline — every fixture', () => {
         ...o!.stretches.flatMap((s) => [s.title, s.time ?? '', s.tag, ...s.taskLines]),
         ...o!.waits.flatMap((w) => [w.text, w.barLabel]),
         o!.savedPill ?? '',
-        o!.card?.title ?? '',
-        o!.card?.body ?? '',
+        o!.card?.detail ?? '',
         o!.ctaSubline,
       ]
       for (const str of strings) expect(str, name).not.toMatch(/phase|session/i)
@@ -234,14 +221,12 @@ describe('deriveCookOutline — every fixture', () => {
     ])
     expect(input.summary!.phases!.length).toBe(4)
     expect(input.summary!.sessions.length).toBe(3)
-    expect(deriveCookOutline(input)!.card!.title).toBe('Plan ahead: this cook spans 3 sittings')
+    expect(deriveCookOutline(input)!.card!.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
 
     // One sitting: N breaks and the longest (1080 min = 18 hr), not "spans 4 sittings".
     input.summary!.sessions = input.summary!.sessions.slice(0, 1)
     for (const p of input.summary!.phases!) p.starts_new_session = false
-    expect(deriveCookOutline(input)!.card!.title).toBe(
-      'Plan ahead: 3 hands-free breaks, the longest ~18 hr',
-    )
+    expect(deriveCookOutline(input)!.card!.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
   })
 })
 
@@ -467,8 +452,8 @@ describe('deriveCookOutline — widened corpus', () => {
     expect(o.waits).toEqual(Array(3).fill({ text: 'Hands free for ~1 hr', barLabel: '~1 hr' }))
     expect(o.savedPill).toBeNull()
     expect(o.stretches.flatMap((s) => s.taskLines)).toEqual([])
-    expect(o.card?.title).toBe('Plan ahead: 3 hands-free breaks, the longest ~1 hr')
-    expect(o.card?.body).toMatch(/^Start ~\d+ hr \d+ min before you want to eat\.$/)
+    expect(o.card?.detail).toBe("You're free for most of it: 3 long breaks, the longest about 1 hr.")
+    expect(o.card?.readyInMin).toBeGreaterThan(0)
   })
 
   it('kadhi pakora: one stretch from the base to serving, no wait, no plan-ahead card', () => {

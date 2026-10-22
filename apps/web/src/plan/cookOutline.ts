@@ -1,7 +1,7 @@
 import type { Node, PlanSummary, ScheduledNode, WaitWindow } from '@abc-cook/schema'
 
 import { attentionLine } from '@/lib/attention'
-import { approxWaitPhrase, formatMinutes, formatRange, startAheadPhrase } from '@/lib/duration'
+import { approxWaitPhrase, formatMinutes, formatRange } from '@/lib/duration'
 
 /**
  * R2: the "How this cook goes" outline — stretch → wait → stretch … — built from
@@ -40,8 +40,11 @@ export interface OutlineWait {
 }
 
 export interface PlanAheadCard {
-  title: string
-  body: string
+  /** The upper end of the whole cook, in minutes (`summary.elapsed_high_min`): the card's bold line is
+   * "Start now and it's ready around {now + this}", built at render with the clock (`readyAroundText`). */
+  readyInMin: number
+  /** The grey line: how many long breaks there are and how long the longest is. */
+  detail: string
 }
 
 export interface CookOutline {
@@ -179,9 +182,9 @@ export function deriveCookOutline(input: OutlineInput): CookOutline | null {
     }
   })
 
-  const startAhead = `~${startAheadPhrase(summary.elapsed_high_min)}`
   const first = stretches[0]
-  const firstLead = first.time ? `First ${first.time}: ${first.title}.` : `First: ${first.title}.`
+  // No step names here: they live in Steps. The first stretch's own range, "20–30 min" or "~3 min".
+  const firstStretch = first.time ? `First stretch: about ${first.time.replace(/^~/, '')}.` : null
 
   let card: PlanAheadCard | null = null
   let ctaSubline = 'Start to finish in one go.'
@@ -189,34 +192,20 @@ export function deriveCookOutline(input: OutlineInput): CookOutline | null {
     // O1 (approved): the count of sittings is `summary.sessions.length`, a read. Phases
     // outnumber sittings once a stretch begins mid-gap, so the "spans N sittings" form is
     // only honest when there really is more than one sitting.
-    const sittings = summary.sessions.length
-    if (phases.length > 2 && sittings > 1) {
-      card = { title: `Plan ahead: this cook spans ${sittings} sittings`, body: '' }
-    } else if (phases.length > 2) {
-      // Several stretches in one sitting: N breaks (a count) and the longest one
-      // (a selection among plan values, not arithmetic).
-      let longest = 1
-      phases.forEach((p, i) => {
-        if ((p.preceded_by_wait_min ?? 0) > (phases[longest].preceded_by_wait_min ?? 0)) longest = i
-      })
-      card = {
-        title: `Plan ahead: ${waits.length} hands-free breaks, the longest ${waits[longest - 1].barLabel}`,
-        body: '',
-      }
-    } else {
-      const w = waits[0].barLabel
-      card = {
-        title: phases[1].starts_new_session
-          ? `Plan ahead: come back ${w} later`
-          : `Plan ahead: ${w} hands free in the middle`,
-        body: '',
-      }
+    // N breaks (a count) and the longest one (a selection among plan values, not arithmetic).
+    let longest = 1
+    phases.forEach((p, i) => {
+      if (i > 0 && (p.preceded_by_wait_min ?? 0) > (phases[longest].preceded_by_wait_min ?? 0)) longest = i
+    })
+    const longestPhrase = `about ${approxWaitPhrase(phases[longest].preceded_by_wait_min ?? 0)}`
+    card = {
+      readyInMin: summary.elapsed_high_min,
+      detail:
+        waits.length === 1
+          ? `You're free for most of it: one long break, ${longestPhrase}.`
+          : `You're free for most of it: ${waits.length} long breaks, the longest ${longestPhrase}.`,
     }
-    card.body = `Start ${startAhead} before you want to eat.`
-    ctaSubline =
-      phases.length === 2
-        ? `${firstLead} The rest is ${waits[0].barLabel} later.`
-        : `${firstLead} Then ${phases.length - 1} more stretches over ${startAhead}.`
+    if (firstStretch) ctaSubline = firstStretch
   }
 
   return {

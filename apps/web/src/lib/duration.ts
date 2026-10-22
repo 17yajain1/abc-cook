@@ -149,6 +149,15 @@ export function headerTiming(summary: PlanSummary | null | undefined, totalMin: 
 }
 
 /**
+ * A duration inside a sentence: "12 min" under an hour, "about 1 hr" (or "about 1 hr 30 min") from an hour
+ * up. The compact "4h 45m" form is for the fact tiles only.
+ */
+export function sentenceMinutes(min: number): string {
+  const whole = roundMin(min)
+  return whole < 60 ? `${whole} min` : `about ${formatMinutes(min)}`
+}
+
+/**
  * The recipe page's hands-on tile: `summary.active_min` to the nearest 5 min with the same `~` as
  * `headerTiming`'s hands-on line. Unlike that line it is always available: it is a fact tile, not a
  * claim that competes with the range, so the "only when informative" suppression doesn't apply. `null`

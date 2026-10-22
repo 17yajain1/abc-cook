@@ -4,6 +4,7 @@ import type { ImportMeta } from '@abc-cook/schema'
 
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { asWrittenLine } from '@/library/ingredientEditor'
+import { useNow } from '@/lib/useNow'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { BackButton } from './BackButton'
@@ -90,6 +91,7 @@ export function PlanScreen({
   onServingsChoiceChange,
   endOfPage,
   editing,
+  now: frozenNow,
 }: {
   plan: RenderPlan
   /** Back to wherever the recipe was opened from (Home or Cookbook): `App` returns to
@@ -111,7 +113,10 @@ export function PlanScreen({
   endOfPage?: { block: EndOfPageBlock | null; remove: RemoveControl | null }
   /** R6a: the saved entry's edit context. Absent when there is no entry to edit (Q4). */
   editing?: PlanEditing
+  /** Freezes the clock behind "ready around" (tests, screenshots). Absent in the app: it ticks every minute. */
+  now?: Date
 }) {
+  const now = useNow(frozenNow)
   const [reviewing, setReviewing] = useState(false)
   const statusLine = statusLineFor(importMeta)
   // A13: the servings gate reads the imported rows, never the edited ones.
@@ -175,6 +180,8 @@ export function PlanScreen({
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
   for (const row of plan.waitRows) {
+    // A wait that names its host step is already on that step's row, with its time: said once, there.
+    if (row.hostLabels.length === 1) continue
     const bucket = waitRowsAfter.get(row.afterStageIndex) ?? []
     bucket.push(row)
     waitRowsAfter.set(row.afterStageIndex, bucket)
@@ -184,7 +191,7 @@ export function PlanScreen({
   // D5: the multitask note's "See where" opens the card holding the first Meanwhile block, if the cook
   // closed it, then scrolls to the block once it is drawn.
   const note = useMemo(() => multitaskNote(plan), [plan])
-  const seeWhere = () => {
+  const seeWhich = () => {
     if (!note) return
     const stage = plan.stages.find((s) => s.windows.some((w) => w.id === note.firstWindowId))
     if (stage && !expandedStages.has(stage.key)) flipStage(stage.key)
@@ -261,7 +268,9 @@ export function PlanScreen({
           statusLine={statusLine}
           edit={editPill}
           titleRef={titleRef}
-          multitask={note ? { text: note.text, onSeeWhere: seeWhere } : null}
+          multitask={note ? { bold: note.bold, detail: note.detail } : null}
+          onSeeWhich={seeWhich}
+          now={now}
         />
 
         {noticeLine && (

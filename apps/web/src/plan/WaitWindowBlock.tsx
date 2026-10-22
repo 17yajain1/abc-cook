@@ -34,22 +34,15 @@ export function WaitWindowBlock({
   const ranked = window.tasks.length > 1
   const showTintBar = hasMultiHomeStage(window.tasks)
 
-  // Qualitative — no number, so it cannot contradict the host's own duration one row up.
-  // Wording is category B (DESIGN_SYSTEM.md § Still open #2): provisional until seen
-  // against a 0-slack and a 50-min-slack window side by side.
-  const footer =
-    window.slackMin <= 2
-      ? 'Start as soon as it is underway — the timing is tight.'
-      : window.slackMin >= window.hostDurationTypical / 2
-        ? 'Plenty of time — no need to rush.'
-        : 'There is room to spare.'
+  // Said only when it matters: a tight window must be started as soon as its host is underway. Plenty of
+  // room is the normal case and needs no line.
+  const tight = window.slackMin <= 2
 
   return (
     <li data-meanwhile={window.id} className="mb-2 mt-1 list-none rounded-home-mini bg-field px-3.5 pb-3 pt-3">
       <p className="text-[16px] font-extrabold text-home-ink">Meanwhile, do these</p>
-      <p className="mt-0.5 text-[13px] text-home-ink-2">{sentence(attentionLine(window.hostAttention))}.</p>
 
-      <ol className="mt-2">
+      <ol className="mt-1">
         {window.tasks.map((task, i) => (
           <StepCard
             key={task.nodeId}
@@ -63,7 +56,11 @@ export function WaitWindowBlock({
         ))}
       </ol>
 
-      <p className="mt-1 border-t border-home-rule pt-2.5 text-[13px] leading-[1.42] text-home-ink-2">{footer}</p>
+      {tight && (
+        <p className="mt-1 border-t border-home-rule pt-2.5 text-[13px] leading-[1.42] text-home-ink-2">
+          Start as soon as it is underway — the timing is tight.
+        </p>
+      )}
     </li>
   )
 }
@@ -76,9 +73,4 @@ export function WaitWindowBlock({
  */
 export function hasMultiHomeStage(tasks: readonly { homeStageIndex: number }[]): boolean {
   return new Set(tasks.map((t) => t.homeStageIndex)).size > 1
-}
-
-/** "your hands are free" -> "Your hands are free". */
-function sentence(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1)
 }
