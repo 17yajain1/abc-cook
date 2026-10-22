@@ -121,19 +121,3 @@ export function importViewFor({
     status,
   }
 }
-
-/**
- * The headline on the importing page, keyed only on what the server has said: its status and
- * which sections have arrived. It names what is being read, never how long it will take.
- * It is the progress strip's headline.
- */
-export function footerFor(view: ImportViewModel, status: ImportStatus): string {
-  if (status === 'acquiring') return 'Getting the recipe…'
-  if (status === 'extracting') {
-    if (view.ingredients.kind === 'pending') return 'Reading the ingredients…'
-    const stepsOpen =
-      view.method.kind === 'pending' || (view.method.kind === 'steps' && !view.method.complete)
-    if (stepsOpen) return 'Reading the steps…'
-  }
-  return 'Building your cooking plan…'
-}

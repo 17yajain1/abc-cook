@@ -1,5 +1,5 @@
 import { canonicalUrlSourceKey } from '../library/sourceKey'
-import { footerFor, type ImportViewModel } from './importView'
+import type { ImportViewModel } from './importView'
 import type { ImportStatus } from './phase'
 
 /** What the source is, for the first segment's label: "Video read", "Page read" or "Text read". */
@@ -21,9 +21,16 @@ export interface StripSegment {
 }
 
 export interface ProgressStrip {
-  /** The existing `footerFor` sentence: it names what is being read, never how long it will take. */
+  /** Names the active segment, never how long it will take. Derived from the segments, so the two cannot disagree. */
   headline: string
   segments: StripSegment[]
+}
+
+const HEADLINE: Record<StripSegment['key'], string> = {
+  read: 'Getting the recipe…',
+  ingredients: 'Reading the ingredients…',
+  steps: 'Reading the steps…',
+  plan: 'Building your cooking plan…',
 }
 
 const READ_LABEL: Record<SourceKind, string> = { video: 'Video read', page: 'Page read', text: 'Text read' }
@@ -36,6 +43,8 @@ const READ_LABEL: Record<SourceKind, string> = { video: 'Video read', page: 'Pag
  *
  * - read: the server has acquired the source (or a blog page gave its recipe), or has moved on.
  * - ingredients / steps: the draft marked the section complete, or the source's own lines gave it whole.
+ *   Ingredients are also done once steps have begun (the draft streams them in that order), and both are done
+ *   once the job is past extraction (a cache hit streams nothing).
  * - plan: the job is validating or building the plan; done only once the job is done.
  */
 export function progressStripFor(
@@ -44,10 +53,15 @@ export function progressStripFor(
   source: { kind: SourceKind; acquired: boolean; preview: boolean },
 ): ProgressStrip {
   const readDone = source.acquired || source.preview || status !== 'acquiring'
+  const pastExtraction = status === 'validating' || status === 'plan_building' || status === 'done'
+  const stepsStarted = view.method.kind === 'steps' || view.method.kind === 'sections'
   const ingredientsDone =
-    view.ingredients.kind === 'lines' || (view.ingredients.kind === 'items' && view.ingredients.complete)
+    pastExtraction ||
+    stepsStarted ||
+    view.ingredients.kind === 'lines' ||
+    (view.ingredients.kind === 'items' && view.ingredients.complete)
   const stepsDone =
-    view.method.kind === 'sections' || (view.method.kind === 'steps' && view.method.complete)
+    pastExtraction || view.method.kind === 'sections' || (view.method.kind === 'steps' && view.method.complete)
   const planDone = status === 'done'
 
   const done: Record<StripSegment['key'], boolean> = {
@@ -65,7 +79,7 @@ export function progressStripFor(
   const order: StripSegment['key'][] = ['read', 'ingredients', 'steps', 'plan']
   const firstOpen = order.find((key) => !done[key])
   return {
-    headline: footerFor(view, status),
+    headline: HEADLINE[firstOpen ?? 'plan'],
     segments: order.map((key) => ({
       key,
       label: labels[key],

@@ -109,7 +109,13 @@ export function ImportingPage({
             {header.title}
           </h1>
         ) : (
-          !stopped && <div aria-hidden="true" className="h-[30px] w-4/5 rounded-full bg-home-skeleton-1" />
+          // Two lines of the title's own line height, so the strip below does not move when a typical title lands.
+          !stopped && (
+            <div aria-hidden="true" className="flex h-[81px] flex-col justify-center gap-3">
+              <div className="h-[22px] w-full rounded-full bg-home-skeleton-1" />
+              <div className="h-[22px] w-3/5 rounded-full bg-home-skeleton-1" />
+            </div>
+          )
         )}
         {sourceLine && <p className="mt-1.5 text-[14px] text-home-ink-2">{sourceLine}</p>}
 

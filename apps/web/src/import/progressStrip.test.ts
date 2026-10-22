@@ -51,9 +51,16 @@ describe('progressStripFor', () => {
     expect(s.headline).toBe('Reading the ingredients…')
   })
 
-  it('ingredients streaming but not complete stay in progress', () => {
+  it('ingredients streaming but not complete stay in progress, and the headline agrees', () => {
     const s = strip('extracting', { acquired, draft: draft({ ingredients: [onion] }) })
     expect(states(s)).toEqual(['done', 'active', 'pending', 'pending'])
+    expect(s.headline).toBe('Reading the ingredients…')
+  })
+
+  it('steps have begun: ingredients are done even before the draft flags them complete', () => {
+    const s = strip('extracting', { acquired, draft: draft({ ingredients: [onion], steps: [{ text: 'Chop.' }] }) })
+    expect(states(s)).toEqual(['done', 'done', 'active', 'pending'])
+    expect(s.headline).toBe('Reading the steps…')
   })
 
   it('ingredients complete, steps streaming', () => {
@@ -96,10 +103,11 @@ describe('progressStripFor', () => {
     expect(s.segments[0].label).toBe('Page read')
   })
 
-  it('a cache hit with no draft and no preview: nothing streams, so the strip passes the status through', () => {
-    // Status moves straight to plan_building: the source counts as read, the sections stay open.
+  it('a cache hit with no draft and no preview: nothing streams, and the plan is the part in progress', () => {
+    // Status moves straight to plan_building: the job is past extraction, so the sections are not still open.
     const s = strip('plan_building')
-    expect(states(s)).toEqual(['done', 'active', 'pending', 'pending'])
+    expect(states(s)).toEqual(['done', 'done', 'done', 'active'])
+    expect(s.headline).toBe('Building your cooking plan…')
   })
 
   it('pasted text: the first part reads "Text read" and is done as soon as the job has moved on', () => {
