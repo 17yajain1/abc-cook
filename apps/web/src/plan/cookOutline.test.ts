@@ -81,7 +81,7 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       'Hands free for ~1 hr',
     ])
     expect(o.waits.map((w) => w.barLabel)).toEqual(['~4 hr 30 min', '~18 hr', '~1 hr'])
-    expect(o.card?.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
+    expect(o.card?.detail).toBe('You can leave it: 3 long waits, the longest about 18 hr.')
     expect(o.card?.readyInMin).toBeGreaterThan(0)
     expect(o.ctaSubline).toBe('First stretch: about 10 min.')
   })
@@ -111,7 +111,7 @@ describe('deriveCookOutline — fixtures (docs/plans/r2-recipe-header.md § 5)',
       ['Then', 'Saute and add beans → Serve', '50–60 min'],
     ])
     expect(o.waits).toEqual([{ text: 'Come back ~8 hr later', barLabel: '~8 hr' }])
-    expect(o.card?.detail).toBe("You're free for most of it: one long break, about 8 hr.")
+    expect(o.card?.detail).toBe('You can leave it: one long wait, about 8 hr.')
     expect(o.card?.readyInMin).toBeGreaterThan(0)
     expect(o.ctaSubline).toBe('First stretch: about 3 min.')
   })
@@ -221,12 +221,27 @@ describe('deriveCookOutline — every fixture', () => {
     ])
     expect(input.summary!.phases!.length).toBe(4)
     expect(input.summary!.sessions.length).toBe(3)
-    expect(deriveCookOutline(input)!.card!.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
+    expect(deriveCookOutline(input)!.card!.detail).toBe('You can leave it: 3 long waits, the longest about 18 hr.')
 
     // One sitting: N breaks and the longest (1080 min = 18 hr), not "spans 4 sittings".
     input.summary!.sessions = input.summary!.sessions.slice(0, 1)
     for (const p of input.summary!.phases!) p.starts_new_session = false
-    expect(deriveCookOutline(input)!.card!.detail).toBe("You're free for most of it: 3 long breaks, the longest about 18 hr.")
+    expect(deriveCookOutline(input)!.card!.detail).toBe('You can leave it: 3 long waits, the longest about 18 hr.')
+  })
+
+  it("the grey line says 'You can leave it' from a 3 hr wait, and 'You're free for most of it' below it", () => {
+    const detail = (wait: number, more = false) =>
+      deriveCookOutline(
+        synthetic([
+          { lo: 10, hi: 12 },
+          { lo: 10, hi: 12, waitBefore: wait },
+          ...(more ? [{ lo: 10, hi: 12, waitBefore: 60 }] : []),
+        ]),
+      )!.card!.detail
+    expect(detail(180)).toBe('You can leave it: one long wait, about 3 hr.')
+    expect(detail(179)).toBe("You're free for most of it: one long break, about 2 hr 45 min.")
+    expect(detail(240, true)).toBe('You can leave it: 2 long waits, the longest about 4 hr.')
+    expect(detail(90, true)).toBe("You're free for most of it: 2 long breaks, the longest about 1 hr 30 min.")
   })
 })
 

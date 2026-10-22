@@ -28,7 +28,7 @@ export function PlanAheadCard({
   const bold = ahead ? ahead.bold : multitask!.bold
   return (
     <div className="mt-4 rounded-home-mini border border-home-peach-rule bg-home-peach px-4 py-3">
-      <p className="text-balance text-[15px] font-bold leading-[1.3] text-home-ink">{bold}</p>
+      <p className="text-[15px] font-bold leading-[1.3] text-home-ink">{bold}</p>
       {greys.map((line) => (
         <p key={line} className="mt-0.5 text-[13px] leading-[1.4] text-home-ink-2">
           {line}

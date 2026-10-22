@@ -69,6 +69,9 @@ export interface OutlineInput {
 
 const MAX_LISTED_TASKS = 2
 
+/** A wait this long (3 hr) is one the cook can leave the kitchen for. */
+const LEAVE_IT_MIN = 180
+
 /** `formatRange`'s `about N min` collapse reads as `~N min` in the outline. */
 function stretchTime(low: number, high: number): string {
   return formatRange(low, high).replace(/^about /, '~')
@@ -197,13 +200,19 @@ export function deriveCookOutline(input: OutlineInput): CookOutline | null {
     phases.forEach((p, i) => {
       if (i > 0 && (p.preceded_by_wait_min ?? 0) > (phases[longest].preceded_by_wait_min ?? 0)) longest = i
     })
-    const longestPhrase = `about ${approxWaitPhrase(phases[longest].preceded_by_wait_min ?? 0)}`
+    const longestMin = phases[longest].preceded_by_wait_min ?? 0
+    const longestPhrase = `about ${approxWaitPhrase(longestMin)}`
+    // A wait of three hours or more is long enough to leave the kitchen for ("You can leave it"); shorter
+    // ones are breaks inside a cook you are mostly free for.
+    const leave = longestMin >= LEAVE_IT_MIN
+    const lead = leave ? 'You can leave it' : "You're free for most of it"
+    const noun = leave ? 'wait' : 'break'
     card = {
       readyInMin: summary.elapsed_high_min,
       detail:
         waits.length === 1
-          ? `You're free for most of it: one long break, ${longestPhrase}.`
-          : `You're free for most of it: ${waits.length} long breaks, the longest ${longestPhrase}.`,
+          ? `${lead}: one long ${noun}, ${longestPhrase}.`
+          : `${lead}: ${waits.length} long ${noun}s, the longest ${longestPhrase}.`,
     }
     if (firstStretch) ctaSubline = firstStretch
   }

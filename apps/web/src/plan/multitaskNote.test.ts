@@ -118,6 +118,14 @@ describe('the note on the page', () => {
     expect(out).not.toContain('Plan ahead:')
   })
 
+  it('overnight pizza dough: "You can leave it", never "free for most of it"', () => {
+    const out = screen('pizza-dough')
+    expect(out).toContain('You can leave it: 3 long waits, the longest about 18 hr.')
+    expect(out).not.toContain('free for most of it')
+    expect(out).toContain('ready around ')
+    expect(out).toContain('tomorrow')
+  })
+
   it('has no between-stage wait row that names a host step, and no attention line in the Meanwhile block', () => {
     for (const name of ['kadai-paneer', 'chicken-biryani', 'kadhi-pakora']) {
       const out = screen(name)
