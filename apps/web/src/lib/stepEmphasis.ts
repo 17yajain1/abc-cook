@@ -65,10 +65,13 @@ const NOT_IN_WORD = '(?<![\\p{L}\\p{M}\\p{N}])'
 // "10g", "10 g": a space or none between the number and its unit; the unit must end its word.
 const QUANTITY = new RegExp(`${NOT_IN_WORD}${RANGE}\\s?(?:${UNITS})(?![\\p{L}\\p{M}])`, 'giu')
 
-// A closed list, on purpose: heat setting words next to "heat" or "flame". "simmer" is not here: it is an
-// action, not a setting, and it would bold half the steps. No Hindi forms: none occur in the fixtures.
+const BARE_NUMBER = new RegExp(`${NOT_IN_WORD}${RANGE}(?![\\p{L}\\p{M}\\p{N}])`, 'giu')
+
+// A closed list, on purpose: heat setting words next to "heat" or "flame", plus the Hinglish "sim" (low).
+// "simmer" is not here: it is an action, not a setting, and it would bold half the steps. No Hindi script
+// forms: none occur in the fixtures.
 const HEAT =
-  /(?<![\p{L}\p{N}])(?:low|medium|high|full)(?:[\s-]+(?:to\s+)?(?:low|medium|high))?\s+(?:heat|flame)(?![\p{L}\p{N}])/giu
+  /(?<![\p{L}\p{N}])(?:(?:low|medium|high|full|mild|slow|sim)(?:[\s-]+(?:to\s+)?(?:low|medium|high))?\s+(?:heat|flame)|(?:on|at)\s+(?:a\s+)?sim)(?![\p{L}\p{N}])/giu
 // An oven temperature: "190°", "190 °C", "375°F". A bare number without the degree sign is not one.
 const OVEN = /(?<![\p{L}\p{N}])\d{2,3}\s?[°˚º](?:\s?[CF](?![\p{L}\p{M}]))?/giu
 
@@ -131,9 +134,20 @@ export function emphasisSpans(
     chosen.push({ ...span, kind })
   }
   if (factor === 1) {
+    // A bracketed amount ("(10g)", "(80-90 ml)") is a conversion of the amount before it: left plain.
+    const bracketed = (at: number): boolean => /\(\s*$/.test(instruction.slice(0, at))
     for (const m of instruction.matchAll(QUANTITY)) {
+      if (bracketed(m.index)) continue
       const end = m.index + m[0].length
       add({ start: m.index, end: nameEnd(instruction, end, consumed) }, 'quantity')
+    }
+    // A number straight before the name of an ingredient the step uses is a quantity with no unit
+    // ("2 eggs", "3 onions"). A bare number before anything else ("6 triangles") stays plain.
+    for (const m of instruction.matchAll(BARE_NUMBER)) {
+      if (bracketed(m.index)) continue
+      const end = m.index + m[0].length
+      const named = nameEnd(instruction, end, consumed)
+      if (named > end) add({ start: m.index, end: named }, 'quantity')
     }
   }
   for (const span of timePhraseSpans(instruction)) add(span, 'time')

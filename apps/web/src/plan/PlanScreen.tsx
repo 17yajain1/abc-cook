@@ -16,7 +16,7 @@ import { IngredientsPanel } from './IngredientsPanel'
 import { OrphanReview } from './OrphanReview'
 import { StepEditContext, type StepEditApi } from './stepEditContext'
 import { stepChoiceGroups } from './stepRows'
-import { stepNumbers } from './stepNumbers'
+import { stageOrdinals, stepNumbers } from './stepNumbers'
 import { useRecipeEditing, type PlanEditing } from './useRecipeEditing'
 import { orphanNoticeLine } from '@/library/recipeEdits'
 import { panelServings } from './panelServings'
@@ -182,6 +182,7 @@ export function PlanScreen({
   const noticeLine = orphanNoticeLine(orphans.length)
   const stepGroups = useMemo(() => stepChoiceGroups(plan), [plan])
   const numbers = useMemo(() => stepNumbers(plan.stages), [plan.stages])
+  const ordinals = useMemo(() => stageOrdinals(plan.stages), [plan.stages])
   // B4: the rename note's "Edit the step". It goes through the same door as any exit, so a blocked
   // exit stays put (the open row keeps its error and scrolls into view); otherwise that step opens in
   // place and the page centres it (`landing`).
@@ -282,6 +283,7 @@ export function PlanScreen({
                     stage={stage}
                     expanded={expandedStages.has(stage.key)}
                     onToggle={() => toggleStage(stage.key)}
+                    ordinal={ordinals.get(stage.stageId) ?? stage.index + 1}
                     numbers={numbers}
                     factor={factor}
                   />

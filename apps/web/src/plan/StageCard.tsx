@@ -26,17 +26,19 @@ export function StageCard({
   stage,
   expanded,
   onToggle,
+  ordinal,
   numbers,
   factor,
 }: {
   stage: RenderStage
   expanded: boolean
   onToggle: () => void
+  /** The badge number: 1..N over the cards that render (`stageOrdinals`). The tint stays the graph index. */
+  ordinal: number
   numbers: ReadonlyMap<string, number>
   factor: number
 }) {
   const tint = stageColor(stage.index)
-  const ordinal = stageOrdinal(stage)
   // R6b (W1 pick f): a collapsed card says so when it holds an edited step, window tasks included.
   const edited = useStepEdit()?.edited
   const holdsEdit = edited != null && stageHoldsEdit(stage, edited)
@@ -118,12 +120,6 @@ export function StageCard({
 /** Whether any step this card draws (inline or in a window) is one of the `edited` ids. */
 export function stageHoldsEdit(stage: RenderStage, edited: ReadonlySet<string>): boolean {
   return stage.inlineTasks.some((t) => edited.has(t.nodeId)) || stage.windows.some((w) => w.tasks.some((t) => edited.has(t.nodeId)))
-}
-
-/** Badge number and badge tint both come from `stage.index` — the M2 defect the doc
- *  records was mixing a filtered render position with the raw graph index. */
-export function stageOrdinal(stage: RenderStage): number {
-  return stage.index + 1
 }
 
 /**

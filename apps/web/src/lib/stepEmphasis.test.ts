@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import croissant from '@/__fixtures__/croissant.plan-response.json'
+import kadhi from '@/__fixtures__/kadhi-pakora.plan-response.json'
 import pumpkin from '@/__fixtures__/pumpkin-pancakes.plan-response.json'
 
 import { emphasisSpans, type ConsumedIngredient } from './stepEmphasis'
@@ -43,9 +44,20 @@ describe('quantity spans', () => {
     expect(bold('Pour 1 litre of water, then add the milk.', names('milk'))).toEqual(['1 litre'])
   })
 
-  it('never bolds a bare number with no unit', () => {
+  it('never bolds a bare number that is not followed by an ingredient the step uses', () => {
     expect(bold('Cut into 6 triangles and 8 equal portions.', names('bread'))).toEqual([])
-    expect(bold('Fry 2 eggs.', names('eggs'))).toEqual([])
+    expect(bold('Fry 2 eggs.', names('bread'))).toEqual([])
+  })
+
+  it('bolds a number straight before a consumed ingredient with no unit ("2 eggs", "3 onions")', () => {
+    expect(bold('Fry 2 eggs.', names('eggs'))).toEqual(['2 eggs'])
+    expect(bold('Chop 3 onions and 2 large tomatoes.', names('onions', 'tomatoes'))).toEqual(['3 onions', '2 large tomatoes'])
+    expect(bold('Add 6 triangles of bread.', names('eggs'))).toEqual([])
+  })
+
+  it('leaves a bracketed conversion plain', () => {
+    expect(bold('Add 1 tbsp sugar (10g) and 2 cups flour (250g).', names('sugar', 'flour'))).toEqual(['1 tbsp sugar', '2 cups flour'])
+    expect(bold('Use 1/3 cup of warm water (80-90 ml).', names('warm water'))).toEqual(['1/3 cup of warm water'])
   })
 
   it('reads integers, fractions, mixed numbers, unicode fractions, ranges and no-space forms', () => {
@@ -86,21 +98,19 @@ describe('quantity spans', () => {
     ])
   })
 
-  it('croissant step 1: the amounts, the name after them and the bracketed ones', () => {
-    const { text, consumed } = step(croissant, 1)
-    expect(bold(text, consumed)).toEqual([
-      '1/3 cup of warm water',
-      '80-90 ml',
-      '1 tbsp sugar',
-      '10g',
-      '1 tbsp dry yeast or instant yeast',
-      '8g',
-    ])
+  it('pumpkin step 1: "15 oz can pumpkin" and "2 eggs"', () => {
+    const { text, consumed } = step(pumpkin, 1)
+    expect(bold(text, consumed)).toEqual(['15 oz can pumpkin', '2 eggs'])
   })
 
-  it('croissant step 4: "5 tbsp soft butter" (a descriptor before the name) and the bracketed grams', () => {
+  it('croissant step 1: the amounts and the name after them, with the bracketed conversions plain', () => {
+    const { text, consumed } = step(croissant, 1)
+    expect(bold(text, consumed)).toEqual(['1/3 cup of warm water', '1 tbsp sugar', '1 tbsp dry yeast or instant yeast'])
+  })
+
+  it('croissant step 4: "5 tbsp soft butter" (a descriptor before the name), the bracketed grams plain', () => {
     const { text, consumed } = step(croissant, 4)
-    expect(bold(text, consumed)).toEqual(['2 cups flour', '250g', '5 tbsp soft butter', '50g', '6 minutes'])
+    expect(bold(text, consumed)).toEqual(['2 cups flour', '5 tbsp soft butter', '6 minutes'])
   })
 
   it('a step with no unit has no quantity bold at all', () => {
@@ -136,6 +146,18 @@ describe('heat spans', () => {
   it('bolds an oven temperature, with or without the scale letter', () => {
     expect(bold('Bake at 190° (375°F) for 20 minutes.')).toEqual(['190°', '375°F', '20 minutes'])
     expect(bold('Preheat to 200 °C.')).toEqual(['200 °C'])
+  })
+
+  it('bolds mild, slow and sim flames, with or without "on a"', () => {
+    expect(bold('Fry them on mild flame patiently.')).toEqual(['mild flame'])
+    expect(bold('Cook on a slow flame, then on a low heat.')).toEqual(['slow flame', 'low heat'])
+    expect(bold('Keep it on sim for ten minutes.')).toEqual(['on sim', 'ten minutes'])
+    expect(bold('Let it simmer.')).toEqual([])
+  })
+
+  it('kadhi step 5: "mild flame"', () => {
+    const { text, consumed } = step(kadhi, 5)
+    expect(bold(text, consumed)).toEqual(['mild flame'])
   })
 
   it('croissant step 18: the temperatures and the time', () => {

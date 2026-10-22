@@ -142,7 +142,7 @@ export function EditableIngredientList({ groups, edit }: { groups: IngredientLis
   return (
     <>
       {groups.map((group) => (
-        <div key={group.key} className="mb-6 last:mb-0">
+        <div key={group.key} className="mt-6 first:mt-0">
           {group.heading && <h3 className="mb-1 text-[13px] font-semibold text-home-ink">{group.heading}</h3>}
           <ul>
             {group.items.map((item) => {
