@@ -2,7 +2,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 
 import type { ImportMeta } from '@abc-cook/schema'
 
-import type { ServingsChoice } from '@/lib/servings'
+import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { asWrittenLine } from '@/library/ingredientEditor'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
@@ -16,6 +16,7 @@ import { IngredientsPanel } from './IngredientsPanel'
 import { OrphanReview } from './OrphanReview'
 import { StepEditContext, type StepEditApi } from './stepEditContext'
 import { stepChoiceGroups } from './stepRows'
+import { stepNumbers } from './stepNumbers'
 import { useRecipeEditing, type PlanEditing } from './useRecipeEditing'
 import { orphanNoticeLine } from '@/library/recipeEdits'
 import { panelServings } from './panelServings'
@@ -41,37 +42,39 @@ export function toggleStageSet(expanded: ReadonlySet<string>, stageId: string): 
   return next
 }
 
-/** The N in the `Ingredients N` tab: every ingredient the plan lists, across groups. */
+/** The N in "N ingredients": every ingredient the plan lists, across groups. */
 export function ingredientCount(groups: readonly RenderIngredientGroup[]): number {
   return groups.reduce((n, g) => n + g.items.length, 0)
 }
 
-/**
- * R1: whether the compact sticky bar should show. It takes over once the page's own tab
- * row has scrolled up to where the bar's copy of the tabs sits, so the tabs appear to
- * stay put while the full header scrolls away. Both offsets are measured from the top of
- * the scroll area (the bar's offset includes the phone's top safe-area inset).
- */
-export function isCompactHeader(scrollTop: number, pageTabsTop: number, barTabsTop: number): boolean {
-  return scrollTop > 0 && scrollTop >= pageTabsTop - barTabsTop
+/** D2: every card starts open. The keys are the run keys `PlanScreen` expands by, one per card. */
+export function allStageKeys(plan: Pick<RenderPlan, 'stages'>): string[] {
+  return plan.stages.map((s) => s.key)
 }
 
-type Tab = 'plan' | 'ingredients'
+/**
+ * Whether the compact sticky bar should show. It takes over once the page's title has scrolled up
+ * to where the bar sits, so the title appears to stay put while the full header scrolls away. Both
+ * figures are measured from the top of the scroll area: the title's bottom edge, and the bar's height
+ * (which includes the phone's top safe-area inset).
+ */
+export function isCompactHeader(scrollTop: number, titleBottom: number, barHeight: number): boolean {
+  return scrollTop > 0 && scrollTop >= titleBottom - barHeight
+}
 
 /**
- * The recipe page (R1, Home register). One scroll area holds the full header, the
- * `Plan · Ingredients N` tab row and the tab's content. The Map mode was removed from
- * this page on 2026-10-13 (`docs/GRAPH_VIEW.md`); `src/map/` stays, unused, until a
- * later clean-up PR.
+ * The recipe page (R1, Home register; one scroll with no tabs since D7). One scroll area holds the
+ * header (picture, title, fact tiles), What you need, the steps in open stage cards, and the end of
+ * the page. The Map mode was removed from this page on 2026-10-13 (`docs/GRAPH_VIEW.md`);
+ * `src/map/` stays, unused, until a later clean-up PR.
  *
- * The compact bar (back, title, tabs) is a second copy laid over the top of the scroll
- * area, rendered only while `isCompactHeader` says the page's own tabs have reached it.
- * Overlaying it rather than making the page's own header sticky means the content below
- * never jumps when the bar appears. It is mounted and unmounted, not faded with
- * opacity/visibility: on iOS Safari the faded-in bar painted its back arrow but not its
- * title text (R1, iPhone retest), and a freshly mounted element has nothing to repaint.
- * An empty, invisible spacer of the same height stays mounted so the threshold can
- * still be measured while the bar is absent.
+ * The compact bar (back, title) is a second copy laid over the top of the scroll area, rendered
+ * only while `isCompactHeader` says the page's own title has reached it. Overlaying it rather than
+ * making the page's own header sticky means the content below never jumps when the bar appears. It is
+ * mounted and unmounted, not faded with opacity/visibility: on iOS Safari the faded-in bar painted its
+ * back arrow but not its title text (R1, iPhone retest), and a freshly mounted element has nothing to
+ * repaint. An empty, invisible spacer of the same height stays mounted so the threshold can still be
+ * measured while the bar is absent.
  */
 export function PlanScreen({
   plan,
@@ -103,12 +106,11 @@ export function PlanScreen({
   /** Q9: a cook is in progress on this plan, so the choice can't change. */
   servingsLocked?: boolean
   onServingsChoiceChange?: (choice: ServingsChoice | null) => void
-  /** R5: the end of the Plan tab. Absent when there is nothing to show. */
+  /** R5: the end of the page. Absent when there is nothing to show. */
   endOfPage?: { block: EndOfPageBlock | null; remove: RemoveControl | null }
   /** R6a: the saved entry's edit context. Absent when there is no entry to edit (Q4). */
   editing?: PlanEditing
 }) {
-  const [tab, setTab] = useState<Tab>('plan')
   const [reviewing, setReviewing] = useState(false)
   const statusLine = statusLineFor(importMeta)
   // A13: the servings gate reads the imported rows, never the edited ones.
@@ -116,8 +118,8 @@ export function PlanScreen({
   const edit = useRecipeEditing(editing)
   const editMode = edit.session.mode === 'edit'
   const orphans = editing?.ctx.overlay.orphans ?? []
-  // Every way out of the editor (a tab, back, Start cooking) goes through `edit.guard`, so a
-  // changed row is committed or kept open, never dropped (A24).
+  // Every way out of the editor (back, Start cooking, Done) goes through `edit.guard`, so a changed row
+  // is committed or kept open, never dropped (A24).
   const latest = useRef({ onBack, onStartCooking })
   useEffect(() => {
     latest.current = { onBack, onStartCooking }
@@ -128,10 +130,10 @@ export function PlanScreen({
   // browse screens), so the page behind it takes the Home ground too.
   useHomeSurface(true)
 
-  // M3.2: overview-first — every card starts collapsed, and each opens on its own.
+  // D2: every card starts open, and each collapses on its own.
   // P1 #5: keyed by `stage.key` (the run), not `stage.stageId` — a stage rendered as
   // more than one card (plan §D) expands each card independently.
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set())
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(() => new Set(allStageKeys(plan)))
   const flipStage = (key: string) => setExpandedStages((prev) => toggleStageSet(prev, key))
   // R6b D6: closing the card that holds the open step goes through the editor's one door, so a typed
   // step is committed or kept open with its error, never dropped (A24). Any other card just flips.
@@ -142,56 +144,33 @@ export function PlanScreen({
     if (holdsOpen) edit.guard('collapse', () => flipStage(key))
     else flipStage(key)
   }
-  // R6b D6: Edit on the Plan tab opens every card, like "Show full recipe". It runs when edit mode starts
-  // or the cook arrives on this tab in it, and not again, so a card the cook closes by hand stays closed.
+  // R6b D6: Edit opens every card, so every step is reachable. It runs when edit mode starts and not
+  // again, so a card the cook closes by hand stays closed.
   const stageKeys = useRef<string[]>([])
   useEffect(() => {
-    stageKeys.current = plan.stages.map((s) => s.key)
+    stageKeys.current = allStageKeys(plan)
   })
   useEffect(() => {
-    if (editMode && tab === 'plan') setExpandedStages(new Set(stageKeys.current))
-  }, [editMode, tab])
+    if (editMode) setExpandedStages(new Set(stageKeys.current))
+  }, [editMode])
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const pageTabsRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
   const barSpacerRef = useRef<HTMLDivElement>(null)
   const compactBarRef = useRef<HTMLDivElement>(null)
   const [compact, setCompact] = useState(false)
   const onScroll = () => {
     const el = scrollRef.current
-    if (!el || !pageTabsRef.current || !barSpacerRef.current) return
-    setCompact(
-      isCompactHeader(el.scrollTop, pageTabsRef.current.offsetTop, barSpacerRef.current.offsetHeight),
-    )
+    const title = titleRef.current
+    if (!el || !title || !barSpacerRef.current) return
+    setCompact(isCompactHeader(el.scrollTop, title.offsetTop + title.offsetHeight, barSpacerRef.current.offsetHeight))
   }
 
-  // The edit toolbar sticks under the compact bar (A24: Done stays reachable on a long list), so it
+  // The edit toolbar sticks under the compact bar (A24: Done stays reachable on a long page), so it
   // needs the bar's height: 0 while the bar is not showing.
   useLayoutEffect(() => {
     scrollRef.current?.style.setProperty('--plan-bar-h', compact ? `${compactBarRef.current?.offsetHeight ?? 0}px` : '0px')
-  }, [compact, tab])
-
-  // Switching tabs while the bar is showing keeps the tabs pinned: the new tab's content
-  // starts right under the bar instead of wherever the old tab was scrolled to. Runs
-  // before paint (layout effect), so the old scroll position never flashes.
-  const pinTabsRef = useRef(false)
-  const switchTab = (next: Tab) => {
-    if (next === tab) return
-    edit.guard('tab', () => {
-      pinTabsRef.current = compact
-      setTab(next)
-    })
-  }
-  const showPlanTab = () => {
-    pinTabsRef.current = compact
-    setTab('plan')
-  }
-  useLayoutEffect(() => {
-    const el = scrollRef.current
-    if (!el || !pinTabsRef.current) return
-    pinTabsRef.current = false
-    el.scrollTop = (pageTabsRef.current?.offsetTop ?? 0) - (barSpacerRef.current?.offsetHeight ?? 0)
-  }, [tab])
+  }, [compact])
 
   const waitRowsAfter = new Map<number, RenderWaitRow[]>()
   for (const row of plan.waitRows) {
@@ -200,18 +179,15 @@ export function PlanScreen({
     waitRowsAfter.set(row.afterStageIndex, bucket)
   }
 
-  const nIngredients = ingredientCount(plan.ingredientGroups)
   const noticeLine = orphanNoticeLine(orphans.length)
   const stepGroups = useMemo(() => stepChoiceGroups(plan), [plan])
-  // B4: the rename note's "Edit the step". It goes through the same door as a tab switch, so a blocked
-  // exit stays put (the open row keeps its error and scrolls into view); otherwise it lands on the Plan
-  // tab with that step open.
-  const goToStep = (nodeId: string) =>
-    edit.guard('tab', () => {
-      showPlanTab()
-      edit.enterAtStep(nodeId)
-    })
+  const numbers = useMemo(() => stepNumbers(plan.stages), [plan.stages])
+  // B4: the rename note's "Edit the step". It goes through the same door as any exit, so a blocked
+  // exit stays put (the open row keeps its error and scrolls into view); otherwise that step opens in
+  // place and the page centres it (`landing`).
+  const goToStep = (nodeId: string) => edit.guard('tab', () => edit.enterAtStep(nodeId))
   const choice = servings?.choice ?? null
+  const factor = choiceFactor(choice)
   const ingredientsEdit: IngredientsEdit | undefined = editing ? { editing, api: edit, choice, stepGroups, goToStep } : undefined
   const stepApi: StepEditApi | null = editing
     ? {
@@ -231,16 +207,9 @@ export function PlanScreen({
         restore: edit.restoreStepText,
       }
     : null
-  const tabs = (
-    <>
-      <TabButton active={tab === 'plan'} onClick={() => switchTab('plan')}>
-        Plan
-      </TabButton>
-      <TabButton active={tab === 'ingredients'} onClick={() => switchTab('ingredients')}>
-        Ingredients <span className="tabular">{nIngredients}</span>
-      </TabButton>
-    </>
-  )
+  const editPill = editing
+    ? { editing: editMode, onToggle: () => (editMode ? edit.guard('done', () => {}) : edit.enter()) }
+    : undefined
 
   // `relative` matters: the CTA and the compact bar are absolutely positioned, and
   // without a positioned ancestor they resolved against the viewport and escaped the
@@ -271,12 +240,14 @@ export function PlanScreen({
           onBack={guardedBack}
           staleness={staleness}
           alreadySaved={alreadySaved}
-          servingsChoice={servings?.choice}
+          servings={servings}
           statusLine={statusLine}
+          edit={editPill}
+          titleRef={titleRef}
         />
 
         {noticeLine && (
-          <p className="px-5 pt-1 text-[13px] leading-[1.4] text-home-ink-2">
+          <p className="px-5 pb-2 text-[13px] leading-[1.4] text-home-ink-2">
             {noticeLine}{' '}
             <button type="button" onClick={() => setReviewing(true)} className="relative font-medium text-home-ink underline underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']">
               Review
@@ -284,24 +255,33 @@ export function PlanScreen({
           </p>
         )}
 
-        <div ref={pageTabsRef} className="flex items-stretch gap-6 border-b border-home-rule px-5">
-          {tabs}
-        </div>
-
         {plan.warnings.length > 0 && (
-          <div className="mx-5 mt-4 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
+          <div className="mx-5 mb-2 rounded-home-mini bg-home-thumb px-3 py-2 text-[13px] text-home-ink-2">
             {plan.warnings.map((w) => (
               <p key={w}>{sentence(w)}</p>
             ))}
           </div>
         )}
 
-        {tab === 'ingredients' ? (
-          <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
-        ) : (
-          <StepEditContext.Provider value={stepApi}>
-            {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap a step to change it." />}
-            <div className={ingredientsEdit ? 'px-5 pt-2' : 'px-5 pt-5'}>
+        {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
+
+        <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
+
+        <StepEditContext.Provider value={stepApi}>
+          <section className="px-5 pt-[18px]" aria-labelledby="steps-heading">
+            <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
+              Steps
+            </h2>
+            {/* When something can be done while waiting, "How this cook goes" says so; with nothing to
+                slot in, the one scheduler-derived sentence says that instead. */}
+            {!plan.hasParallelWork && (
+              <p className="mb-3 mt-1 text-[13px] leading-[1.4] text-home-ink-2">
+                {plan.hasUnattendedWork
+                  ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
+                  : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
+              </p>
+            )}
+            <div className={plan.hasParallelWork ? 'mt-3' : ''}>
               {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
                 <WaitRow key={`wait-pre-${i}`} row={row} />
               ))}
@@ -311,6 +291,8 @@ export function PlanScreen({
                     stage={stage}
                     expanded={expandedStages.has(stage.key)}
                     onToggle={() => toggleStage(stage.key)}
+                    numbers={numbers}
+                    factor={factor}
                   />
                   {(waitRowsAfter.get(index) ?? []).map((row, i) => (
                     <WaitRow key={`wait-${index}-${i}`} row={row} />
@@ -318,22 +300,14 @@ export function PlanScreen({
                 </Fragment>
               ))}
 
-              {plan.savedMin === 0 && (
-                <p className="pb-4 pt-2 text-[13px] text-home-ink-2">
-                  {plan.hasUnattendedWork
-                    ? "This recipe has long, hands-off waits — but nothing else in the plan can be done during them."
-                    : "Nothing in this recipe cooks unattended — there's no prep to slot in while you wait."}
-                </p>
-              )}
-
               {endOfPage && <EndOfPageSection block={endOfPage.block} remove={endOfPage.remove} />}
             </div>
-          </StepEditContext.Provider>
-        )}
+          </section>
+        </StepEditContext.Provider>
       </div>
 
-      {/* Measures where the bar's tabs start: the top inset plus the 56px title row. Empty
-          and invisible, so it has nothing to paint. */}
+      {/* Measures the compact bar's height: the top inset plus the 56px title row. Empty and
+          invisible, so it has nothing to paint. */}
       <div
         ref={barSpacerRef}
         aria-hidden
@@ -352,54 +326,30 @@ export function PlanScreen({
               {plan.title}
             </p>
           </div>
-          <div className="-mb-px flex items-stretch gap-6 px-5">{tabs}</div>
         </div>
       )}
 
       {/* z-20 keeps this fixed footer above the scrolled plan content beneath it. The
           bottom padding is at least the home-indicator inset, so the pill clears Safari's
           bottom toolbar and the home indicator. */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-4">
+      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-home-rule bg-home-ground px-5 pb-[max(24px,var(--safe-bottom))] pt-3.5">
         {/* Terracotta pill, the Home register's primary action (R1; was signal in the Plan
             register). Sentence case: Home bans Title Case. M3.4: wired to Cooking Mode. */}
         <button
           type="button"
           onClick={guardedStart}
-          className="flex h-[52px] w-full items-center justify-center rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground"
+          className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground"
         >
           Start cooking
         </button>
         {/* R2: what "Start cooking" begins, in one line. Absent without `summary.phases`. */}
         {plan.outline && (
-          <p className="mt-2 line-clamp-2 text-balance text-center text-[13px] leading-[1.35] text-home-ink-2">
+          <p className="mt-1.5 line-clamp-2 text-balance text-center text-[12px] leading-[1.35] text-home-ink-2">
             {plan.outline.ctaSubline}
           </p>
         )}
       </div>
     </div>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`-mb-px border-b-2 pb-2.5 pt-1 text-[15px] font-semibold ${
-        active ? 'border-home-ink text-home-ink' : 'border-transparent text-home-ink-2'
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 

@@ -11,6 +11,7 @@ import { derivePlan } from './derive'
 import type { Ingredient } from '@abc-cook/schema'
 
 import {
+  allStageKeys,
   ingredientCount,
   isCompactHeader,
   PlanScreen,
@@ -71,7 +72,7 @@ describe('toggleStageSet (M3.2)', () => {
   })
 })
 
-describe('ingredientCount (R1 tab label)', () => {
+describe('ingredientCount (the N in "N ingredients")', () => {
   const item = (id: string) => ({ id }) as Ingredient
 
   it('counts every item across groups', () => {
@@ -93,23 +94,22 @@ describe('ingredientCount (R1 tab label)', () => {
 })
 
 describe('isCompactHeader (R1 sticky bar)', () => {
-  // The page's tab row starts 420px down the scroll area; the bar's copy of the tabs
-  // sits 56px from the top (title row height).
+  // The page's title ends 420px down the scroll area; the bar is 56px tall (the title row height).
   it('stays on the full header at the very top', () => {
     expect(isCompactHeader(0, 420, 56)).toBe(false)
   })
 
-  it('stays on the full header until the page tabs reach the bar', () => {
+  it('stays on the full header until the title reaches the bar', () => {
     expect(isCompactHeader(363, 420, 56)).toBe(false)
   })
 
-  it('switches to the compact bar once the page tabs reach it', () => {
+  it('switches to the compact bar once the title reaches it', () => {
     expect(isCompactHeader(364, 420, 56)).toBe(true)
     expect(isCompactHeader(900, 420, 56)).toBe(true)
   })
 
   it('accounts for a top safe-area inset in the bar offset', () => {
-    // 47px notch inset: the bar's tabs sit at 103px, so it takes over 47px sooner.
+    // 47px notch inset: the bar is 103px tall, so it takes over 47px sooner.
     expect(isCompactHeader(317, 420, 103)).toBe(true)
     expect(isCompactHeader(316, 420, 103)).toBe(false)
   })
@@ -119,7 +119,25 @@ describe('isCompactHeader (R1 sticky bar)', () => {
   })
 })
 
-describe('FGC-16 (F1): the status line sits under the title, before the outline', () => {
+describe('allStageKeys (D2: every card starts open)', () => {
+  it('is one key per rendered card, in order', () => {
+    const plan = derivePlan(croissant as RecipePlanResponse)
+    expect(allStageKeys(plan)).toEqual(plan.stages.map((s) => s.key))
+    expect(allStageKeys(plan).length).toBeGreaterThan(0)
+  })
+
+  it('renders every stage open, with no tab row', () => {
+    const out = renderToStaticMarkup(
+      createElement(PlanScreen, { plan: derivePlan(croissant as RecipePlanResponse), onBack: () => {}, onStartCooking: () => {} }),
+    )
+    expect(out).not.toContain('aria-expanded="false"')
+    expect(out).toContain('aria-expanded="true"')
+    expect(out).not.toContain('aria-pressed')
+    expect(out).toContain('What you need')
+  })
+})
+
+describe('FGC-16 (F1): the status line sits under the title, before What you need', () => {
   const LINE = 'Plan simplified — steps run one after another.'
   const meta = { degraded: true, review_recommended: false, warnings: ['degraded'] } as unknown as ImportMeta
   const html = (staleness?: { kind: 'stale' | 'unchecked' }) =>
@@ -133,12 +151,12 @@ describe('FGC-16 (F1): the status line sits under the title, before the outline'
       }),
     )
 
-  it('comes right after the title and before the outline and the tabs', () => {
+  it('comes after the title and before What you need and the steps', () => {
     const out = html()
     const at = out.indexOf(LINE)
     expect(at).toBeGreaterThan(out.indexOf('</h1>'))
-    expect(at).toBeLessThan(out.indexOf('How this cook goes'))
-    expect(at).toBeLessThan(out.indexOf('Ingredients'))
+    expect(at).toBeLessThan(out.indexOf('What you need'))
+    expect(at).toBeLessThan(out.indexOf('Steps'))
   })
 
   it('shows once', () => {

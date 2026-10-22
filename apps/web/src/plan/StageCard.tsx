@@ -2,39 +2,38 @@ import { Fragment } from 'react'
 
 import type { StageSpan } from '@abc-cook/schema'
 
-import { attentionNote } from '@/lib/attention'
 import { uniqueDisplayNames } from '@/lib/displayNames'
 import { formatMinutes } from '@/lib/duration'
 import { stageColor } from '@/lib/stageColor'
 
 import type { RenderStage, RenderTask } from './derive'
-import { useStepEdit, useStepOpen } from './stepEditContext'
-import { StepInstruction, StepPencil } from './StepRow'
+import { useStepEdit } from './stepEditContext'
+import { StepCard } from './StepCard'
 import { WaitWindowBlock } from './WaitWindowBlock'
 
 /**
- * One stage in the vertical plan — Direction 3 (docs/DESIGN_SYSTEM.md § Register), drawn
- * in the Home register since R1 (§ Resolved in R1).
+ * One stage on the recipe page, drawn in the Home register (D7, docs/DESIGN_SYSTEM.md § Register).
  *
- * The stage is a white card with a 1px rule and a 16px radius, spanning the full content
- * width. Stage identity is the filled ordinal badge in the stage's own tint, inside the
- * header before the stage name, plus the title weight (§ Stage identity). There is no
- * tinted ground any more: on the warm Home ground the grey tints read cold and muddy, and
- * the wait-window field barely separated from them. A wait window the stage hosts renders
- * as a panel directly beneath its host's own task row, never in place of it.
+ * The stage is a white card with a 1px rule and a 16px radius, spanning the full content width. Stage
+ * identity is the filled ordinal badge in the stage's own tint plus the title weight (§ Stage identity).
+ * Every card starts open (D2); the chevron collapses one on its own. A wait window the stage hosts renders
+ * as a panel directly beneath its host's own step, never in place of it.
  *
- * M3.2: a controlled component. `PlanScreen` owns which stages are open — the overview
- * starts every stage collapsed, and "Show full recipe" / "Show overview" toggle them
- * all at once, neither of which a stage can know about from inside itself.
+ * A controlled component: `PlanScreen` owns which stages are open. `numbers` gives every step its
+ * page-wide number (`stepNumbers`), and `factor` is the servings factor, which turns quantity bolding off.
  */
 export function StageCard({
   stage,
   expanded,
   onToggle,
+  numbers,
+  factor,
 }: {
   stage: RenderStage
   expanded: boolean
   onToggle: () => void
+  numbers: ReadonlyMap<string, number>
+  factor: number
 }) {
   const tint = stageColor(stage.index)
   const ordinal = stageOrdinal(stage)
@@ -52,7 +51,7 @@ export function StageCard({
   const showsStageDuration = !stage.repeated && !stage.hasForeignRows && !stage.rowsAbsorbedElsewhere
 
   return (
-    <div className="mb-3 rounded-home-card border border-home-rule bg-home-surface px-3.5 pb-2.5 pt-3">
+    <div className="mb-3 rounded-home-card border border-home-rule bg-home-surface px-4 pb-1.5 pt-3.5">
       {/* The ring is for keyboard focus only (`focus-visible`). A tap focuses the button
        * too, and the browser's default ring on that focus was the black box left behind
        * on a tapped header. */}
@@ -60,52 +59,35 @@ export function StageCard({
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className="flex w-full items-start gap-2.5 rounded-home-mini text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-home-ink"
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${stage.label}`}
+        className="flex w-full items-center gap-2.5 rounded-home-mini pb-2.5 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-home-ink"
       >
         {/* Numerals are white, not the ground colour: 4.55:1 or better on every tint. */}
         <span
-          className="tabular mt-px flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full text-[12px] font-semibold leading-none text-home-surface"
+          className="tabular flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold leading-none text-home-surface"
           style={{ background: tint }}
         >
           {ordinal}
         </span>
-        {/* Row one is badge · name · (collapsed figure) · toggle, and the toggle is always
-         * pinned top-right on it. The expanded figure (the long hands-on / waiting split)
-         * gets its own subline under the name instead of wrapping the row. The figure is
-         * omitted when `showsStageDuration` is false — it's a whole-stage rollup, and a
-         * repeated, foreign-row-absorbing, or rows-absorbed-elsewhere card would either
-         * double-count it or make it wrong for what's actually shown here. */}
-        <span className="min-w-0 flex-1">
-          <span className="block text-[18px] font-bold leading-[24px] text-home-ink">
-            {stage.label}
-          </span>
-          {expanded && showsStageDuration && (
-            <span className="tabular mt-0.5 block text-[13px] font-medium text-home-ink-2">
-              {expandedStageDurationText(stage.span)}
-            </span>
-          )}
-        </span>
+        <span className="min-w-0 flex-1 text-[18px] font-extrabold leading-[24px] text-home-ink">{stage.label}</span>
         {!expanded && holdsEdit && (
-          <span className="flex-shrink-0 pt-[3px] text-[13px] font-normal leading-[18px] text-home-ink-2">Edited</span>
+          <span className="flex-shrink-0 text-[13px] font-normal leading-[18px] text-home-ink-2">Edited</span>
         )}
-        {!expanded && showsStageDuration && (
-          <span className="tabular flex-shrink-0 pt-[3px] text-[13px] font-medium leading-[18px] text-home-ink-2">
+        {showsStageDuration && (
+          <span className="tabular flex-shrink-0 whitespace-nowrap text-[13px] leading-[18px] text-home-ink-2">
             {collapsedStageDurationText(stage.span)}
           </span>
         )}
-        <span
-          aria-hidden
-          className="flex h-6 w-4 flex-shrink-0 items-center justify-center text-[15px] font-medium leading-none text-home-ink-2"
-        >
-          {expanded ? '−' : '+'}
+        <span aria-hidden className="flex h-8 w-6 flex-shrink-0 items-center justify-center text-home-ink-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d={expanded ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
+          </svg>
         </span>
       </button>
 
       {!expanded && (
-        <div className="mt-1">
-          {chain && (
-            <p className="line-clamp-2 text-[13px] text-home-ink-2">{chain}</p>
-          )}
+        <div className="pb-2">
+          {chain && <p className="line-clamp-2 text-[13px] text-home-ink-2">{chain}</p>}
           {meanwhile.length > 0 && (
             <p className="mt-1 text-[13px] text-home-ink-2">
               <span className="font-medium text-home-ink">Meanwhile: </span>
@@ -116,24 +98,18 @@ export function StageCard({
       )}
 
       {expanded && (
-        <div className="mt-3">
-          {stage.ingredients.length > 0 && (
-            <p className="mb-3 text-[13px] text-home-ink-2">
-              <span className="font-medium text-home-ink">{YOULL_NEED_LABEL}</span>
-              {ingredientNames(stage)}
-            </p>
-          )}
+        <ol>
           {stage.inlineTasks.map((task) => {
             const win = windowByHost.get(task.nodeId)
             const foreign = task.homeStageIndex !== stage.index
             return (
               <Fragment key={task.nodeId}>
-                <TaskRow task={task} foreign={foreign} />
-                {win && <WaitWindowBlock window={win} />}
+                <StepCard task={task} number={numbers.get(task.nodeId) ?? 0} factor={factor} foreign={foreign} />
+                {win && <WaitWindowBlock window={win} numbers={numbers} factor={factor} />}
               </Fragment>
             )
           })}
-        </div>
+        </ol>
       )}
     </div>
   )
@@ -220,56 +196,4 @@ export function taskDurationText(task: RenderTask): string {
   if (task.attention === 'hands_on') return `~${formatted}`
   if (task.durationProvenance === 'inferred') return `about ${formatted}`
   return formatted
-}
-
-/**
- * `foreign`: true when this row's `homeStageIndex` isn't the card's own — a short
- * interleave absorbed in place (`groupIntoRuns`, plan §D checkpoint) rather than given
- * its own card. Reuses `WaitWindowBlock`'s home-stage tint bar (a plain 3px left edge
- * in the row's own stage colour — no panel, no "Meanwhile" heading, no background
- * change), so it reads as "this one row belongs to another stage" rather than as the
- * window grammar's "do this while the row above cooks" relationship, which this isn't.
- */
-function TaskRow({ task, foreign }: { task: RenderTask; foreign: boolean }) {
-  const note = attentionNote(task.attention)
-  // B25: with the editor open the duration moves to the corner and the text column takes the whole row.
-  const open = useStepOpen(task.nodeId)
-  return (
-    <div
-      className={`relative flex items-baseline gap-3 border-b border-home-rule py-3 last:border-b-0 ${foreign ? 'pl-3' : ''}`}
-    >
-      {foreign && (
-        <span
-          aria-hidden
-          className="absolute bottom-0 left-0 top-0 w-[3px]"
-          style={{ background: stageColor(task.homeStageIndex) }}
-        />
-      )}
-      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <span className={`block text-[15px] font-medium text-home-ink ${open ? 'pr-16' : ''}`}>{task.label}</span>
-        <StepInstruction task={task} />
-        {task.donenessCue && (
-          <span className="mt-0.5 block text-[13px] leading-[1.42] text-home-ink-2">
-            until {task.donenessCue}
-          </span>
-        )}
-        {note && <span className="mt-0.5 block text-[13px] text-home-ink-2">{note}</span>}
-        {task.addedLabel != null && (
-          <span className="mt-0.5 block text-[13px] text-home-ink-2">{task.addedLabel}</span>
-        )}
-        {task.tip != null && (
-          <span className="mt-0.5 block text-[13px] text-home-ink-2">
-            <span className="font-medium text-home-ink">Tip: </span>
-            {task.tip}
-          </span>
-        )}
-      </div>
-      <span
-        className={`tabular flex flex-shrink-0 flex-col items-end text-[13px] font-medium text-home-ink-2 ${open ? 'absolute right-0 top-3' : ''}`}
-      >
-        {taskDurationText(task)}
-        <StepPencil task={task} />
-      </span>
-    </div>
-  )
 }

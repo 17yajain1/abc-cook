@@ -10,10 +10,10 @@ import type { ReactNode } from 'react'
  */
 export function IngredientRow({ primary, trailing }: { primary: ReactNode; trailing?: ReactNode }) {
   return (
-    <li className="flex items-baseline justify-between gap-3 border-b border-home-rule py-2 text-[15px] last:border-b-0">
+    <li className="flex items-baseline justify-between gap-3 border-b border-home-rule py-2.5 text-[15px] last:border-b-0">
       <span className="text-home-ink">{primary}</span>
       {trailing != null && (
-        <span className="tabular max-w-[60%] flex-shrink-0 text-right text-[13px] font-medium text-home-ink-2">
+        <span className="tabular max-w-[60%] flex-shrink-0 text-right text-[15px] font-bold text-home-ink">
           {trailing}
         </span>
       )}

@@ -154,9 +154,12 @@ export default function App() {
         return
       }
       const { recipe, marker } = outcome
+      const fields = planFields(recipe.payload, recipe.edits ?? [], recipe.import_meta?.provenance ?? null)
       setView({
         kind: 'plan',
-        ...planFields(recipe.payload, recipe.edits ?? [], recipe.import_meta?.provenance ?? null),
+        ...fields,
+        // D4: the saved entry's own key is the one its Cookbook thumbnail is drawn from.
+        plan: { ...fields.plan, sourceKey: recipe.source_key },
         origin: { kind: 'library', id },
         saveState: { status: 'saved' },
         importMeta: recipe.import_meta ?? null,

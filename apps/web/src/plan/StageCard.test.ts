@@ -131,6 +131,7 @@ function task(overrides: Partial<RenderTask>): RenderTask {
     homeStageIndex: 0,
     tip: null,
     addedLabel: null,
+    consumed: [],
     ...overrides,
   }
 }

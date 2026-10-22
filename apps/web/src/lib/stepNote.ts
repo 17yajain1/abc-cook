@@ -88,6 +88,37 @@ export function textHasTimePhrase(text: string): boolean {
   return NUMERIC_TIME.test(t) || WORD_TIME.test(t)
 }
 
+/** A stretch of a string, as `[start, end)` offsets. */
+export interface TextSpan {
+  start: number
+  end: number
+}
+
+// The same two patterns `textHasTimePhrase` asks, with a `g` flag so every match is found.
+const NUMERIC_TIME_ALL = new RegExp(NUMERIC_TIME.source, 'giu')
+const WORD_TIME_ALL = new RegExp(WORD_TIME.source, 'giu')
+
+/**
+ * Where `text` states a time, by the same vocabulary as `textHasTimePhrase` ("10 min", "ten minutes",
+ * "दस मिनट"). Sorted, never overlapping. Offsets are into `text` as given: it is not normalised here, so
+ * a Hindi time written in decomposed form is simply not found (presentational only: plain text).
+ */
+export function timePhraseSpans(text: string): TextSpan[] {
+  const found: TextSpan[] = []
+  for (const re of [NUMERIC_TIME_ALL, WORD_TIME_ALL]) {
+    re.lastIndex = 0
+    for (const m of text.matchAll(re)) found.push({ start: m.index, end: m.index + m[0].length })
+  }
+  found.sort((a, b) => a.start - b.start || b.end - a.end)
+  const out: TextSpan[] = []
+  for (const span of found) {
+    const last = out[out.length - 1]
+    if (last && span.start < last.end) continue
+    out.push(span)
+  }
+  return out
+}
+
 // ---- R6b: did the amounts in a step move? ---------------------------------------------------
 
 const NUMBER_RUN = new RegExp(NUMBER, 'gu')

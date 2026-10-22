@@ -13,7 +13,7 @@ import type { IngredientListGroup } from './ingredientGroups'
 import type { StepChoiceGroup } from './stepRows'
 import type { PlanEditing, useRecipeEditing } from './useRecipeEditing'
 
-/** What the Ingredients tab needs to draw editing: the saved entry's context and the session. */
+/** What the recipe page needs to draw editing: the saved entry's context and the session. */
 export interface IngredientsEdit {
   editing: PlanEditing
   api: ReturnType<typeof useRecipeEditing>
@@ -21,25 +21,26 @@ export interface IngredientsEdit {
   choice: ServingsChoice | null
   /** R6b D8: the picker's options, one group per stage card in page order. */
   stepGroups: StepChoiceGroup[]
-  /** R6b B4: the rename note's "Edit the step": leaves for the Plan tab with that step open. Blocked exits stay put. */
+  /** R6b B4: the rename note's "Edit the step": scrolls to that step and opens it. Blocked exits stay put. */
   goToStep: (nodeId: string) => void
 }
 
-/** "Edit" / "Done" and the hint, above the list. One control for both tabs; only the hint differs. */
+/**
+ * The one sticky edit bar (D7, A24): the hint and Done, shown only while editing so Done stays reachable down
+ * a long page. Outside edit mode the header's Edit pill is the way in, and nothing shows here.
+ */
 export function EditToolbar({ edit, hint }: { edit: IngredientsEdit; hint: string }) {
   const { api } = edit
-  const editing = api.session.mode === 'edit'
+  if (api.session.mode !== 'edit') return null
   return (
-    <div className="sticky top-[var(--plan-bar-h,0px)] z-10 flex items-center justify-between gap-3 bg-home-ground px-5 pb-2 pt-3">
-      <p className="min-w-0 flex-1 text-[13px] leading-[1.4] text-home-ink-2">{editing ? hint : ''}</p>
+    <div className="sticky top-[var(--plan-bar-h,0px)] z-10 flex items-center justify-between gap-3 border-b border-home-rule bg-home-ground px-5 pb-2 pt-3">
+      <p className="min-w-0 flex-1 text-[13px] leading-[1.4] text-home-ink-2">{hint}</p>
       <button
         type="button"
-        onClick={() => (editing ? api.guard('done', () => {}) : api.enter())}
-        className={`inline-flex h-11 flex-shrink-0 items-center rounded-full px-5 text-[13px] font-semibold ${
-          editing ? 'bg-home-ink text-home-ground' : 'border border-home-ink text-home-ink'
-        }`}
+        onClick={() => api.guard('done', () => {})}
+        className="inline-flex h-11 flex-shrink-0 items-center rounded-full bg-home-ink px-5 text-[13px] font-semibold text-home-ground"
       >
-        {editing ? 'Done' : 'Edit'}
+        Done
       </button>
     </div>
   )

@@ -140,6 +140,18 @@ export function headerTiming(summary: PlanSummary | null | undefined, totalMin: 
 }
 
 /**
+ * The recipe page's hands-on tile: `summary.active_min` to the nearest 5 min with the same `~` as
+ * `headerTiming`'s hands-on line. Unlike that line it is always available: it is a fact tile, not a
+ * claim that competes with the range, so the "only when informative" suppression doesn't apply. `null`
+ * for a plan saved before `summary` existed. Under 5 min the figure is shown whole rather than as 0.
+ */
+export function handsOnTileText(summary: PlanSummary | null | undefined): string | null {
+  if (!summary) return null
+  const rounded = roundTo5(summary.active_min)
+  return `~${formatMinutes(rounded >= 5 ? rounded : summary.active_min)}`
+}
+
+/**
  * A hands-free gap as the cook reads it: `"55 min"`, `"1 hr 45 min"`, `"19 hr"`. R2.
  *
  * Floors, never rounds up: to 5 min below 120 min, to 15 min from 120 min to below 600 min,
