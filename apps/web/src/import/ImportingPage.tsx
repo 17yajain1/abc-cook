@@ -30,7 +30,7 @@ const PRIMARY =
  * (CLAUDE.md: the frontend renders `CookingPlan`, nothing more). The draft lists are append-only, so a row
  * on screen never moves while it streams.
  *
- * `slot` replaces the progress strip with a failure card (or the "taking longer" line), and on a failure the
+ * `slot` is the failure card (no strip), or the "taking longer" note inside the strip's card; on a failure the
  * footer button becomes that card's primary action; `ImportProgress` builds both.
  */
 export function ImportingPage({
@@ -50,7 +50,7 @@ export function ImportingPage({
   view: ImportViewModel
   /** The progress strip, while the job runs. */
   strip: Strip | null
-  /** Replaces the strip: the failure card, or the "taking longer" line. */
+  /** With a strip: shown inside its card, under the parts (the "taking longer" note). Without one: the failure card. */
   slot?: ReactNode
   footer: ImportingFooter
   /** The thumbnail's source key (a YouTube link only). */
@@ -99,9 +99,8 @@ export function ImportingPage({
       }
     >
       <header className="flex-shrink-0 px-5 pb-4 pt-[calc(12px+var(--safe-top))]">
-        <div className="-ml-2 mb-3 flex items-center justify-between gap-3">
+        <div className="-ml-2 mb-3 flex items-center">
           <BackButton onClick={onBack} circled />
-          {!stopped && <span className="text-[13px] font-medium text-home-ink-2">Importing…</span>}
         </div>
         <RecipeThumbnail sourceKey={sourceKey} onLoaded={onThumbnailLoaded} />
         {header?.title ? (
@@ -119,7 +118,7 @@ export function ImportingPage({
         )}
         {sourceLine && <p className="mt-1.5 text-[14px] text-home-ink-2">{sourceLine}</p>}
 
-        {slot ?? (strip && <ProgressStripCard strip={strip} />)}
+        {strip ? <ProgressStripCard strip={strip}>{slot}</ProgressStripCard> : slot}
 
         {!stopped && (
           <>

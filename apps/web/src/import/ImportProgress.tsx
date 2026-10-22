@@ -88,7 +88,7 @@ export function ImportProgress({
         strip={strip}
         slot={
           phase.kind === 'slow' ? (
-            <div role="status" className="mt-4 rounded-home-card border border-home-rule bg-home-surface px-4 py-3.5">
+            <div role="status" className="mt-3 border-t border-home-rule pt-3">
               <p className="text-[15px] leading-[1.4] text-home-ink">This is taking longer than expected.</p>
               <button
                 type="button"

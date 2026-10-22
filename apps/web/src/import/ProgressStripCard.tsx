@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { ProgressStrip as Strip, SegmentState } from './progressStrip'
 
 const BAR: Record<SegmentState, string> = {
@@ -7,11 +9,11 @@ const BAR: Record<SegmentState, string> = {
 }
 
 /**
- * The importing page's progress card (D1): a headline naming what is being read, over four parts. Static:
+ * The importing page's progress card (D1): a headline naming what is being read, over four parts, and `children` below them (the "taking longer" note). Static:
  * no animation and no time, because the server says which part it is on and nothing about how long it
  * will take. The headline is the live region, so a screen reader hears each change once.
  */
-export function ProgressStripCard({ strip }: { strip: Strip }) {
+export function ProgressStripCard({ strip, children }: { strip: Strip; children?: ReactNode }) {
   return (
     <div className="mt-4 rounded-home-card border border-home-rule bg-home-surface px-4 pb-3 pt-3.5">
       <div className="flex items-center gap-2.5" role="status" aria-live="polite">
@@ -33,6 +35,7 @@ export function ProgressStripCard({ strip }: { strip: Strip }) {
           </li>
         ))}
       </ol>
+      {children}
     </div>
   )
 }

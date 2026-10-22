@@ -54,6 +54,10 @@ export type Phase =
       draft: StreamedDraft | null
     }
 
+/** A failed job with no failure kind (an older server, or the last-resort handler). The server's own `job.error`
+ * is for the console, not the cook; the footer's Try again carries the action, so this says what happened only. */
+export const GENERIC_ERROR = 'Something went wrong reading this recipe.'
+
 /** The screen's own sentence for each failure kind. The server sends an equivalent one in
  * `job.error` for older web builds; this build reads `failure` and writes its own. */
 export const FAILURE_COPY: Record<ImportFailure, string> = {
@@ -97,7 +101,7 @@ export function phaseFor(
       const failure = job.result?.failure
       const phase: Phase = failure
         ? { kind: 'failed', failure, url: ctx.url, preview, acquired, draft }
-        : { kind: 'error', message: job.error ?? 'The import failed.', preview, acquired, draft }
+        : { kind: 'error', message: GENERIC_ERROR, preview, acquired, draft }
       return { kind: 'phase', phase, keepPolling: false }
     }
     default:

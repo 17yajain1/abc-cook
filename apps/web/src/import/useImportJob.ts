@@ -99,6 +99,7 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
           draft: job.draft ?? null,
         }
 
+        if (job.status === 'failed' && job.error) console.warn('[import] job failed:', job.error)
         const decision = phaseFor(job, {
           jobId,
           token,

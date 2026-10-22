@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ImportJobResponse } from '@abc-cook/schema'
 
 import { importMetaFrom } from './importMeta'
-import { FAILURE_COPY, FAILURE_HINT, phaseFor, type Phase } from './phase'
+import { FAILURE_COPY, FAILURE_HINT, GENERIC_ERROR, phaseFor, type Phase } from './phase'
 import { statusLineFor } from '../plan/PlanScreen'
 
 const ctx: { jobId: string; token: number; attempt: number; maxPolls: number; url: string | null } = {
@@ -53,10 +53,11 @@ describe('phaseFor — failed jobs', () => {
   })
 
   it('a failed job with no failure keeps today’s error path', () => {
+    // The server's own text is for the console; the cook sees one fixed sentence.
     const withMessage = phaseOf({ job_id: 'j1', status: 'failed', error: 'It broke.', acquired })
-    expect(withMessage).toEqual({ kind: 'error', message: 'It broke.', preview: null, acquired, draft: null })
+    expect(withMessage).toEqual({ kind: 'error', message: GENERIC_ERROR, preview: null, acquired, draft: null })
     const bare = phaseOf({ job_id: 'j1', status: 'failed' })
-    expect(bare).toMatchObject({ kind: 'error', message: 'The import failed.' })
+    expect(bare).toMatchObject({ kind: 'error', message: GENERIC_ERROR })
     const noKind = phaseOf({ job_id: 'j1', status: 'failed', result: { status: 'failed' } })
     expect(noKind.kind).toBe('error')
   })
