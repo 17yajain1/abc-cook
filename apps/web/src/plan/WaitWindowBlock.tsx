@@ -45,7 +45,7 @@ export function WaitWindowBlock({
         : 'There is room to spare.'
 
   return (
-    <li className="mb-2 mt-1 list-none rounded-home-mini bg-field px-3.5 pb-3 pt-3">
+    <li data-meanwhile={window.id} className="mb-2 mt-1 list-none rounded-home-mini bg-field px-3.5 pb-3 pt-3">
       <p className="text-[16px] font-extrabold text-home-ink">Meanwhile, do these</p>
       <p className="mt-0.5 text-[13px] text-home-ink-2">{sentence(attentionLine(window.hostAttention))}.</p>
 

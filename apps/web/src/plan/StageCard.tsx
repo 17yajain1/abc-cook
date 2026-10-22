@@ -6,7 +6,7 @@ import { uniqueDisplayNames } from '@/lib/displayNames'
 import { formatMinutes } from '@/lib/duration'
 import { stageColor } from '@/lib/stageColor'
 
-import type { RenderStage, RenderTask } from './derive'
+import type { RenderStage } from './derive'
 import { useStepEdit } from './stepEditContext'
 import { StepCard } from './StepCard'
 import { WaitWindowBlock } from './WaitWindowBlock'
@@ -177,19 +177,4 @@ export function expandedStageDurationText(span: StageSpan): string {
   return `~${formatMinutes(span.inline_work_min)}`
 }
 
-/**
- * A task row's duration text (C1 long-duration formatting, C2 estimate cue, M3.2
- * three-way). Three mutually exclusive cases, checked in order:
- *  - hands-on: `~N min` — the cook is doing this themselves, so it's a rough figure
- *    the way the collapsed stage figure is, never a promise.
- *  - not hands-on and the duration's provenance is `inferred`: `about N min` — never
- *    for `defaulted` (`graph.py`: a defaulted number must never be presented as an
- *    estimate the model made).
- *  - otherwise: `N min`, plain.
- */
-export function taskDurationText(task: RenderTask): string {
-  const formatted = formatMinutes(task.durationTypical)
-  if (task.attention === 'hands_on') return `~${formatted}`
-  if (task.durationProvenance === 'inferred') return `about ${formatted}`
-  return formatted
-}
+export { taskDurationText } from './taskDuration'

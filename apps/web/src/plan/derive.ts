@@ -16,7 +16,6 @@ import { displayCue } from '@/lib/displayCue'
 import { canonicalSourceKey } from '@/library/sourceKey'
 import type { ServingsSource } from '@/lib/servings'
 
-import { deriveCookLanes, type CookLanes } from './laneGeometry'
 import { deriveCookOutline, type CookOutline } from './cookOutline'
 
 /** `NodeProvenance.fields` values — extracted/inferred/defaulted, per `provenance.py`. */
@@ -200,8 +199,6 @@ export interface RenderPlan {
   sourceUrl: string | null
   /** D5: the scheduler put at least one task inside a wait window (`hasParallelWork`). */
   hasParallelWork: boolean
-  /** D5: the two-lane picture of "How this cook goes"; `null` exactly when `hasParallelWork` is false. */
-  lanes: CookLanes | null
   /** D4: the canonical source key, which the header's thumbnail is derived from. A Cookbook open
    * replaces it with the saved entry's own `source_key`. */
   sourceKey: string | null
@@ -460,7 +457,6 @@ export function derivePlan(
     sourceUrl: graph.source?.kind === 'url' ? graph.source.value : null,
     sourceKey: graph.source ? canonicalSourceKey(graph.source) : null,
     hasParallelWork: hasParallelWork(payload),
-    lanes: deriveCookLanes({ graph, scheduled: plan.scheduled, windows: plan.windows, totalMin: plan.total_min }),
     outline: deriveCookOutline({
       summary: payload.summary,
       nodes: graph.nodes,

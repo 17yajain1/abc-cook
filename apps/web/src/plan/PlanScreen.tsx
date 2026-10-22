@@ -12,8 +12,8 @@ import type { AlreadySaved } from './AlreadySavedNotice'
 import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
 import type { EndOfPageBlock } from './endOfPage'
 import { EditToolbar, type IngredientsEdit } from './EditableIngredientList'
-import { CookLanes } from './CookLanes'
 import { IngredientsPanel } from './IngredientsPanel'
+import { multitaskNote } from './multitaskNote'
 import { OrphanReview } from './OrphanReview'
 import { StepEditContext, type StepEditApi } from './stepEditContext'
 import { stepChoiceGroups } from './stepRows'
@@ -181,6 +181,21 @@ export function PlanScreen({
   }
 
   const noticeLine = orphanNoticeLine(orphans.length)
+  // D5: the multitask note's "See where" opens the card holding the first Meanwhile block, if the cook
+  // closed it, then scrolls to the block once it is drawn.
+  const note = useMemo(() => multitaskNote(plan), [plan])
+  const seeWhere = () => {
+    if (!note) return
+    const stage = plan.stages.find((s) => s.windows.some((w) => w.id === note.firstWindowId))
+    if (stage && !expandedStages.has(stage.key)) flipStage(stage.key)
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        scrollRef.current
+          ?.querySelector(`[data-meanwhile="${note.firstWindowId}"]`)
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+      ),
+    )
+  }
   const stepGroups = useMemo(() => stepChoiceGroups(plan), [plan])
   const numbers = useMemo(() => stepNumbers(plan.stages), [plan.stages])
   const ordinals = useMemo(() => stageOrdinals(plan.stages), [plan.stages])
@@ -246,6 +261,7 @@ export function PlanScreen({
           statusLine={statusLine}
           edit={editPill}
           titleRef={titleRef}
+          multitask={note ? { text: note.text, onSeeWhere: seeWhere } : null}
         />
 
         {noticeLine && (
@@ -268,8 +284,6 @@ export function PlanScreen({
         {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
 
         <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
-
-        <CookLanes plan={plan} />
 
         <StepEditContext.Provider value={stepApi}>
           <section className="px-5 pt-[18px]" aria-labelledby="steps-heading">

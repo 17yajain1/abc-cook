@@ -5,7 +5,7 @@ import { stageColor } from '@/lib/stageColor'
 import type { RenderTask } from './derive'
 import { useStepOpen } from './stepEditContext'
 import { StepInstruction, StepPencil } from './StepRow'
-import { taskDurationText } from './StageCard'
+import { taskDurationText } from './taskDuration'
 
 /**
  * One numbered step on the recipe page (D7): the number, the name and its time, the instruction with its
