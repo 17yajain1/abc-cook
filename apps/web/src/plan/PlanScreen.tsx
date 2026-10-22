@@ -12,6 +12,7 @@ import type { AlreadySaved } from './AlreadySavedNotice'
 import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
 import type { EndOfPageBlock } from './endOfPage'
 import { EditToolbar, type IngredientsEdit } from './EditableIngredientList'
+import { CookLanes } from './CookLanes'
 import { IngredientsPanel } from './IngredientsPanel'
 import { OrphanReview } from './OrphanReview'
 import { StepEditContext, type StepEditApi } from './stepEditContext'
@@ -267,6 +268,8 @@ export function PlanScreen({
         {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
 
         <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
+
+        <CookLanes plan={plan} />
 
         <StepEditContext.Provider value={stepApi}>
           <section className="px-5 pt-[18px]" aria-labelledby="steps-heading">
