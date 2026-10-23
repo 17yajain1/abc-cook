@@ -4,6 +4,8 @@
  * a pure string formatter over values the real selectors already computed.
  */
 
+import { formatMinutes, roundMin } from '@/lib/duration'
+
 const WORDS = [
   'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
   'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
@@ -52,8 +54,9 @@ export function clockStr(ms: number): string {
 }
 
 /** The `long_wait` / `sitting_break` wall-clock line (§6, §8.1): "4:18 pm", "tomorrow,
- * 7:00 am", or "in 3 days, 9:00 am", by calendar-day difference from `now`. */
-export function dayClock(now: number, target: number): string {
+ * 7:00 am", or "in 3 days, 9:00 am", by calendar-day difference from `now`. `clock`
+ * formats the time itself (`clockStr` by default; `localClock` passes the device locale's). */
+export function dayClock(now: number, target: number, clock: (ms: number) => string = clockStr): string {
   const a = new Date(now)
   const b = new Date(target)
   const days = Math.round(
@@ -61,10 +64,52 @@ export function dayClock(now: number, target: number): string {
       Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
       86_400_000,
   )
-  if (days === 0) return clockStr(target)
-  if (days === 1) return `tomorrow, ${clockStr(target)}`
-  return `in ${days} days, ${clockStr(target)}`
+  if (days === 0) return clock(target)
+  if (days === 1) return `tomorrow, ${clock(target)}`
+  return `in ${days} days, ${clock(target)}`
 }
+
+/** PR 2 CP3: `dayClock` with the time in the device locale's own clock ("1:42 PM",
+ * "13:42"); `locale` is for tests. Every space inside the time becomes a no-break space,
+ * so a time never splits from its am/pm. */
+export function localClock(now: number, target: number, locale?: string): string {
+  const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
+  return dayClock(now, target, (ms) => format.format(ms).replace(/\s/gu, ' '))
+}
+
+/** PR 2 CP3: a timer's time left, as the rail, the timer sheet and All steps say it. Whole
+ * minutes rounded up (`Math.ceil`, so the number never goes up as time passes), never
+ * seconds; from an hour, `formatMinutes`' hours and minutes. At or past the end it is
+ * "Time's up", with no count (CP4's banner takes that case over). `big` + `unit` is the
+ * sheet's split ("52" + "min left"); `text` is the one-line form. */
+export function timeLeft(ms: number): { big: string; unit: string | null; text: string } {
+  if (ms <= 0) return { big: "Time's up", unit: null, text: "Time's up" }
+  const min = Math.ceil(ms / 60_000)
+  if (min < 60) return { big: String(min), unit: 'min left', text: `${min} min left` }
+  const big = formatMinutes(min)
+  return { big, unit: 'left', text: `${big} left` }
+}
+
+/** PR 2 CP3: a timer's length as an adjective ("Start 12-min timer", "Start 1-hr timer",
+ * "Start 1 hr 30 min timer"): one unit is hyphenated, mixed units are not. Rounded with
+ * `roundMin`, the same number `startNode` times; `null` under one minute (no length to name). */
+export function timerLength(min: number): string | null {
+  const m = roundMin(min)
+  if (m < 1) return null
+  if (m < 60) return `${m}-min`
+  return m % 60 === 0 ? `${m / 60}-hr` : formatMinutes(m)
+}
+
+/** PR 2 CP3: the hands-off step's line, "About 1 hr. Start a timer, or just move on."
+ * (the plain length, `formatMinutes`). `null` when the step has no length to name. */
+export function handsOffLine(min: number): string | null {
+  if (roundMin(min) < 1) return null
+  return `About ${formatMinutes(min)}. Start a timer, or just move on.`
+}
+
+/** PR 2 CP3: the lead-in of the doneness cue line ("Ready when: golden brown"). One
+ * constant, for later translation. */
+export const READY_WHEN = 'Ready when:'
 
 function firstClause(text: string): string {
   const cuts = ['. ', ', ', ' and ', ' then ', ' until ', ' with ']

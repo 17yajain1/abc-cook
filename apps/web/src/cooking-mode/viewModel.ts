@@ -11,22 +11,25 @@ import {
   running,
   sheetOrder,
   sittingIndex,
-  skipAllowed,
   stepPosition,
   waitSubject,
   whisperInput,
   current,
 } from '@/cooking/select'
 import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/types'
+import { attentionTag } from '@/lib/attention'
+import { displayCue } from '@/lib/displayCue'
+import { cueShownWith } from '@/lib/doneness'
 import type { HeaderTiming } from '@/lib/duration'
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { servingsCopy } from '@/lib/servingsCopy'
 import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE, stepAmountHint, stepNeedsAmountNote, textHasTimePhrase } from '@/lib/stepNote'
 
-import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
+import { aboutMinutes, cap, dayClock, handsOffLine, minutesLeft, splitCopy, timerLength, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
-import { quantityChips } from './quantity'
+import { needRows, quantityChips, type NeedRow } from './quantity'
 import { backTarget, pageOrder, ticks, upNext, type Tick, type UpNextView } from './stepPage'
+import { rails, type RailView } from './timers'
 
 /**
  * The screen-selection and copy layer for Cooking Mode (M3.4), ported from the design
@@ -71,11 +74,10 @@ export type ActionDescriptor =
    * follows the start with `view(null)` and the cook moves on, as Done does. */
   | { kind: 'startNode'; nodeId: string; clearView?: boolean }
   | { kind: 'markDone'; nodeId: string }
-  /** PR 2 CP1: the single command path CP3's screens will use. No view emits it yet. */
+  /** PR 2 CP1: the timer sheet's "Stop timer" (CP3). */
   | { kind: 'stopNode'; nodeId: string }
   /** PR 2 CP1: navigation only. CP2's Up next and Back emit it. */
   | { kind: 'view'; nodeId: string | null }
-  | { kind: 'skip'; nodeId: string }
   /** `ms` (PR 2 CP3.0): the amount to add; absent is the engine's default (`EXTEND_MS`). */
   | { kind: 'extend'; nodeId: string; ms?: number }
   | { kind: 'acknowledge' }
@@ -159,29 +161,38 @@ export interface CookingView {
    * is folded into `readyAt`. `null` everywhere else, including the multi-pan wait,
    * which has no single subject to time. */
   waitTime: { left: string; readyAt: string } | null
+  /** The whisper and the What's cooking link: on the wait screens only since PR 2 CP3,
+   * whose step pages use the timer rail instead (`rails`). CP4 replaces them there too. */
   whisperText: string | null
   showLink: boolean
-  /** V2.1 running-work strip on `task`/`handsoff_pending` (1d — Owner-selected, not
-   * usability-validated; reopen condition in the design record). When set, it replaces
-   * `whisperText` on that screen. `null` everywhere
-   * else, and for a periodic host (which keeps the whisper). */
-  strip: RunningStripView | null
   primary: ActionButton | null
   secondary: ActionButton | null
   /** B0 (N3): true on every screen where the undo link can appear in `secondary`
    * (`UNDO_ELIGIBLE_SCREENS`). The shell then keeps that slot's height whether or not a
    * secondary is showing, so the primary never moves when the undo link comes or goes —
-   * a quick second tap where Done *was* must not land on "Undo". */
+   * a quick second tap where Done *was* must not land on "Undo". PR 2 CP3: `false` on the
+   * step pages, whose Undo sits outside the footer (the shell), so it never moves the primary. */
   reserveSecondary: boolean
-}
-
-export interface RunningStripView {
-  label: string
-  /** "About N min left" while running (D6 — never `m:ss`, never a clock), else "Holding". */
-  right: string
-  /** Drawn hollow instead of filled once the timer is up. */
-  holding: boolean
-  sub: string | null
+  /** PR 2 CP3: the step on a step page; `null` everywhere else. */
+  nodeId: string | null
+  /** PR 2 CP3: the running-timer rails (`timers.ts`), on the step pages only; `[]` elsewhere. */
+  rails: RailView[]
+  /** PR 2 CP3: a not-started hands-off step's tag ("Hands-off" / "Low attention"), its
+   * "About 1 hr. Start a timer, or just move on." line (`null` without a length) and the
+   * quiet "Mark as done" link (owner answer 5). `null` on every other page. */
+  handsOff: { tag: string; line: string | null; markDone: ActionButton } | null
+  /** PR 2 CP3: how you know the step is ready, as stored, shown after "Ready when:" — only
+   * when the step text doesn't already say it (`cueShownWith`) and the cue is showable
+   * (`displayCue`). On the not-done step pages only. */
+  cue: string | null
+  /** PR 2 CP3: "You'll need" rows (`needRows`); `label` is the R4 accessible name of an
+   * amount the scaler could not scale. `[]` off the step pages. */
+  need: Array<NeedRow & { label?: string }>
+  /** PR 2 CP3: the step's ingredients, for the step text's bolding (`EmphasisText`, D6):
+   * only the fields it reads, so no ingredient id reaches the view. */
+  consumed: Pick<Ingredient, 'name' | 'qty' | 'qty_text' | 'qty_amount' | 'unit'>[]
+  /** PR 2 CP3: the session's servings factor, for the same bolding. */
+  factor: number
 }
 
 export interface SheetRowView {
@@ -286,8 +297,8 @@ interface BackgroundSubject {
 
 /** The node the whisper names (dc.html's `whisperFor` choice), over the real
  * `whisperInput`/`running`/`holding` selectors — the soonest node worth naming that
- * isn't the one already on screen. Shared by `whisperFor` and `stripFor` so the two
- * can never disagree about *which* background work to surface. */
+ * isn't the one already on screen. (It also chose the V2.1 strip's subject until PR 2 CP3
+ * replaced the strip with the timer rail.) */
 function backgroundSubject(
   model: CookingModel,
   session: CookingSession,
@@ -325,32 +336,6 @@ function whisperFor(
   return `${info.label} has about ${aboutMinutes(rem)} left${tail}`
 }
 
-/** V2.1 running-work strip (B1/B2 variant 1d — Owner-selected, not usability-validated;
- * reopen condition in the design record):
- * the same subject the whisper would name, as label + "About N min left". Read-only —
- * no control of any kind (O1). `null` for a periodic host: 1d has no approved wording
- * for "give it a stir" (1l/1t are not promoted), so that case keeps the whisper. */
-function stripFor(
-  model: CookingModel,
-  session: CookingSession,
-  now: number,
-  onScreenNodeId: string | null,
-): RunningStripView | null {
-  const s = backgroundSubject(model, session, now, onScreenNodeId)
-  if (s == null) return null
-  const info = model.nodes[s.nodeId]
-  if (info.attention === 'periodic') return null
-  if (s.phase === 'running') {
-    return { label: info.label, right: minutesLeft(endsAtOf(session, s.nodeId) - now), holding: false, sub: null }
-  }
-  return {
-    label: info.label,
-    right: 'Holding',
-    holding: true,
-    sub: s.phase === 'holding' ? 'Nothing needs you for it yet.' : null,
-  }
-}
-
 export interface CookingViewOptions {
   recipeTitle: string
   leaving: boolean
@@ -385,7 +370,7 @@ const UNDO_ELIGIBLE_SCREENS: ScreenId[] = [
  * eligibility list, not the shell grouping, decides. */
 function applyUndoOverride(
   v: CookingView,
-  _model: CookingModel,
+  model: CookingModel,
   session: CookingSession,
   now: number,
   screenId: ScreenId,
@@ -394,7 +379,22 @@ function applyUndoOverride(
   const t = session.lastTransition
   if (t == null) return
   if (now - t.at >= UNDO_WINDOW_MS) return
-  v.secondary = { label: 'Undo', solid: false, action: { kind: 'undo' } }
+  const label = STEP_SCREENS.includes(screenId) ? undoLabel(model, t, v.nodeId) : 'Undo'
+  v.secondary = { label, solid: false, action: { kind: 'undo' } }
+}
+
+/** Owner answer 2 (PR 2 CP3): on the acted-on step's own page (the transition's first
+ * entry: the sink on an early finish, the first producer on an acknowledge) just "Undo";
+ * on any other step page, what it undoes and where. A stored legacy `skip` keeps "Undo". */
+function undoLabel(model: CookingModel, t: NonNullable<CookingSession['lastTransition']>, onScreen: string | null): string {
+  const acted = t.entries[0]?.nodeId
+  if (acted == null || acted === onScreen) return 'Undo'
+  const name = model.nodes[acted]?.label
+  if (name == null) return 'Undo'
+  if (t.kind === 'done' || t.kind === 'acknowledge') return `Undo Done on ${name}`
+  if (t.kind === 'start') return `Undo timer start on ${name}`
+  if (t.kind === 'stop') return `Undo timer stop on ${name}`
+  return 'Undo'
 }
 
 /** The entry screen (`open()` -> no stored session): the one screen that quotes a
@@ -433,10 +433,16 @@ export function buildEntryView(
     waitTime: null,
     whisperText: null,
     showLink: false,
-    strip: null,
     primary: { label: 'Start cooking', solid: true, action: { kind: 'start' } },
     secondary: { label: 'See the plan', solid: false, action: { kind: 'seePlan' } },
     reserveSecondary: false,
+    nodeId: null,
+    rails: [],
+    handsOff: null,
+    cue: null,
+    need: [],
+    consumed: [],
+    factor: choiceFactor(choice),
   }
 }
 
@@ -478,38 +484,57 @@ export function buildCookingView(
     waitTime: null,
     whisperText: null,
     showLink: false,
-    strip: null,
     primary: null,
     secondary: null,
-    reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id),
+    reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id) && !STEP_SCREENS.includes(scr.id),
+    nodeId: null,
+    rails: [],
+    handsOff: null,
+    cue: null,
+    need: [],
+    consumed: [],
+    factor: choiceFactor(options.choice),
   }
 
   if (STEP_SCREENS.includes(scr.id)) {
     const cur = scr.currentNodeId!
     const n = model.nodes[cur]
+    v.nodeId = cur
     // V2.1 (1a order, reweighted): the step label is the screen's title and the full
     // instruction follows it untruncated — no `splitCopy` on the task screen.
     v.label = n.label
     v.title = n.instruction
-    const factor = choiceFactor(options.choice)
+    const factor = v.factor
     const copy = servingsCopy(options.choice ?? null)
     const chips = quantityChips(n, ingredients, factor)
     v.chips = chips.map((chip) => chip.text)
     v.chipItems = chips.map((chip) =>
       chip.unscaled ? { ...chip, label: copy.chipLabel(chip.text) } : chip,
     )
+    // CP3: "You'll need" rows replace the chips on screen (`chips` stays for its tests).
+    v.need = needRows(n, ingredients, factor).map((row) =>
+      row.unscaled ? { ...row, label: copy.chipLabel(`${row.name}, ${row.amount ?? ''}`) } : row,
+    )
+    v.consumed = n.consumes.flatMap((id) => {
+      const i = id.startsWith('ing_') ? ingredients.get(id) : undefined
+      return i != null ? [{ name: i.name, qty: i.qty, qty_text: i.qty_text, qty_amount: i.qty_amount, unit: i.unit }] : []
+    })
     v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
     v.addedNote = n.addedLabel
     v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? STEP_TIME_NOTE : null
     const imported = options.importedSteps?.get(cur)
     v.stepAmountNote =
       options.editedSteps?.has(cur) && imported != null && stepAmountHint(imported, n.instruction, n.consumes) ? STEP_AMOUNT_NOTE : null
-    v.note = n.donenessCue ? `${cap(n.donenessCue)}.` : null
-    v.strip = stripFor(model, session, now, cur)
-    if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)
-    v.showLink = running(model, session).length > 0
+    // CP3: the cue moves out of `note` into its own "Ready when:" line, only when the text
+    // doesn't already say it (the recipe page's rule); never on a done step.
+    if (scr.id !== 'step_done') {
+      const shown = displayCue(n.donenessCue)
+      v.cue = cueShownWith(n.instruction, shown) != null ? shown : null
+    }
     // "Step N of M": the recipe-page number of the step on the page.
     const order = pageOrder(model, options.pageNumbers)
+    // CP3: the rail replaces the strip, the whisper and the What's cooking link.
+    v.rails = rails(model, session, now, order)
     const pageN = order.indexOf(cur) + 1
     v.step = factor !== 1 ? copy.stepMeta(pageN, order.length) : `Step ${pageN} of ${order.length}`
     // R4 F1: once per session, on its first step screen — the live count, not the page number.
@@ -520,14 +545,17 @@ export function buildCookingView(
     v.upNext = upNext(model, session, now, cur, order)
     if (scr.id === 'task') {
       v.primary = { label: 'Done', solid: true, action: { kind: 'markDone', nodeId: cur } }
-      // Skip stays the suggested step's control (until CP3); a viewed step never offers it.
-      if (current(model, session) === cur && skipAllowed(model, session)) {
-        v.secondary = { label: 'Skip for now', solid: false, action: { kind: 'skip', nodeId: cur } }
-      }
     } else if (scr.id === 'handsoff_pending') {
       const action: ActionDescriptor =
         session.viewing === cur ? { kind: 'startNode', nodeId: cur, clearView: true } : { kind: 'startNode', nodeId: cur }
-      v.primary = { label: "I've started it", solid: false, action }
+      // FGC-37: the timer's length is the same number `startNode` times.
+      const len = timerLength(n.durationTypical)
+      v.primary = { label: len != null ? `Start ${len} timer` : "I've started it", solid: true, action }
+      v.handsOff = {
+        tag: attentionTag(n.attention) ?? 'Hands-off',
+        line: handsOffLine(n.durationTypical),
+        markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: cur } },
+      }
     } else if (scr.id === 'step_running') {
       v.primary = { label: "It's done", solid: true, action: { kind: 'markDone', nodeId: cur } }
     } else {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { ingredientsById } from './quantity'
+import { pageOrder, stepList } from './stepPage'
 import { buildCookingView, type CookingView } from './viewModel'
 import { shouldHoldWakeLock } from './wakeLock'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
@@ -245,9 +246,10 @@ describe('the viewed step', () => {
     const se = must(engine.view(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
     const v = DONUTS.view(se, T0)
     expect(v.screenId).toBe('handsoff_pending')
+    // CP3: the timer start is named from the duration (FGC-37), on the terracotta pill.
     expect(v.primary).toEqual({
-      label: "I've started it",
-      solid: false,
+      label: 'Start 1-hr timer',
+      solid: true,
       action: { kind: 'startNode', nodeId: 'first_rise', clearView: true },
     })
   })
@@ -305,11 +307,50 @@ describe('the viewed step', () => {
   })
 })
 
+describe('stepList (PR 2 CP3, All steps)', () => {
+  const order = pageOrder(DONUTS.model, DONUTS.pageNumbers)
+  const n = (id: string) => order.indexOf(id) + 1
+
+  it('every page step in page order, numbered as the page numbers it', () => {
+    const rows = stepList(DONUTS.model, DONUTS.fresh(), T0, order, 'bloom_yeast')
+    expect(rows.map((r) => r.nodeId)).toEqual(order)
+    expect(rows.map((r) => r.n)).toEqual(order.map((_, i) => i + 1))
+    expect(rows.map((r) => r.name)).toEqual(order.map((id) => DONUTS.model.nodes[id].label))
+  })
+
+  it('mid-cook: done (no right text), running (its time left), viewed ("You are here"), to do', () => {
+    let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
+    se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0)) // 60 min
+    const rows = stepList(DONUTS.model, se, T0 + 8 * MIN, order, 'grease_pan')
+    const row = (id: string) => rows.find((r) => r.nodeId === id)!
+    expect(row('bloom_yeast')).toEqual({ nodeId: 'bloom_yeast', n: n('bloom_yeast'), name: 'Bloom yeast', state: 'done', right: null, action: { kind: 'view', nodeId: 'bloom_yeast' } })
+    expect(row('first_rise')).toMatchObject({ state: 'running', right: '52 min left' })
+    expect(row('grease_pan')).toMatchObject({ state: 'viewed', right: 'You are here' })
+    expect(row('shape_and_cut')).toMatchObject({ state: 'todo', right: null }) // hands-on: no time
+  })
+
+  it('a to-do hands-off or low-attention step shows its length; viewed wins over running and done', () => {
+    let se = must(engine.startNode(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
+    const rows = stepList(DONUTS.model, se, T0, order, 'first_rise')
+    const row = (id: string) => rows.find((r) => r.nodeId === id)!
+    expect(row('proof_donuts')).toMatchObject({ state: 'todo', right: '25 min' })
+    expect(row('fry_donuts')).toMatchObject({ state: 'todo', right: '14 min' })
+    expect(row('first_rise')).toMatchObject({ state: 'viewed', right: 'You are here' })
+    se = must(engine.markDone(se, DONUTS.model, 'bloom_yeast', T0))
+    expect(stepList(DONUTS.model, se, T0, order, 'bloom_yeast')[n('bloom_yeast') - 1]).toMatchObject({ state: 'viewed' })
+  })
+
+  it('a step with a length of an hour or more reads it in hours (Donuts first rise: "1 hr")', () => {
+    const rows = stepList(DONUTS.model, DONUTS.fresh(), T0, order, 'bloom_yeast')
+    expect(rows.find((r) => r.nodeId === 'first_rise')).toMatchObject({ state: 'todo', right: '1 hr' })
+  })
+})
+
 describe('Undo and the wake lock', () => {
-  it('the undo link reads "Undo" within the window', () => {
+  it('the undo link shows within the window; off the acted-on step it names what it undoes (CP3)', () => {
     const se = KADAI.done(KADAI.fresh(), ['chop_onion'], T0)
-    expect(KADAI.view(se, T0 + 9_000).secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
-    expect(KADAI.view(se, T0 + 10_000).secondary?.label).not.toBe('Undo')
+    expect(KADAI.view(se, T0 + 9_000).secondary).toEqual({ label: 'Undo Done on Chop onion', solid: false, action: { kind: 'undo' } })
+    expect(KADAI.view(se, T0 + 10_000).secondary).toBeNull()
   })
 
   it('the wake lock holds on the two new step screens', () => {
@@ -317,7 +358,7 @@ describe('Undo and the wake lock', () => {
     expect(shouldHoldWakeLock('step_done')).toBe(true)
   })
 
-  it('amendment 2: Undo after "I\'ve started it" from a viewed step returns to that step, not started', () => {
+  it('amendment 2: Undo after the timer start from a viewed step returns to that step, not started', () => {
     let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0 + MIN)
     se = must(engine.view(se, DONUTS.model, 'first_rise', T0 + 2 * MIN))
     const before = se
@@ -328,8 +369,9 @@ describe('Undo and the wake lock', () => {
     se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0 + 3 * MIN))
     se = must(engine.view(se, DONUTS.model, null, T0 + 3 * MIN))
 
+    // The start cleared the view, so the page is now another step: the link names the start (CP3).
     const v = DONUTS.view(se, T0 + 3 * MIN + 5_000)
-    expect(v.secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
+    expect(v.secondary).toEqual({ label: 'Undo timer start on First rise', solid: false, action: { kind: 'undo' } })
 
     const undone = must(engine.undo(se, DONUTS.model, T0 + 3 * MIN + 5_000))
     expect(undone.nodes.first_rise).toEqual({ state: 'pending' })

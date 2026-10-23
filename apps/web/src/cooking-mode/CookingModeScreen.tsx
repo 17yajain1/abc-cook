@@ -15,6 +15,10 @@ import { useHomeSurface } from '@/shell/useHomeSurface'
 import { CookingShell } from './CookingShell'
 import { finishCooking, replaceSession, type SessionFinished } from './finalizeSession'
 import { ingredientsById } from './quantity'
+import { StepListSheet } from './StepListSheet'
+import { pageOrder, stepList } from './stepPage'
+import { runningTimers, timerSheet, type RailView } from './timers'
+import { TimerSheet, type TimerSheetContent } from './TimerSheet'
 import { useWakeLock } from './useWakeLock'
 import {
   buildConflictView,
@@ -93,6 +97,12 @@ export function CookingModeScreen({
   const [now, setNow] = useState(() => Date.now())
   const [leaving, setLeaving] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  // PR 2 CP3: the timer sheet (one timer, or the Timers list behind "+N more"), the All
+  // steps sheet, and the step whose "You'll need" list the cook opened (owner answer 4:
+  // it stays open while on that step and closes when the step on screen changes).
+  const [timerFor, setTimerFor] = useState<{ mode: 'one'; nodeId: string } | { mode: 'all' } | null>(null)
+  const [stepsOpen, setStepsOpen] = useState(false)
+  const [needOpenFor, setNeedOpenFor] = useState<string | null>(null)
 
   // CP-B (notes/pr19-atomic-replace-plan.md §3/§6): staged, in-memory-only replacement
   // intent — none of these three are ever persisted or dispatched to the store by
@@ -143,6 +153,8 @@ export function CookingModeScreen({
   const runEngine = (fn: () => void) => {
     fn()
     setSheetOpen(false)
+    setTimerFor(null)
+    setStepsOpen(false)
     setLeaving(false)
   }
 
@@ -199,18 +211,15 @@ export function CookingModeScreen({
       case 'markDone':
         runEngine(() => session.markDone(model, action.nodeId))
         return
-      // PR 2 CP1: unreachable from today's views; CP3's screens emit it.
+      // PR 2 CP3: the timer sheet's "Stop timer".
       case 'stopNode':
         runEngine(() => session.stopNode(model, action.nodeId))
         return
       case 'view':
         runEngine(() => session.view(model, action.nodeId))
         return
-      case 'skip':
-        runEngine(() => session.skip(model, action.nodeId))
-        return
       case 'extend':
-        runEngine(() => session.extend(model, action.nodeId))
+        runEngine(() => session.extend(model, action.nodeId, action.ms))
         return
       case 'acknowledge':
         runEngine(() => session.acknowledge(model))
@@ -244,6 +253,16 @@ export function CookingModeScreen({
     }
   }
 
+  // The shell's CP3 controls: a rail opens its timer's sheet ("+N more": the Timers list),
+  // "Step N of M" opens All steps, "N more" opens the rest of You'll need on this step.
+  const stepControls = (v: CookingView) => ({
+    needExpanded: v.nodeId != null && needOpenFor === v.nodeId,
+    onAction: dispatchAction,
+    onRail: (rail: RailView) => setTimerFor(rail.kind === 'timer' ? { mode: 'one', nodeId: rail.nodeId } : { mode: 'all' }),
+    onSteps: () => setStepsOpen(true),
+    onExpandNeed: () => setNeedOpenFor(v.nodeId),
+  })
+
   // Staged replacement (CP-B, plan §3): "End it and start this" was tapped — A is
   // still fully intact in storage (nothing has been dispatched yet); this renders B's
   // ordinary entry screen in its place, purely a local view swap. `session.replace`
@@ -262,6 +281,7 @@ export function CookingModeScreen({
           onLeave={() => setLeaving(true)}
           onSheet={() => setSheetOpen(true)}
           onNavigate={dispatchAction}
+          {...stepControls(view)}
         />
       </div>
     )
@@ -303,6 +323,22 @@ export function CookingModeScreen({
   const sheet =
     sheetOpen && openResult.status === 'ok' ? buildSheetView(model, openResult.session, now) : null
 
+  // CP3 sheets, rebuilt from the session every render; a sheet whose subject is gone (the
+  // timer stopped or finished, nothing left running, the step page replaced) shows nothing.
+  const live = openResult.status === 'ok' ? openResult.session : null
+  const order = pageOrder(model, pageNumbers)
+  let timerContent: TimerSheetContent | null = null
+  if (live != null && view.nodeId != null && timerFor != null) {
+    if (timerFor.mode === 'one') {
+      const one = timerSheet(model, live, now, timerFor.nodeId, order, view.nodeId)
+      timerContent = one != null ? { mode: 'one', sheet: one } : null
+    } else {
+      const rows = runningTimers(model, live, now, order)
+      timerContent = rows.length > 0 ? { mode: 'all', rows } : null
+    }
+  }
+  const steps = live != null && view.nodeId != null && stepsOpen ? stepList(model, live, now, order, view.nodeId) : null
+
   return (
     <div className="relative h-full overflow-hidden">
       {replaceNotice && <ReplaceNotice onDismiss={() => setReplaceNotice(false)} />}
@@ -313,8 +349,20 @@ export function CookingModeScreen({
         onLeave={() => setLeaving(true)}
         onSheet={() => setSheetOpen(true)}
         onNavigate={dispatchAction}
+        {...stepControls(view)}
       />
       {sheet && <WhatsCookingSheet sheet={sheet} onClose={() => setSheetOpen(false)} />}
+      {timerContent && (
+        <TimerSheet
+          content={timerContent}
+          onAction={dispatchAction}
+          onPick={(nodeId) => setTimerFor({ mode: 'one', nodeId })}
+          onClose={() => setTimerFor(null)}
+        />
+      )}
+      {steps && (
+        <StepListSheet rows={steps} onPick={(row) => dispatchAction(row.action)} onClose={() => setStepsOpen(false)} />
+      )}
     </div>
   )
 }

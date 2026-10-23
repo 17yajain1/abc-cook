@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
+import { handsOffLine, timerLength } from './copy'
+import type { RailView } from './timers'
 import { buildConflictView, buildCookingView, buildEntryView, buildSheetView } from './viewModel'
 import { ingredientsById } from './quantity'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
+import kadhiPakora from '@/__fixtures__/kadhi-pakora.plan-response.json'
 import maggi2min from '@/__fixtures__/maggi-2min.plan-response.json'
 import pizzaDough from '@/__fixtures__/pizza-dough.plan-response.json'
 import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
@@ -17,6 +20,7 @@ import * as engine from '@/cooking/engine'
 import { deriveCookingModel } from '@/cooking/model'
 import type { CookingModel, CookingSession, Rejected, SessionConflict } from '@/cooking/types'
 import { headerTiming } from '@/lib/duration'
+import type { ServingsChoice } from '@/lib/servings'
 
 /**
  * Cooking Mode screen/copy-layer coverage, driven exclusively through real
@@ -88,13 +92,14 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 10 * MIN)
     expect(v.screenId).toBe('handsoff_pending')
     expect(v.label).toBe('Cook tomato base')
+    // CP3: the timer start is named from the duration (FGC-37).
     expect(v.primary).toEqual({
-      label: "I've started it",
-      solid: false,
+      label: 'Start 12-min timer',
+      solid: true,
       action: { kind: 'startNode', nodeId: 'cook_tomato_base' },
     })
-    // Three hands-on steps done -> Step 4 of 10. The preview simulates "I've started
-    // it" and finds the first window prep task it unblocks.
+    // Three hands-on steps done -> Step 4 of 10. The preview simulates the timer start
+    // and finds the first window prep task it unblocks.
     expect(v.step).toBe('Step 4 of 10')
     expect(v.upNext?.name).toBe('Cube capsicum')
     // F2 covers the pending hands-off start screen too: cook_tomato_base consumes ing_salt
@@ -103,7 +108,7 @@ describe('kadai-paneer', () => {
     expect(v.qty).toBeNull()
   })
 
-  it('task_window: shows a task inside the wait window with a whisper naming the host', () => {
+  it('task_window: shows a task inside the wait window with a rail naming the host (CP3: was the whisper)', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
@@ -113,8 +118,9 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 10 * MIN + 1000)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Cube capsicum')
-    expect(v.showLink).toBe(true)
-    expect(v.whisperText).toContain('Cook tomato base')
+    expect(v.showLink).toBe(false)
+    expect(v.whisperText).toBeNull()
+    expect(v.rails).toMatchObject([{ kind: 'timer', name: 'Cook tomato base' }])
     expect(v.step).toBe('Step 5 of 10')
     expect(v.upNext?.name).toBe('Cube paneer')
     expect(v.chips).toEqual(['1 large capsicum'])
@@ -372,9 +378,11 @@ describe('undo link — P1 #6 §C3', () => {
     const view = (now: number) =>
       buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
 
-    // Same screen, same flag, with the undo link showing and after it lifts.
-    expect(view(T0 + 1 * MIN).reserveSecondary).toBe(true)
-    expect(view(T0 + 1 * MIN + 10_000).reserveSecondary).toBe(true)
+    // CP3: a step page reserves no slot, with the undo link showing or not — its Undo
+    // sits outside the footer (the shell), so the primary still never moves.
+    expect(view(T0 + 1 * MIN).screenId).toBe('task')
+    expect(view(T0 + 1 * MIN).reserveSecondary).toBe(false)
+    expect(view(T0 + 1 * MIN + 10_000).reserveSecondary).toBe(false)
     // Entry screen is not undo-eligible: no reserved slot.
     const timing = headerTiming(KADAI.summary ?? null, KADAI.plan.total_min)
     expect(buildEntryView(kadaiModel, KADAI.graph.title, timing).reserveSecondary).toBe(false)
@@ -386,35 +394,31 @@ describe('undo link — P1 #6 §C3', () => {
     const view = (now: number) =>
       buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
 
+    // CP3: the page now shows chop_tomato, not the acted-on step, so the link names it.
     expect(view(T0 + 1 * MIN).secondary).toEqual({
-      label: 'Undo',
+      label: 'Undo Done on Chop onion',
       solid: false,
       action: { kind: 'undo' },
     })
     expect(view(T0 + 1 * MIN + 9_900).secondary).toEqual({
-      label: 'Undo',
+      label: 'Undo Done on Chop onion',
       solid: false,
       action: { kind: 'undo' },
     })
-    // Past the window, the undo override lifts and the ordinary secondary (Skip for
-    // now, since another executable node exists) is back.
-    expect(view(T0 + 1 * MIN + 10_000).secondary).toEqual({
-      label: 'Skip for now',
-      solid: false,
-      action: { kind: 'skip', nodeId: 'chop_tomato' },
-    })
+    // Past the window, the undo override lifts; CP3 removed Skip, so nothing replaces it.
+    expect(view(T0 + 1 * MIN + 10_000).secondary).toBeNull()
 
-    // "I've started it" on the next hands-off step is itself undoable (PR 2 CP2a, owner
-    // option A): the link names the started step for 10 s, then Skip is back.
+    // The timer start on the next hands-off step is itself undoable (PR 2 CP2a, owner
+    // option A): the link names the started step for 10 s, then nothing.
     se = must(engine.markDone(se, kadaiModel, 'chop_tomato', T0 + 2 * MIN))
     se = must(engine.markDone(se, kadaiModel, 'saute_onion', T0 + 2 * MIN))
     se = must(engine.startNode(se, kadaiModel, 'cook_tomato_base', T0 + 2 * MIN))
     expect(view(T0 + 2 * MIN).secondary).toEqual({
-      label: 'Undo',
+      label: 'Undo timer start on Cook tomato base',
       solid: false,
       action: { kind: 'undo' },
     })
-    expect(view(T0 + 2 * MIN + 10_000).secondary?.action.kind).toBe('skip')
+    expect(view(T0 + 2 * MIN + 10_000).secondary).toBeNull()
   })
 
   it('is present after a multi-producer acknowledge, naming the first producer, and never on the handover screen it followed', () => {
@@ -439,9 +443,10 @@ describe('undo link — P1 #6 §C3', () => {
     se = must(engine.acknowledge(se, model, T0 + 20 * MIN))
     const afterAck = view(se, T0 + 20 * MIN)
     // Whatever screen follows the acknowledge (task/wait/handsoff_pending), the undo
-    // link names the earliest-in-order producer — boil_spiced_water — not soak_rice.
+    // link names the earliest-in-order producer — boil_spiced_water — not soak_rice
+    // (CP3: by name, since the page that follows is another step).
     expect(afterAck.secondary).toEqual({
-      label: 'Undo',
+      label: 'Undo Done on Boil spiced water',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -680,26 +685,25 @@ describe('strawberry-shortcake', () => {
     // dependencies of its own.
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Whip cream')
-    expect(v.showLink).toBe(true)
-    // bake_shortcakes' completion is what unblocks cool_shortcakes; macerate_berries'
-    // completion doesn't yet unblock anything (assemble_shortcakes still needs
-    // cool_shortcakes/slice_garnish_berries too) — so the running-work strip (V2.1, 1d)
-    // names bake_shortcakes, never macerate_berries; the sheet link above still lists
-    // both.
+    // CP3: the V2.1 strip named only bake_shortcakes (the one that unblocks the next
+    // step); the rails show every running timer, soonest to finish on top, so the cook
+    // can see both. No whisper and no What's cooking link on a step page.
+    expect(v.showLink).toBe(false)
     expect(v.whisperText).toBeNull()
-    expect(v.strip?.label).toBe('Bake shortcakes')
-    expect(v.strip?.right).toBe('About 13 min left')
+    expect(v.rails.map((r) => r.kind === 'timer' && `${r.name}: ${r.left}`)).toEqual([
+      'Bake shortcakes: 13 min left',
+      'Macerate berries: 20 min left',
+    ])
   })
 })
 
 // ---------------------------------------------------------------------------
-// V2.1 running-work strip (1d — PROVISIONAL, UNVALIDATED, V-A PENDING): the strip, the
-// whisper it replaces on step screens, and the What's cooking link beside it.
-// Not constructible through the real engine, so not tested here: the strip's `past`
-// phase and the whisper's "is holding" sentence (see the V2.1 coverage note).
+// PR 2 CP3: the timer rails replace the V2.1 running-work strip, the whisper and the
+// What's cooking link on step screens (same scenarios the strip tests used). The wait
+// screen keeps its whisper until CP4.
 // ---------------------------------------------------------------------------
 
-describe('V2.1 running-work strip', () => {
+describe('CP3 timer rails (formerly the V2.1 running-work strip)', () => {
   const SHORTCAKE = strawberryShortcake as RecipePlanResponse
   const KADAI = kadaiPaneer as RecipePlanResponse
   const T0 = 1_700_000_000_000
@@ -729,43 +733,38 @@ describe('V2.1 running-work strip', () => {
     return must(engine.startNode(se, shortcake, 'cool_shortcakes', T0 + 24 * MIN))
   }
 
-  it('exactly one other node running: the strip names it and the What\'s cooking link still shows', () => {
+  const railTexts = (v: { rails: RailView[] }) => v.rails.map((r) => (r.kind === 'timer' ? `${r.name}: ${r.left}` : r.text))
+
+  it('exactly one other node running: one rail; no whisper, no What\'s cooking link', () => {
     const v = shortcakeView(bakeRunning(), T0 + 6 * MIN)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Hull and slice berries')
-    expect(v.strip).toEqual({ label: 'Bake shortcakes', right: 'About 18 min left', holding: false, sub: null })
+    expect(railTexts(v)).toEqual(['Bake shortcakes: 18 min left'])
     expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(true)
+    expect(v.showLink).toBe(false)
   })
 
-  it('handsoff_pending: the strip names the other running node while the pending one waits to be started', () => {
+  it('handsoff_pending: the rail names the running node while the pending one waits to be started', () => {
     const se = must(engine.markDone(bakeRunning(), shortcake, 'hull_and_slice_berries', T0 + 11 * MIN))
     const v = shortcakeView(se, T0 + 11 * MIN)
     expect(v.screenId).toBe('handsoff_pending')
     expect(v.label).toBe('Macerate berries')
-    expect(v.strip).toEqual({ label: 'Bake shortcakes', right: 'About 13 min left', holding: false, sub: null })
+    expect(railTexts(v)).toEqual(['Bake shortcakes: 13 min left'])
     expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(true)
+    expect(v.showLink).toBe(false)
   })
 
-  it('holding: an expired node nothing needs yet reads "Holding" with the calm line, never as a whisper', () => {
-    // macerate_berries ended at +31; assemble_shortcakes still waits on cool_shortcakes
-    // and whip_cream, so nothing requires it (holding), and cool_shortcakes isn't
-    // required-if-expired either — no whisper subject, so the holding node is named.
+  it('an expired timer nothing needs yet stays on its rail as "Time\'s up" (CP4\'s banner replaces this)', () => {
+    // macerate_berries ended at +31 and nothing requires it yet; cool_shortcakes ends +34.
     const v = shortcakeView(coolingWithMacerateRunning(), T0 + 32 * MIN)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Whip cream')
-    expect(v.strip).toEqual({
-      label: 'Macerate berries',
-      right: 'Holding',
-      holding: true,
-      sub: 'Nothing needs you for it yet.',
-    })
+    expect(railTexts(v)).toEqual(["Macerate berries: Time's up", 'Cool shortcakes: 2 min left'])
     expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(true)
+    expect(v.showLink).toBe(false)
   })
 
-  it('periodic host: no strip; the whisper keeps its "give it a stir" wording', () => {
+  it('periodic host: a rail like any other timer, no "give it a stir" whisper', () => {
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
     se = must(engine.markDone(se, kadai, 'chop_onion', T0 + 3 * MIN))
     se = must(engine.markDone(se, kadai, 'chop_tomato', T0 + 10 * MIN))
@@ -777,12 +776,12 @@ describe('V2.1 running-work strip', () => {
       leaving: false,
     })
     expect(v.screenId).toBe('task')
-    expect(v.strip).toBeNull()
-    expect(v.whisperText).toBe('Cook tomato base has about twelve minutes left, so give it a stir when you pass.')
-    expect(v.showLink).toBe(true)
+    expect(railTexts(v)).toEqual(['Cook tomato base: 12 min left'])
+    expect(v.whisperText).toBeNull()
+    expect(v.showLink).toBe(false)
   })
 
-  it('wait screen: no strip, and the whisper names a past-its-time node other than the wait subject', () => {
+  it('wait screen: no rail, and the whisper names a past-its-time node other than the wait subject', () => {
     let se = coolingWithMacerateRunning()
     se = must(engine.markDone(se, shortcake, 'whip_cream', T0 + 28 * MIN))
     se = must(engine.markDone(se, shortcake, 'slice_garnish_berries', T0 + 30 * MIN))
@@ -791,18 +790,18 @@ describe('V2.1 running-work strip', () => {
     const v = shortcakeView(se, T0 + 32 * MIN)
     expect(v.screenId).toBe('wait')
     expect(v.label).toBe('Cool shortcakes')
-    expect(v.strip).toBeNull()
+    expect(v.rails).toEqual([])
     expect(v.whisperText).toBe('Macerate berries is past its time and holding.')
   })
 
-  it('non-step screens never carry a strip: handover, leaving, done', () => {
+  it('non-step screens never carry a rail: handover, leaving, done', () => {
     const handoverView = shortcakeView(bakeRunning(), T0 + 24 * MIN)
     expect(handoverView.screenId).toBe('handover')
-    expect(handoverView.strip).toBeNull()
+    expect(handoverView.rails).toEqual([])
 
     const leavingView = shortcakeView(bakeRunning(), T0 + 7 * MIN, true)
     expect(leavingView.screenId).toBe('leaving')
-    expect(leavingView.strip).toBeNull()
+    expect(leavingView.rails).toEqual([])
 
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
     for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
@@ -821,7 +820,7 @@ describe('V2.1 running-work strip', () => {
       leaving: false,
     })
     expect(doneView.screenId).toBe('done')
-    expect(doneView.strip).toBeNull()
+    expect(doneView.rails).toEqual([])
   })
 })
 
@@ -1120,7 +1119,7 @@ describe('CP1 — screens tolerate out-of-order states', () => {
     expect(v.primary?.action).toEqual({ kind: 'markDone', nodeId: 'cube_paneer' })
   })
 
-  it('biryani: a timer whose consumer is done shows as holding on the strip, never a handover', () => {
+  it('biryani: a timer whose consumer is done stays on its rail ("Time\'s up"), never a handover', () => {
     const BIRYANI = chickenBiryani as RecipePlanResponse
     const model = deriveCookingModel(BIRYANI)
     const ingredients = ingredientsById(BIRYANI.graph.ingredients)
@@ -1130,15 +1129,10 @@ describe('CP1 — screens tolerate out-of-order states', () => {
 
     const v = buildCookingView(model, se, T0 + 30 * MIN, ingredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
     expect(v.screenId).toBe('task')
-    expect(v.strip).toEqual({
-      label: model.nodes.soak_rice.label,
-      right: 'Holding',
-      holding: true,
-      sub: 'Nothing needs you for it yet.',
-    })
+    expect(v.rails).toMatchObject([{ kind: 'timer', nodeId: 'soak_rice', left: "Time's up" }])
   })
 
-  it('maggi: a stopped timer is back on the hands-off screen with "I\'ve started it"', () => {
+  it('maggi: a stopped timer is back on the hands-off screen with its timer start', () => {
     const MAGGI = maggi2min as RecipePlanResponse
     const model = deriveCookingModel(MAGGI)
     const ingredients = ingredientsById(MAGGI.graph.ingredients)
@@ -1148,7 +1142,7 @@ describe('CP1 — screens tolerate out-of-order states', () => {
 
     const v = buildCookingView(model, se, T0 + MIN, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
     expect(v.screenId).toBe('handsoff_pending')
-    expect(v.primary).toEqual({ label: "I've started it", solid: false, action: { kind: 'startNode', nodeId: 'boil_water' } })
+    expect(v.primary).toEqual({ label: 'Start 3-min timer', solid: true, action: { kind: 'startNode', nodeId: 'boil_water' } })
     expect(v.step).toBe(`Step 1 of ${model.order.length}`)
   })
 })
@@ -1163,7 +1157,8 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const se = must(engine.markDone(must(engine.start(null, model, 'server:kadai', T0)), model, 'add_paneer', T0 + MIN))
     const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
 
-    const undoLink = { label: 'Undo', solid: false, action: { kind: 'undo' } }
+    // CP3: the page shows the suggestion (Chop onion), so the link names the step it undoes.
+    const undoLink = { label: 'Undo Done on Add paneer', solid: false, action: { kind: 'undo' } }
     expect(view(T0 + MIN).secondary).toEqual(undoLink)
     expect(view(T0 + MIN + 9_999).secondary).toEqual(undoLink)
     expect(view(T0 + MIN + 10_000).secondary?.action.kind).not.toBe('undo')
@@ -1176,7 +1171,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const se = must(engine.markDone(must(engine.start(null, model, 'server:maggi', T0)), model, 'boil_water', T0))
     const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
 
-    expect(view(T0).secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
+    expect(view(T0).secondary).toEqual({ label: 'Undo Done on Boil water', solid: false, action: { kind: 'undo' } })
     expect(view(T0 + 10_000).secondary?.action.kind).not.toBe('undo')
   })
 
@@ -1241,5 +1236,287 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     expect(view(T0 + MIN).secondary?.action).toEqual({ kind: 'undo' })
     expect(view(T0 + MIN + 10_000).secondary).toBeNull()
     expect(must(engine.undo(se, model, T0 + MIN)).nodes.boil_water).toEqual(timer)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP3 — step screens: rail, hands-off, cue, You'll need, bolding, no Skip, Undo label
+// ---------------------------------------------------------------------------
+
+describe('PR 2 CP3 step screens', () => {
+  const T0 = 1_700_000_000_000
+  const ALL_FIXTURES = {
+    ...import.meta.glob('../__fixtures__/*.plan-response.json', { eager: true, import: 'default' }),
+    ...import.meta.glob('../__fixtures__/fgc58/*.plan-response.json', { eager: true, import: 'default' }),
+  } as Record<string, RecipePlanResponse>
+
+  function fixture(raw: unknown) {
+    const payload = raw as RecipePlanResponse
+    const model = deriveCookingModel(payload)
+    const ingredients = ingredientsById(payload.graph.ingredients)
+    const view = (se: CookingSession, now: number, choice: ServingsChoice | null = null) =>
+      buildCookingView(model, se, now, ingredients, { recipeTitle: payload.graph.title, leaving: false, choice })
+    const fresh = () => must(engine.start(null, model, `server:${model.graphId}`, T0))
+    const done = (se: CookingSession, ids: string[], now: number) =>
+      ids.reduce((s, id) => must(engine.markDone(s, model, id, now)), se)
+    return { payload, model, ingredients, view, fresh, done }
+  }
+  const DONUTS = fixture(homemadeDonuts)
+  const KADAI = fixture(kadaiPaneer)
+  const KADHI = fixture(kadhiPakora)
+  const FIRST_THREE = ['bloom_yeast', 'mix_dough', 'knead_dough']
+
+  describe('timer rail', () => {
+    it('a step page while a timer runs: one rail; no strip, whisper or What\'s cooking link', () => {
+      let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
+      se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
+      const v = DONUTS.view(se, T0 + 8 * MIN)
+      expect(v.screenId).toBe('task')
+      expect(v.rails).toEqual([
+        { kind: 'timer', nodeId: 'first_rise', name: 'First rise', left: '52 min left', aria: 'First rise, 52 min left. Open timer' },
+      ])
+      expect('strip' in v).toBe(false) // the V2.1 strip is gone
+      expect(v.whisperText).toBeNull()
+      expect(v.showLink).toBe(false)
+    })
+
+    it('a periodic timer gets a rail too (Kadai base), where the whisper used to be', () => {
+      let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+      const v = KADAI.view(se, T0 + MIN)
+      expect(v.rails.map((r) => r.kind === 'timer' && r.nodeId)).toEqual(['cook_tomato_base'])
+      expect(v.whisperText).toBeNull()
+    })
+
+    it('no timer, no rail; non-step screens never carry rails (they keep the link until CP4)', () => {
+      expect(DONUTS.view(DONUTS.fresh(), T0).rails).toEqual([])
+      let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+      se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
+      const wait = KADAI.view(se, T0 + 2 * MIN)
+      expect(wait.screenId).toBe('wait')
+      expect(wait.rails).toEqual([])
+    })
+  })
+
+  describe('hands-off step', () => {
+    const pending = () => DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
+
+    it('tag, "About 1 hr" line, "Start 1-hr timer" primary and a quiet Mark as done', () => {
+      const v = DONUTS.view(pending(), T0 + MIN)
+      expect(v.screenId).toBe('handsoff_pending')
+      expect(v.handsOff).toEqual({
+        tag: 'Hands-off',
+        line: 'About 1 hr. Start a timer, or just move on.',
+        markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: 'first_rise' } },
+      })
+      expect(v.primary).toEqual({ label: 'Start 1-hr timer', solid: true, action: { kind: 'startNode', nodeId: 'first_rise' } })
+    })
+
+    it('viewed: the start still moves the cook on (clearView)', () => {
+      const se = must(engine.view(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(se, T0).primary?.action).toEqual({ kind: 'startNode', nodeId: 'first_rise', clearView: true })
+    })
+
+    it('low attention: "Low attention" tag and the minutes (Kadai base, 12 min)', () => {
+      const se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      const v = KADAI.view(se, T0)
+      expect(v.handsOff).toMatchObject({ tag: 'Low attention', line: 'About 12 min. Start a timer, or just move on.' })
+      expect(v.primary?.label).toBe('Start 12-min timer')
+    })
+
+    it('every hands-off node in every fixture: "Start ‹len› timer" from its duration, "I\'ve started it" only without one', () => {
+      let checked = 0
+      for (const [path, payload] of Object.entries(ALL_FIXTURES)) {
+        const f = fixture(payload)
+        for (const id of f.model.order) {
+          const info = f.model.nodes[id]
+          if (info.occupiesCook) continue
+          const se = must(engine.view(f.fresh(), f.model, id, T0))
+          const v = f.view(se, T0)
+          expect(v.screenId, `${path} ${id}`).toBe('handsoff_pending')
+          const len = timerLength(info.durationTypical)
+          expect(v.primary?.label, `${path} ${id}`).toBe(len == null ? "I've started it" : `Start ${len} timer`)
+          expect(v.handsOff?.line ?? null, `${path} ${id}`).toBe(handsOffLine(info.durationTypical))
+          checked++
+        }
+      }
+      expect(checked).toBeGreaterThan(20)
+    })
+
+    it('a step without a duration: "I\'ve started it", the tag and no line', () => {
+      const model = { ...DONUTS.model, nodes: { ...DONUTS.model.nodes, first_rise: { ...DONUTS.model.nodes.first_rise, durationTypical: 0.4 } } }
+      const v = buildCookingView(model, pending(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts', leaving: false })
+      expect(v.primary).toEqual({ label: "I've started it", solid: true, action: { kind: 'startNode', nodeId: 'first_rise' } })
+      expect(v.handsOff).toMatchObject({ tag: 'Hands-off', line: null })
+    })
+
+    it('no hands-off block on a hands-on step, a running step or a done step', () => {
+      let se = pending()
+      expect(DONUTS.view(DONUTS.fresh(), T0).handsOff).toBeNull()
+      se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
+      se = must(engine.view(se, DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(se, T0).screenId).toBe('step_running')
+      expect(DONUTS.view(se, T0).handsOff).toBeNull()
+      se = must(engine.view(se, DONUTS.model, 'bloom_yeast', T0))
+      expect(DONUTS.view(se, T0).handsOff).toBeNull()
+    })
+
+    it('Mark as done is never forced: Up next still moves on without a timer', () => {
+      const v = DONUTS.view(pending(), T0)
+      expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'grease_pan' })
+    })
+  })
+
+  describe('cue', () => {
+    it('shown as stored when the text does not say it (Donuts first rise), on the pending, running and suggested pages', () => {
+      let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
+      expect(DONUTS.view(se, T0).cue).toBe('doubled in bulk, holds a dimple when poked')
+      se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
+      se = must(engine.view(se, DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(se, T0).screenId).toBe('step_running')
+      expect(DONUTS.view(se, T0).cue).toBe('doubled in bulk, holds a dimple when poked')
+      expect(DONUTS.view(DONUTS.fresh(), T0).cue).toBe('a thick foamy head on the milk')
+    })
+
+    it('not on a done step; not when the step text already says it; never in note', () => {
+      let se = DONUTS.done(DONUTS.fresh(), ['bloom_yeast'], T0)
+      se = must(engine.view(se, DONUTS.model, 'bloom_yeast', T0))
+      expect(DONUTS.view(se, T0).screenId).toBe('step_done')
+      expect(DONUTS.view(se, T0).cue).toBeNull()
+      const k = must(engine.view(KADHI.fresh(), KADHI.model, 'step_heat_the_oil_hotter_and_fry', T0))
+      expect(KADHI.model.nodes.step_heat_the_oil_hotter_and_fry.donenessCue).toBe('light brown on the outside')
+      expect(KADHI.view(k, T0).cue).toBeNull()
+      expect(DONUTS.view(DONUTS.fresh(), T0).note).toBeNull()
+    })
+
+    it('a non-Latin cue is hidden, as on the recipe page (displayCue)', () => {
+      const model = { ...DONUTS.model, nodes: { ...DONUTS.model.nodes, bloom_yeast: { ...DONUTS.model.nodes.bloom_yeast, donenessCue: 'हल्का झाग' } } }
+      const v = buildCookingView(model, DONUTS.fresh(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts', leaving: false })
+      expect(v.cue).toBeNull()
+    })
+
+    it('never ends in a doubled full stop (shown as stored, nothing appended)', () => {
+      for (const payload of Object.values(ALL_FIXTURES)) {
+        const f = fixture(payload)
+        for (const id of f.model.order) {
+          const cue = f.view(must(engine.view(f.fresh(), f.model, id, T0)), T0).cue
+          if (cue != null) expect(cue).not.toMatch(/\.\.$/)
+        }
+      }
+    })
+  })
+
+  describe("You'll need, bolding", () => {
+    it('one row per ingredient, name as written and amount (Kadhi step 1: eleven rows)', () => {
+      const v = KADHI.view(KADHI.fresh(), T0)
+      expect(v.need).toHaveLength(11)
+      expect(v.need[0]).toEqual({ name: 'Curd', amount: '1 ½ cups', unscaled: false })
+      expect(v.need.find((r) => r.name === 'Salt')).toEqual({ name: 'Salt', amount: 'to taste', unscaled: false })
+    })
+
+    it('scaled to the session\'s servings; an unscaled amount carries the R4 accessible label', () => {
+      const choice: ServingsChoice = { mode: 'servings', chosen: 8, original: 4 }
+      const v = KADHI.view(KADHI.fresh(), T0, choice)
+      expect(v.need[0]).toEqual({ name: 'Curd', amount: '3 cups', unscaled: false })
+      const model = KADHI.model
+      const ing = new Map(KADHI.ingredients)
+      ing.set('ing_curd', { ...ing.get('ing_curd')!, qty_amount: null, qty_text: '1 (400 g) tub', unit: null })
+      const w = buildCookingView(model, KADHI.fresh(), T0, ing, { recipeTitle: 'Kadhi', leaving: false, choice })
+      expect(w.need[0]).toEqual({ name: 'Curd', amount: '1 (400 g) tub', unscaled: true, label: 'Curd, 1 (400 g) tub — amount for 4 servings' })
+    })
+
+    it('consumed + factor feed EmphasisText: the node\'s ing_* ingredients, as the recipe page passes them', () => {
+      const v = KADAI.view(must(engine.markDone(KADAI.fresh(), KADAI.model, 'chop_onion', T0)), T0)
+      const expected = KADAI.model.nodes.chop_tomato.consumes
+        .filter((id) => id.startsWith('ing_'))
+        .map((id) => KADAI.ingredients.get(id)!)
+      expect(v.consumed).toEqual(
+        expected.map((i) => ({ name: i.name, qty: i.qty, qty_text: i.qty_text, qty_amount: i.qty_amount, unit: i.unit })),
+      )
+      expect(v.consumed.length).toBeGreaterThan(0)
+      expect(v.factor).toBe(1)
+    })
+
+    it('off the step pages: no rows, nothing consumed', () => {
+      let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+      se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
+      const wait = KADAI.view(se, T0 + 2 * MIN)
+      expect([wait.need, wait.consumed, wait.nodeId]).toEqual([[], [], null])
+    })
+  })
+
+  describe('Skip is gone; Undo never moves the primary', () => {
+    it('the suggested hands-on step offers no Skip, even when skipping would be allowed', () => {
+      const v = KADAI.view(must(engine.markDone(KADAI.fresh(), KADAI.model, 'chop_onion', T0)), T0 + MIN)
+      expect(v.screenId).toBe('task')
+      expect(v.secondary).toBeNull()
+    })
+
+    it('step pages reserve no slot (Undo sits outside the footer); wait screens keep theirs until CP4', () => {
+      const se = must(engine.markDone(KADAI.fresh(), KADAI.model, 'chop_onion', T0))
+      expect(KADAI.view(se, T0).reserveSecondary).toBe(false)
+      expect(KADAI.view(se, T0 + 10_000).reserveSecondary).toBe(false)
+      let w = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      w = must(engine.startNode(w, KADAI.model, 'cook_tomato_base', T0))
+      w = KADAI.done(w, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
+      expect(KADAI.view(w, T0 + 2 * MIN).reserveSecondary).toBe(true)
+    })
+
+    it('nodeId names the step on the page', () => {
+      expect(DONUTS.view(DONUTS.fresh(), T0).nodeId).toBe('bloom_yeast')
+    })
+  })
+
+  describe('Undo label (owner answer 2)', () => {
+    const undo = (label: string) => ({ label, solid: false, action: { kind: 'undo' } })
+
+    it('Done: "Undo" on the acted-on step, "Undo Done on ‹label›" anywhere else', () => {
+      let se = must(engine.view(DONUTS.fresh(), DONUTS.model, 'bloom_yeast', T0))
+      se = must(engine.markDone(se, DONUTS.model, 'bloom_yeast', T0))
+      // Done moved the view on, so the page now shows the suggestion.
+      expect(DONUTS.view(se, T0).nodeId).toBe('mix_dough')
+      expect(DONUTS.view(se, T0).secondary).toEqual(undo('Undo Done on Bloom yeast'))
+      const back = must(engine.view(se, DONUTS.model, 'bloom_yeast', T0))
+      expect(DONUTS.view(back, T0).secondary).toEqual(undo('Undo'))
+    })
+
+    it('timer start and stop name their kind', () => {
+      let se = must(engine.startNode(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(se, T0).secondary).toEqual(undo('Undo timer start on First rise'))
+      se = must(engine.stopNode(se, DONUTS.model, 'first_rise', T0 + MIN))
+      expect(DONUTS.view(se, T0 + MIN).secondary).toEqual(undo('Undo timer stop on First rise'))
+      se = must(engine.view(se, DONUTS.model, 'first_rise', T0 + MIN))
+      expect(DONUTS.view(se, T0 + MIN).secondary).toEqual(undo('Undo'))
+    })
+
+    it('acknowledge reads as Done on its first producer', () => {
+      let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+      se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+      se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
+      se = must(engine.acknowledge(se, KADAI.model, T0 + 13 * MIN))
+      const v = KADAI.view(se, T0 + 13 * MIN)
+      expect(v.nodeId).not.toBe('cook_tomato_base')
+      expect(v.secondary).toEqual(undo('Undo Done on Cook tomato base'))
+    })
+
+    it('Undo works from any step page: act on A, view B, Undo on B restores A and the view', () => {
+      let se = must(engine.view(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
+      const before = se
+      se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
+      se = must(engine.view(se, DONUTS.model, 'make_glaze', T0 + 1_000))
+      const v = DONUTS.view(se, T0 + 2_000)
+      expect(v.nodeId).toBe('make_glaze')
+      expect(v.secondary).toEqual(undo('Undo timer start on First rise'))
+      const undone = must(engine.undo(se, DONUTS.model, T0 + 2_000))
+      expect(undone.nodes).toEqual(before.nodes)
+      expect(undone.viewing).toBe('first_rise')
+    })
+
+    it('gone after the 10 s window, as before', () => {
+      const se = must(engine.startNode(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(se, T0 + 10_000).secondary).toBeNull()
+    })
   })
 })

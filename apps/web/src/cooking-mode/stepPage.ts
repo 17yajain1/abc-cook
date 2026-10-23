@@ -2,6 +2,9 @@ import { isRejected, markDone, startNode } from '@/cooking/engine'
 import { current } from '@/cooking/select'
 import type { CookingModel, CookingSession } from '@/cooking/types'
 import { attentionTag } from '@/lib/attention'
+import { formatMinutes, roundMin } from '@/lib/duration'
+
+import { timeLeft } from './copy'
 
 /**
  * PR 2 CP2: the pieces of the step page that aren't the step itself: the progress ticks,
@@ -44,6 +47,41 @@ export function ticks(session: CookingSession, order: string[], viewedId: string
     const state: TickState =
       nodeId === viewedId ? 'viewed' : s === 'done' ? 'done' : s === 'running' ? 'running' : 'todo'
     return { nodeId, state }
+  })
+}
+
+/** PR 2 CP3: one row of the All steps sheet. */
+export interface StepListRow {
+  nodeId: string
+  /** The recipe-page number. */
+  n: number
+  name: string
+  state: TickState
+  /** "You are here" (viewed), the time left (running), the step's length for a to-do
+   * hands-off / low-attention step, else `null`. */
+  right: string | null
+  action: { kind: 'view'; nodeId: string }
+}
+
+/** The All steps sheet: every page step in page order. The viewed step wins over its own
+ * done or running state, as on the ticks. Times only on timed steps (the design). */
+export function stepList(
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  order: string[],
+  viewedId: string,
+): StepListRow[] {
+  return ticks(session, order, viewedId).map(({ nodeId, state }, i) => {
+    const info = model.nodes[nodeId]
+    const s = session.nodes[nodeId]
+    let right: string | null = null
+    if (state === 'viewed') right = 'You are here'
+    else if (s.state === 'running') right = timeLeft(s.endsAt - now).text
+    else if (state === 'todo' && !info.occupiesCook && roundMin(info.durationTypical) >= 1) {
+      right = formatMinutes(info.durationTypical)
+    }
+    return { nodeId, n: i + 1, name: info.label, state, right, action: { kind: 'view', nodeId } }
   })
 }
 

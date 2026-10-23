@@ -215,6 +215,10 @@ Split into:
   § *Resolved in P1 #6*), `Continue cooking` on the Plan view, and (only if a real
   dinner asks for it) `StageCard` active/complete marks.
 
+**TODO (after PR 2 CP5):** engine Skip cleanup. PR 2 CP3 removed Skip from the screens
+only; remove the engine's `skip`, `skipAllowed`, store/`useSession` `skip` and their tests,
+but keep `deferred` and `Transition` `'skip'` readable for stored sessions.
+
 **M3.2b** (source-section stages, in-stage waits) is deferred and unscoped independently
 of this split — it can land before or after M3.3–M3.5; nothing in the session core
 depends on it.
