@@ -10,6 +10,7 @@ import { deriveCookingModel } from './model'
 import { current, executable, handover, lifecycle, nextRequiredAt, running, skipAllowed } from './select'
 import type { CookingModel, CookingSession, Rejected } from './types'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
+import croissant from '@/__fixtures__/croissant.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import maggi2min from '@/__fixtures__/maggi-2min.plan-response.json'
@@ -30,6 +31,7 @@ const KADAI = kadaiPaneer as RecipePlanResponse
 const BIRYANI = chickenBiryani as RecipePlanResponse
 const DONUTS = homemadeDonuts as RecipePlanResponse
 const PIZZA = pizzaDough as RecipePlanResponse
+const CROISSANT = croissant as RecipePlanResponse
 const MAGGI = maggi2min as RecipePlanResponse
 // Referenced only by the full-run driver's fixture list (rows 36/37).
 const SHORTCAKE = strawberryShortcake as RecipePlanResponse
@@ -1036,5 +1038,85 @@ describe('CP1 rule 8 — early finish stops the running timers', () => {
       'rest_and_serve',
       ...running(model, before),
     ])
+  })
+})
+
+describe('CP1.1 — acknowledging the finish step\'s handover finishes the cook like Done', () => {
+  // Both fixtures end on a hands-off finish step, so "It's done" on its handover is how the
+  // cook finishes. Another timer is left running (started out of order, one extended).
+  const cases: [string, RecipePlanResponse, string, string][] = [
+    ['croissant', CROISSANT, 'step_bake_at_190_375_f_for', 'step_chill_in_fridge_for_one_hour'],
+    ['pizza-dough', PIZZA, 'step_transfer_the_pizza_to_a_cutting', 'step_cover_and_refrigerate_overnight_18_hours'],
+  ]
+
+  for (const [name, payload, sink, other] of cases) {
+    it(`${name}: the other timers stop in the same transition; undo restores them with the original endsAt`, () => {
+      const model = deriveCookingModel(payload)
+      expect(model.nodes[sink].isSink).toBe(true)
+      expect(model.nodes[sink].occupiesCook).toBe(false)
+      let s = freshSession(model, `server:${name}`, T0)
+      s = must(engine.startNode(s, model, other, T0))
+      s = must(engine.extend(s, model, other, T0 + m(1)))
+      s = must(engine.startNode(s, model, sink, T0 + m(1)))
+      s = must(engine.view(s, model, sink, T0 + m(1)))
+      const before = s
+      const otherTimer = s.nodes[other]
+      const sinkTimer = s.nodes[sink]
+      const now = T0 + m(1) + m(model.nodes[sink].durationTypical)
+      expect(handover(model, s, now)?.producers).toEqual([sink])
+
+      const finished = must(engine.acknowledge(s, model, now))
+      expect(finished.finishedAt).toBe(now)
+      expect(lifecycle(model, finished, now)).toBe('finished')
+      expect(running(model, finished)).toEqual([])
+      expect(finished.nodes[other]).toEqual({ state: 'pending' })
+      expect(finished.nodes[sink]).toEqual({ state: 'done', at: now, endsAt: sinkTimer.state === 'running' ? sinkTimer.endsAt : null })
+      expect(new Set(changedNodes(before, finished))).toEqual(new Set([sink, other]))
+      expect(finished.viewing).toBeNull()
+      expect(finished.lastTransition).toEqual({
+        kind: 'acknowledge',
+        at: now,
+        entries: [
+          { nodeId: sink, prev: sinkTimer },
+          { nodeId: other, prev: otherTimer },
+        ],
+        viewing: sink,
+      })
+
+      // Inside the 10 s window: one undo brings everything back as it was.
+      const undone = must(engine.undo(finished, model, now + 9_000))
+      expect(undone.finishedAt).toBeNull()
+      expect(undone.nodes).toEqual(before.nodes)
+      expect(undone.nodes[other]).toEqual(otherTimer)
+      expect(undone.viewing).toBe(sink)
+      expect(lifecycle(model, undone, now + 9_000)).toBe('active')
+    })
+  }
+
+  it('markDone and acknowledge on the finish step produce the same nodes and finishedAt', () => {
+    const model = deriveCookingModel(CROISSANT)
+    const sink = 'step_bake_at_190_375_f_for'
+    let s = freshSession(model, 'server:croissant', T0)
+    s = must(engine.startNode(s, model, 'step_chill_in_fridge_for_one_hour', T0))
+    s = must(engine.startNode(s, model, sink, T0))
+    const now = T0 + m(model.nodes[sink].durationTypical)
+    expect(handover(model, s, now)?.producers).toEqual([sink])
+    const viaDone = must(engine.markDone(s, model, sink, now))
+    const viaAck = must(engine.acknowledge(s, model, now))
+    expect(viaAck.nodes).toEqual(viaDone.nodes)
+    expect(viaAck.finishedAt).toEqual(viaDone.finishedAt)
+    expect(viaAck.lastTransition?.entries).toEqual(viaDone.lastTransition?.entries)
+  })
+
+  it('acknowledging a handover that is not the finish step leaves the other timers running', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    s = must(engine.startNode(s, model, 'boil_water', T0))
+    s = must(engine.startNode(s, model, 'cook_noodles', T0 + m(model.nodes.boil_water.durationTypical) - 1))
+    const now = T0 + m(model.nodes.boil_water.durationTypical)
+    expect(handover(model, s, now)?.producers).toEqual(['boil_water'])
+    const acked = must(engine.acknowledge(s, model, now))
+    expect(acked.nodes.cook_noodles).toEqual(s.nodes.cook_noodles)
+    expect(acked.finishedAt).toBeNull()
   })
 })

@@ -1200,6 +1200,30 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     expect(view(undone, T0 + MIN + 5_000).screenId).not.toBe('done')
   })
 
+  it('after an early finish by acknowledging the finish step: same done screen, same undo', () => {
+    const PIZZA = pizzaDough as RecipePlanResponse
+    const model = deriveCookingModel(PIZZA)
+    const ingredients = ingredientsById(PIZZA.graph.ingredients)
+    const sink = 'step_transfer_the_pizza_to_a_cutting'
+    let se = must(engine.start(null, model, 'server:pizza', T0))
+    se = must(engine.startNode(se, model, 'step_cover_and_refrigerate_overnight_18_hours', T0))
+    const timer = se.nodes.step_cover_and_refrigerate_overnight_18_hours
+    se = must(engine.startNode(se, model, sink, T0))
+    const at = T0 + model.nodes[sink].durationTypical * MIN
+    se = must(engine.acknowledge(se, model, at))
+    const view = (s: CookingSession, now: number) =>
+      buildCookingView(model, s, now, ingredients, { recipeTitle: PIZZA.graph.title, leaving: false })
+
+    expect(se.nodes.step_cover_and_refrigerate_overnight_18_hours).toEqual({ state: 'pending' })
+    expect(view(se, at).screenId).toBe('done')
+    expect(view(se, at).secondary).toEqual({ label: `Back to ${model.nodes[sink].label}`, solid: false, action: { kind: 'undo' } })
+    expect(view(se, at + 10_000).secondary).toBeNull()
+
+    const undone = must(engine.undo(se, model, at + 5_000))
+    expect(undone.nodes.step_cover_and_refrigerate_overnight_18_hours).toEqual(timer)
+    expect(view(undone, at + 5_000).screenId).not.toBe('done')
+  })
+
   it('after stopNode', () => {
     const MAGGI = maggi2min as RecipePlanResponse
     const model = deriveCookingModel(MAGGI)

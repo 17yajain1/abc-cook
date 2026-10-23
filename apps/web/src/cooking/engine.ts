@@ -180,34 +180,50 @@ function viewingAfter(session: CookingSession, completed: string[]): Pick<Cookin
   return { viewing: null }
 }
 
+/** What completing `ids` does, shared by `markDone` and `acknowledge` so the two can
+ * never disagree about finishing. Each id becomes `done` (keeping its timer's `endsAt`,
+ * or `null` if it never ran). If one of them is the finish step, the cook finishes
+ * (`finishedAt`) and every other timer still running stops (running -> `pending`) in
+ * the same transition, so nothing rings after the cook has finished (owner decision 1;
+ * CP1.1 for the handover path). Every change is an entry, so `undo` restores all of it,
+ * the stopped timers' original `startedAt`/`endsAt`/`extendedMs` included. */
+function complete(
+  session: CookingSession,
+  model: CookingModel,
+  ids: string[],
+  now: number,
+): { nodes: Record<string, NodeState>; entries: TransitionEntry[]; finishedAt: number | null } {
+  const entries: TransitionEntry[] = []
+  let nodes = { ...session.nodes }
+  for (const id of ids) {
+    const prev = nodes[id]
+    entries.push({ nodeId: id, prev })
+    nodes = { ...nodes, [id]: { state: 'done', at: now, endsAt: prev.state === 'running' ? prev.endsAt : null } }
+  }
+  if (!ids.some((id) => model.nodes[id].isSink)) return { nodes, entries, finishedAt: session.finishedAt }
+
+  for (const id of running(model, session)) {
+    if (ids.includes(id)) continue
+    entries.push({ nodeId: id, prev: session.nodes[id] })
+    nodes = { ...nodes, [id]: { state: 'pending' } }
+  }
+  return { nodes, entries, finishedAt: now }
+}
+
 /** `markDone(id, now)` (plan §E/§C3, PR 2 CP1): allowed on any node that is `pending`,
  * `deferred` or `running`, in any order; only an already-done node rejects
  * (`already_done`). A hands-off node done without ever starting its timer stores
- * `endsAt: null`. Done on the sink always finishes the cook (`finishedAt`) and, in the
- * same transition, stops every timer still running (running -> pending), so nothing
- * rings after the cook has finished; `undo` restores all of them (owner decision 1). */
+ * `endsAt: null`. Done on the sink finishes the cook and stops every other running
+ * timer, undoably (`complete`). */
 export function markDone(session: CookingSession, model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
-  const info = model.nodes[nodeId]
-  const prev = session.nodes[nodeId]
-  if (prev.state === 'done') return reject('already_done')
+  if (session.nodes[nodeId].state === 'done') return reject('already_done')
 
-  const endsAt = prev.state === 'running' ? prev.endsAt : null
-  const entries: TransitionEntry[] = [{ nodeId, prev }]
-  let nodes: Record<string, NodeState> = { ...session.nodes, [nodeId]: { state: 'done', at: now, endsAt } }
-  if (info.isSink) {
-    for (const id of running(model, session)) {
-      if (id === nodeId) continue
-      entries.push({ nodeId: id, prev: session.nodes[id] })
-      nodes = { ...nodes, [id]: { state: 'pending' } }
-    }
-  }
-
-  const transition: Transition = { kind: 'done', at: now, entries, ...viewingBefore(session) }
+  const { nodes, entries, finishedAt } = complete(session, model, [nodeId], now)
   return {
     ...session,
     nodes,
-    lastTransition: transition,
-    finishedAt: info.isSink ? now : session.finishedAt,
+    lastTransition: { kind: 'done', at: now, entries, ...viewingBefore(session) },
+    finishedAt,
     ...viewingAfter(session, [nodeId]),
   }
 }
@@ -215,23 +231,13 @@ export function markDone(session: CookingSession, model: CookingModel, nodeId: s
 /** `acknowledge(now)` (plan §E/§C5/§L2): `markDone` for every producer named by the
  * pending handover, in execution order, as one multi-entry transition (§L1 — supersedes
  * the single-entry `Transition` shape so `undo` can reverse all of them or none). It
- * completes exactly those producers and nothing else. */
+ * completes exactly those producers; when one is the finish step it finishes the cook
+ * exactly like Done on it, other running timers stopped (`complete`, CP1.1). */
 export function acknowledge(session: CookingSession, model: CookingModel, now: number): CookingSession | Rejected {
   const h = handover(model, session, now)
   if (h == null) return reject('no_handover')
 
-  const entries: TransitionEntry[] = []
-  let nodes = { ...session.nodes }
-  let finishedAt = session.finishedAt
-
-  for (const producerId of h.producers) {
-    const prev = nodes[producerId]
-    entries.push({ nodeId: producerId, prev })
-    const endsAt = prev.state === 'running' ? prev.endsAt : null
-    nodes = { ...nodes, [producerId]: { state: 'done', at: now, endsAt } }
-    if (model.nodes[producerId].isSink) finishedAt = now
-  }
-
+  const { nodes, entries, finishedAt } = complete(session, model, h.producers, now)
   return {
     ...session,
     nodes,

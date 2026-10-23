@@ -120,7 +120,9 @@ function checkStep(
   where: string,
 ): void {
   const ackProducers = step.kind === 'acknowledge' ? (handover(model, prev, now)?.producers ?? []) : []
-  const earlyFinish = step.kind === 'markDone' && prev.finishedAt == null && next.finishedAt != null
+  // Done on the finish step, or "It's done" on its handover (CP1.1): either finishes the cook.
+  const earlyFinish =
+    (step.kind === 'markDone' || step.kind === 'acknowledge') && prev.finishedAt == null && next.finishedAt != null
 
   const newlyDone = model.order.filter((id) => prev.nodes[id].state !== 'done' && next.nodes[id].state === 'done')
   const expectedDone =
