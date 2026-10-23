@@ -297,20 +297,27 @@ export function skip(session: CookingSession, model: CookingModel, nodeId: strin
   }
 }
 
-/** `extend(id, now)` (plan §E/§C4/§K5 "Give it longer"): adds `EXTEND_MS` whether or
+/** `extend(id, now, ms?)` (plan §E/§C4/§K5 "Give it longer"): adds `ms` (`EXTEND_MS` by
+ * default; the timer sheet's "Add 5 min" passes `ADD_TIME_MS`, PR 2 CP3.0) whether or
  * not the node has expired; does not touch `lastTransition` (§E lists no undo effect —
- * only `done`/`skip`/`acknowledge`/`stop`/`start` do). Per §C4's own wording, the increment is a fixed
- * `EXTEND_MS` added to the *existing* `endsAt` — not `now + EXTEND_MS` — so neither
+ * only `done`/`skip`/`acknowledge`/`stop`/`start` do). Per §C4's own wording, the increment is
+ * added to the *existing* `endsAt` — not `now + ms` — so neither
  * `model` nor `now` is read; both stay in the signature only for parity with every
  * other action in §E, which is `(session, model, ..., now)` throughout. */
-export function extend(session: CookingSession, _model: CookingModel, nodeId: string, _now: number): CookingSession | Rejected {
+export function extend(
+  session: CookingSession,
+  _model: CookingModel,
+  nodeId: string,
+  _now: number,
+  ms: number = EXTEND_MS,
+): CookingSession | Rejected {
   const prev = session.nodes[nodeId]
   if (prev.state !== 'running') return reject('not_running')
   return {
     ...session,
     nodes: {
       ...session.nodes,
-      [nodeId]: { ...prev, endsAt: prev.endsAt + EXTEND_MS, extendedMs: prev.extendedMs + EXTEND_MS },
+      [nodeId]: { ...prev, endsAt: prev.endsAt + ms, extendedMs: prev.extendedMs + ms },
     },
   }
 }

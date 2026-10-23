@@ -8,6 +8,10 @@
  * `duration_max - duration_typical` headroom — the owner may revisit this (§K5 table). */
 export const EXTEND_MS = 60_000
 
+/** PR 2 CP3.0: the timer sheet's "Add 5 min" — `extend` with this amount instead of
+ * `EXTEND_MS`, same semantics (added to the existing `endsAt`, not undoable). */
+export const ADD_TIME_MS = 5 * 60_000
+
 /** P1 #6 (orientation/recovery plan §C3, M3 design handoff open item 3, impl handoff
  * §8.8): the undo link ("Back to ‹step›") shows for this long after a `done`/`skip`/
  * `acknowledge`/`stop`/`start` transition (`start`: PR 2 CP2a), timed from the persisted

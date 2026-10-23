@@ -5,6 +5,7 @@ import type { RecipePlanResponse } from '@abc-cook/schema'
 import { ingredientsById } from '@/cooking-mode/quantity'
 import { buildCookingView } from '@/cooking-mode/viewModel'
 
+import { ADD_TIME_MS, EXTEND_MS } from './constants'
 import * as engine from './engine'
 import { deriveCookingModel } from './model'
 import { current, executable, handover, running } from './select'
@@ -26,6 +27,7 @@ const FIXTURES = {
 const SEQUENCES = 25
 const ACTIONS = 80
 const T0 = 1_700_000_000_000
+const extendsAccepted = { one: 0, five: 0 }
 
 /** mulberry32: a small seeded PRNG, so a failure replays exactly. */
 function prng(seed: number): () => number {
@@ -74,6 +76,8 @@ const KINDS: Kind[] = [
 interface Step {
   kind: Kind
   nodeId: string | null
+  /** `extend` only (CP3.0): the amount to add; `undefined` takes the default one minute. */
+  ms?: number
 }
 
 function apply(model: CookingModel, s: CookingSession, step: Step, now: number): CookingSession | Rejected {
@@ -86,7 +90,7 @@ function apply(model: CookingModel, s: CookingSession, step: Step, now: number):
     case 'stopNode':
       return engine.stopNode(s, model, id, now)
     case 'extend':
-      return engine.extend(s, model, id, now)
+      return engine.extend(s, model, id, now, step.ms)
     case 'skip':
       return engine.skip(s, model, id, now)
     case 'acknowledge':
@@ -162,6 +166,12 @@ function checkStep(
     }
   }
 
+  if (step.kind === 'extend') {
+    const a = prev.nodes[step.nodeId!]
+    const b = next.nodes[step.nodeId!]
+    if (a.state !== 'running' || b.state !== 'running') throw new Error(`${where}: extend on a timer that isn't running`)
+    expect(b.endsAt - a.endsAt, `${where}: extend amount`).toBe(step.ms ?? EXTEND_MS)
+  }
   if (step.kind === 'view') expect(next.nodes, `${where}: view changed a node`).toEqual(prev.nodes)
   if (earlyFinish) expect(running(model, next), `${where}: running after finish`).toEqual([])
 
@@ -199,12 +209,13 @@ describe('CP1 — random-order replay over every fixture', () => {
         }
         now += Math.floor(rand() * 5_000)
         const nodeId = kind === 'view' && rand() < 0.2 ? null : ids[Math.floor(rand() * ids.length)]
-        const step: Step = { kind, nodeId }
+        const step: Step = { kind, nodeId, ...(kind === 'extend' && rand() < 0.5 ? { ms: ADD_TIME_MS } : {}) }
         const where = `${path} seq ${seq} action ${i}`
 
         const result = apply(model, s, step, now)
         if (engine.isRejected(result)) continue
         accepted++
+        if (kind === 'extend') extendsAccepted[step.ms === ADD_TIME_MS ? 'five' : 'one']++
         checkStep(model, s, result, step, now, where)
         s = result
         expect(
@@ -215,5 +226,11 @@ describe('CP1 — random-order replay over every fixture', () => {
     }
 
     expect(accepted).toBeGreaterThan(SEQUENCES * 10)
+  })
+
+  // Runs after the fixtures above (tests in a file run in order).
+  it('accepted extends with both amounts (default one minute and ADD_TIME_MS)', () => {
+    expect(extendsAccepted.one).toBeGreaterThan(0)
+    expect(extendsAccepted.five).toBeGreaterThan(0)
   })
 })

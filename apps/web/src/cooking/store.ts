@@ -51,7 +51,7 @@ export type SessionAction =
   | { type: 'view'; model: CookingModel; nodeId: string | null; now: number }
   | { type: 'acknowledge'; model: CookingModel; now: number }
   | { type: 'skip'; model: CookingModel; nodeId: string; now: number }
-  | { type: 'extend'; model: CookingModel; nodeId: string; now: number }
+  | { type: 'extend'; model: CookingModel; nodeId: string; now: number; ms?: number }
   | { type: 'undo'; model: CookingModel; now: number }
   | { type: 'leave'; model: CookingModel; now: number }
   | { type: 'resume'; model: CookingModel; now: number }
@@ -160,7 +160,7 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
         }
         case 'extend': {
           const current = requireSession()
-          return engine.isRejected(current) ? current : applying(engine.extend(current, action.model, action.nodeId, action.now))
+          return engine.isRejected(current) ? current : applying(engine.extend(current, action.model, action.nodeId, action.now, action.ms))
         }
         case 'undo': {
           const current = requireSession()

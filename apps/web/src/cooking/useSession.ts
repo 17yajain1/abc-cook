@@ -39,7 +39,7 @@ export interface UseSessionResult {
   view(model: CookingModel, nodeId: string | null): DispatchResult
   acknowledge(model: CookingModel): DispatchResult
   skip(model: CookingModel, nodeId: string): DispatchResult
-  extend(model: CookingModel, nodeId: string): DispatchResult
+  extend(model: CookingModel, nodeId: string, ms?: number): DispatchResult
   undo(model: CookingModel): DispatchResult
   leave(model: CookingModel): DispatchResult
   resume(model: CookingModel): DispatchResult
@@ -88,7 +88,7 @@ export function useSession(store: SessionStore): UseSessionResult {
     [dispatch],
   )
   const extend = useCallback(
-    (model: CookingModel, nodeId: string) => dispatch({ type: 'extend', model, nodeId, now: Date.now() }),
+    (model: CookingModel, nodeId: string, ms?: number) => dispatch({ type: 'extend', model, nodeId, now: Date.now(), ms }),
     [dispatch],
   )
   const undo = useCallback((model: CookingModel) => dispatch({ type: 'undo', model, now: Date.now() }), [dispatch])

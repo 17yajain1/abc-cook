@@ -100,6 +100,30 @@ describe('createSessionStore — dispatch/getState/subscribe wiring', () => {
   })
 })
 
+describe('createSessionStore — extend by a given amount (PR 2 CP3.0)', () => {
+  it('passes ms through to the engine; without ms it adds one minute; a rejection does not persist', () => {
+    const model = deriveCookingModel(KADAI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
+    store.dispatch({ type: 'startNode', model, nodeId: 'cook_tomato_base', now: T0 })
+
+    expect(store.dispatch({ type: 'extend', model, nodeId: 'cook_tomato_base', now: T0 + m(1), ms: m(5) }).ok).toBe(true)
+    expect(store.getState()?.nodes.cook_tomato_base).toMatchObject({ endsAt: T0 + m(17), extendedMs: m(5) })
+
+    expect(store.dispatch({ type: 'extend', model, nodeId: 'cook_tomato_base', now: T0 + m(2) }).ok).toBe(true)
+    expect(store.getState()?.nodes.cook_tomato_base).toMatchObject({ endsAt: T0 + m(18), extendedMs: m(6) })
+    expect(JSON.parse(storage.raw('abc-cook:session:v1')!).session.nodes.cook_tomato_base.endsAt).toBe(T0 + m(18))
+
+    const before = storage.raw('abc-cook:session:v1')
+    expect(store.dispatch({ type: 'extend', model, nodeId: 'chop_onion', now: T0, ms: m(5) })).toEqual({
+      ok: false,
+      reason: 'not_running',
+    })
+    expect(storage.raw('abc-cook:session:v1')).toBe(before)
+  })
+})
+
 describe('createSessionStore — reopen (row 15)', () => {
   it('a new store over the same storage round-trips the session, including a running timer', () => {
     const model = deriveCookingModel(KADAI)

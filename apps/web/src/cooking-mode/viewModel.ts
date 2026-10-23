@@ -76,7 +76,8 @@ export type ActionDescriptor =
   /** PR 2 CP1: navigation only. CP2's Up next and Back emit it. */
   | { kind: 'view'; nodeId: string | null }
   | { kind: 'skip'; nodeId: string }
-  | { kind: 'extend'; nodeId: string }
+  /** `ms` (PR 2 CP3.0): the amount to add; absent is the engine's default (`EXTEND_MS`). */
+  | { kind: 'extend'; nodeId: string; ms?: number }
   | { kind: 'acknowledge' }
   | { kind: 'resume' }
   | { kind: 'touch' }

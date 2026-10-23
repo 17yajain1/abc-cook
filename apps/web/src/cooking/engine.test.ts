@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
+import { ADD_TIME_MS, EXTEND_MS } from './constants'
 import * as engine from './engine'
 import { deriveCookingModel } from './model'
 import { current, executable, handover, lifecycle, nextRequiredAt, running, skipAllowed } from './select'
@@ -204,6 +205,51 @@ describe('extend (rows 16-17)', () => {
     const model = deriveCookingModel(KADAI)
     const s = freshSession(model, 'server:kadai', T0)
     expect(engine.extend(s, model, 'cook_tomato_base', T0)).toEqual({ ok: false, reason: 'not_running' })
+    expect(engine.extend(s, model, 'cook_tomato_base', T0, ADD_TIME_MS)).toEqual({ ok: false, reason: 'not_running' })
+  })
+})
+
+describe('extend by a given amount (PR 2 CP3.0, the timer sheet\'s "Add 5 min")', () => {
+  function donutsRising(): { model: CookingModel; s: CookingSession } {
+    const model = deriveCookingModel(DONUTS)
+    let s = freshSession(model, 'server:donuts', T0)
+    s = must(engine.markDone(s, model, 'bloom_yeast', T0))
+    s = must(engine.startNode(s, model, 'first_rise', T0 + m(18)))
+    return { model, s }
+  }
+
+  it('ADD_TIME_MS is five minutes', () => {
+    expect(ADD_TIME_MS).toBe(m(5))
+  })
+
+  it('adds exactly the given amount to endsAt and extendedMs, keeping startedAt', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(30), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toEqual({ state: 'running', startedAt: T0 + m(18), endsAt: T0 + m(83), extendedMs: m(5) })
+  })
+
+  it('without an amount it still adds one minute (EXTEND_MS); the two accumulate', () => {
+    const { model, s } = donutsRising()
+    let next = must(engine.extend(s, model, 'first_rise', T0 + m(30)))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(78) + EXTEND_MS, extendedMs: EXTEND_MS })
+    next = must(engine.extend(next, model, 'first_rise', T0 + m(31), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(84), extendedMs: m(6) })
+  })
+
+  it('leaves lastTransition, viewing, finishedAt and every other node untouched (not undoable)', () => {
+    const { model, s } = donutsRising()
+    const viewed = must(engine.view(s, model, 'mix_dough', T0 + m(20)))
+    const next = must(engine.extend(viewed, model, 'first_rise', T0 + m(30), ADD_TIME_MS))
+    expect(next.lastTransition).toBe(viewed.lastTransition)
+    expect(next.viewing).toBe('mix_dough')
+    expect(next.finishedAt).toBe(viewed.finishedAt)
+    for (const id of model.order) if (id !== 'first_rise') expect(next.nodes[id]).toBe(viewed.nodes[id])
+  })
+
+  it('adds to an expired timer\'s existing endsAt, not to now (same §C4 semantics)', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(200), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(83) })
   })
 })
 
