@@ -168,7 +168,7 @@ export function ImportingPage({
             <h2 id="steps-heading" className={SECTION_TITLE}>
               Steps
             </h2>
-            <span className="text-[13px] text-home-ink-2">Still being worked out</span>
+            {!stopped && <span className="text-[13px] text-home-ink-2">Still being worked out</span>}
           </div>
           <div className="mt-2.5">
             {view.method.kind === 'steps' ? (

@@ -51,9 +51,11 @@ export function StepCard({
         </span>
       )}
       <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-        <span className={`block text-[16px] font-bold leading-6 text-home-ink ${open ? 'pr-16' : ''}`}>
-          {task.label}
-          {startWithThis && <span className="ml-2 text-[12px] font-medium text-home-ink-2">start with this</span>}
+        {/* The tag is its own flex item: it stays on the name's line when there is room and drops whole under
+            the name (no indent, never split over two lines) when there isn't. */}
+        <span className={`flex flex-wrap items-baseline gap-x-2 text-[16px] font-bold leading-6 text-home-ink ${open ? 'pr-16' : ''}`}>
+          <span>{task.label}</span>
+          {startWithThis && <span className="whitespace-nowrap text-[12px] font-medium leading-5 text-home-ink-2">start with this</span>}
         </span>
         <StepInstruction task={task} factor={factor} />
         {cue && <span className="mt-0.5 block text-[13px] leading-[1.42] text-home-ink-2">{cue}</span>}
