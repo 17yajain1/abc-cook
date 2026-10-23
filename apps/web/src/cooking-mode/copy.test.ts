@@ -174,16 +174,22 @@ describe('timerLength (PR 2 CP3)', () => {
   })
 })
 
-describe('handsOffLine (PR 2 CP3)', () => {
-  it('uses the plain length', () => {
-    expect(handsOffLine(12)).toBe('About 12 min. Start a timer, or just move on.')
-    expect(handsOffLine(60)).toBe('About 1 hr. Start a timer, or just move on.')
-    expect(handsOffLine(90)).toBe('About 1 hr 30 min. Start a timer, or just move on.')
-    expect(handsOffLine(1080)).toBe('About 18 hr. Start a timer, or just move on.')
+describe('handsOffLine (PR 2 CP3, CP3.1 by tag)', () => {
+  it('Hands-off (unattended): the plain length, then "Start a timer, or just move on."', () => {
+    expect(handsOffLine(12, 'unattended')).toBe('About 12 min. Start a timer, or just move on.')
+    expect(handsOffLine(60, 'unattended')).toBe('About 1 hr. Start a timer, or just move on.')
+    expect(handsOffLine(90, 'unattended')).toBe('About 1 hr 30 min. Start a timer, or just move on.')
+    expect(handsOffLine(1080, 'unattended')).toBe('About 18 hr. Start a timer, or just move on.')
+  })
+
+  it('Low attention (periodic): the plain length, then "Check on it now and then."', () => {
+    expect(handsOffLine(12, 'periodic')).toBe('About 12 min. Check on it now and then.')
+    expect(handsOffLine(90, 'periodic')).toBe('About 1 hr 30 min. Check on it now and then.')
   })
 
   it('no length, no line (nothing to say "about" of)', () => {
-    expect(handsOffLine(0.4)).toBeNull()
+    expect(handsOffLine(0.4, 'unattended')).toBeNull()
+    expect(handsOffLine(0.4, 'periodic')).toBeNull()
   })
 })
 

@@ -66,7 +66,7 @@ export function CookingShell({
   onExpandNeed,
 }: {
   view: CookingView
-  /** CP3 owner answer 4: the "N more" row was tapped on this step (state kept by the screen). */
+  /** CP3 owner answer 4: "Show N more" was tapped on this step (state kept by the screen). */
   needExpanded: boolean
   onPrimary: () => void
   onSecondary: () => void
@@ -77,7 +77,7 @@ export function CookingShell({
   onNavigate: (action: ActionDescriptor) => void
   /** CP3: any other action the page offers (the hands-off "Mark as done"). */
   onAction: (action: ActionDescriptor) => void
-  /** CP3: a rail was tapped: one timer's sheet, or the Timers list for "+N more". */
+  /** CP3: a rail was tapped: one timer's sheet, or the Timers list for "N more timers". */
   onRail: (rail: RailView) => void
   /** CP3: "Step N of M" was tapped: the All steps sheet. */
   onSteps: () => void
@@ -147,7 +147,7 @@ export function CookingShell({
       </div>
 
       {/* CP3 timer rails (V2Running): full-width sage, 48px, under the top bar; one per
-          running timer up to two, the second becoming "+N more" with a third (owner answer 1). */}
+          running timer up to two, the second becoming "N more timers" with a third (owner answer 1). */}
       {isStep && view.rails.length > 0 && (
         <div className="mt-1 flex flex-shrink-0 flex-col gap-px">
           {view.rails.map((rail) => (
@@ -158,9 +158,9 @@ export function CookingShell({
               onClick={() => onRail(rail)}
               className={`flex h-12 w-full items-center gap-2.5 bg-home-sage px-5 text-left ${g.ink}`}
             >
-              <span aria-hidden="true" className="h-2 w-2 flex-none rounded-full bg-home-terracotta" />
               {rail.kind === 'timer' ? (
                 <>
+                  <span aria-hidden="true" className="h-2 w-2 flex-none rounded-full bg-home-terracotta" />
                   <span className="min-w-0 flex-1 truncate text-[16px] font-bold">{rail.name}</span>
                   <span
                     className="flex-none whitespace-nowrap text-[16px] font-bold text-home-sage-chip-text"
@@ -170,7 +170,12 @@ export function CookingShell({
                   </span>
                 </>
               ) : (
-                <span className="flex-1 text-[16px] font-bold">{rail.text}</span>
+                // CP3.1: the summary rail has no dot (the dot means a running timer), and a ›
+                // at its right edge says it opens the Timers list.
+                <>
+                  <span className="flex-1 text-[16px] font-bold">{rail.text}</span>
+                  <span aria-hidden="true" className="flex-none text-[20px] font-bold leading-none text-home-sage-chip-text">›</span>
+                </>
               )}
             </button>
           ))}
@@ -254,7 +259,7 @@ export function CookingShell({
                 {view.servingsNote && <p className={note}>{view.servingsNote}</p>}
                 {view.timesNote && <p className={note}>{view.timesNote}</p>}
                 {/* CP3 "You'll need" (V2Step): name left, amount right in bold tabular, rules
-                    between. Display only, except the "N more" row, which opens the rest here. An
+                    between. Display only, except "Show N more", which opens the rest here. An
                     amount the scaler could not scale is ink-2, not bold, with an accessible
                     name that says so (R4). */}
                 {view.need.length > 0 && (
@@ -283,9 +288,10 @@ export function CookingShell({
                         <button
                           type="button"
                           onClick={onExpandNeed}
-                          className={`flex h-11 w-full items-center text-left text-[16px] font-semibold ${g.ink2}`}
+                          className="flex h-11 w-full items-center gap-1 text-left text-[16px] font-semibold text-home-terracotta-text"
                         >
                           {need.more}
+                          <span aria-hidden="true" className="text-[14px]">▾</span>
                         </button>
                       </div>
                     )}

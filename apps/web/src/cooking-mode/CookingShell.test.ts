@@ -104,7 +104,7 @@ describe("CookingShell — You'll need (CP3, replaces the F2 chips)", () => {
     expect(render(v)).not.toContain('You&#x27;ll need')
   })
 
-  it('Kadhi step 1 (eleven ingredients): the first five, then "6 more" as a button; expanded shows all eleven', () => {
+  it('Kadhi step 1 (eleven ingredients): the first five, then "Show 6 more ▾" as a terracotta link; expanded shows all eleven', () => {
     const KADHI = kadhiPakora as RecipePlanResponse
     const kModel = deriveCookingModel(KADHI)
     const v = buildCookingView(kModel, must(engine.start(null, kModel, 'k', T0)), T0, ingredientsById(KADHI.graph.ingredients), {
@@ -114,7 +114,9 @@ describe("CookingShell — You'll need (CP3, replaces the F2 chips)", () => {
     const collapsed = render(v)
     expect(needTexts(collapsed)).toHaveLength(5)
     expect(needTexts(collapsed)[0]).toEqual(['Curd', '1 ½ cups'])
-    expect(collapsed).toMatch(/<button[^>]*>6 more<\/button>/)
+    const link = collapsed.match(/<button[^>]*class="([^"]*)"[^>]*>Show 6 more<span aria-hidden="true"[^>]*>▾<\/span><\/button>/)
+    expect(link).not.toBeNull()
+    for (const c of ['text-home-terracotta-text', 'text-[16px]', 'font-semibold']) expect(link![1].split(' ')).toContain(c)
     const open = render(v, true)
     expect(needTexts(open)).toHaveLength(11)
     expect(open).not.toContain('6 more')
@@ -212,14 +214,19 @@ describe('CookingShell — PR 2 CP3 step screens', () => {
     expect(html).not.toContain('What&#x27;s cooking')
   })
 
-  it('no rail without a running timer; "+N more" is its own button', () => {
+  it('no rail without a running timer; the summary rail is its own button (CP3.1: no dot, "N more timers", › at the right)', () => {
     expect(render(dView(fresh(), T0))).not.toContain('Open timer')
     let se = rising()
     se = must(engine.startNode(se, dModel, 'proof_donuts', T0))
     se = must(engine.startNode(se, dModel, 'heat_oil', T0))
     const html = render(dView(se, T0))
     expect(html.match(/Open timer"/g)).toHaveLength(1)
-    expect(html).toMatch(/<button[^>]*aria-label="2 more timers. Show all timers"[^>]*>.*\+2 more.*?<\/button>/)
+    const more = html.match(/<button[^>]*aria-label="2 more timers. Show all timers"[^>]*>(.*?)<\/button>/)
+    expect(more).not.toBeNull()
+    const [tag, inner] = [more![0].slice(0, more![0].indexOf('>') + 1), more![1]]
+    for (const c of ['h-12', 'bg-home-sage']) expect(tag).toContain(c) // same height and ground as a timer rail
+    expect(inner).not.toContain('bg-home-terracotta') // the dot means a running timer
+    expect(inner).toMatch(/^<span[^>]*>2 more timers<\/span><span aria-hidden="true" class="[^"]*text-home-sage-chip-text[^"]*">›<\/span>$/)
   })
 
   it('"Step N of M" is a 32px button that opens All steps', () => {

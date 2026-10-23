@@ -2,7 +2,7 @@ import type { TimerRow, TimerSheetView } from './timers'
 import type { ActionDescriptor } from './viewModel'
 
 /** What the timer sheet shows: one timer (V2TimerSheet), or every running timer (the
- * Timers list behind "+N more", owner answer 1). */
+ * Timers list behind "N more timers", owner answer 1). */
 export type TimerSheetContent = { mode: 'one'; sheet: TimerSheetView } | { mode: 'all'; rows: TimerRow[] }
 
 const OUTLINE =

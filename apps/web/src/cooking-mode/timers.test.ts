@@ -81,14 +81,14 @@ describe('rails (owner answer 1: at most two)', () => {
     expect(rails(model, se, T0, order).map((r) => r.kind === 'timer' && r.name)).toEqual(['Proof donuts', 'First rise'])
   })
 
-  it('three or more: the soonest, then "+N more" (N = timers not on the first rail)', () => {
+  it('three or more: the soonest, then "N more timers" (N = timers not on the first rail; CP3.1 label)', () => {
     let se = start(fresh(), 'first_rise', T0)
     se = start(se, 'proof_donuts', T0)
     se = start(se, 'heat_oil', T0)
     const r = rails(model, se, T0, order)
     expect(r).toHaveLength(MAX_RAILS)
     expect(r[0]).toMatchObject({ kind: 'timer', nodeId: 'heat_oil' })
-    expect(r[1]).toEqual({ kind: 'more', count: 2, text: '+2 more', aria: '2 more timers. Show all timers' })
+    expect(r[1]).toEqual({ kind: 'more', count: 2, text: '2 more timers', aria: '2 more timers. Show all timers' })
   })
 
   it('none running: no rail', () => {

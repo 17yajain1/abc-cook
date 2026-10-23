@@ -120,11 +120,12 @@ export const NEED_ALL_UP_TO = 6
 /** Past `NEED_ALL_UP_TO`, this many rows show before the "N more" row. */
 export const NEED_HEAD = 5
 
-/** The rows "You'll need" draws, and the "N more" row's text (`null` for none). Collapsed
- * lists of seven or more show the first `NEED_HEAD` in recipe order; `expanded` shows all. */
+/** The rows "You'll need" draws, and the "Show N more" link's text (`null` for none; CP3.1).
+ * Collapsed lists of seven or more show the first `NEED_HEAD` in recipe order; `expanded`
+ * shows all. */
 export function needShown<T>(rows: T[], expanded: boolean): { rows: T[]; more: string | null } {
   if (expanded || rows.length <= NEED_ALL_UP_TO) return { rows, more: null }
-  return { rows: rows.slice(0, NEED_HEAD), more: `${rows.length - NEED_HEAD} more` }
+  return { rows: rows.slice(0, NEED_HEAD), more: `Show ${rows.length - NEED_HEAD} more` }
 }
 
 /** `text` starts with `prefix` on a word boundary ("a handful of x" / "a handful"). */

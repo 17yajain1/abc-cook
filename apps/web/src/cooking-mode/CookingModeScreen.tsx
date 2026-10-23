@@ -97,7 +97,7 @@ export function CookingModeScreen({
   const [now, setNow] = useState(() => Date.now())
   const [leaving, setLeaving] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
-  // PR 2 CP3: the timer sheet (one timer, or the Timers list behind "+N more"), the All
+  // PR 2 CP3: the timer sheet (one timer, or the Timers list behind "N more timers"), the All
   // steps sheet, and the step whose "You'll need" list the cook opened (owner answer 4:
   // it stays open while on that step and closes when the step on screen changes).
   const [timerFor, setTimerFor] = useState<{ mode: 'one'; nodeId: string } | { mode: 'all' } | null>(null)
@@ -253,8 +253,8 @@ export function CookingModeScreen({
     }
   }
 
-  // The shell's CP3 controls: a rail opens its timer's sheet ("+N more": the Timers list),
-  // "Step N of M" opens All steps, "N more" opens the rest of You'll need on this step.
+  // The shell's CP3 controls: a rail opens its timer's sheet ("N more timers": the Timers
+  // list), "Step N of M" opens All steps, "Show N more" opens the rest of You'll need here.
   const stepControls = (v: CookingView) => ({
     needExpanded: v.nodeId != null && needOpenFor === v.nodeId,
     onAction: dispatchAction,

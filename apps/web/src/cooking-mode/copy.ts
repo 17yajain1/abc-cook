@@ -4,6 +4,8 @@
  * a pure string formatter over values the real selectors already computed.
  */
 
+import type { Node } from '@abc-cook/schema'
+
 import { formatMinutes, roundMin } from '@/lib/duration'
 
 const WORDS = [
@@ -100,11 +102,14 @@ export function timerLength(min: number): string | null {
   return m % 60 === 0 ? `${m / 60}-hr` : formatMinutes(m)
 }
 
-/** PR 2 CP3: the hands-off step's line, "About 1 hr. Start a timer, or just move on."
- * (the plain length, `formatMinutes`). `null` when the step has no length to name. */
-export function handsOffLine(min: number): string | null {
+/** PR 2 CP3: the not-started hands-off step's line, by its tag (CP3.1): "Hands-off" says
+ * "About 1 hr. Start a timer, or just move on."; "Low attention" (`periodic`, which wants
+ * the cook now and then) says "About 12 min. Check on it now and then." The length is the
+ * plain `formatMinutes`; `null` when the step has no length to name. */
+export function handsOffLine(min: number, attention: Node['attention']): string | null {
   if (roundMin(min) < 1) return null
-  return `About ${formatMinutes(min)}. Start a timer, or just move on.`
+  const tail = attention === 'periodic' ? 'Check on it now and then.' : 'Start a timer, or just move on.'
+  return `About ${formatMinutes(min)}. ${tail}`
 }
 
 /** PR 2 CP3: the lead-in of the doneness cue line ("Ready when: golden brown"). One

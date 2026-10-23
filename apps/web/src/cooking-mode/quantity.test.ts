@@ -371,9 +371,9 @@ describe('needShown (owner answer 4: threshold)', () => {
     for (const n of [0, 1, 6]) expect(needShown(rows(n), false)).toEqual({ rows: rows(n), more: null })
   })
 
-  it('seven or more: the first five in order, then "N more"', () => {
-    expect(needShown(rows(7), false)).toEqual({ rows: rows(5), more: '2 more' })
-    expect(needShown(rows(11), false)).toEqual({ rows: rows(5), more: '6 more' })
+  it('seven or more: the first five in order, then "Show N more" (CP3.1)', () => {
+    expect(needShown(rows(7), false)).toEqual({ rows: rows(5), more: 'Show 2 more' })
+    expect(needShown(rows(11), false)).toEqual({ rows: rows(5), more: 'Show 6 more' })
   })
 
   it('expanded: every row, no summary', () => {

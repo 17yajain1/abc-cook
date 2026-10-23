@@ -17,7 +17,8 @@ export interface SheetButton {
  * `now`: nothing here times anything or decides what runs.
  */
 
-/** Owner answer 1: at most two rails; with a third timer the second becomes "+N more". */
+/** Owner answer 1: at most two rails; with a third timer the second becomes the summary
+ * rail, "N more timers" (CP3.1). */
 export const MAX_RAILS = 2
 
 export interface TimerRow {
@@ -70,7 +71,7 @@ export function runningTimers(model: CookingModel, session: CookingSession, now:
 }
 
 /** The rails under the top bar: one per timer up to `MAX_RAILS`; with more timers than
- * that, the soonest and then "+N more". The viewed step's own timer is included. */
+ * that, the soonest and then "N more timers". The viewed step's own timer is included. */
 export function rails(model: CookingModel, session: CookingSession, now: number, order: string[]): RailView[] {
   const rows = runningTimers(model, session, now, order)
   const asRail = (r: TimerRow): RailView => ({
@@ -82,7 +83,7 @@ export function rails(model: CookingModel, session: CookingSession, now: number,
   })
   if (rows.length <= MAX_RAILS) return rows.map(asRail)
   const more = rows.length - 1
-  return [asRail(rows[0]), { kind: 'more', count: more, text: `+${more} more`, aria: `${more} more timers. Show all timers` }]
+  return [asRail(rows[0]), { kind: 'more', count: more, text: `${more} more timers`, aria: `${more} more timers. Show all timers` }]
 }
 
 /** One timer's sheet, or `null` when `nodeId` isn't running (the sheet then closes).

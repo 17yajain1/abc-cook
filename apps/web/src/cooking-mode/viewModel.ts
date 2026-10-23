@@ -178,7 +178,7 @@ export interface CookingView {
   /** PR 2 CP3: the running-timer rails (`timers.ts`), on the step pages only; `[]` elsewhere. */
   rails: RailView[]
   /** PR 2 CP3: a not-started hands-off step's tag ("Hands-off" / "Low attention"), its
-   * "About 1 hr. Start a timer, or just move on." line (`null` without a length) and the
+   * "About 1 hr. ..." line by tag (`handsOffLine`; `null` without a length) and the
    * quiet "Mark as done" link (owner answer 5). `null` on every other page. */
   handsOff: { tag: string; line: string | null; markDone: ActionButton } | null
   /** PR 2 CP3: how you know the step is ready, as stored, shown after "Ready when:" — only
@@ -553,7 +553,7 @@ export function buildCookingView(
       v.primary = { label: len != null ? `Start ${len} timer` : "I've started it", solid: true, action }
       v.handsOff = {
         tag: attentionTag(n.attention) ?? 'Hands-off',
-        line: handsOffLine(n.durationTypical),
+        line: handsOffLine(n.durationTypical, n.attention),
         markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: cur } },
       }
     } else if (scr.id === 'step_running') {

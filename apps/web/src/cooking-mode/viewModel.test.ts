@@ -1318,11 +1318,32 @@ describe('PR 2 CP3 step screens', () => {
       expect(DONUTS.view(se, T0).primary?.action).toEqual({ kind: 'startNode', nodeId: 'first_rise', clearView: true })
     })
 
-    it('low attention: "Low attention" tag and the minutes (Kadai base, 12 min)', () => {
+    it('low attention: "Low attention" tag and "Check on it now and then." (CP3.1; Kadai base, 12 min)', () => {
       const se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
       const v = KADAI.view(se, T0)
-      expect(v.handsOff).toMatchObject({ tag: 'Low attention', line: 'About 12 min. Start a timer, or just move on.' })
+      expect(v.handsOff).toEqual({
+        tag: 'Low attention',
+        line: 'About 12 min. Check on it now and then.',
+        markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: 'cook_tomato_base' } },
+      })
       expect(v.primary?.label).toBe('Start 12-min timer')
+    })
+
+    it('every Low attention step says "Check on it", every Hands-off step "just move on" (both tags, every fixture)', () => {
+      const seen = new Set<string>()
+      for (const payload of Object.values(ALL_FIXTURES)) {
+        const f = fixture(payload)
+        for (const id of f.model.order) {
+          const info = f.model.nodes[id]
+          if (info.occupiesCook || timerLength(info.durationTypical) == null) continue
+          const h = f.view(must(engine.view(f.fresh(), f.model, id, T0)), T0).handsOff!
+          seen.add(h.tag)
+          expect(h.line, `${f.model.graphId} ${id}`).toMatch(
+            h.tag === 'Low attention' ? /\. Check on it now and then\.$/ : /\. Start a timer, or just move on\.$/,
+          )
+        }
+      }
+      expect(seen).toEqual(new Set(['Hands-off', 'Low attention']))
     })
 
     it('every hands-off node in every fixture: "Start ‹len› timer" from its duration, "I\'ve started it" only without one', () => {
@@ -1337,7 +1358,7 @@ describe('PR 2 CP3 step screens', () => {
           expect(v.screenId, `${path} ${id}`).toBe('handsoff_pending')
           const len = timerLength(info.durationTypical)
           expect(v.primary?.label, `${path} ${id}`).toBe(len == null ? "I've started it" : `Start ${len} timer`)
-          expect(v.handsOff?.line ?? null, `${path} ${id}`).toBe(handsOffLine(info.durationTypical))
+          expect(v.handsOff?.line ?? null, `${path} ${id}`).toBe(handsOffLine(info.durationTypical, info.attention))
           checked++
         }
       }
