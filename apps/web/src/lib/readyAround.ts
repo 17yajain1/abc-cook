@@ -2,11 +2,12 @@ import { roundUpTo5 } from './duration'
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-/** "8:45 pm": 12-hour, lower-case am/pm, no leading zero on the hour. Local time. */
+/** "8:45 pm": 12-hour, lower-case am/pm, no leading zero on the hour. Local time. The space is a no-break
+ * space (U+00A0) so a line never ends on "7:05" with "pm" on the next. */
 function clock(at: Date): string {
   const h = at.getHours()
   const m = at.getMinutes()
-  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
 }
 
 /** Calendar days from `from` to `to`, by local date (not by 24-hour spans). */

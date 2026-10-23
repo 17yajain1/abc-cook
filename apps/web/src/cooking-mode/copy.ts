@@ -44,10 +44,11 @@ export function minutesLeft(ms: number): string {
   return `About ${Math.ceil(ms / 60_000)} min left`
 }
 
+/** "4:18 pm" with a no-break space (U+00A0), so a time never splits from its am/pm across lines. */
 export function clockStr(ms: number): string {
   const d = new Date(ms)
   const h = d.getHours() % 12 || 12
-  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'am' : 'pm'}`
+  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'am' : 'pm'}`
 }
 
 /** The `long_wait` / `sitting_break` wall-clock line (§6, §8.1): "4:18 pm", "tomorrow,
