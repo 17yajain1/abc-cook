@@ -230,7 +230,7 @@ describe('CP1 — random-order replay over every fixture', () => {
         checkStep(model, s, result, step, now, where)
         s = result
         expect(
-          () => buildCookingView(model, s, now, ingredients, { recipeTitle: payload.graph.title, leaving: false }),
+          () => buildCookingView(model, s, now, ingredients, { recipeTitle: payload.graph.title }),
           `${where}: buildCookingView threw`,
         ).not.toThrow()
       }

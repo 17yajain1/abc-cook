@@ -1,4 +1,7 @@
-import type { StepListRow, TickState } from './stepPage'
+import { useState } from 'react'
+
+import { endCookFoot, type StepListRow, type TickState } from './stepPage'
+import type { ActionDescriptor } from './viewModel'
 
 /** Circle and name per row state (V2StepList): done = sage with a tick and a grey name;
  * viewed = terracotta circle on a peach row, bold name; running and to do = peach circle. */
@@ -28,16 +31,26 @@ function Tick() {
  * PR 2 CP3: the All steps sheet, opened from "Step N of M". From 150px below the top of
  * the screen, scrolling inside. Every page step with its recipe-page number; a tap views
  * that step (navigation only, never a completion) and closes; the viewed row just closes.
+ * PR 2 CP4: a quiet "End this cook" at the foot (`endCookFoot`), confirmed in place; the
+ * confirm resets when the sheet closes (it unmounts).
  */
 export function StepListSheet({
   rows,
   onPick,
   onClose,
+  onAction,
+  confirmingEnd = false,
 }: {
   rows: StepListRow[]
   onPick: (row: StepListRow) => void
   onClose: () => void
+  /** "End cook" (`endAndExit`). */
+  onAction: (action: ActionDescriptor) => void
+  /** For the static render only: start with the confirm showing. */
+  confirmingEnd?: boolean
 }) {
+  const [confirming, setConfirming] = useState(confirmingEnd)
+  const foot = endCookFoot(confirming)
   return (
     <div className="absolute inset-0">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-home-ink/40" />
@@ -83,6 +96,32 @@ export function StepListSheet({
               )}
             </button>
           ))}
+          <div data-end-cook="true" className="border-t border-home-rule px-2 pt-2">
+            {foot.prompt && <p className="pb-2 pt-1 text-[16px] font-semibold text-home-ink">{foot.prompt}</p>}
+            <div className="flex items-center gap-3">
+              {foot.buttons.map((b) =>
+                'action' in b ? (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => onAction(b.action)}
+                    className="h-11 rounded-full bg-home-terracotta px-5 text-[16px] font-bold text-home-ground"
+                  >
+                    {b.label}
+                  </button>
+                ) : (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => setConfirming(b.confirm)}
+                    className="h-11 px-1 text-[16px] text-home-ink-2 underline underline-offset-[3px]"
+                  >
+                    {b.label}
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

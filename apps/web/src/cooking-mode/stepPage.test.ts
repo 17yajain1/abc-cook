@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { ingredientsById } from './quantity'
-import { pageOrder, stepList } from './stepPage'
+import { endCookFoot, meanwhileRows, pageOrder, stepList, waitingNext } from './stepPage'
 import { buildCookingView, type CookingView } from './viewModel'
 import { shouldHoldWakeLock } from './wakeLock'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
@@ -38,7 +38,6 @@ function fixture(raw: unknown) {
   const view = (se: CookingSession, now: number, withNumbers = true): CookingView =>
     buildCookingView(model, se, now, ingredients, {
       recipeTitle: payload.graph.title,
-      leaving: false,
       ...(withNumbers ? { pageNumbers } : {}),
     })
   const fresh = () => must(engine.start(null, model, `server:${model.graphId}`, T0))
@@ -78,17 +77,18 @@ describe('Up next', () => {
     expect(v.upNext?.stepRef).toBe('Step 5')
   })
 
-  it('hands-off running and viewed (amendment 1): still "Meanwhile" and the window task', () => {
+  it('hands-off running and viewed (CP4 waiting screen): "When it\'s done" and its first not-done consumer; the window task moves to Meanwhile', () => {
     let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0 + MIN)
     se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0 + 2 * MIN))
     se = must(engine.view(se, DONUTS.model, 'first_rise', T0 + 3 * MIN))
     const v = DONUTS.view(se, T0 + 3 * MIN)
     expect(v.screenId).toBe('step_running')
-    expect(v.upNext?.label).toBe('Meanwhile')
-    expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'grease_pan' })
+    expect(v.upNext?.label).toBe("When it's done")
+    expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'shape_and_cut' })
+    expect(v.waiting?.meanwhile.map((r) => r.nodeId)).toEqual(['grease_pan'])
   })
 
-  it('window task already done: the normal rule, labelled "Up next"', () => {
+  it('window task already done: pending uses the normal rule; running still names the consumer', () => {
     const se = DONUTS.done(DONUTS.fresh(), [...FIRST_THREE, 'grease_pan'], T0 + MIN)
     const pending = DONUTS.view(se, T0 + 2 * MIN)
     expect(pending.screenId).toBe('handsoff_pending')
@@ -98,8 +98,8 @@ describe('Up next', () => {
     let running = must(engine.startNode(se, DONUTS.model, 'first_rise', T0 + 2 * MIN))
     running = must(engine.view(running, DONUTS.model, 'first_rise', T0 + 2 * MIN))
     const v = DONUTS.view(running, T0 + 2 * MIN)
-    expect(v.upNext?.label).toBe('Up next')
-    expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'shape_and_cut' }) // simulated markDone
+    expect(v.upNext?.label).toBe("When it's done")
+    expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'shape_and_cut' })
   })
 
   it('viewed step is not the suggestion: the same simulation on the viewed step', () => {
@@ -169,14 +169,22 @@ describe('ticks', () => {
     expect(DONUTS.view(se, T0 + 2 * MIN).ticks?.[3]).toEqual({ nodeId: 'first_rise', state: 'viewed' })
   })
 
-  it('are absent off the step pages', () => {
+  it('CP4: the waiting screen has them too, with Back and "When it\'s done", as a step page does', () => {
     let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
     se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
     se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
     const v = KADAI.view(se, T0 + 2 * MIN)
     expect(v.screenId).toBe('wait')
+    expect(v.ticks?.find((t) => t.state === 'viewed')?.nodeId).toBe('cook_tomato_base')
+    expect(v.back?.action.kind).toBe('view')
+    expect(v.upNext?.label).toBe("When it's done")
+  })
+
+  it('are absent off the step and waiting screens (done)', () => {
+    const se = must(engine.markDone(KADAI.fresh(), KADAI.model, 'finish', T0))
+    const v = KADAI.view(se, T0)
+    expect(v.screenId).toBe('done')
     expect(v.ticks).toBeNull()
-    expect(v.back).toBeNull()
     expect(v.upNext).toBeNull()
   })
 })
@@ -288,10 +296,13 @@ describe('the viewed step', () => {
     expect(v.label).toBe(KADAI.model.nodes.add_paneer.label)
   })
 
-  it('handover and finished beat a view', () => {
+  it('a timer end no longer takes over (CP4: a banner); finished beats a view', () => {
     let se = must(engine.startNode(MAGGI.fresh(), MAGGI.model, 'boil_water', T0))
     se = must(engine.view(se, MAGGI.model, 'add_noodles_masala', T0))
-    expect(MAGGI.view(se, T0 + 30 * MIN).screenId).toBe('handover')
+    const ended = MAGGI.view(se, T0 + 30 * MIN)
+    expect(ended.screenId).toBe('task')
+    expect(ended.nodeId).toBe('add_noodles_masala')
+    expect(ended.strips.map((s) => s.kind)).toEqual(['banner'])
 
     let fin = must(engine.view(KADAI.fresh(), KADAI.model, 'chop_onion', T0))
     fin = must(engine.markDone(fin, KADAI.model, 'finish', T0))
@@ -343,6 +354,80 @@ describe('stepList (PR 2 CP3, All steps)', () => {
   it('a step with a length of an hour or more reads it in hours (Donuts first rise: "1 hr")', () => {
     const rows = stepList(DONUTS.model, DONUTS.fresh(), T0, order, 'bloom_yeast')
     expect(rows.find((r) => r.nodeId === 'first_rise')).toMatchObject({ state: 'todo', right: '1 hr' })
+  })
+})
+
+describe('waitingNext (PR 2 CP4, "When it\'s done")', () => {
+  const order = pageOrder(KADAI.model, KADAI.pageNumbers)
+
+  it('the first not-done consumer, in execution order', () => {
+    let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+    se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+    const next = waitingNext(KADAI.model, se, T0, 'cook_tomato_base', order)
+    expect(next).toMatchObject({ label: "When it's done", name: KADAI.model.nodes.add_veggies.label, action: { kind: 'view', nodeId: 'add_veggies' } })
+  })
+
+  it('every consumer done: the suggestion after a simulated Done', () => {
+    let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+    se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+    se = must(engine.markDone(se, KADAI.model, 'add_veggies', T0))
+    // chop_capsicum is passed (its only consumer, add_veggies, is done), so the engine
+    // suggests cube_paneer.
+    expect(waitingNext(KADAI.model, se, T0, 'cook_tomato_base', order)?.action).toEqual({ kind: 'view', nodeId: 'cube_paneer' })
+  })
+
+  it('nothing for the finish step', () => {
+    const se = must(engine.startNode(MAGGI.fresh(), MAGGI.model, 'boil_water', T0))
+    const sink = MAGGI.model.order.find((id) => MAGGI.model.nodes[id].isSink)!
+    expect(waitingNext(MAGGI.model, se, T0, sink, MAGGI.model.order)).toBeNull()
+  })
+})
+
+describe('meanwhileRows (PR 2 CP4, the waiting screen\'s Meanwhile block)', () => {
+  const order = pageOrder(KADAI.model, KADAI.pageNumbers)
+  const n = (id: string) => order.indexOf(id) + 1
+
+  it('one row per task of the windows this step hosts, by rankInWindow; done / running / to do', () => {
+    let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
+    se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
+    se = must(engine.markDone(se, KADAI.model, 'chop_capsicum', T0 + MIN))
+    const rows = meanwhileRows(KADAI.model, se, T0 + 2 * MIN, 'cook_tomato_base', order)
+    const tasks = KADAI.model.order
+      .filter((id) => KADAI.model.nodes[id].windowId != null)
+      .sort((a, b) => (KADAI.model.nodes[a].rankInWindow ?? 0) - (KADAI.model.nodes[b].rankInWindow ?? 0))
+    expect(rows.map((r) => r.nodeId)).toEqual(tasks)
+    expect(rows[0]).toEqual({
+      nodeId: 'chop_capsicum',
+      n: n('chop_capsicum'),
+      name: KADAI.model.nodes.chop_capsicum.label,
+      state: 'done',
+      right: 'Done',
+      action: { kind: 'view', nodeId: 'chop_capsicum' },
+    })
+    expect(rows[1]).toMatchObject({ state: 'todo', right: null })
+  })
+
+  it('a running task shows its time left; a step that hosts no window has no rows', () => {
+    let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
+    se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
+    const dOrder = pageOrder(DONUTS.model, DONUTS.pageNumbers)
+    expect(meanwhileRows(DONUTS.model, se, T0, 'first_rise', dOrder).map((r) => r.nodeId)).toEqual(['grease_pan'])
+    expect(meanwhileRows(DONUTS.model, se, T0, 'proof_donuts', dOrder)).toEqual([])
+  })
+})
+
+describe('endCookFoot (PR 2 CP4, "End this cook" at the foot of All steps)', () => {
+  it('ending takes two taps: the first only asks', () => {
+    const first = endCookFoot(false)
+    expect(first).toEqual({ prompt: null, buttons: [{ label: 'End this cook', confirm: true }] })
+    const second = endCookFoot(true)
+    expect(second.prompt).toBe('End this cook? Running timers will stop.')
+    expect(second.buttons[0]).toEqual({ label: 'End cook', action: { kind: 'endAndExit' } })
+  })
+
+  it('"Keep cooking" dispatches nothing; it goes back to the list', () => {
+    expect(endCookFoot(true).buttons[1]).toEqual({ label: 'Keep cooking', confirm: false })
+    expect(endCookFoot(true).buttons.filter((b) => 'action' in b)).toHaveLength(1)
   })
 })
 

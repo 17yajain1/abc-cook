@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
-import { CookingShell } from './CookingShell'
+import { CookingShell, MessageScreen } from './CookingShell'
 import { ingredientsById } from './quantity'
 import { StepListSheet } from './StepListSheet'
 import { pageOrder, stepList } from './stepPage'
@@ -41,7 +41,7 @@ function must(result: CookingSession | Rejected): CookingSession {
   return result
 }
 const view = (se: CookingSession, now: number) =>
-  buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
+  buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title })
 const render = (v: CookingView, needExpanded = false) =>
   renderToStaticMarkup(
     createElement(CookingShell, {
@@ -50,7 +50,6 @@ const render = (v: CookingView, needExpanded = false) =>
       onPrimary: noop,
       onSecondary: noop,
       onLeave: noop,
-      onSheet: noop,
       onNavigate: noop,
       onAction: noop,
       onRail: noop,
@@ -109,7 +108,6 @@ describe("CookingShell — You'll need (CP3, replaces the F2 chips)", () => {
     const kModel = deriveCookingModel(KADHI)
     const v = buildCookingView(kModel, must(engine.start(null, kModel, 'k', T0)), T0, ingredientsById(KADHI.graph.ingredients), {
       recipeTitle: KADHI.graph.title,
-      leaving: false,
     })
     const collapsed = render(v)
     expect(needTexts(collapsed)).toHaveLength(5)
@@ -129,13 +127,13 @@ describe("CookingShell — You'll need (CP3, replaces the F2 chips)", () => {
     expect(html).not.toMatch(/<b[^>]*>1 can<\/b>/)
   })
 
-  it('handover is unchanged: no need block even if rows are set', () => {
+  it('the waiting screen draws no need block even if rows are set (CP4: the handover screen is gone)', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) se = must(engine.markDone(se, model, id, T0 + 8 * MIN))
     se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
     for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) se = must(engine.markDone(se, model, id, T0 + 16 * MIN))
     const v = view(se, T0 + 23 * MIN)
-    expect(v.screenId).toBe('handover')
+    expect(v.layout).toBe('waiting')
     const html = render(v)
     expect(html).not.toContain('You&#x27;ll need')
     expect(render({ ...v, need: [{ name: 'Onion', amount: '2', unscaled: false }] })).toBe(html)
@@ -148,7 +146,7 @@ describe('CookingShell — PR 2 CP2 step page', () => {
   const dIngredients = ingredientsById(DONUTS.graph.ingredients)
   const pageNumbers = stepNumbers(derivePlan(DONUTS).stages)
   const dView = (se: CookingSession, now: number) =>
-    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, leaving: false, pageNumbers })
+    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, pageNumbers })
   const fresh = () => must(engine.start(null, dModel, 'server:donuts', T0))
 
   it('step 1: Up next is one button with its aria-label; no Back', () => {
@@ -172,7 +170,7 @@ describe('CookingShell — PR 2 CP2 step page', () => {
     expect(ticks![0].match(/<div class="h-\[3px\]/g)).toHaveLength(pageNumbers.size)
   })
 
-  it('no Plan ground or ink token is left on a step, wait or handover screen', () => {
+  it('no Plan ground or ink token is left on a step, waiting, ended, done or stale screen (bar the Meanwhile block\'s field)', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     const screens = [render(view(se, T0))]
     for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) se = must(engine.markDone(se, model, id, T0))
@@ -182,11 +180,19 @@ describe('CookingShell — PR 2 CP2 step page', () => {
     const wait = view(se, T0 + 2 * MIN)
     expect(wait.screenId).toBe('wait')
     screens.push(render(wait))
-    const handover = view(se, T0 + 23 * MIN)
-    expect(handover.screenId).toBe('handover')
-    screens.push(render(handover))
+    const ended = view(se, T0 + 23 * MIN)
+    expect(ended.waiting?.ended).toBe(true)
+    screens.push(render(ended))
+    const done = view(must(engine.markDone(se, model, 'finish', T0 + 24 * MIN)), T0 + 24 * MIN)
+    expect(done.screenId).toBe('done')
+    screens.push(render(done))
+    const stale = view(must(engine.start(null, model, 'k', T0)), T0 + 3 * 24 * 60 * MIN)
+    expect(stale.screenId).toBe('stale')
+    screens.push(render(stale))
     for (const html of screens) {
-      expect(html).not.toMatch(/\b(bg|text|border)-(paper|ink|ink-2|ink-3|field|rule|signal)(\/\d+)?\b/)
+      // CP4: the Meanwhile block sits on the recipe page's own `bg-field` (WaitWindowBlock),
+      // on purpose; nothing else from the Plan register.
+      expect(html.replaceAll('rounded-home-mini bg-field', '')).not.toMatch(/\b(bg|text|border)-(paper|ink|ink-2|ink-3|field|rule|signal)(\/\d+)?\b/)
     }
   })
 })
@@ -197,7 +203,7 @@ describe('CookingShell — PR 2 CP3 step screens', () => {
   const dIngredients = ingredientsById(DONUTS.graph.ingredients)
   const pageNumbers = stepNumbers(derivePlan(DONUTS).stages)
   const dView = (se: CookingSession, now: number) =>
-    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, leaving: false, pageNumbers })
+    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, pageNumbers })
   const fresh = () => must(engine.start(null, dModel, 'server:donuts', T0))
   const rising = () => must(engine.startNode(fresh(), dModel, 'first_rise', T0))
   const footer = (html: string) => html.match(/<div data-footer="true"[^>]*>.*$/)![0]
@@ -299,14 +305,15 @@ describe('CookingShell — PR 2 CP3 step screens', () => {
     expect(html).toMatch(/<button type="button" aria-label="Close"[^>]*bg-home-ink\/40/) // the scrim
   })
 
-  it('timer sheet: on its own step the header says "Step N"; expired, no Add 5 min and Stop spans the row', () => {
+  it('timer sheet: on its own step the header says "Step N"; expired, "Time\'s up" and Add 5 min stays (CP4: from now)', () => {
     const se = must(engine.view(rising(), dModel, 'first_rise', T0))
     const html = sheetHtml({ mode: 'one', sheet: timerSheet(dModel, se, T0 + 61 * MIN, 'first_rise', order, 'first_rise')! })
     expect(html).not.toContain('Go to step')
     expect(html).toMatch(/>Step \d+<\/span>/)
     expect(html).toContain('Time&#x27;s up')
-    expect(html).not.toContain('Add 5 min')
-    expect(html).toMatch(/col-span-2[^>]*>Stop timer</)
+    expect(html).not.toContain('Ready around')
+    expect(html).toContain('>Add 5 min</button>')
+    expect(html).not.toContain('col-span-2')
   })
 
   it('Timers list: every running timer as a row button, soonest first', () => {
@@ -321,12 +328,144 @@ describe('CookingShell — PR 2 CP3 step screens', () => {
   it('All steps: one 56px row per page step; done has a tick, the viewed row is peach with "You are here"', () => {
     const se = must(engine.markDone(rising(), dModel, 'bloom_yeast', T0))
     const rows = stepList(dModel, se, T0, order, 'mix_dough')
-    const html = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop }))
+    const html = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop, onAction: noop }))
     expect(html).toMatch(/role="dialog" aria-label="All steps"/)
     expect(html).toContain('>All steps<')
     expect(html.match(/class="flex min-h-14/g)).toHaveLength(order.length)
     expect(html).toMatch(/<path d="M5 12l5 5L20 7"><\/path><\/svg><span class="sr-only">Step 1, done<\/span>/)
     expect(html).toMatch(/aria-current="step" class="[^"]*bg-home-peach[^"]*">.*?You are here/)
     expect(html).toMatch(/text-home-sage-chip-text"[^>]*>1 hr left</) // first rise, running
+  })
+})
+
+describe('CookingShell — PR 2 CP4 non-step screens', () => {
+  const DONUTS = homemadeDonuts as RecipePlanResponse
+  const dModel = deriveCookingModel(DONUTS)
+  const dIngredients = ingredientsById(DONUTS.graph.ingredients)
+  const pageNumbers = stepNumbers(derivePlan(DONUTS).stages)
+  const dView = (se: CookingSession, now: number, extra: { reviewing?: boolean; thumbnail?: string | null } = {}) =>
+    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, pageNumbers, ...extra })
+  const fresh = () => must(engine.start(null, dModel, 'server:donuts', T0))
+  const footer = (html: string) => html.match(/<div data-footer="true"[^>]*>.*$/)![0]
+  /** First rise viewed and running (ends T0+60); heat_oil also running (ends T0+12). */
+  const waitingOnRise = () => {
+    let se = must(engine.startNode(fresh(), dModel, 'first_rise', T0))
+    se = must(engine.startNode(se, dModel, 'heat_oil', T0))
+    return must(engine.view(se, dModel, 'first_rise', T0))
+  }
+
+  it('waiting (V2Wait): the 26px step name, 52px minutes + "min left", Add 5 min, the 4px bar, the ready line', () => {
+    const html = render(dView(waitingOnRise(), T0 + 12 * MIN - 30_000))
+    expect(html).toMatch(/<h1 class="text-\[26px\] font-extrabold[^"]*"[^>]*>First rise<\/h1>/)
+    expect(html).toMatch(/<span class="text-\[52px\] font-bold[^"]*">49<\/span><span class="text-\[18px\] font-semibold text-home-ink-2">min left<\/span>/)
+    expect(html).toMatch(/<button type="button" class="h-11 px-1 text-\[16px\] font-bold text-home-terracotta-text">Add 5 min<\/button>/)
+    expect(html).toMatch(/<div aria-hidden="true" class="flex h-1 bg-home-rule"><div class="bg-home-terracotta" style="width:19\.\d%"><\/div><\/div>/)
+    expect(html).toMatch(/Ready around [^<]+\. We&#x27;ll ring when it&#x27;s done\./)
+    // The other timer keeps its rail; this one's is hidden.
+    expect(html).toContain('aria-label="Heat oil, 1 min left. Open timer"')
+    expect(html).not.toContain('First rise, ')
+  })
+
+  it('waiting: "Meanwhile, do these" on the field ground, a 44px button per task; "When it\'s done"; "It\'s done" in the footer', () => {
+    const html = render(dView(waitingOnRise(), T0 + MIN))
+    expect(html).toMatch(/<div data-meanwhile="true" class="rounded-home-mini bg-field[^"]*"><div class="text-\[16px\] font-extrabold text-home-ink">Meanwhile, do these<\/div>/)
+    expect(html).toMatch(/<button type="button" class="[^"]*min-h-11[^"]*"><span[^>]*>\d+<\/span><span class="[^"]*text-home-ink">Grease tray<\/span><\/button>/)
+    expect(html).toMatch(/aria-label="When it&#x27;s done: step \d+, Roll and cut\. Go to it"/)
+    expect(footer(html)).toMatch(/>Back<\/button><button[^>]*bg-home-terracotta[^>]*>It&#x27;s done<\/button>/)
+  })
+
+  it('waiting: a done task has the sage tick and "Done", its name in ink-2', () => {
+    const se = must(engine.markDone(waitingOnRise(), dModel, 'grease_pan', T0 + MIN))
+    const html = render(dView(must(engine.view(se, dModel, 'first_rise', T0 + MIN)), T0 + 2 * MIN))
+    expect(html).toMatch(/<span class="[^"]*text-home-ink-2">Grease tray<\/span><span class="[^"]*text-home-sage-chip-text"[^>]*><svg[^>]*>.*?<\/svg>Done<\/span>/)
+  })
+
+  it('waiting: Undo sits outside the footer (the footer is byte-identical with and without it)', () => {
+    const se = waitingOnRise()
+    const withUndo = render(dView(se, T0 + 1_000))
+    const without = render(dView(se, T0 + 20_000))
+    expect(withUndo).toContain('>Undo timer start on Heat oil</button>')
+    expect(footer(withUndo)).toBe(footer(without))
+  })
+
+  it('banner (V2Banner): a terracotta role=status strip, 17/800 title, the 14px line, outlined +5 min and cream Done; raised over any sheet', () => {
+    const se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
+    const html = render(dView(se, T0 + 12 * MIN + 10_000))
+    const strip = html.match(/<div data-strips="true" class="([^"]*)">(.*?)<\/div><\/div>(?=<div aria-hidden="true" data-ticks)/)
+    expect(strip).not.toBeNull()
+    expect(strip![1]).toContain('relative z-30')
+    expect(strip![2]).toMatch(/^<div role="status" class="[^"]*bg-home-terracotta[^"]*text-home-ground[^"]*"><div class="min-w-0 flex-1"><div class="text-\[17px\] font-extrabold[^"]*">Heat oil is ready<\/div><div class="text-\[14px\] opacity-\[\.88\]">Timer ended just now<\/div><\/div>/)
+    expect(strip![2]).toMatch(/<button type="button" class="[^"]*border-\[1\.5px\] border-home-ground[^"]*">\+5 min<\/button><button type="button" class="[^"]*bg-home-ground[^"]*text-home-terracotta-text">Done<\/button>/)
+  })
+
+  it('rails alone are not raised; two banners stack, the one that ended first on top', () => {
+    expect(render(dView(must(engine.startNode(fresh(), dModel, 'heat_oil', T0)), T0))).not.toContain('z-30')
+    let se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
+    se = must(engine.startNode(se, dModel, 'proof_donuts', T0))
+    const html = render(dView(se, T0 + 26 * MIN))
+    expect(html.match(/role="status"/g)).toHaveLength(2)
+    expect(html.indexOf('Heat oil is ready')).toBeLessThan(html.indexOf('Proof donuts is ready'))
+  })
+
+  it('a banner takes the rail\'s slot: the footer is byte-identical before and after a timer ends', () => {
+    const se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
+    expect(footer(render(dView(se, T0 + 11 * MIN)))).toBe(footer(render(dView(se, T0 + 13 * MIN))))
+  })
+
+  it('done (V2Done): the picture full width, 300px, cover; 40/800 at 88% width; the line; Back + Finished cooking', () => {
+    const se = must(engine.markDone(fresh(), dModel, 'glaze_donuts', T0 + 82 * MIN))
+    const html = render(dView(se, T0 + 82 * MIN + 20_000, { thumbnail: 'https://i.ytimg.com/vi/x/hqdefault.jpg' }))
+    expect(html).toMatch(/<div class="flex h-full flex-col bg-home-ground"><div class="flex-shrink-0 pt-\[var\(--safe-top\)\]"><img src="https:\/\/i\.ytimg\.com\/vi\/x\/hqdefault\.jpg" alt="Homemade Glazed Donuts, from the recipe&#x27;s video" class="block h-\[300px\] w-full object-cover"\/>/)
+    expect(html).toMatch(/<h1 class="text-\[40px\] font-extrabold[^"]*" style="font-stretch:88%">Homemade Glazed Donuts is done\.<\/h1><p class="text-\[17px\] text-home-ink-2">Done in 1 hr 22 min\.<\/p>/)
+    expect(footer(html)).toMatch(/>Back<\/button><button[^>]*>Finished cooking<\/button>/)
+    expect(html).not.toContain('Leave')
+  })
+
+  it('done without a picture: no img and no gap', () => {
+    const se = must(engine.markDone(fresh(), dModel, 'glaze_donuts', T0 + 82 * MIN))
+    const html = render(dView(se, T0 + 82 * MIN + 20_000))
+    expect(html).not.toContain('<img')
+    expect(html).toContain('<div class="flex-shrink-0 pt-[var(--safe-top)]"></div>')
+  })
+
+  it('done: Undo for 10 s, outside the footer', () => {
+    const se = must(engine.markDone(fresh(), dModel, 'glaze_donuts', T0 + 82 * MIN))
+    const withUndo = render(dView(se, T0 + 82 * MIN))
+    expect(withUndo).toContain('>Undo</button>')
+    expect(footer(withUndo)).toBe(footer(render(dView(se, T0 + 82 * MIN + 20_000))))
+  })
+
+  it('stale: the message layout, 34/800 at 88% width, Carry on (pill) and Start again (outlined)', () => {
+    const html = render(dView(fresh(), T0 + 3 * 24 * 60 * MIN))
+    expect(html).toMatch(/<h1 class="text-\[34px\] font-extrabold[^"]*" style="font-stretch:88%">You were last here \d+ hr( \d+ min)? ago\.<\/h1>/)
+    expect(html).toMatch(/<button type="button" class="[^"]*bg-home-terracotta[^"]*">Carry on<\/button><button type="button" class="[^"]*border-home-terracotta[^"]*">Start again<\/button>/)
+  })
+
+  it('conflict (MessageScreen): heading, line and two buttons, no top bar', () => {
+    const html = renderToStaticMarkup(
+      createElement(MessageScreen, {
+        heading: 'You’re still cooking Kadai Paneer.',
+        line: 'Pick one cook to carry on with.',
+        primary: { label: 'Back to Kadai Paneer', onClick: noop },
+        secondary: { label: 'End it and cook Homemade Donuts', onClick: noop },
+      }),
+    )
+    expect(html).not.toContain('Leave')
+    expect(html.match(/<button/g)).toHaveLength(2)
+    expect(html).toMatch(/style="font-stretch:88%">You’re still cooking Kadai Paneer\.<\/h1><p class="text-\[17px\][^"]*">Pick one cook to carry on with\.<\/p>/)
+  })
+
+  it('All steps: "End this cook" at the foot; the confirm in place, "End cook" and "Keep cooking"', () => {
+    const rows = stepList(dModel, fresh(), T0, pageOrder(dModel, pageNumbers), 'bloom_yeast')
+    const closed = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop, onAction: noop }))
+    expect(closed).toMatch(/<div data-end-cook="true"[^>]*><div[^>]*><button[^>]*underline[^>]*>End this cook<\/button><\/div><\/div>/)
+    const confirming = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop, onAction: noop, confirmingEnd: true }))
+    expect(confirming).toContain('>End this cook? Running timers will stop.</p>')
+    expect(confirming).toMatch(/<button[^>]*bg-home-terracotta[^>]*>End cook<\/button><button[^>]*>Keep cooking<\/button>/)
+  })
+
+  it('no m:ss anywhere in cooking mode\'s rendered screens', () => {
+    const htmls = [render(dView(waitingOnRise(), T0 + 59 * MIN + 30_000)), render(dView(must(engine.startNode(fresh(), dModel, 'heat_oil', T0)), T0 + 11 * MIN + 45_000))]
+    for (const html of htmls) expect(html.replace(/\d{1,2}:\d{2}(\s| )?(AM|PM|am|pm)?/g, (m) => (/[AaPp]/.test(m) ? '' : m))).not.toMatch(/\b\d{1,2}:\d{2}\b/)
   })
 })

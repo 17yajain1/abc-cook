@@ -59,13 +59,7 @@ export function clockStr(ms: number): string {
  * 7:00 am", or "in 3 days, 9:00 am", by calendar-day difference from `now`. `clock`
  * formats the time itself (`clockStr` by default; `localClock` passes the device locale's). */
 export function dayClock(now: number, target: number, clock: (ms: number) => string = clockStr): string {
-  const a = new Date(now)
-  const b = new Date(target)
-  const days = Math.round(
-    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
-      Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
-      86_400_000,
-  )
+  const days = calendarDays(now, target)
   if (days === 0) return clock(target)
   if (days === 1) return `tomorrow, ${clock(target)}`
   return `in ${days} days, ${clock(target)}`
@@ -77,6 +71,51 @@ export function dayClock(now: number, target: number, clock: (ms: number) => str
 export function localClock(now: number, target: number, locale?: string): string {
   const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
   return dayClock(now, target, (ms) => format.format(ms).replace(/\s/gu, ' '))
+}
+
+/** Whole calendar days from `now`'s date to `target`'s, in local time (never "under 24 h"). */
+function calendarDays(now: number, target: number): number {
+  const a = new Date(now)
+  const b = new Date(target)
+  return Math.round(
+    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
+      86_400_000,
+  )
+}
+
+/** PR 2 CP4: "Ready around ‹this›", the time first in the device locale's clock: "1:42 PM",
+ * "7:00 AM tomorrow", "7:00 AM in 3 days". "Tomorrow" is the next calendar day. Every space
+ * inside the time is a no-break space, as in `localClock`. */
+export function readyClock(now: number, target: number, locale?: string): string {
+  const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
+  const time = format.format(target).replace(/\s/gu, ' ')
+  const days = calendarDays(now, target)
+  if (days <= 0) return time
+  if (days === 1) return `${time} tomorrow`
+  return `${time} in ${days} days`
+}
+
+/** PR 2 CP4: how long ago a timer ended, as the banner says it: "just now" under a minute,
+ * then whole minutes ("4 min ago", `Math.round`, at least 1), then `formatMinutes` from an
+ * hour ("1 hr 5 min ago"). Never seconds. */
+export function endedAgo(ms: number): string {
+  if (ms < 60_000) return 'just now'
+  return `${formatMinutes(Math.max(1, Math.round(ms / 60_000)))} ago`
+}
+
+/** PR 2 CP4: a time since, in `formatMinutes` style ("45 min", "7 hr", "7 hr 20 min"), each
+ * number joined to its unit by a no-break space so "7 / hr" never splits across lines in the
+ * stale screen's 34px title. */
+export function sinceText(ms: number): string {
+  return formatMinutes(Math.max(0, ms) / 60_000).replace(/(\d) /g, '$1 ')
+}
+
+/** PR 2 CP4: `text` as a sentence: trimmed, with a full stop added unless it already ends in
+ * `.`, `!`, `?` or `…` (a closing quote or bracket after the mark still counts). Every
+ * cooking-mode sentence that ends in stored text goes through this, so none ends "..". */
+export function sentence(text: string): string {
+  const t = text.trim()
+  return /[.!?…]["'”’)\]]*$/u.test(t) ? t : `${t}.`
 }
 
 /** PR 2 CP3: a timer's time left, as the rail, the timer sheet and All steps say it. Whole

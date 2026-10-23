@@ -5,10 +5,14 @@ import {
   cap,
   clockStr,
   dayClock,
+  endedAgo,
   handsOffLine,
   localClock,
   minutesLeft,
   READY_WHEN,
+  readyClock,
+  sentence,
+  sinceText,
   splitCopy,
   timeLeft,
   timerLength,
@@ -18,6 +22,8 @@ import {
 const MIN = 60_000
 // A clock time joins its am/pm with a no-break space (U+00A0); expectations are written with a plain one.
 const nb = (s: string) => s.replace(/(\d) (am|pm)/, '$1\u00a0$2')
+// A number joins its unit with a no-break space (PR 2 CP4 `sinceText`).
+const nbUnit = (s: string) => s.replace(/(\d) /g, '$1\u00a0')
 
 describe('wordFor', () => {
   it('spells small numbers, falls back to digits past the table', () => {
@@ -246,5 +252,83 @@ describe('localClock (PR 2 CP3, the device locale)', () => {
 describe('READY_WHEN', () => {
   it('is one string, for later translation', () => {
     expect(READY_WHEN).toBe('Ready when:')
+  })
+})
+
+describe('readyClock (PR 2 CP4, the time first)', () => {
+  const plain = (s: string) => s.replace(/\s/gu, ' ')
+  const at = (d: number, h: number, m: number) => new Date(2026, 9, d, h, m, 0).getTime()
+
+  it('same calendar day: the time alone, in the device locale', () => {
+    expect(plain(readyClock(at(23, 13, 0), at(23, 13, 42), 'en-US'))).toBe('1:42 PM')
+    expect(plain(readyClock(at(23, 13, 0), at(23, 13, 42), 'en-GB'))).toBe('13:42')
+  })
+
+  it('the next calendar day: "7:00 am tomorrow"', () => {
+    expect(plain(readyClock(at(23, 21, 0), at(24, 7, 0), 'en-US'))).toBe('7:00 AM tomorrow')
+    expect(plain(readyClock(at(23, 21, 0), at(24, 7, 0), 'en-GB'))).toBe('7:00 tomorrow')
+  })
+
+  it('"tomorrow" from the calendar day, never from "under 24 h"', () => {
+    expect(plain(readyClock(at(23, 23, 50), at(24, 0, 10), 'en-GB'))).toBe('0:10 tomorrow')
+    expect(plain(readyClock(at(23, 23, 50), at(24, 0, 10), 'en-US'))).toBe('12:10 AM tomorrow')
+    expect(plain(readyClock(at(23, 1, 0), at(23, 7, 0), 'en-US'))).toBe('7:00 AM')
+  })
+
+  it('later: "in N days"', () => {
+    expect(plain(readyClock(at(23, 9, 0), at(26, 7, 0), 'en-US'))).toBe('7:00 AM in 3 days')
+  })
+
+  it('no-break spaces inside the time', () => {
+    expect(readyClock(at(23, 13, 0), at(23, 13, 42), 'en-US')).toMatch(/^1:42 PM$/)
+  })
+})
+
+describe('endedAgo (PR 2 CP4, the banner)', () => {
+  it('under a minute: "just now"', () => {
+    expect(endedAgo(0)).toBe('just now')
+    expect(endedAgo(59_999)).toBe('just now')
+  })
+
+  it('whole minutes, rounded, at least 1; never seconds', () => {
+    expect(endedAgo(60_000)).toBe('1 min ago')
+    expect(endedAgo(89_000)).toBe('1 min ago')
+    expect(endedAgo(4 * MIN + 20_000)).toBe('4 min ago')
+    expect(endedAgo(4 * MIN + 40_000)).toBe('5 min ago')
+  })
+
+  it('from an hour: hours and minutes', () => {
+    expect(endedAgo(65 * MIN)).toBe('1 hr 5 min ago')
+    expect(endedAgo(120 * MIN)).toBe('2 hr ago')
+  })
+})
+
+describe('sinceText (PR 2 CP4, the stale screen)', () => {
+  it('formatMinutes style, never "hours"', () => {
+    expect(sinceText(45 * MIN)).toBe(nbUnit('45 min'))
+    expect(sinceText(7 * 60 * MIN)).toBe(nbUnit('7 hr'))
+    expect(sinceText(7 * 60 * MIN + 20 * MIN)).toBe(nbUnit('7 hr 20 min'))
+  })
+
+  it('a number never splits from its unit across lines (a no-break space between them)', () => {
+    expect(sinceText(7 * 60 * MIN + 20 * MIN)).toBe('7 hr 20 min')
+  })
+})
+
+describe('sentence (PR 2 CP4: no doubled full stop)', () => {
+  it('adds a full stop only when the text has no closing mark', () => {
+    expect(sentence('Kadai Paneer')).toBe('Kadai Paneer.')
+    expect(sentence('Pizza dough.')).toBe('Pizza dough.')
+    expect(sentence('Wow!')).toBe('Wow!')
+    expect(sentence('Ready?')).toBe('Ready?')
+    expect(sentence('And then…')).toBe('And then…')
+  })
+
+  it('trims first; a closing quote or bracket after the mark still counts', () => {
+    expect(sentence('Pizza dough. ')).toBe('Pizza dough.')
+    expect(sentence('Pizza dough ')).toBe('Pizza dough.')
+    expect(sentence('He said "stop."')).toBe('He said "stop."')
+    expect(sentence('(the best one!)')).toBe('(the best one!)')
+    expect(sentence('the "best" one')).toBe('the "best" one.')
   })
 })

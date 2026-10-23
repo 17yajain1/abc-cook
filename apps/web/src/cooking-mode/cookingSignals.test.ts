@@ -37,25 +37,49 @@ class FakeTarget implements EventTargetLike {
 
 function fakeAudio() {
   const started: number[] = []
-  const resume = vi.fn(() => Promise.resolve())
-  const ctx: AudioContextLike = {
+  const stopped: number[] = []
+  const notes: Array<{ type: string; hz: number }> = []
+  const ramps: Array<[string, number, number]> = []
+  const ctx: AudioContextLike & { state: AudioContextState } = {
+    state: 'running',
     currentTime: 5,
     destination: {},
-    resume,
-    createOscillator: () => ({
-      type: 'sine',
-      frequency: { value: 0 },
-      connect: () => undefined,
-      start: (when?: number) => {
-        started.push(when ?? 0)
+    resume: () => Promise.resolve(),
+    createOscillator: () => {
+      const osc = {
+        type: 'sine' as OscillatorType,
+        frequency: { value: 0 },
+        connect: () => undefined,
+        start: (when?: number) => {
+          started.push(when ?? 0)
+          notes.push({ type: osc.type, hz: osc.frequency.value })
+        },
+        stop: (when?: number) => {
+          stopped.push(when ?? 0)
+        },
+      }
+      return osc
+    },
+    createGain: () => ({
+      gain: {
+        value: 1,
+        setValueAtTime: (v: number, t: number) => ramps.push(['set', v, t]),
+        linearRampToValueAtTime: (v: number, t: number) => ramps.push(['linear', v, t]),
+        exponentialRampToValueAtTime: (v: number, t: number) => ramps.push(['exp', v, t]),
       },
-      stop: () => undefined,
+      connect: () => undefined,
     }),
-    createGain: () => ({ gain: { value: 1 }, connect: () => undefined }),
   }
+  const resume = vi.fn(() => {
+    ctx.state = 'running'
+    return Promise.resolve()
+  })
+  ctx.resume = resume
   const create = vi.fn(() => ctx)
-  return { create, resume, started }
+  return { create, resume, started, stopped, notes, ramps, ctx }
 }
+
+const round = (xs: number[]) => xs.map((x) => Math.round(x * 100) / 100)
 
 describe('cookingSignals — keepAwake', () => {
   it('delegates to the existing wake lock controller', () => {
@@ -81,19 +105,70 @@ describe('cookingSignals — playSound', () => {
     target.fire('pointerdown')
     expect(audio.create).toHaveBeenCalledTimes(1)
     expect(audio.resume).toHaveBeenCalledTimes(1)
-    expect(target.count()).toBe(0)
 
     signals.playSound('timerEnd')
-    expect(audio.started).toEqual([5])
+    expect(audio.started.length).toBeGreaterThan(0)
   })
 
-  it('a keydown unlocks too, and a second gesture creates no second context', () => {
+  it('a keydown, touchend or click unlocks too, and a second gesture creates no second context', () => {
+    for (const type of ['keydown', 'touchend', 'click']) {
+      const audio = fakeAudio()
+      const target = new FakeTarget()
+      createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
+      target.fire(type)
+      target.fire('pointerdown')
+      expect(audio.create, type).toHaveBeenCalledTimes(1)
+    }
+  })
+
+  it('the listener stays on: a tap after the page was backgrounded resumes a suspended context (iOS)', () => {
     const audio = fakeAudio()
     const target = new FakeTarget()
     createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
-    target.fire('keydown')
+    target.fire('touchend')
+    expect(target.count()).toBe(4)
+    target.fire('touchend') // running: nothing to do
+    expect(audio.resume).toHaveBeenCalledTimes(1)
+    audio.ctx.state = 'suspended'
+    target.fire('click')
+    expect(audio.resume).toHaveBeenCalledTimes(2)
+  })
+
+  it('playSound tries resume() first when the context is suspended', () => {
+    const audio = fakeAudio()
+    const target = new FakeTarget()
+    const signals = createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
     target.fire('pointerdown')
-    expect(audio.create).toHaveBeenCalledTimes(1)
+    audio.ctx.state = 'suspended'
+    signals.playSound('timerEnd')
+    expect(audio.resume).toHaveBeenCalledTimes(2)
+  })
+
+  it('the chime: 880 Hz then 660 Hz, triangle, 0.18 s each, three times in about 1.8 s', () => {
+    const audio = fakeAudio()
+    const target = new FakeTarget()
+    const signals = createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
+    target.fire('pointerdown')
+    signals.playSound('timerEnd')
+    expect(audio.notes).toEqual([880, 660, 880, 660, 880, 660].map((hz) => ({ type: 'triangle', hz })))
+    expect(round(audio.started)).toEqual([5, 5.18, 5.6, 5.78, 6.2, 6.38])
+    expect(round(audio.stopped)).toEqual([5.18, 5.36, 5.78, 5.96, 6.38, 6.56])
+    expect(audio.stopped[audio.stopped.length - 1] - 5).toBeLessThanOrEqual(1.8)
+  })
+
+  it('each note fades in over 10 ms to 0.3 and out exponentially (no clicks)', () => {
+    const audio = fakeAudio()
+    const target = new FakeTarget()
+    const signals = createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
+    target.fire('pointerdown')
+    signals.playSound('timerEnd')
+    const first = audio.ramps.slice(0, 3).map(([k, v, t]) => [k, v, Math.round(t * 1000) / 1000])
+    expect(first).toEqual([
+      ['set', 0.0001, 5],
+      ['linear', 0.3, 5.01],
+      ['exp', 0.0001, 5.18],
+    ])
+    expect(audio.ramps).toHaveLength(18)
   })
 
   it('is a no-op without an audio context factory', () => {
@@ -113,6 +188,17 @@ describe('cookingSignals — vibrate', () => {
 
   it('is a no-op when vibrate is not injected', () => {
     expect(() => createWebCookingSignals({ wakeLock: fakeWakeLock() }).vibrate(200)).not.toThrow()
+  })
+
+  it('skips the call before the page has had a tap (Chrome blocks it and logs an error)', () => {
+    const vibrate = vi.fn(() => true)
+    let active = false
+    const signals = createWebCookingSignals({ wakeLock: fakeWakeLock(), vibrate, hasUserActivation: () => active })
+    signals.vibrate([300, 150, 300])
+    expect(vibrate).not.toHaveBeenCalled()
+    active = true
+    signals.vibrate([300, 150, 300])
+    expect(vibrate).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -155,7 +241,7 @@ describe('cookingSignals — liveTimer and dispose', () => {
     const audio = fakeAudio()
     const target = new FakeTarget()
     const signals = createWebCookingSignals({ wakeLock: fakeWakeLock(), createAudioContext: audio.create, unlockTarget: target })
-    expect(target.count()).toBe(2)
+    expect(target.count()).toBe(4)
 
     signals.dispose()
     expect(target.count()).toBe(0)

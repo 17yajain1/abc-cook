@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
-import { localClock } from './copy'
+import { readyClock } from './copy'
 import { pageOrder } from './stepPage'
-import { MAX_RAILS, rails, runningTimers, timerSheet } from './timers'
+import { MAX_RAILS, runningTimers, strips, timerSheet } from './timers'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import { ADD_TIME_MS } from '@/cooking/constants'
@@ -61,38 +61,132 @@ describe('runningTimers', () => {
   })
 })
 
-describe('rails (owner answer 1: at most two)', () => {
+describe('strips, no timer ended: the CP3 rails (owner answer 1: at most two)', () => {
   it('one timer: one rail naming its step and time left, with the design\'s aria-label', () => {
     const se = start(fresh(), 'first_rise', T0)
-    expect(rails(model, se, T0 + 8 * MIN, order)).toEqual([
+    expect(strips(model, se, T0 + 8 * MIN, order)).toEqual([
       { kind: 'timer', nodeId: 'first_rise', name: 'First rise', left: '52 min left', aria: 'First rise, 52 min left. Open timer' },
     ])
   })
 
-  it('includes the viewed step\'s own timer (its page has no other way to the sheet)', () => {
+  it('includes the viewed step\'s own timer unless it is hidden (its own waiting screen)', () => {
     let se = start(fresh(), 'first_rise', T0)
     se = must(engine.view(se, model, 'first_rise', T0))
-    expect(rails(model, se, T0, order).map((r) => r.kind === 'timer' && r.nodeId)).toEqual(['first_rise'])
+    expect(strips(model, se, T0, order).map((r) => r.kind === 'timer' && r.nodeId)).toEqual(['first_rise'])
+    expect(strips(model, se, T0, order, 'first_rise')).toEqual([])
   })
 
   it('two timers: two rails, soonest on top', () => {
     let se = start(fresh(), 'first_rise', T0)
     se = start(se, 'proof_donuts', T0)
-    expect(rails(model, se, T0, order).map((r) => r.kind === 'timer' && r.name)).toEqual(['Proof donuts', 'First rise'])
+    expect(strips(model, se, T0, order).map((r) => r.kind === 'timer' && r.name)).toEqual(['Proof donuts', 'First rise'])
   })
 
   it('three or more: the soonest, then "N more timers" (N = timers not on the first rail; CP3.1 label)', () => {
     let se = start(fresh(), 'first_rise', T0)
     se = start(se, 'proof_donuts', T0)
     se = start(se, 'heat_oil', T0)
-    const r = rails(model, se, T0, order)
+    const r = strips(model, se, T0, order)
     expect(r).toHaveLength(MAX_RAILS)
     expect(r[0]).toMatchObject({ kind: 'timer', nodeId: 'heat_oil' })
     expect(r[1]).toEqual({ kind: 'more', count: 2, text: '2 more timers', aria: '2 more timers. Show all timers' })
   })
 
+  it('a hidden timer is not counted: three running, one hidden, two rails', () => {
+    let se = start(fresh(), 'first_rise', T0)
+    se = start(se, 'proof_donuts', T0)
+    se = start(se, 'heat_oil', T0)
+    expect(strips(model, se, T0, order, 'heat_oil').map((r) => r.kind === 'timer' && r.nodeId)).toEqual([
+      'proof_donuts',
+      'first_rise',
+    ])
+  })
+
   it('none running: no rail', () => {
-    expect(rails(model, fresh(), T0, order)).toEqual([])
+    expect(strips(model, fresh(), T0, order)).toEqual([])
+  })
+})
+
+describe('strips, a timer ended: the V2Banner (PR 2 CP4)', () => {
+  // Started at T0: heat_oil ends T0+12, fry_donuts T0+14, proof_donuts T0+25, first_rise T0+60.
+  const banner = (nodeId: string, name: string, line: string) => ({
+    kind: 'banner',
+    nodeId,
+    title: `${name} is ready`,
+    line,
+    add: { label: '+5 min', action: { kind: 'extend', nodeId, ms: ADD_TIME_MS } },
+    done: { label: 'Done', action: { kind: 'markDone', nodeId } },
+  })
+
+  it('just ended: "‹name› is ready" / "Timer ended just now", its own +5 min and Done', () => {
+    const se = start(fresh(), 'heat_oil', T0)
+    expect(strips(model, se, T0 + 12 * MIN + 10_000, order)).toEqual([banner('heat_oil', 'Heat oil', 'Timer ended just now')])
+  })
+
+  it('ended while away: minutes, rounded, never seconds; from an hour, hours and minutes', () => {
+    const se = start(fresh(), 'heat_oil', T0)
+    expect(strips(model, se, T0 + 16 * MIN + 20_000, order)[0]).toMatchObject({ line: 'Timer ended 4 min ago' })
+    expect(strips(model, se, T0 + 77 * MIN, order)[0]).toMatchObject({ line: 'Timer ended 1 hr 5 min ago' })
+  })
+
+  it('every ended timer becomes a banner, required or not (holding included)', () => {
+    // first_rise's consumer (shape_and_cut) is not ready while other steps are pending.
+    const se = start(fresh(), 'first_rise', T0)
+    expect(strips(model, se, T0 + 61 * MIN, order).map((s) => s.kind)).toEqual(['banner'])
+  })
+
+  it('banner first, then the one running timer as its rail', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = start(se, 'first_rise', T0)
+    const s = strips(model, se, T0 + 13 * MIN, order)
+    expect(s.map((x) => x.kind)).toEqual(['banner', 'timer'])
+    expect(s[1]).toMatchObject({ nodeId: 'first_rise', left: '47 min left' })
+  })
+
+  it('banner, then several running fold into "N more timers"', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = start(se, 'first_rise', T0)
+    se = start(se, 'proof_donuts', T0)
+    const s = strips(model, se, T0 + 13 * MIN, order)
+    expect(s.map((x) => x.kind)).toEqual(['banner', 'more'])
+    expect(s[1]).toMatchObject({ count: 2, text: '2 more timers' })
+  })
+
+  it('two ended: two banners, the one that ended first on top; at most 2 banners and 3 strips', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = start(se, 'proof_donuts', T0)
+    se = start(se, 'first_rise', T0)
+    const two = strips(model, se, T0 + 26 * MIN, order)
+    expect(two.map((x) => x.kind)).toEqual(['banner', 'banner', 'timer'])
+    expect(two.map((x) => (x.kind === 'more' ? null : x.nodeId))).toEqual(['heat_oil', 'proof_donuts', 'first_rise'])
+    // All three ended: two banners, the third folds into the strip (one left: its rail).
+    const three = strips(model, se, T0 + 61 * MIN, order)
+    expect(three.map((x) => x.kind)).toEqual(['banner', 'banner', 'timer'])
+    expect(three[2]).toMatchObject({ nodeId: 'first_rise', left: "Time's up" })
+  })
+
+  it('a third ended plus one running fold into "2 more timers"', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = start(se, 'proof_donuts', T0)
+    se = start(se, 'fry_donuts', T0) // 14 min, ends T0+14
+    se = start(se, 'first_rise', T0)
+    const s = strips(model, se, T0 + 26 * MIN, order)
+    expect(s.map((x) => x.kind)).toEqual(['banner', 'banner', 'more'])
+    expect(s[2]).toMatchObject({ count: 2 })
+  })
+
+  it('a hidden timer\'s banner is hidden too (its own waiting screen shows the end)', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = start(se, 'first_rise', T0)
+    expect(strips(model, se, T0 + 13 * MIN, order, 'heat_oil').map((x) => x.kind)).toEqual(['timer'])
+  })
+
+  it('"+5 min" after the end gives a new end 5 min from now, so the banner becomes a rail', () => {
+    let se = start(fresh(), 'heat_oil', T0)
+    se = must(engine.extend(se, model, 'heat_oil', T0 + 16 * MIN, ADD_TIME_MS))
+    expect(strips(model, se, T0 + 16 * MIN, order)).toEqual([
+      { kind: 'timer', nodeId: 'heat_oil', name: 'Heat oil', left: '5 min left', aria: 'Heat oil, 5 min left. Open timer' },
+    ])
   })
 })
 
@@ -108,7 +202,8 @@ describe('timerSheet', () => {
       goTo: { label: `Go to ${stepRef('first_rise').toLowerCase()}`, action: { kind: 'view', nodeId: 'first_rise' } },
       big: '52',
       unit: 'min left',
-      readyAt: `Ready around ${localClock(now, T0 + 60 * MIN, 'en-GB')}`,
+      readyAt: `Ready around ${readyClock(now, T0 + 60 * MIN, 'en-GB')}`,
+      ended: false,
       fraction: 8 / 60,
       add: { label: 'Add 5 min', action: { kind: 'extend', nodeId: 'first_rise', ms: ADD_TIME_MS } },
       stop: { label: 'Stop timer', action: { kind: 'stopNode', nodeId: 'first_rise' } },
@@ -128,11 +223,22 @@ describe('timerSheet', () => {
     expect(s.fraction).toBeCloseTo(3 / 75)
   })
 
-  it('expired: "Time\'s up", no unit, no ready clock, no Add 5 min; the bar is full', () => {
+  it('expired: "Time\'s up", no unit, no ready clock; the bar is full; Add 5 min stays (CP4: from now)', () => {
     const s = timerSheet(model, rising(), T0 + 61 * MIN, 'first_rise', order, null)!
-    expect([s.big, s.unit, s.readyAt, s.add]).toEqual(["Time's up", null, null, null])
+    expect([s.big, s.unit, s.readyAt, s.ended]).toEqual(["Time's up", null, null, true])
+    expect(s.add).toEqual({ label: 'Add 5 min', action: { kind: 'extend', nodeId: 'first_rise', ms: ADD_TIME_MS } })
     expect(s.fraction).toBe(1)
     expect(s.stop.action).toEqual({ kind: 'stopNode', nodeId: 'first_rise' })
+  })
+
+  it('the next day: "Ready around 7:00 tomorrow", the time first (CP4 readyClock)', () => {
+    const now = new Date(2026, 9, 23, 22, 0).getTime()
+    const se = must(engine.startNode(fresh(), model, 'first_rise', now - 51 * MIN)) // ends 22:09 the same day
+    expect(timerSheet(model, se, now, 'first_rise', order, null, 'en-GB')?.readyAt).toBe('Ready around 22:09')
+    const late = must(engine.extend(se, model, 'first_rise', now, 9 * 60 * MIN)) // ends 07:09 the next day
+    expect(timerSheet(model, late, now, 'first_rise', order, null, 'en-GB')?.readyAt?.replace(/\s/gu, ' ')).toBe(
+      'Ready around 7:09 tomorrow',
+    )
   })
 
   it('a node that is not running has no sheet (the sheet then closes itself)', () => {

@@ -7,11 +7,10 @@ import pizza from '@/__fixtures__/pizza-dough.plan-response.json'
 import { current } from '@/cooking/select'
 import { createSessionStore, type StorageLike } from '@/cooking/store'
 import { deriveCookingModel } from '@/cooking/model'
-import { headerTiming } from '@/lib/duration'
 import type { ServingsChoice } from '@/lib/servings'
 
 import { ingredientsById, quantityChips, quantityPhrases } from './quantity'
-import { buildCookingView, buildEntryView } from './viewModel'
+import { buildCookingView } from './viewModel'
 
 const PIZZA = pizza as RecipePlanResponse
 const CROISSANT = croissant as RecipePlanResponse
@@ -39,7 +38,7 @@ function viewAt(payload: RecipePlanResponse, choice: ServingsChoice | null, want
       store.dispatch({ type: 'markDone', model, nodeId: run, now: T0 })
       continue
     }
-    const v = buildCookingView(model, s, T0, ings, { recipeTitle: payload.graph.title, leaving: false, choice })
+    const v = buildCookingView(model, s, T0, ings, { recipeTitle: payload.graph.title, choice })
     if ((v.screenId === 'task' || v.screenId === 'handsoff_pending') && want(cur)) return { v, model, node: model.nodes[cur], ings }
     store.dispatch({ type: model.nodes[cur].occupiesCook ? 'markDone' : 'startNode', model, nodeId: cur, now: T0 })
   }
@@ -131,34 +130,7 @@ describe('times note (F1): once per session, on its first step, from factor 2', 
     expect(viewAt(PIZZA, null, () => true).v.timesNote).toBeNull()
     expect(viewAt(CROISSANT, B(1.5), () => true).v.timesNote).toBeNull()
   })
-  it('the resume and conflict entry screen keeps carrying it in its note', () => {
-    const model = deriveCookingModel(PIZZA)
-    const timing = headerTiming(PIZZA.summary ?? null, PIZZA.plan.total_min)
-    expect(buildEntryView(model, 'Pizza', timing, S(16, 8)).note).toContain('A bigger batch can take longer.')
-  })
-})
-
-describe('entry screen', () => {
-  const model = deriveCookingModel(PIZZA)
-  const timing = headerTiming(PIZZA.summary ?? null, PIZZA.plan.total_min)
-  it('unchanged at factor 1', () => {
-    const a = buildEntryView(model, 'Pizza', timing)
-    const b = buildEntryView(model, 'Pizza', timing, null)
-    expect(b).toEqual(a)
-    expect(buildEntryView(model, 'Pizza', timing, S(8, 8))).toEqual(a)
-  })
-  it('names the choice, and adds the times note from factor 2', () => {
-    const v = buildEntryView(model, 'Pizza', timing, S(12, 8))
-    expect(v.instr).toContain('For 12 servings')
-    expect(v.note ?? '').not.toContain('A bigger batch')
-    const w = buildEntryView(model, 'Pizza', timing, S(16, 8))
-    expect(w.note).toContain('Times are for 8 servings. A bigger batch can take longer.')
-  })
-  it('batch copy', () => {
-    const v = buildEntryView(model, 'Pizza', timing, B(2))
-    expect(v.instr).toContain('Amounts ×2')
-    expect(v.note).toContain('Times are for the recipe as written. A bigger batch can take longer.')
-  })
+  // PR 2 CP4: the entry screen that also carried it is gone (Start cooking opens step 1).
 })
 
 function model_instr(payload: RecipePlanResponse, id: string): string {

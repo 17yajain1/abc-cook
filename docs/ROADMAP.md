@@ -219,6 +219,9 @@ Split into:
 only; remove the engine's `skip`, `skipAllowed`, store/`useSession` `skip` and their tests,
 but keep `deferred` and `Transition` `'skip'` readable for stored sessions.
 
+**TODO:** Not done (reopen a done step), pending the CP5 wrong-Done check.
+**CP5:** try a wrong Done on purpose, on a hands-on and a hands-off step, and judge whether the 10 s Undo is enough.
+
 **M3.2b** (source-section stages, in-stage waits) is deferred and unscoped independently
 of this split — it can land before or after M3.3–M3.5; nothing in the session core
 depends on it.

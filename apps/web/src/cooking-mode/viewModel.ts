@@ -1,67 +1,64 @@
-import type { Ingredient } from '@abc-cook/schema'
+import type { Ingredient, SourceRef } from '@abc-cook/schema'
 
 import { UNDO_WINDOW_MS } from '@/cooking/constants'
-import {
-  handover,
-  holding,
-  lifecycle,
-  nextRequiredAt,
-  requiredIfExpired,
-  role,
-  running,
-  sheetOrder,
-  sittingIndex,
-  stepPosition,
-  waitSubject,
-  whisperInput,
-  current,
-} from '@/cooking/select'
+import { current, handover, lifecycle, role, running, stepPosition, waitSubject } from '@/cooking/select'
 import type { CookingModel, CookingSession, SessionConflict } from '@/cooking/types'
 import { attentionTag } from '@/lib/attention'
 import { displayCue } from '@/lib/displayCue'
 import { cueShownWith } from '@/lib/doneness'
-import type { HeaderTiming } from '@/lib/duration'
+import { formatMinutes } from '@/lib/duration'
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { servingsCopy } from '@/lib/servingsCopy'
 import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE, stepAmountHint, stepNeedsAmountNote, textHasTimePhrase } from '@/lib/stepNote'
+import { canonicalSourceKey, thumbnailUrlFor } from '@/library/sourceKey'
 
-import { aboutMinutes, cap, dayClock, handsOffLine, minutesLeft, splitCopy, timerLength, wordFor } from './copy'
+import { endedAgo, handsOffLine, sentence, sinceText, timeLeft, timerLength } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
 import { needRows, quantityChips, type NeedRow } from './quantity'
-import { backTarget, pageOrder, ticks, upNext, type Tick, type UpNextView } from './stepPage'
-import { rails, type RailView } from './timers'
+import {
+  backTarget,
+  meanwhileRows,
+  pageOrder,
+  ticks,
+  upNext,
+  waitingNext,
+  type MeanwhileRow,
+  type Tick,
+  type UpNextView,
+} from './stepPage'
+import { strips, timerSheet, type StripView } from './timers'
+import { shouldHoldWakeLock } from './wakeLock'
 
 /**
- * The screen-selection and copy layer for Cooking Mode (M3.4), ported from the design
- * handoff's prototype (`Cooking Mode - M3.4 UI.dc.html`'s `screenOf`/`viewOf`/
- * `whisperFor`/`applySheet`). Every fact this file reads comes from the real M3.3
- * selectors (`@/cooking/select`) — nothing here recomputes `current`, `handover`,
- * `role`, `awayClass` or any other scheduling/session decision. This file only turns
- * their outputs into the strings and action descriptors the screens render.
+ * The screen-selection and copy layer for Cooking Mode (M3.4; PR 2 CP2-CP4). Every fact
+ * this file reads comes from the real selectors (`@/cooking/select`) — nothing here
+ * recomputes `current`, `handover`, `role` or any other scheduling/session decision. This
+ * file only turns their outputs into the strings and action descriptors the screens render.
+ *
+ * PR 2 CP4: four layouts are left. The step page (CP3); the waiting screen (V2Wait) for a
+ * step whose timer is running, viewed or chosen because nothing else needs the cook; the
+ * done screen (V2Done); and the stale message. A timer's end is a banner (`timers.ts`
+ * `strips`), never a takeover; there is no start, leaving or returning screen.
  *
  * `conflict` is deliberately not a `ScreenId` case `resolveScreen`/`buildCookingView`
  * ever reach — a plan-key conflict means the stored session does not belong to `model`
  * at all, so there is no `(model, session)` pair to build a view from. The caller
  * (`CookingModeScreen`) renders that screen directly from `OpenResult.conflict`, via
- * this module's own `buildConflictView` (CP1a) — a separate, smaller view model than
- * `CookingView`, built from a `SessionConflict` rather than a `(model, session)` pair.
+ * `buildConflictView`.
  */
 
 export type ScreenId =
-  | 'entry'
   | 'task'
   | 'handsoff_pending'
-  /** PR 2 CP2: the step page for a viewed step whose timer is running. */
+  /** The waiting screen of a viewed step whose timer is running (PR 2 CP4: V2Wait). */
   | 'step_running'
   /** PR 2 CP2: the step page for a viewed step that is already done. */
   | 'step_done'
+  /** The waiting screen chosen when nothing needs the cook; the three ids keep the wake-lock
+   * rules (`wakeLock.ts`) apart: held on `wait`, released on the long two. */
   | 'wait'
   | 'long_wait'
-  | 'handover'
-  | 'leaving'
-  | 'returning'
   | 'sitting_break'
-  | 'sitting_resume'
   | 'stale'
   | 'done'
   /** Produced only by the caller directly from `OpenResult` — never by `resolveScreen`.
@@ -69,34 +66,27 @@ export type ScreenId =
   | 'conflict'
 
 export type ActionDescriptor =
-  | { kind: 'start' }
   /** `clearView` (PR 2 CP2): the step was started from a view naming it, so the caller
    * follows the start with `view(null)` and the cook moves on, as Done does. */
   | { kind: 'startNode'; nodeId: string; clearView?: boolean }
   | { kind: 'markDone'; nodeId: string }
   /** PR 2 CP1: the timer sheet's "Stop timer" (CP3). */
   | { kind: 'stopNode'; nodeId: string }
-  /** PR 2 CP1: navigation only. CP2's Up next and Back emit it. */
+  /** PR 2 CP1: navigation only. Up next, Back, All steps and the Meanwhile rows emit it. */
   | { kind: 'view'; nodeId: string | null }
   /** `ms` (PR 2 CP3.0): the amount to add; absent is the engine's default (`EXTEND_MS`). */
   | { kind: 'extend'; nodeId: string; ms?: number }
-  | { kind: 'acknowledge' }
-  | { kind: 'resume' }
+  /** The stale screen's "Carry on". */
   | { kind: 'touch' }
-  | { kind: 'end' }
-  /** Dismiss the local "leaving" screen without touching the session. */
-  | { kind: 'stay' }
-  /** Navigate back to the Plan view. Local UI only — never an engine action. */
-  | { kind: 'seePlan' }
+  /** PR 2 CP4: the stale screen's "Start again": one atomic replace, then step 1. */
+  | { kind: 'startAgain' }
   /** P1 #6 §C3: reverses `lastTransition` — the "Undo" link (PR 2 CP2's label). */
   | { kind: 'undo' }
-  /** P1 #6 §C4: the done screen's "Finished cooking" — ends the session, then
-   * navigates to the Library (`onFinish`), distinct from the stale screen's `end`,
-   * which stays on the entry screen. */
+  /** P1 #6 §C4: "Finished cooking" — ends the session, then leaves (`onFinish`). */
   | { kind: 'finish' }
-  /** P1 #6 §C4: leaving/returning's "End the cook and clear the timers" — ends the
-   * session, then leaves Cooking Mode entirely (`onExit`, back to that recipe's Plan),
-   * distinct from `finish`'s trip to the Library. */
+  /** PR 2 CP4: the done screen's Back — show the last step (local UI, never persisted). */
+  | { kind: 'review' }
+  /** PR 2 CP4: All steps' "End cook" — ends the session, then leaves Cooking Mode (`onExit`). */
   | { kind: 'endAndExit' }
 
 export interface ActionButton {
@@ -105,11 +95,39 @@ export interface ActionButton {
   action: ActionDescriptor
 }
 
-export type Shell = 'paper' | 'dark' | 'field'
+/** Which layout the shell draws (PR 2 CP4). */
+export type Layout = 'step' | 'waiting' | 'done' | 'message'
+
+/** PR 2 CP4 (V2Wait): the waiting block, built from the timer sheet's own figures
+ * (`timerSheet`), so the sheet and the screen can't disagree. */
+export interface WaitingView {
+  /** "48" + "min left"; "1 hr 12 min" + "left"; "Time's up" + `null` once it has ended. */
+  big: string
+  unit: string | null
+  ended: boolean
+  /** "Ready around 1:42 PM. We'll ring when it's done." (wake lock held), the long-wait
+   * alarm line (released), or "Timer ended 4 min ago" once it has ended. */
+  line: string
+  fraction: number
+  /** "Add 5 min": from now on an expired timer (CP4.0). */
+  add: ActionButton
+  /** The tasks of the windows this step hosts (the recipe page's "Meanwhile, do these"). */
+  meanwhile: MeanwhileRow[]
+}
+
+/** PR 2 CP4 (V2Done). */
+export interface DoneView {
+  /** The recipe's YouTube thumbnail, or `null`: no image and no gap. */
+  thumbnail: string | null
+  /** The picture's alt text: "‹Title›, from the recipe's video". */
+  alt: string
+  /** One line from the session: "All 8 steps, in 1 hr 22 min." / "Done in 1 hr 22 min." */
+  line: string
+}
 
 export interface CookingView {
   screenId: ScreenId
-  shell: Shell
+  layout: Layout
   topRecipe: string
   showTopRight: boolean
   label: string | null
@@ -130,7 +148,7 @@ export interface CookingView {
   servingsNote: string | null
   /** R4 F1: "Times are for N servings. A bigger batch can take longer." Shown once per session,
    * on its first step screen, when the factor is 2 or more. Later steps and a smaller factor
-   * get `null`. (The resume and conflict entry screen carries the same sentence in its `note`.) */
+   * get `null`. */
   timesNote: string | null
   /** R6b B3 (ii): "Timers stay as planned. Changing times comes later." Only on the task screen of a step the
    * cook edited whose text now has a time phrase. No "Edited" mark anywhere; the timer is still the scheduler's. */
@@ -142,48 +160,35 @@ export interface CookingView {
    * (FGC-3). `null` on every other screen and for every step from the source. */
   addedNote: string | null
   note: string | null
-  /** "Step N of M" on the step pages (PR 2 CP2: N is the recipe-page number, `stepNumbers`,
-   * falling back to the execution order). `null` everywhere else. */
+  /** "Step N of M" on the step and waiting screens (PR 2 CP2: N is the recipe-page number,
+   * `stepNumbers`, falling back to the execution order). `null` everywhere else. */
   step: string | null
-  /** PR 2 CP2: the Up next block (`stepPage.ts`'s `upNext`), navigation only. `null` on the
-   * finish step and off the step pages. */
+  /** PR 2 CP2: the Up next block (`stepPage.ts`'s `upNext`; "When it's done" on a waiting
+   * screen), navigation only. `null` on the finish step and elsewhere. */
   upNext: UpNextView | null
-  /** PR 2 CP2: one progress tick per page step, on the step pages only. */
+  /** PR 2 CP2: one progress tick per page step, on the step and waiting screens only. */
   ticks: Tick[] | null
-  /** PR 2 CP2: "Back" to the previous page step (a view, never a completion). `null` on page
-   * step 1 and off the step pages. */
+  /** "Back": to the previous page step (a view, never a completion), or the done screen's
+   * `review`. `null` on page step 1 and on the stale screen. */
   back: ActionButton | null
   /** PR 2 CP2: "Done." under the text of a done step (`step_done`), which has no primary. */
   stateLine: string | null
-  /** Time-left + end-clock line for a single-subject `wait`/`long_wait` screen (P0 #4,
-   * owner decision 2026-09-27). A separate slot from `note` so `note`'s existing meaning
-   * (and its existing assertions) are untouched — the `long_wait` `note` this replaces
-   * is folded into `readyAt`. `null` everywhere else, including the multi-pan wait,
-   * which has no single subject to time. */
-  waitTime: { left: string; readyAt: string } | null
-  /** The whisper and the What's cooking link: on the wait screens only since PR 2 CP3,
-   * whose step pages use the timer rail instead (`rails`). CP4 replaces them there too. */
-  whisperText: string | null
-  showLink: boolean
   primary: ActionButton | null
+  /** The Undo link (drawn outside the footer, so it never moves the primary) or the stale
+   * screen's "Start again". */
   secondary: ActionButton | null
-  /** B0 (N3): true on every screen where the undo link can appear in `secondary`
-   * (`UNDO_ELIGIBLE_SCREENS`). The shell then keeps that slot's height whether or not a
-   * secondary is showing, so the primary never moves when the undo link comes or goes —
-   * a quick second tap where Done *was* must not land on "Undo". PR 2 CP3: `false` on the
-   * step pages, whose Undo sits outside the footer (the shell), so it never moves the primary. */
-  reserveSecondary: boolean
-  /** PR 2 CP3: the step on a step page; `null` everywhere else. */
+  /** PR 2 CP3: the step on a step or waiting screen; `null` everywhere else. */
   nodeId: string | null
-  /** PR 2 CP3: the running-timer rails (`timers.ts`), on the step pages only; `[]` elsewhere. */
-  rails: RailView[]
+  /** PR 2 CP3/CP4: the rails and banners under the top bar (`timers.ts` `strips`), on the
+   * step and waiting screens only; `[]` elsewhere. */
+  strips: StripView[]
   /** PR 2 CP3: a not-started hands-off step's tag ("Hands-off" / "Low attention"), its
    * "About 1 hr. ..." line by tag (`handsOffLine`; `null` without a length) and the
    * quiet "Mark as done" link (owner answer 5). `null` on every other page. */
   handsOff: { tag: string; line: string | null; markDone: ActionButton } | null
   /** PR 2 CP3: how you know the step is ready, as stored, shown after "Ready when:" — only
    * when the step text doesn't already say it (`cueShownWith`) and the cue is showable
-   * (`displayCue`). On the not-done step pages only. */
+   * (`displayCue`). On the not-done step pages and the waiting screen. */
   cue: string | null
   /** PR 2 CP3: "You'll need" rows (`needRows`); `label` is the R4 accessible name of an
    * amount the scaler could not scale. `[]` off the step pages. */
@@ -193,91 +198,60 @@ export interface CookingView {
   consumed: Pick<Ingredient, 'name' | 'qty' | 'qty_text' | 'qty_amount' | 'unit'>[]
   /** PR 2 CP3: the session's servings factor, for the same bolding. */
   factor: number
-}
-
-export interface SheetRowView {
-  nodeId: string
-  label: string
-  cue: string
-  time: string
-  dot: boolean
-}
-
-export interface SheetView {
-  rows: SheetRowView[]
-  note: string
-  next: string | null
-}
-
-function endsAtOf(session: CookingSession, nodeId: string): number {
-  const s = session.nodes[nodeId]
-  return s.state === 'running' ? s.endsAt : Number.POSITIVE_INFINITY
-}
-
-/** "Label, around H:MM pm" for one running node — shared by the away shell's
- * leaving/returning notes and the multi-pan wait's per-pan note (P0 #4). */
-function withEnd(model: CookingModel, session: CookingSession, now: number, id: string): string {
-  return `${model.nodes[id].label}, around ${dayClock(now, endsAtOf(session, id))}`
-}
-
-function sheetTime(model: CookingModel, session: CookingSession, now: number, id: string): string {
-  const rem = endsAtOf(session, id) - now
-  if (rem <= 0) return 'done'
-  const info = model.nodes[id]
-  if (info.durationMax - info.durationMin > 15) return `~${Math.round(rem / 60_000)}m`
-  const s = Math.round(rem / 1000)
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  /** PR 2 CP4: the waiting block, on the waiting screens only. */
+  waiting: WaitingView | null
+  /** PR 2 CP4: the done screen's picture and line. */
+  done: DoneView | null
 }
 
 interface ScreenResolution {
   id: ScreenId
-  currentNodeId: string | null
-  nextNodeId: string | null
+  nodeId: string | null
 }
 
-/** `screenOf` (dc.html), ported: `lifecycle` first, then the local "leaving" UI flag,
- * then the `leftAt` overlay, then a handover, then the viewed step (PR 2 CP2), then
- * `role` — the composition order the M3.4 session summary's decision 2 settled on, with
- * `viewing` slotted in after the handover (which CP4 replaces with a banner). `leaving` is
- * local component state, never persisted (mirrors the prototype's `s.leaving`) — see
- * `CookingModeScreen`. */
-function resolveScreen(
-  model: CookingModel,
-  session: CookingSession,
-  now: number,
-  leaving: boolean,
-): ScreenResolution {
-  const empty: ScreenResolution = { id: 'entry', currentNodeId: null, nextNodeId: null }
-  const lc = lifecycle(model, session, now)
-  if (lc === 'finished') return { ...empty, id: 'done' }
-  if (lc === 'stale') return { ...empty, id: 'stale' }
-  if (leaving) return { ...empty, id: 'leaving' }
+/** The step pages (task, hands-off, done) and the waiting screens. */
+const STEP_SCREENS: ScreenId[] = ['task', 'handsoff_pending', 'step_done']
+const WAITING_SCREENS: ScreenId[] = ['step_running', 'wait', 'long_wait', 'sitting_break']
 
-  if (session.leftAt != null) {
-    const h = handover(model, session, now)
-    const nextId = h ? (h.consumer ?? h.producers[0]) : current(model, session)
-    const last = sittingIndex(model, session)
-    const next = nextId != null ? (model.sittingOf[nextId] ?? null) : null
-    const crossed = model.sessions.length > 1 && next != null && last != null && next > last
-    return { id: crossed ? 'sitting_resume' : 'returning', currentNodeId: null, nextNodeId: nextId }
+function sinkOf(model: CookingModel): string {
+  return model.order.find((id) => model.nodes[id].isSink) ?? model.order[model.order.length - 1]
+}
+
+/**
+ * Which screen, in order: `lifecycle` first (finished: the done screen, or the step the cook
+ * went Back to while `reviewing`; stale), then the viewed step (PR 2 CP2), then `current`,
+ * then the waiting screen. PR 2 CP4: a handover no longer takes over the screen — its timer
+ * is a banner — so with nothing to do the waiting screen shows the first handover producer,
+ * else the wait subject, else (several pans, none the subject) the soonest running timer.
+ */
+function resolveScreen(model: CookingModel, session: CookingSession, now: number, reviewing: boolean): ScreenResolution {
+  const lc = lifecycle(model, session, now)
+  if (lc === 'finished') {
+    if (!reviewing) return { id: 'done', nodeId: null }
+    const id = session.viewing != null && session.viewing in model.nodes ? session.viewing : sinkOf(model)
+    return { id: viewedScreen(model, session, id), nodeId: id }
   }
+  if (lc === 'stale') return { id: 'stale', nodeId: null }
+
+  // The cook chose to look at a step: show it whatever its state.
+  const viewed = session.viewing
+  if (viewed != null && viewed in model.nodes) return { id: viewedScreen(model, session, viewed), nodeId: viewed }
+
+  const cur = current(model, session)
+  if (cur != null) return { id: model.nodes[cur].occupiesCook ? 'task' : 'handsoff_pending', nodeId: cur }
 
   const r = role(model, session, now)
-  if (r === 'handover') return { ...empty, id: 'handover' }
-  // The cook chose to look at a step: show it whatever its state, over a wait too.
-  const viewed = session.viewing
-  if (viewed != null && viewed in model.nodes) {
-    return { id: viewedScreen(model, session, viewed), currentNodeId: viewed, nextNodeId: null }
-  }
-  if (r === 'task') {
-    const cur = current(model, session)
-    if (cur == null) return { ...empty, id: 'wait' } // unreachable per select.ts's own contract; safe fallback
-    return { id: model.nodes[cur].occupiesCook ? 'task' : 'handsoff_pending', currentNodeId: cur, nextNodeId: null }
-  }
-  return { ...empty, id: r }
+  if (r === 'handover') return { id: 'wait', nodeId: handover(model, session, now)!.producers[0] }
+  const subject = waitSubject(model, session, now)?.nodeId ?? running(model, session)[0] ?? null
+  if (subject != null) return { id: r === 'task' ? 'wait' : r, nodeId: subject }
+
+  // Nothing to do and nothing running (only reachable through out-of-order states): the
+  // first step not yet done, else the finish step.
+  const left = model.order.find((id) => session.nodes[id].state !== 'done') ?? sinkOf(model)
+  return { id: viewedScreen(model, session, left), nodeId: left }
 }
 
-/** The step page a viewed step gets, by its state. */
+/** The screen a viewed step gets, by its state. */
 function viewedScreen(model: CookingModel, session: CookingSession, nodeId: string): ScreenId {
   const s = session.nodes[nodeId].state
   if (s === 'done') return 'step_done'
@@ -285,60 +259,8 @@ function viewedScreen(model: CookingModel, session: CookingSession, nodeId: stri
   return model.nodes[nodeId].occupiesCook ? 'task' : 'handsoff_pending'
 }
 
-/** The screens that show one step's page: the suggested step, or the viewed one. */
-const STEP_SCREENS: ScreenId[] = ['task', 'handsoff_pending', 'step_running', 'step_done']
-
-interface BackgroundSubject {
-  nodeId: string
-  /** `holding`: the `holding()` selector's own not-required expiry. `past`: the whisper
-   * subject's timer is up (no `required` verdict either way). */
-  phase: 'running' | 'past' | 'holding'
-}
-
-/** The node the whisper names (dc.html's `whisperFor` choice), over the real
- * `whisperInput`/`running`/`holding` selectors — the soonest node worth naming that
- * isn't the one already on screen. (It also chose the V2.1 strip's subject until PR 2 CP3
- * replaced the strip with the timer rail.) */
-function backgroundSubject(
-  model: CookingModel,
-  session: CookingSession,
-  now: number,
-  onScreenNodeId: string | null,
-): BackgroundSubject | null {
-  const wi = whisperInput(model, session, now)
-  if (!wi) {
-    const holdingIds = holding(model, session, now)
-    return holdingIds.length > 0 ? { nodeId: holdingIds[0], phase: 'holding' } : null
-  }
-  let id = wi.nodeId
-  if (id === onScreenNodeId) {
-    const others = running(model, session).filter((x) => x !== onScreenNodeId)
-    if (others.length === 0) return null
-    id = others[0]
-  }
-  return { nodeId: id, phase: endsAtOf(session, id) - now <= 0 ? 'past' : 'running' }
-}
-
-/** `whisperFor` (dc.html), ported verbatim over `backgroundSubject`. */
-function whisperFor(
-  model: CookingModel,
-  session: CookingSession,
-  now: number,
-  onScreenNodeId: string | null,
-): string | null {
-  const s = backgroundSubject(model, session, now, onScreenNodeId)
-  if (s == null) return null
-  const info = model.nodes[s.nodeId]
-  if (s.phase === 'holding') return `${info.label} is holding. Nothing needs you for it yet.`
-  if (s.phase === 'past') return `${info.label} is past its time and holding.`
-  const rem = endsAtOf(session, s.nodeId) - now
-  const tail = info.attention === 'periodic' ? ', so give it a stir when you pass.' : '.'
-  return `${info.label} has about ${aboutMinutes(rem)} left${tail}`
-}
-
 export interface CookingViewOptions {
   recipeTitle: string
-  leaving: boolean
   /** R4: the session's servings choice (`session.servingsChoice`); absent is factor 1. */
   choice?: ServingsChoice | null
   /** R6b: ids of the steps whose text the cook edited (`OverlayResult.editedSteps`). Absent is none. */
@@ -348,44 +270,39 @@ export interface CookingViewOptions {
   /** PR 2 CP2: the recipe-page number of each step (`stepNumbers(derivePlan(...).stages)`).
    * Absent, or missing a step, falls back to the execution order. */
   pageNumbers?: ReadonlyMap<string, number>
+  /** PR 2 CP4: the done screen's Back was tapped, so a finished cook shows its steps.
+   * Local UI state (`CookingModeScreen`), never persisted. */
+  reviewing?: boolean
+  /** PR 2 CP4: the done screen's picture (`recipeThumbnail`); absent or `null` is none. */
+  thumbnail?: string | null
+  /** For tests: the clock's locale (default: the device's). */
+  locale?: string
 }
 
-const UNDO_ELIGIBLE_SCREENS: ScreenId[] = [
-  'task',
-  'handsoff_pending',
-  'step_running',
-  'step_done',
-  'wait',
-  'long_wait',
-  'sitting_break',
-  'done',
-]
+const UNDO_ELIGIBLE_SCREENS: ScreenId[] = [...STEP_SCREENS, ...WAITING_SCREENS, 'done']
 
-/** The undo link's secondary-slot override (P1 #6 plan §C3): "Undo" (PR 2 CP2's label,
- * formerly "Back to ‹step›"), shown for `UNDO_WINDOW_MS` timed from the *persisted*
- * `lastTransition.at` — never a timer of its own, so it survives the phone sleeping.
- * Mutates `v.secondary` in place, replacing whatever Skip/Give it longer/etc. that
- * screen would otherwise show. Screens outside `UNDO_ELIGIBLE_SCREENS` (handover, the
- * away/stale/entry screens) are untouched even if a transition is pending — the
- * eligibility list, not the shell grouping, decides. */
+/** The undo link (P1 #6 plan §C3): shown for `UNDO_WINDOW_MS` timed from the *persisted*
+ * `lastTransition.at` — never a timer of its own, so it survives the phone sleeping. It
+ * takes the `secondary` slot, which the shell draws outside the footer (PR 2 CP3), so it
+ * never moves the primary. `onScreen` is the step the screen is about: the step on a step
+ * or waiting screen, the finish step on the done screen. */
 function applyUndoOverride(
   v: CookingView,
   model: CookingModel,
   session: CookingSession,
   now: number,
-  screenId: ScreenId,
+  onScreen: string | null,
 ): void {
-  if (!UNDO_ELIGIBLE_SCREENS.includes(screenId)) return
+  if (!UNDO_ELIGIBLE_SCREENS.includes(v.screenId)) return
   const t = session.lastTransition
   if (t == null) return
   if (now - t.at >= UNDO_WINDOW_MS) return
-  const label = STEP_SCREENS.includes(screenId) ? undoLabel(model, t, v.nodeId) : 'Undo'
-  v.secondary = { label, solid: false, action: { kind: 'undo' } }
+  v.secondary = { label: undoLabel(model, t, onScreen), solid: false, action: { kind: 'undo' } }
 }
 
-/** Owner answer 2 (PR 2 CP3): on the acted-on step's own page (the transition's first
+/** Owner answer 2 (PR 2 CP3): on the acted-on step's own screen (the transition's first
  * entry: the sink on an early finish, the first producer on an acknowledge) just "Undo";
- * on any other step page, what it undoes and where. A stored legacy `skip` keeps "Undo". */
+ * anywhere else, what it undoes and where. A stored legacy `skip` keeps "Undo". */
 function undoLabel(model: CookingModel, t: NonNullable<CookingSession['lastTransition']>, onScreen: string | null): string {
   const acted = t.entries[0]?.nodeId
   if (acted == null || acted === onScreen) return 'Undo'
@@ -397,53 +314,21 @@ function undoLabel(model: CookingModel, t: NonNullable<CookingSession['lastTrans
   return 'Undo'
 }
 
-/** The entry screen (`open()` -> no stored session): the one screen that quotes a
- * timing figure (M3.4 handoff §1/§5 — corrections table row 5). */
-export function buildEntryView(
-  model: CookingModel,
-  recipeTitle: string,
-  timing: HeaderTiming,
-  choice?: ServingsChoice | null,
-): CookingView {
-  const degraded = model.warnings.includes('degraded')
-  const scaled = choiceFactor(choice) !== 1
-  const copy = servingsCopy(choice ?? null)
-  return {
-    screenId: 'entry',
-    shell: 'paper',
-    topRecipe: '',
-    showTopRight: false,
-    label: null,
-    title: recipeTitle,
-    instr: `${scaled ? `${copy.entry}. ` : ''}${timing.secondary ? `${timing.primary}. ${timing.secondary}.` : `${timing.primary}.`}`,
-    qty: null,
-    chips: [],
-    chipItems: [],
-    servingsNote: null,
-    timesNote: null,
-    stepTimeNote: null,
-    stepAmountNote: null,
-    addedNote: null,
-    note: `${copy.timesNote && scaled ? `${copy.timesNote} ` : ''}${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
-    step: null,
-    upNext: null,
-    ticks: null,
-    back: null,
-    stateLine: null,
-    waitTime: null,
-    whisperText: null,
-    showLink: false,
-    primary: { label: 'Start cooking', solid: true, action: { kind: 'start' } },
-    secondary: { label: 'See the plan', solid: false, action: { kind: 'seePlan' } },
-    reserveSecondary: false,
-    nodeId: null,
-    rails: [],
-    handsOff: null,
-    cue: null,
-    need: [],
-    consumed: [],
-    factor: choiceFactor(choice),
-  }
+/** PR 2 CP4: the done screen's picture: the recipe's YouTube thumbnail, else `null`. */
+export function recipeThumbnail(source: SourceRef): string | null {
+  return thumbnailUrlFor(canonicalSourceKey(source))
+}
+
+/** PR 2 CP4: the done screen's one line, from session state only. The time is measured
+ * (`finishedAt − startedAt`), never a plan figure. The step count only when every step is
+ * done: otherwise we can't tell whether a step marked Done was really done, or whether
+ * skipping one mattered, so the line says only how long it took. */
+export function doneLine(model: CookingModel, session: CookingSession): string {
+  const ms = (session.finishedAt ?? session.startedAt) - session.startedAt
+  const time = ms < 60_000 ? 'under a minute' : formatMinutes(Math.round(ms / 60_000))
+  const steps = model.order.length
+  if (!model.order.every((id) => session.nodes[id].state === 'done')) return `Done in ${time}.`
+  return steps === 1 ? `1 step, in ${time}.` : `All ${steps} steps, in ${time}.`
 }
 
 /**
@@ -458,10 +343,11 @@ export function buildCookingView(
   ingredients: ReadonlyMap<string, Ingredient>,
   options: CookingViewOptions,
 ): CookingView {
-  const scr = resolveScreen(model, session, now, options.leaving)
+  const reviewing = options.reviewing === true && session.finishedAt != null
+  const scr = resolveScreen(model, session, now, reviewing)
   const v: CookingView = {
     screenId: scr.id,
-    shell: 'paper',
+    layout: 'message',
     topRecipe: options.recipeTitle,
     showTopRight: true,
     label: null,
@@ -481,232 +367,182 @@ export function buildCookingView(
     ticks: null,
     back: null,
     stateLine: null,
-    waitTime: null,
-    whisperText: null,
-    showLink: false,
     primary: null,
     secondary: null,
-    reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id) && !STEP_SCREENS.includes(scr.id),
     nodeId: null,
-    rails: [],
+    strips: [],
     handsOff: null,
     cue: null,
     need: [],
     consumed: [],
     factor: choiceFactor(options.choice),
+    waiting: null,
+    done: null,
   }
 
-  if (STEP_SCREENS.includes(scr.id)) {
-    const cur = scr.currentNodeId!
+  const isStep = STEP_SCREENS.includes(scr.id)
+  if (isStep || WAITING_SCREENS.includes(scr.id)) {
+    const cur = scr.nodeId!
     const n = model.nodes[cur]
-    v.nodeId = cur
-    // V2.1 (1a order, reweighted): the step label is the screen's title and the full
-    // instruction follows it untruncated — no `splitCopy` on the task screen.
-    v.label = n.label
-    v.title = n.instruction
-    const factor = v.factor
     const copy = servingsCopy(options.choice ?? null)
-    const chips = quantityChips(n, ingredients, factor)
-    v.chips = chips.map((chip) => chip.text)
-    v.chipItems = chips.map((chip) =>
-      chip.unscaled ? { ...chip, label: copy.chipLabel(chip.text) } : chip,
-    )
-    // CP3: "You'll need" rows replace the chips on screen (`chips` stays for its tests).
-    v.need = needRows(n, ingredients, factor).map((row) =>
-      row.unscaled ? { ...row, label: copy.chipLabel(`${row.name}, ${row.amount ?? ''}`) } : row,
-    )
-    v.consumed = n.consumes.flatMap((id) => {
-      const i = id.startsWith('ing_') ? ingredients.get(id) : undefined
-      return i != null ? [{ name: i.name, qty: i.qty, qty_text: i.qty_text, qty_amount: i.qty_amount, unit: i.unit }] : []
-    })
-    v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
-    v.addedNote = n.addedLabel
-    v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? STEP_TIME_NOTE : null
-    const imported = options.importedSteps?.get(cur)
-    v.stepAmountNote =
-      options.editedSteps?.has(cur) && imported != null && stepAmountHint(imported, n.instruction, n.consumes) ? STEP_AMOUNT_NOTE : null
-    // CP3: the cue moves out of `note` into its own "Ready when:" line, only when the text
-    // doesn't already say it (the recipe page's rule); never on a done step.
+    v.nodeId = cur
+    v.label = n.label
+    // "Step N of M": the recipe-page number of the step on the page.
+    const order = pageOrder(model, options.pageNumbers)
+    const pageN = order.indexOf(cur) + 1
+    v.step = v.factor !== 1 ? copy.stepMeta(pageN, order.length) : `Step ${pageN} of ${order.length}`
+    v.ticks = ticks(session, order, cur)
+    const prev = backTarget(order, cur)
+    v.back = prev != null ? { label: 'Back', solid: false, action: { kind: 'view', nodeId: prev } } : null
+    // CP3: the cue as its own "Ready when:" line, only when the text doesn't already say it
+    // (the recipe page's rule); never on a done step.
     if (scr.id !== 'step_done') {
       const shown = displayCue(n.donenessCue)
       v.cue = cueShownWith(n.instruction, shown) != null ? shown : null
     }
-    // "Step N of M": the recipe-page number of the step on the page.
-    const order = pageOrder(model, options.pageNumbers)
-    // CP3: the rail replaces the strip, the whisper and the What's cooking link.
-    v.rails = rails(model, session, now, order)
-    const pageN = order.indexOf(cur) + 1
-    v.step = factor !== 1 ? copy.stepMeta(pageN, order.length) : `Step ${pageN} of ${order.length}`
-    // R4 F1: once per session, on its first step screen — the live count, not the page number.
-    v.timesNote = stepPosition(model, session).n === 1 ? copy.timesNote : null
-    v.ticks = ticks(session, order, cur)
-    const prev = backTarget(order, cur)
-    v.back = prev != null ? { label: 'Back', solid: false, action: { kind: 'view', nodeId: prev } } : null
-    v.upNext = upNext(model, session, now, cur, order)
-    if (scr.id === 'task') {
-      v.primary = { label: 'Done', solid: true, action: { kind: 'markDone', nodeId: cur } }
-    } else if (scr.id === 'handsoff_pending') {
-      const action: ActionDescriptor =
-        session.viewing === cur ? { kind: 'startNode', nodeId: cur, clearView: true } : { kind: 'startNode', nodeId: cur }
-      // FGC-37: the timer's length is the same number `startNode` times.
-      const len = timerLength(n.durationTypical)
-      v.primary = { label: len != null ? `Start ${len} timer` : "I've started it", solid: true, action }
-      v.handsOff = {
-        tag: attentionTag(n.attention) ?? 'Hands-off',
-        line: handsOffLine(n.durationTypical, n.attention),
-        markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: cur } },
-      }
-    } else if (scr.id === 'step_running') {
-      v.primary = { label: "It's done", solid: true, action: { kind: 'markDone', nodeId: cur } }
-    } else {
-      v.stateLine = 'Done.'
-    }
-    applyUndoOverride(v, model, session, now, scr.id)
-    return v
-  }
 
-  if (scr.id === 'wait' || scr.id === 'long_wait') {
-    const subject = waitSubject(model, session, now)
-    const run = running(model, session)
-    if (subject == null) {
-      // No running node's own expiry would need the cook — every consumer is still
-      // waiting on a sibling. Nothing to judge, so state the fact and offer nothing
-      // (M3.4 session summary's "owner's eye wanted" call). Never fall back to naming
-      // a node the selector did not choose. Multi-pan wait (owner decision 3,
-      // 2026-09-27): per-pan end clocks only — no aggregate time-left, no primary.
-      v.label = 'Nothing needs you'
-      v.title = run.length > 1 ? `${cap(wordFor(run.length))} pans are running.` : 'One pan is running.'
-      v.instr = run.length > 1 ? 'Nothing needs you until they are all done.' : 'Nothing needs you for it yet.'
-      v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
-      v.showLink = run.length > 0
-      applyUndoOverride(v, model, session, now, scr.id)
-      return v
-    }
-    const n = model.nodes[subject.nodeId]
-    v.label = n.label
-    if (n.donenessCue) {
-      const c = splitCopy(`${cap(n.donenessCue)}.`)
-      v.title = c.title
-      v.instr = c.body
+    if (isStep) {
+      v.layout = 'step'
+      buildStepPage(v, model, session, now, ingredients, options, cur, order, reviewing)
     } else {
-      const c = splitCopy(n.instruction)
-      v.title = c.title
-      v.instr = c.body
+      v.layout = 'waiting'
+      buildWaiting(v, model, session, now, cur, order, options.locale)
     }
-    // Primary is unconditional (owner decision 2026-09-27): "It's done" advances the
-    // flow whether or not there's a cue to judge it by — the engine already allows
-    // `markDone` on any running hands-off node at any time.
-    v.primary = { label: "It's done", solid: false, action: { kind: 'markDone', nodeId: n.id } }
-    const endsAt = endsAtOf(session, n.id)
-    v.waitTime = { left: minutesLeft(endsAt - now), readyAt: `Ready around ${dayClock(now, endsAt)}.` }
-    v.secondary = { label: 'Give it longer', solid: false, action: { kind: 'extend', nodeId: n.id } }
-    v.whisperText = whisperFor(model, session, now, n.id)
-    v.showLink = run.length > 1
-    applyUndoOverride(v, model, session, now, scr.id)
-    return v
-  }
-
-  if (scr.id === 'handover') {
-    const h = handover(model, session, now)!
-    const p = model.nodes[h.producers[0]]
-    v.shell = 'dark'
-    v.label = p.label
-    v.title =
-      h.overrunMs >= 60_000
-        ? `${cap(aboutMinutes(h.overrunMs))} past.`
-        : `${p.label}${h.reason === 'must_attend' ? ' wants a look.' : ' is done.'}`
-    v.instr =
-      h.reason === 'consumer_ready' && h.consumer
-        ? model.nodes[h.consumer].instruction
-        : (p.donenessCue ? `${cap(p.donenessCue)}.` : p.instruction)
-    v.primary =
-      h.reason === 'must_attend'
-        ? { label: "It's done", solid: false, action: { kind: 'acknowledge' } }
-        : { label: 'On it', solid: true, action: { kind: 'acknowledge' } }
-    v.secondary = { label: 'Needs a minute more', solid: false, action: { kind: 'extend', nodeId: h.producers[0] } }
+    applyUndoOverride(v, model, session, now, cur)
     return v
   }
 
   if (scr.id === 'done') {
+    v.layout = 'done'
     v.topRecipe = ''
     v.showTopRight = false
-    v.title = `${options.recipeTitle} is done.`
+    v.title = sentence(`${options.recipeTitle} is done`)
+    v.done = {
+      thumbnail: options.thumbnail ?? null,
+      alt: `${options.recipeTitle}, from the recipe's video`,
+      line: doneLine(model, session),
+    }
+    v.back = { label: 'Back', solid: false, action: { kind: 'review' } }
     v.primary = { label: 'Finished cooking', solid: true, action: { kind: 'finish' } }
-    applyUndoOverride(v, model, session, now, scr.id)
+    applyUndoOverride(v, model, session, now, sinkOf(model))
     return v
   }
 
-  // Away shell (field ground): leaving, returning, sitting_break, sitting_resume, stale.
-  v.shell = 'field'
+  // stale (PR 2 CP4): wired, not removed — Home's Continue strip resumes a stale session here.
   v.showTopRight = false
-  const run = running(model, session)
-
-  if (scr.id === 'leaving') {
-    v.label = 'Leaving'
-    v.title =
-      run.length === 0
-        ? 'Nothing is on the heat.'
-        : run.length === 1
-          ? 'One thing is still on.'
-          : `${cap(wordFor(run.length))} things are still on.`
-    v.instr = 'Timers keep their own time whether the app is open or not.'
-    v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
-    v.primary = { label: 'Back to cooking', solid: true, action: { kind: 'stay' } }
-    v.secondary = { label: 'End the cook and clear the timers', solid: false, action: { kind: 'endAndExit' } }
-  } else if (scr.id === 'returning') {
-    v.label = 'Away'
-    v.title = `You left about ${aboutMinutes(now - (session.leftAt ?? now))} ago.`
-    v.instr = handover(model, session, now) != null ? 'Something is ready and waiting for you.' : 'Everything kept its own time.'
-    v.note = run.length > 0 ? `${run.map((id) => withEnd(model, session, now, id)).join(' · ')}.` : null
-    v.primary = { label: 'Back to cooking', solid: true, action: { kind: 'resume' } }
-    v.secondary = { label: 'End the cook and clear the timers', solid: false, action: { kind: 'endAndExit' } }
-  } else if (scr.id === 'sitting_resume') {
-    const n = scr.nextNodeId ? model.nodes[scr.nextNodeId] : null
-    v.label = 'Between sittings'
-    v.title = 'Ready when you are.'
-    v.instr = n ? n.instruction : 'Pick up where you left off.'
-    v.primary = { label: 'Back to cooking', solid: true, action: { kind: 'resume' } }
-  } else if (scr.id === 'sitting_break') {
-    const next = nextRequiredAt(model, session)
-    const host = run.length > 0 ? model.nodes[run[0]] : null
-    v.label = 'Nothing to do'
-    v.title = next != null ? `Nothing until ${dayClock(now, next)}.` : 'Nothing to do for now.'
-    v.instr = host ? host.instruction : null
-    v.note = 'Nothing here needs you before then.'
-    v.showTopRight = true
-  } else if (scr.id === 'stale') {
-    v.label = 'Found a session'
-    v.title = `You started this ${aboutMinutes(now - session.startedAt)} ago.`
-    v.instr = 'Every timer here is long past.'
-    v.primary = { label: 'Continue', solid: true, action: { kind: 'touch' } }
-    v.secondary = { label: 'Start again', solid: false, action: { kind: 'end' } }
-  }
-
-  applyUndoOverride(v, model, session, now, scr.id)
+  v.title = `You were last here ${sinceText(now - session.lastSeenAt)} ago.`
+  v.instr = 'Carry on where you left off, or start again.'
+  v.primary = { label: 'Carry on', solid: true, action: { kind: 'touch' } }
+  v.secondary = { label: 'Start again', solid: false, action: { kind: 'startAgain' } }
   return v
 }
 
-/** `applySheet` (dc.html), ported: the read-only "What's cooking" overlay, over
- * `sheetOrder`/`requiredIfExpired` — never advances the cook, never reorders. */
-export function buildSheetView(model: CookingModel, session: CookingSession, now: number): SheetView {
-  const ids = sheetOrder(model, session, now)
-  const req = ids.length > 0 && requiredIfExpired(model, session, now, ids[0])
-  const rows: SheetRowView[] = ids.map((id, i) => ({
-    nodeId: id,
-    label: model.nodes[id].label,
-    cue: model.nodes[id].donenessCue ? cap(model.nodes[id].donenessCue) : '',
-    time: sheetTime(model, session, now, id),
-    dot: i === 0 && req,
-  }))
-  const note = ids.length === 0 ? 'Nothing is cooking.' : req ? 'The marked one will want you first.' : 'Nothing here needs you yet.'
-  const nextHands = model.order.find((id) => model.nodes[id].occupiesCook && session.nodes[id].state !== 'done')
-  const next = nextHands ? `Next in your hands: ${model.nodes[nextHands].label}.` : null
-  return { rows, note, next }
+/** The step page (PR 2 CP2/CP3): the instruction, the hands-off block, You'll need, Up
+ * next and the primary. While `reviewing` a finished cook (PR 2 CP4) the primary is
+ * "Finished cooking" and nothing that acts on the cook is offered. */
+function buildStepPage(
+  v: CookingView,
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  ingredients: ReadonlyMap<string, Ingredient>,
+  options: CookingViewOptions,
+  cur: string,
+  order: string[],
+  reviewing: boolean,
+): void {
+  const n = model.nodes[cur]
+  const factor = v.factor
+  const copy = servingsCopy(options.choice ?? null)
+  // V2.1 (1a order, reweighted): the step label is the screen's title and the full
+  // instruction follows it untruncated.
+  v.title = n.instruction
+  const chips = quantityChips(n, ingredients, factor)
+  v.chips = chips.map((chip) => chip.text)
+  v.chipItems = chips.map((chip) => (chip.unscaled ? { ...chip, label: copy.chipLabel(chip.text) } : chip))
+  // CP3: "You'll need" rows replace the chips on screen (`chips` stays for its tests).
+  v.need = needRows(n, ingredients, factor).map((row) =>
+    row.unscaled ? { ...row, label: copy.chipLabel(`${row.name}, ${row.amount ?? ''}`) } : row,
+  )
+  v.consumed = n.consumes.flatMap((id) => {
+    const i = id.startsWith('ing_') ? ingredients.get(id) : undefined
+    return i != null ? [{ name: i.name, qty: i.qty, qty_text: i.qty_text, qty_amount: i.qty_amount, unit: i.unit }] : []
+  })
+  v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
+  v.addedNote = n.addedLabel
+  v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? STEP_TIME_NOTE : null
+  const imported = options.importedSteps?.get(cur)
+  v.stepAmountNote =
+    options.editedSteps?.has(cur) && imported != null && stepAmountHint(imported, n.instruction, n.consumes) ? STEP_AMOUNT_NOTE : null
+  // R4 F1: once per session, on its first step screen — the live count, not the page number.
+  v.timesNote = stepPosition(model, session).n === 1 ? copy.timesNote : null
+  if (v.screenId === 'step_done') v.stateLine = 'Done.'
+
+  if (reviewing) {
+    v.primary = { label: 'Finished cooking', solid: true, action: { kind: 'finish' } }
+    return
+  }
+
+  // CP3: the rail; CP4: the banner in its place once a timer ends.
+  v.strips = strips(model, session, now, order)
+  v.upNext = upNext(model, session, now, cur, order)
+  if (v.screenId === 'task') {
+    v.primary = { label: 'Done', solid: true, action: { kind: 'markDone', nodeId: cur } }
+  } else if (v.screenId === 'handsoff_pending') {
+    const action: ActionDescriptor =
+      session.viewing === cur ? { kind: 'startNode', nodeId: cur, clearView: true } : { kind: 'startNode', nodeId: cur }
+    // FGC-37: the timer's length is the same number `startNode` times.
+    const len = timerLength(n.durationTypical)
+    v.primary = { label: len != null ? `Start ${len} timer` : "I've started it", solid: true, action }
+    v.handsOff = {
+      tag: attentionTag(n.attention) ?? 'Hands-off',
+      line: handsOffLine(n.durationTypical, n.attention),
+      markDone: { label: 'Mark as done', solid: false, action: { kind: 'markDone', nodeId: cur } },
+    }
+  }
+}
+
+/**
+ * The waiting screen (PR 2 CP4, V2Wait): the step's name, the time left, "Add 5 min", the
+ * bar and the ready line, the Meanwhile block, "When it's done" and "It's done". The step's
+ * own timer is left off the strips (no duplicate); once it ends, its banner is left off too
+ * and the block here shows the end instead.
+ */
+function buildWaiting(
+  v: CookingView,
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  cur: string,
+  order: string[],
+  locale?: string,
+): void {
+  v.strips = strips(model, session, now, order, cur)
+  v.upNext = waitingNext(model, session, now, cur, order)
+  v.primary = { label: "It's done", solid: true, action: { kind: 'markDone', nodeId: cur } }
+  const sheet = timerSheet(model, session, now, cur, order, cur, locale)
+  if (sheet == null) return
+  const s = session.nodes[cur]
+  const endsAt = s.state === 'running' ? s.endsAt : now
+  // Owner answer 6: "We'll ring" only where the wake lock is held.
+  const ring = shouldHoldWakeLock(v.screenId)
+    ? "We'll ring when it's done."
+    : "Set an alarm too; we can't ring once your phone locks."
+  v.waiting = {
+    big: sheet.big,
+    unit: sheet.unit,
+    ended: sheet.ended,
+    line: sheet.ended ? `Timer ended ${endedAgo(now - endsAt)}` : `${sheet.readyAt}. ${ring}`,
+    fraction: sheet.fraction,
+    add: { label: sheet.add.label, solid: false, action: sheet.add.action },
+    meanwhile: meanwhileRows(model, session, now, cur, order),
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Conflict — CP1a (M3.4.5 session-lockout plan). Built from a `SessionConflict`
-// (`@/cooking/types`), not a `(model, session)` pair — see the file-top comment.
+// Conflict — CP1a (M3.4.5 session-lockout plan); PR 2 CP4 (V2Conflict). Built from a
+// `SessionConflict` (`@/cooking/types`), not a `(model, session)` pair — see the file-top
+// comment.
 // ---------------------------------------------------------------------------
 
 export type ConflictActionKind = 'goTo' | 'endAndStart' | 'close'
@@ -716,27 +552,27 @@ export interface ConflictAction {
   label: string
 }
 
+/** The blocking cook's soonest timer, read from the stored session. `stepName` is `null`
+ * when this device can't name the step (a `server:` key has no payload here). */
+export interface ConflictTimer {
+  stepName: string | null
+  endsAt: number
+}
+
 export interface ConflictViewModel {
   planKey: string
   title: string | null
   state: SessionConflict['state']
-  /** One line naming the other cook and, where known, its state — never a bare
-   * "Already cooking" once a title is available (plan decision 1: "clearly identify the
-   * other recipe when possible"). */
-  message: string
+  /** "You're still cooking Kadai Paneer." (34/800, through `sentence`). */
+  heading: string
+  /** One line on the blocking cook's soonest timer (or none), then "Pick one cook to carry on with." */
+  line: string
   /**
-   * `close` is always last; `goTo` is present only when `canGoTo(planKey)` says so;
-   * `endAndStart`/`close` are unconditional (plan decision 2: never silently drop the
-   * conflict). The first two entries' *order* (i.e. which one is primary —
-   * `CookingModeScreen`'s `ConflictScreen` renders index 0 as the solid primary button)
-   * is CP-C priority, keyed on `conflict.state`: `active`/`unknown` put `goTo` first
-   * (nothing contradicts staying with the still-live session); `stale`/`finished` put
-   * `endAndStart` first (there is nothing live to go back to, so replacing is the more
-   * useful default action) — see `endAndStartLeads` below. Never changes *which*
-   * actions are present, only their order. `CookingModeScreen` (CP1b/CP-B) wires each
-   * `kind` to real behavior — `goTo` to `App.tsx`'s navigation, `endAndStart` to the
-   * staged-replace flow (CP-B), `close` to `onExit` — this module only decides which
-   * actions apply and in what order.
+   * Always two (PR 2 CP4). With "Go to" possible: "Back to ‹A›" and "End it and cook ‹B›",
+   * in CP-C order (`active`/`unknown` lead with going back; `stale`/`finished` with ending
+   * it, since there is nothing live to go back to). Without (`canGoTo` false: an `import:`
+   * key or a deleted entry): "End it and cook ‹B›" and "Back" (close). Index 0 is the
+   * solid primary.
    */
   actions: ConflictAction[]
 }
@@ -744,59 +580,74 @@ export interface ConflictViewModel {
 /**
  * Whether a `planKey` is offered as a "Go to" destination (CP1a's shape, CP1b's real
  * check). Defaults to `resolveConflictTarget`'s prefix rule presuming every `library:`
- * id still exists — `server:`/`library:` addressable, `import:` never (an unsaved
- * import has no address to return to once superseded — M3.4 CP2 investigation §1: a
- * fresh import's `graph.id` is a random UUID nothing else is keyed to). The real,
+ * id still exists — `server:`/`library:` addressable, `import:` never. The real,
  * App-wired check (`CookingModeScreen` passing a predicate backed by the actual
- * `Library`) additionally hides `library:` when that specific entry no longer exists —
- * `buildConflictView`'s own `canGoTo` parameter, below, is how CP1b overrides this
- * default without `viewModel.ts` needing to know about the library at all.
+ * `Library`) additionally hides `library:` when that specific entry no longer exists.
  */
 function defaultCanGoTo(planKey: string): boolean {
   return canResolveConflictTarget(planKey, () => true)
 }
 
-const CONFLICT_MESSAGE: Record<SessionConflict['state'], (title: string) => string> = {
-  active: (title) => `${title} is still cooking.`,
-  finished: (title) => `You already finished cooking ${title}.`,
-  stale: (title) => `${title} was left a while ago.`,
-  unknown: (title) => `${title} may still be cooking.`,
-}
-
-/**
- * CP-C priority: which of `goTo`/`endAndStart` leads, by `conflict.state`. `active` and
- * `unknown` are treated alike — missing metadata is not evidence of stale/finished, so
- * `unknown` gets the same "go back to it" default as a confirmed-live session, never
- * the "replace it" default `stale`/`finished` get.
- */
+/** CP-C priority: `active` and `unknown` alike lead with "Back to"; `stale`/`finished` with "End it". */
 function endAndStartLeads(state: SessionConflict['state']): boolean {
   return state === 'stale' || state === 'finished'
 }
 
-/**
- * `buildConflictView` (CP1a, `canGoTo` added CP1b, priority ordering added CP-C): the
- * conflict screen's copy and action list, from the `SessionConflict` `engine.open()`
- * reports. Never silently drops the conflict (plan decision 2) — `endAndStart`/`close`
- * are always present regardless of `state`; `canGoTo=false` never adds `goTo`, only
- * ever changes whether `goTo` is offered at all, never `endAndStart`/`close`'s
- * presence. `canGoTo` defaults to the prefix-only rule (every CP1a call site, and every
- * test that doesn't care about library existence, keeps working unchanged); the real
- * caller (`CookingModeScreen`) passes one backed by the actual `Library`.
- */
-export function buildConflictView(conflict: SessionConflict, canGoTo: (planKey: string) => boolean = defaultCanGoTo): ConflictViewModel {
-  const message =
-    conflict.title != null ? CONFLICT_MESSAGE[conflict.state](conflict.title) : 'Another cook is already on.'
+function conflictHeading(conflict: SessionConflict): string {
+  const name = conflict.title ?? 'another recipe'
+  if (conflict.state === 'stale') return `You left ${name} a while ago.`
+  if (conflict.state === 'finished') return sentence(`You finished ${name}`)
+  return sentence(`You're still cooking ${name}`)
+}
 
-  const goTo: ConflictAction = { kind: 'goTo', label: `Go to ${conflict.title ?? 'that recipe'}` }
-  const endAndStart: ConflictAction = { kind: 'endAndStart', label: 'End it and start this' }
-
-  const actions: ConflictAction[] = []
-  if (canGoTo(conflict.planKey)) {
-    actions.push(...(endAndStartLeads(conflict.state) ? [endAndStart, goTo] : [goTo, endAndStart]))
-  } else {
-    actions.push(endAndStart)
+function timerSentence(timer: ConflictTimer | null, now: number): string | null {
+  if (timer == null) return null
+  if (timer.endsAt > now) {
+    const left = timeLeft(timer.endsAt - now).text
+    // Keeps the step name's own casing: "Tomato base has 6 min left on its timer."
+    return timer.stepName != null ? `${timer.stepName} has ${left} on its timer.` : `A timer has ${left}.`
   }
-  actions.push({ kind: 'close', label: 'Close' })
+  const ago = endedAgo(now - timer.endsAt)
+  return timer.stepName != null ? `${timer.stepName}'s timer ended ${ago}.` : `A timer ended ${ago}.`
+}
 
-  return { planKey: conflict.planKey, title: conflict.title, state: conflict.state, message, actions }
+/** The blocking session's soonest running timer, as the conflict screen names it. */
+export function conflictTimer(
+  session: CookingSession | null,
+  stepName: (nodeId: string) => string | null,
+): ConflictTimer | null {
+  if (session == null) return null
+  let best: { id: string; endsAt: number } | null = null
+  for (const [id, s] of Object.entries(session.nodes)) {
+    if (s.state === 'running' && (best == null || s.endsAt < best.endsAt)) best = { id, endsAt: s.endsAt }
+  }
+  return best != null ? { stepName: stepName(best.id), endsAt: best.endsAt } : null
+}
+
+/**
+ * `buildConflictView` (CP1a, `canGoTo` CP1b, priority CP-C, PR 2 CP4's V2Conflict copy):
+ * the conflict screen's heading, line and its two actions, from the `SessionConflict`
+ * `engine.open()` reports plus the blocking cook's soonest timer.
+ */
+export function buildConflictView(
+  conflict: SessionConflict,
+  canGoTo: (planKey: string) => boolean = defaultCanGoTo,
+  options: { recipeTitle: string; timer: ConflictTimer | null; now: number } = { recipeTitle: 'this', timer: null, now: 0 },
+): ConflictViewModel {
+  const goTo: ConflictAction = { kind: 'goTo', label: `Back to ${conflict.title ?? 'that recipe'}` }
+  const endAndStart: ConflictAction = { kind: 'endAndStart', label: `End it and cook ${options.recipeTitle}` }
+  const actions = canGoTo(conflict.planKey)
+    ? endAndStartLeads(conflict.state)
+      ? [endAndStart, goTo]
+      : [goTo, endAndStart]
+    : [endAndStart, { kind: 'close' as const, label: 'Back' }]
+  const timer = timerSentence(options.timer, options.now)
+  return {
+    planKey: conflict.planKey,
+    title: conflict.title,
+    state: conflict.state,
+    heading: conflictHeading(conflict),
+    line: `${timer != null ? `${timer} ` : ''}Pick one cook to carry on with.`,
+    actions,
+  }
 }

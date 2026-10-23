@@ -1,34 +1,27 @@
+import { useState, type ReactNode } from 'react'
+
 import { EmphasisText } from '@/plan/EmphasisText'
 
 import { READY_WHEN } from './copy'
 import { needShown } from './quantity'
 import type { TickState } from './stepPage'
-import type { RailView } from './timers'
-import type { ActionDescriptor, CookingView, Shell } from './viewModel'
+import type { RailView, StripView } from './timers'
+import type { ActionButton, ActionDescriptor, CookingView } from './viewModel'
 
 /**
- * `CookingShell` (M3.4 handoff §2, PR 2 CP2's v2 frame): top bar (recipe name · Leave),
- * progress ticks, body column, footer — one component. PR 2 CP2 puts every cooking screen
- * on the Home register's one cream ground (`home/tokens.css`, shared, not aliased); the
- * three `Shell` values all resolve to it now and CP4 removes the type. The step pages
- * (`task`, `handsoff_pending`, `step_running`, `step_done`) get the v2 layout: timer rails,
- * "Step N of M" (opens All steps), name, text (bolded, D6), the cue, the hands-off line,
- * "You'll need", Up next pinned to the bottom of the content, then Back + a terracotta
- * pill (PR 2 CP3). Every other screen keeps today's layout and copy, recoloured.
+ * `CookingShell` (M3.4 handoff §2, PR 2's v2 frames): every cooking screen on the Home
+ * register's one cream ground (`home/tokens.css`, shared, not aliased). Four layouts
+ * (PR 2 CP4), all in Archivo (`--font-sans`):
+ * - step (`task`, `handsoff_pending`, `step_done`; CP3): strips, "Step N of M" (opens All
+ *   steps), name, text (bolded, D6), the cue, the hands-off line, "You'll need", Up next
+ *   pinned to the bottom of the content, then Back + a terracotta pill;
+ * - waiting (V2Wait): the same top, then the time left, "Add 5 min", the bar, the ready
+ *   line, the Meanwhile block and "When it's done";
+ * - done (V2Done): the recipe's picture, "‹Title› is done.", one line, Back + "Finished cooking";
+ * - message (the stale screen, and through `MessageScreen` the conflict screen).
+ * The strips under the top bar are the CP3 rails and the CP4 banners. Undo is drawn outside
+ * the footer on every layout, so the primary never moves.
  */
-
-const CREAM = {
-  bg: 'bg-home-ground',
-  ink: 'text-home-ink',
-  ink2: 'text-home-ink-2',
-  meta: 'text-home-ink-2',
-  rule: 'border-home-rule',
-  mark: 'border-home-ink-2',
-}
-
-const GROUND: Record<Shell, typeof CREAM> = { paper: CREAM, field: CREAM, dark: CREAM }
-
-const STEP_SCREENS = new Set(['task', 'handsoff_pending', 'step_running', 'step_done'])
 
 /** Viewed = ink, done = terracotta, running = the peach tint, to do = rule. */
 const TICK: Record<TickState, string> = {
@@ -39,6 +32,9 @@ const TICK: Record<TickState, string> = {
 }
 
 const PILL = 'h-[60px] rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground'
+// min-h, not h: a long recipe name ("End it and cook Homemade Glazed Donuts") wraps to two lines.
+const OUTLINED =
+  'min-h-[60px] rounded-full border-[1.5px] border-home-terracotta bg-home-ground px-3.5 py-2 text-[18px] font-bold leading-[1.3] text-home-terracotta-text'
 
 /** The design's small list icon beside "Step N of M". */
 function ListIcon() {
@@ -52,13 +48,20 @@ function ListIcon() {
   )
 }
 
+function TickIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12l5 5L20 7" />
+    </svg>
+  )
+}
+
 export function CookingShell({
   view,
   needExpanded,
   onPrimary,
   onSecondary,
   onLeave,
-  onSheet,
   onNavigate,
   onAction,
   onRail,
@@ -70,12 +73,11 @@ export function CookingShell({
   needExpanded: boolean
   onPrimary: () => void
   onSecondary: () => void
+  /** PR 2 CP4: Leave just leaves; timers keep running. */
   onLeave: () => void
-  /** The What's cooking link, on the wait screens only since CP3. */
-  onSheet: () => void
-  /** Up next and Back: a `view` action, navigation only. */
+  /** Up next, Back and the Meanwhile rows: a `view` action (navigation only), or `review`. */
   onNavigate: (action: ActionDescriptor) => void
-  /** CP3: any other action the page offers (the hands-off "Mark as done"). */
+  /** Any other action the page offers: "Mark as done", "Add 5 min", a banner's buttons. */
   onAction: (action: ActionDescriptor) => void
   /** CP3: a rail was tapped: one timer's sheet, or the Timers list for "N more timers". */
   onRail: (rail: RailView) => void
@@ -83,106 +85,71 @@ export function CookingShell({
   onSteps: () => void
   onExpandNeed: () => void
 }) {
-  const g = GROUND[view.shell]
-  const isStep = STEP_SCREENS.has(view.screenId)
-  const hasWhisper = !!(view.whisperText || view.showLink)
+  // Undo is drawn outside the footer, so the footer's height and the primary's position
+  // never depend on it (CP3; CP4 for the waiting and done screens).
+  const undo = view.secondary?.action.kind === 'undo' ? view.secondary : null
+  const footer = <Footer back={view.back} primary={view.primary} onNavigate={onNavigate} onPrimary={onPrimary} />
+  const undoBar = undo && <UndoBar label={undo.label} onClick={onSecondary} />
 
-  // The whisper and the What's cooking link, recoloured: on the wait screens only since
-  // CP3 (the step pages use the rail); CP4 replaces them there too.
-  const background = hasWhisper && (
-    <div className={`flex flex-col items-start gap-2 border-t py-[18px] ${g.rule}`}>
-      {view.whisperText && <p className={`text-[18px] leading-[1.5] ${g.ink}`}>{view.whisperText}</p>}
-      {view.showLink && (
-        <button
-          type="button"
-          onClick={onSheet}
-          className={`relative text-[15px] underline underline-offset-[3px] after:absolute after:inset-x-0 after:-inset-y-[11px] after:content-[''] ${g.meta}`}
-        >
-          What&apos;s cooking
-        </button>
-      )}
+  if (view.layout === 'done') {
+    return (
+      <div className="flex h-full flex-col bg-home-ground">
+        <div className="flex-shrink-0 pt-[var(--safe-top)]">{view.done?.thumbnail && <Thumbnail src={view.done.thumbnail} alt={view.done.alt} />}</div>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div className={`flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-5 pt-6 ${undo ? 'pb-11' : ''}`}>
+            <h1 className="text-[40px] font-extrabold leading-[1.02] tracking-[-0.01em] text-home-ink" style={{ fontStretch: '88%' }}>
+              {view.title}
+            </h1>
+            {view.done && <p className="text-[17px] text-home-ink-2">{view.done.line}</p>}
+          </div>
+          {undoBar}
+        </div>
+        {footer}
+      </div>
+    )
+  }
+
+  const topBar = (
+    // The cooking root no longer carries the top inset (useHomeSurface), so the bar adds it
+    // itself. Leave is a 44px text button.
+    <div className="flex-shrink-0 pt-[var(--safe-top)]">
+      <div className="flex h-[52px] items-center justify-between gap-3 pl-5 pr-2 pt-2">
+        <span className="min-w-0 truncate text-[15px] font-bold text-home-ink">{view.topRecipe}</span>
+        {view.showTopRight && (
+          <button type="button" onClick={onLeave} className="h-11 flex-none whitespace-nowrap px-3 text-[15px] font-semibold text-home-ink-2">
+            Leave
+          </button>
+        )}
+      </div>
     </div>
   )
 
-  // CP3: Undo on a step page is drawn outside the footer, so the primary never moves.
-  const stepUndo = isStep && view.secondary?.action.kind === 'undo' ? view.secondary : null
+  if (view.layout === 'message') {
+    return (
+      <div className="flex h-full flex-col bg-home-ground">
+        {topBar}
+        <MessageBody
+          heading={view.title}
+          line={view.instr}
+          primary={view.primary && { label: view.primary.label, onClick: onPrimary }}
+          secondary={view.secondary && { label: view.secondary.label, onClick: onSecondary }}
+          note={view.note}
+        />
+      </div>
+    )
+  }
+
+  const isWaiting = view.layout === 'waiting'
   const need = needShown(view.need, needExpanded)
-
-  // The non-step screens' secondary slot (kept until CP4).
-  const secondary = (view.secondary || view.reserveSecondary) && (
-    <div className={`flex items-center justify-center pt-3.5 text-center ${view.reserveSecondary ? 'min-h-[46px]' : ''}`}>
-      {view.secondary && (
-        <button
-          type="button"
-          onClick={onSecondary}
-          className={`relative underline underline-offset-[3px] after:absolute after:inset-x-0 after:-inset-y-[11px] after:content-[''] ${
-            view.secondary.action.kind === 'undo' ? `text-[16px] ${g.ink2}` : `text-[15px] ${g.meta}`
-          }`}
-        >
-          {view.secondary.label}
-        </button>
-      )}
-    </div>
-  )
-
-  const note = `text-[16px] leading-[1.45] ${g.ink2}`
+  const note = 'text-[16px] leading-[1.45] text-home-ink-2'
 
   return (
-    <div className={`flex h-full flex-col ${g.bg}`}>
-      {/* Top bar. The cooking root no longer carries the top inset (useHomeSurface), so
-          the bar adds it itself. Leave is a 44px text button. */}
-      <div className="flex-shrink-0 pt-[var(--safe-top)]">
-        <div className="flex h-[52px] items-center justify-between gap-3 pl-5 pr-2 pt-2">
-          <span className={`min-w-0 truncate text-[15px] font-bold ${g.ink}`}>{view.topRecipe}</span>
-          {view.showTopRight && (
-            <button
-              type="button"
-              onClick={onLeave}
-              className={`h-11 flex-none whitespace-nowrap px-3 text-[15px] font-semibold ${g.ink2}`}
-            >
-              Leave
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="flex h-full flex-col bg-home-ground">
+      {topBar}
 
-      {/* CP3 timer rails (V2Running): full-width sage, 48px, under the top bar; one per
-          running timer up to two, the second becoming "N more timers" with a third (owner answer 1). */}
-      {isStep && view.rails.length > 0 && (
-        <div className="mt-1 flex flex-shrink-0 flex-col gap-px">
-          {view.rails.map((rail) => (
-            <button
-              key={rail.kind === 'timer' ? rail.nodeId : 'more'}
-              type="button"
-              aria-label={rail.aria}
-              onClick={() => onRail(rail)}
-              className={`flex h-12 w-full items-center gap-2.5 bg-home-sage px-5 text-left ${g.ink}`}
-            >
-              {rail.kind === 'timer' ? (
-                <>
-                  <span aria-hidden="true" className="h-2 w-2 flex-none rounded-full bg-home-terracotta" />
-                  <span className="min-w-0 flex-1 truncate text-[16px] font-bold">{rail.name}</span>
-                  <span
-                    className="flex-none whitespace-nowrap text-[16px] font-bold text-home-sage-chip-text"
-                    style={{ fontVariantNumeric: 'tabular-nums' }}
-                  >
-                    {rail.left}
-                  </span>
-                </>
-              ) : (
-                // CP3.1: the summary rail has no dot (the dot means a running timer), and a ›
-                // at its right edge says it opens the Timers list.
-                <>
-                  <span className="flex-1 text-[16px] font-bold">{rail.text}</span>
-                  <span aria-hidden="true" className="flex-none text-[20px] font-bold leading-none text-home-sage-chip-text">›</span>
-                </>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      <Strips strips={view.strips} onRail={onRail} onAction={onAction} />
 
-      {isStep && view.ticks && (
+      {view.ticks && (
         <div
           aria-hidden="true"
           data-ticks="true"
@@ -195,49 +162,49 @@ export function CookingShell({
         </div>
       )}
 
-      {isStep ? (
-        <>
-          {/* Step page: the content scrolls; Up next is pinned to its bottom (mt-auto) and
-              fills the space a short step leaves. While Undo shows, the column keeps 44px
-              free at its foot so nothing sits under the Undo bar. */}
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pt-5 ${stepUndo ? 'pb-11' : ''}`}>
-              <div className="flex shrink-0 flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  {view.step && (
-                    <button
-                      type="button"
-                      onClick={onSteps}
-                      aria-label={`${view.step}. Show all steps`}
-                      className={`flex h-8 items-center gap-1.5 self-start pr-2.5 text-[15px] font-semibold ${g.ink2}`}
-                      style={{ fontVariantNumeric: 'tabular-nums' }}
-                    >
-                      <ListIcon />
-                      {view.step}
-                    </button>
-                  )}
-                  <h1
-                    className={`text-[26px] font-extrabold leading-[1.15] tracking-[-0.005em] ${g.ink}`}
-                    style={{ textWrap: 'balance' }}
-                  >
-                    {view.label}
-                  </h1>
-                </div>
+      {/* The content scrolls; Up next is pinned to its bottom (mt-auto) and fills the space a
+          short step leaves. While Undo shows, the column keeps 44px free at its foot so
+          nothing sits under the Undo bar. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pt-5 ${undo ? 'pb-11' : ''}`}>
+          <div className={`flex shrink-0 flex-col ${isWaiting ? 'gap-3.5' : 'gap-4'}`}>
+            <div className="flex flex-col gap-1.5">
+              {view.step && (
+                <button
+                  type="button"
+                  onClick={onSteps}
+                  aria-label={`${view.step}. Show all steps`}
+                  className="flex h-8 items-center gap-1.5 self-start pr-2.5 text-[15px] font-semibold text-home-ink-2"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  <ListIcon />
+                  {view.step}
+                </button>
+              )}
+              <h1 className="text-[26px] font-extrabold leading-[1.15] tracking-[-0.005em] text-home-ink" style={{ textWrap: 'balance' }}>
+                {view.label}
+              </h1>
+            </div>
+
+            {isWaiting ? (
+              <>
+                {view.waiting && <WaitingBlock waiting={view.waiting} onAction={onAction} />}
+                {view.cue && <CueLine cue={view.cue} />}
+                {view.waiting && view.waiting.meanwhile.length > 0 && <MeanwhileBlock rows={view.waiting.meanwhile} onNavigate={onNavigate} />}
+              </>
+            ) : (
+              <>
                 {/* D6: quantities, times and heat in bold, the recipe page's own rule. */}
-                <p className={`max-w-[350px] text-[24px] leading-[1.42] ${g.ink}`} style={{ textWrap: 'pretty' }}>
+                <p className="max-w-[350px] text-[24px] leading-[1.42] text-home-ink" style={{ textWrap: 'pretty' }}>
                   <EmphasisText text={view.title} consumed={view.consumed} factor={view.factor} />
                 </p>
                 {/* CP3 owner answer 3: how you know it's ready, only when the text doesn't say it. */}
-                {view.cue && (
-                  <p className={`text-[17px] leading-[1.45] ${g.ink}`}>
-                    <b className="font-bold text-home-ink">{READY_WHEN}</b> {view.cue}
-                  </p>
-                )}
+                {view.cue && <CueLine cue={view.cue} />}
                 {/* V2HandsOff: the sage tag and how long, never a forced timer; "Mark as done"
                     (owner answer 5) for a step done without timing it. */}
                 {view.handsOff && (
                   <div className="flex flex-col items-start gap-1">
-                    <div className={`flex items-center gap-2.5 text-[16px] leading-[1.4] ${g.ink}`}>
+                    <div className="flex items-center gap-2.5 text-[16px] leading-[1.4] text-home-ink">
                       <span className="flex-none whitespace-nowrap rounded-full bg-home-sage px-2.5 py-1 text-[13px] font-bold text-home-sage-chip-text">
                         {view.handsOff.tag}
                       </span>
@@ -246,7 +213,7 @@ export function CookingShell({
                     <button
                       type="button"
                       onClick={() => view.handsOff && onAction(view.handsOff.markDone.action)}
-                      className={`-ml-1 h-11 px-1 text-[16px] underline underline-offset-[3px] ${g.ink2}`}
+                      className="-ml-1 h-11 px-1 text-[16px] text-home-ink-2 underline underline-offset-[3px]"
                     >
                       {view.handsOff.markDone.label}
                     </button>
@@ -264,18 +231,18 @@ export function CookingShell({
                     name that says so (R4). */}
                 {view.need.length > 0 && (
                   <div data-need="true">
-                    <div className={`pb-1.5 text-[14px] font-semibold ${g.ink2}`}>You&apos;ll need</div>
+                    <div className="pb-1.5 text-[14px] font-semibold text-home-ink-2">You&apos;ll need</div>
                     {need.rows.map((row) => (
                       <div
                         key={`${row.name}|${row.amount ?? ''}`}
                         data-need-row="true"
                         aria-label={row.label}
-                        className={`flex justify-between gap-3 border-t py-2 text-[16px] leading-[1.4] ${g.rule} ${g.ink}`}
+                        className="flex justify-between gap-3 border-t border-home-rule py-2 text-[16px] leading-[1.4] text-home-ink"
                       >
                         <span>{row.name}</span>
                         {row.amount != null &&
                           (row.unscaled ? (
-                            <span className={`whitespace-nowrap text-right ${g.ink2}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            <span className="whitespace-nowrap text-right text-home-ink-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
                               {row.amount}
                             </span>
                           ) : (
@@ -284,7 +251,7 @@ export function CookingShell({
                       </div>
                     ))}
                     {need.more && (
-                      <div className={`border-t ${g.rule}`}>
+                      <div className="border-t border-home-rule">
                         <button
                           type="button"
                           onClick={onExpandNeed}
@@ -301,120 +268,290 @@ export function CookingShell({
                 {/* R6b B3 (ii), B21: quiet notes after the step's own lines. No "Edited" mark. */}
                 {view.stepTimeNote && <p className={note}>{view.stepTimeNote}</p>}
                 {view.stepAmountNote && <p className={note}>{view.stepAmountNote}</p>}
-              </div>
-
-              <div className="mt-auto shrink-0 pt-4">
-                {/* Up next: the whole block is one button that moves the view (never a
-                    completion). */}
-                {view.upNext && (
-                  <button
-                    type="button"
-                    onClick={() => view.upNext && onNavigate(view.upNext.action)}
-                    aria-label={`${view.upNext.label}: ${view.upNext.stepRef.toLowerCase()}, ${view.upNext.name}. Go to it`}
-                    className={`flex w-full flex-col gap-1.5 border-t pb-4 pt-3.5 text-left ${g.rule} ${g.ink}`}
-                  >
-                    <span className="flex w-full items-baseline justify-between">
-                      <span className="text-[14px] font-semibold text-home-terracotta-text">{view.upNext.label}</span>
-                      <span className={`text-[13px] ${g.ink2}`}>{view.upNext.stepRef}</span>
-                    </span>
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[19px] font-extrabold leading-[1.25]">
-                      {view.upNext.name}
-                      {view.upNext.tag && (
-                        <span className="flex-none whitespace-nowrap rounded-full bg-home-sage px-[9px] py-[3px] text-[12px] font-bold text-home-sage-chip-text">
-                          {view.upNext.tag}
-                        </span>
-                      )}
-                    </span>
-                    <span className={`text-[17px] leading-[1.45] ${g.ink2}`}>{view.upNext.text}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* CP3: Undo, over the foot of the scroll area on the cream ground, never inside
-                the footer, so the footer's height and the primary's position never depend on
-                it. One line; a long step name truncates. */}
-            {stepUndo && (
-              <div className={`absolute inset-x-0 bottom-0 flex h-11 items-center justify-center px-5 ${g.bg}`}>
-                <button
-                  type="button"
-                  onClick={onSecondary}
-                  className={`h-11 max-w-full truncate text-[16px] underline underline-offset-[3px] ${g.ink2}`}
-                >
-                  {stepUndo.label}
-                </button>
-              </div>
+              </>
             )}
           </div>
 
-          {/* Footer: Back + the primary pill, nothing else. */}
-          <div data-footer="true" className="flex-shrink-0 px-5 pb-[calc(24px+var(--safe-bottom))] pt-1">
-            {(view.back || view.primary) && (
-              <div className="flex items-center gap-3">
-                {view.back && (
-                  <button
-                    type="button"
-                    onClick={() => view.back && onNavigate(view.back.action)}
-                    className={`h-[60px] flex-none pl-1 pr-[18px] text-[17px] font-bold ${g.ink}`}
-                  >
-                    Back
-                  </button>
-                )}
-                {view.primary && (
-                  <button type="button" onClick={onPrimary} className={`flex-1 ${PILL}`}>
-                    {view.primary.label}
-                  </button>
-                )}
-              </div>
+          <div className="mt-auto shrink-0 pt-4">
+            {/* Up next: the whole block is one button that moves the view (never a completion). */}
+            {view.upNext && (
+              <button
+                type="button"
+                onClick={() => view.upNext && onNavigate(view.upNext.action)}
+                aria-label={`${view.upNext.label}: ${view.upNext.stepRef.toLowerCase()}, ${view.upNext.name}. Go to it`}
+                className="flex w-full flex-col gap-1.5 border-t border-home-rule pb-4 pt-3.5 text-left text-home-ink"
+              >
+                <span className="flex w-full items-baseline justify-between">
+                  <span className="text-[14px] font-semibold text-home-terracotta-text">{view.upNext.label}</span>
+                  <span className="text-[13px] text-home-ink-2">{view.upNext.stepRef}</span>
+                </span>
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[19px] font-extrabold leading-[1.25]">
+                  {view.upNext.name}
+                  {view.upNext.tag && (
+                    <span className="flex-none whitespace-nowrap rounded-full bg-home-sage px-[9px] py-[3px] text-[12px] font-bold text-home-sage-chip-text">
+                      {view.upNext.tag}
+                    </span>
+                  )}
+                </span>
+                <span className="text-[17px] leading-[1.45] text-home-ink-2">{view.upNext.text}</span>
+              </button>
             )}
           </div>
-        </>
-      ) : (
-        <>
-          {/* Body column (B0). The lead-in (124px) is a spacer that *shrinks* (down to
-              24px) before the content is pushed below the fold. Content is `shrink-0`;
-              only the spacer yields. */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-6">
-            <div aria-hidden className="min-h-6 shrink basis-[124px]" />
-            <div className="shrink-0">
-              {view.step && <div className={`mb-1 text-[13px] ${g.meta}`}>{view.step}</div>}
-              {view.label && <div className={`mb-3 text-[13px] ${g.meta}`}>{view.label}</div>}
-              <h1 className={`text-[30px] font-semibold leading-[1.15] ${g.ink}`} style={{ fontStretch: '88%' }}>
-                {view.title}
-              </h1>
-              {view.instr && <p className={`mt-5 text-[18px] leading-[1.55] ${g.ink}`}>{view.instr}</p>}
-              {view.waitTime && (
-                <div className="mt-4">
-                  <p className={`text-[18px] leading-[1.55] ${g.ink}`}>{view.waitTime.left}</p>
-                  <p className={`text-[15px] leading-[1.5] ${g.meta}`}>{view.waitTime.readyAt}</p>
-                </div>
-              )}
-              {view.qty && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.qty}</p>}
-              {view.note && <p className={`mt-4 text-[15px] leading-[1.5] ${g.meta}`}>{view.note}</p>}
+        </div>
+        {undoBar}
+      </div>
+
+      {footer}
+    </div>
+  )
+}
+
+/** CP3 owner answer 3: "Ready when:" in bold ink, then the cue as stored. */
+function CueLine({ cue }: { cue: string }) {
+  return (
+    <p className="text-[17px] leading-[1.45] text-home-ink">
+      <b className="font-bold text-home-ink">{READY_WHEN}</b> {cue}
+    </p>
+  )
+}
+
+/**
+ * The strips under the top bar: CP3's sage rails and CP4's terracotta banners (V2Banner).
+ * A banner takes a rail's slot, so the footer never moves; the text below moves down once,
+ * by the height difference, when a timer ends. While a banner shows, the region sits above
+ * any open sheet's scrim (`z-30`), so the banner stays visible and tappable over it.
+ */
+function Strips({
+  strips,
+  onRail,
+  onAction,
+}: {
+  strips: StripView[]
+  onRail: (rail: RailView) => void
+  onAction: (action: ActionDescriptor) => void
+}) {
+  if (strips.length === 0) return null
+  const raised = strips.some((s) => s.kind === 'banner')
+  return (
+    <div data-strips="true" className={`mt-1 flex flex-shrink-0 flex-col gap-px ${raised ? 'relative z-30' : ''}`}>
+      {strips.map((strip) =>
+        strip.kind === 'banner' ? (
+          <div key={`banner-${strip.nodeId}`} role="status" className="flex items-center gap-3 bg-home-terracotta px-5 py-3 text-home-ground">
+            <div className="min-w-0 flex-1">
+              <div className="text-[17px] font-extrabold leading-[1.25]">{strip.title}</div>
+              <div className="text-[14px] opacity-[.88]">{strip.line}</div>
             </div>
+            <button
+              type="button"
+              onClick={() => onAction(strip.add.action)}
+              className="h-11 flex-none whitespace-nowrap rounded-full border-[1.5px] border-home-ground px-4 text-[15px] font-bold text-home-ground"
+            >
+              {strip.add.label}
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction(strip.done.action)}
+              className="h-11 flex-none whitespace-nowrap rounded-full bg-home-ground px-4 text-[15px] font-bold text-home-terracotta-text"
+            >
+              {strip.done.label}
+            </button>
           </div>
-
-          <div className="flex-shrink-0 px-6 pb-[34px]">
-            {background}
-
-            {view.primary &&
-              (view.primary.solid ? (
-                <button type="button" onClick={onPrimary} className={`flex w-full items-center justify-center ${PILL}`}>
-                  {view.primary.label}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onPrimary}
-                  className={`flex min-h-[60px] w-full items-center justify-center rounded-full border border-home-ink px-3.5 py-2 text-center text-[18px] font-medium leading-[1.3] ${g.ink}`}
-                >
-                  {view.primary.label}
-                </button>
-              ))}
-
-            {secondary}
-          </div>
-        </>
+        ) : (
+          // CP3 timer rails (V2Running): full-width sage, 48px; the summary rail has no dot
+          // (the dot means a running timer), and a › at its right edge (CP3.1).
+          <button
+            key={strip.kind === 'timer' ? strip.nodeId : 'more'}
+            type="button"
+            aria-label={strip.aria}
+            onClick={() => onRail(strip)}
+            className="flex h-12 w-full items-center gap-2.5 bg-home-sage px-5 text-left text-home-ink"
+          >
+            {strip.kind === 'timer' ? (
+              <>
+                <span aria-hidden="true" className="h-2 w-2 flex-none rounded-full bg-home-terracotta" />
+                <span className="min-w-0 flex-1 truncate text-[16px] font-bold">{strip.name}</span>
+                <span className="flex-none whitespace-nowrap text-[16px] font-bold text-home-sage-chip-text" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {strip.left}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-[16px] font-bold">{strip.text}</span>
+                <span aria-hidden="true" className="flex-none text-[20px] font-bold leading-none text-home-sage-chip-text">›</span>
+              </>
+            )}
+          </button>
+        ),
       )}
+    </div>
+  )
+}
+
+/** V2Wait: the 52px time left + "Add 5 min", the 4px bar and the ready line. */
+function WaitingBlock({ waiting, onAction }: { waiting: NonNullable<CookingView['waiting']>; onAction: (action: ActionDescriptor) => void }) {
+  return (
+    <div data-waiting="true" className="flex flex-col gap-2.5 pt-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <div className="flex items-baseline gap-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <span className="text-[52px] font-bold leading-none text-home-ink">{waiting.big}</span>
+          {waiting.unit && <span className="text-[18px] font-semibold text-home-ink-2">{waiting.unit}</span>}
+        </div>
+        <button type="button" onClick={() => onAction(waiting.add.action)} className="h-11 px-1 text-[16px] font-bold text-home-terracotta-text">
+          {waiting.add.label}
+        </button>
+      </div>
+      <div aria-hidden="true" className="flex h-1 bg-home-rule">
+        <div className="bg-home-terracotta" style={{ width: `${Math.round(waiting.fraction * 1000) / 10}%` }} />
+      </div>
+      <p className="text-[15px] text-home-ink-2">{waiting.line}</p>
+    </div>
+  )
+}
+
+/** "Meanwhile, do these" (the recipe page's WaitWindowBlock wording, on its field ground):
+ * one 44px row per task, each a button to that step (P2: the cook can go anywhere). */
+function MeanwhileBlock({
+  rows,
+  onNavigate,
+}: {
+  rows: NonNullable<CookingView['waiting']>['meanwhile']
+  onNavigate: (action: ActionDescriptor) => void
+}) {
+  return (
+    <div data-meanwhile="true" className="rounded-home-mini bg-field px-3.5 pb-1 pt-3">
+      <div className="text-[16px] font-extrabold text-home-ink">Meanwhile, do these</div>
+      {rows.map((row) => (
+        <button
+          key={row.nodeId}
+          type="button"
+          onClick={() => onNavigate(row.action)}
+          className="mt-2 flex min-h-11 w-full items-center gap-2.5 border-t border-home-ink/12 text-left text-[16px]"
+        >
+          <span className="w-6 flex-none font-bold text-home-terracotta-text" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {row.n}
+          </span>
+          <span className={`min-w-0 flex-1 ${row.state === 'done' ? 'text-home-ink-2' : 'text-home-ink'}`}>{row.name}</span>
+          {row.right && (
+            <span className="flex flex-none items-center gap-1 whitespace-nowrap text-[14px] font-bold text-home-sage-chip-text" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {row.state === 'done' && <TickIcon />}
+              {row.right}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** The done screen's picture: full width, 300px, cover. A failed load hides it, so there is
+ * never a broken image or a gap (as `ContinueStrip` does). */
+function Thumbnail({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return null
+  return <img src={src} alt={alt} onError={() => setFailed(true)} className="block h-[300px] w-full object-cover" />
+}
+
+/** Undo, over the foot of the scroll area on the cream ground, never inside the footer. One
+ * line; a long step name truncates. */
+function UndoBar({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 flex h-11 items-center justify-center bg-home-ground px-5">
+      <button type="button" onClick={onClick} className="h-11 max-w-full truncate text-[16px] text-home-ink-2 underline underline-offset-[3px]">
+        {label}
+      </button>
+    </div>
+  )
+}
+
+/** Footer: Back + the primary pill, nothing else. */
+function Footer({
+  back,
+  primary,
+  onNavigate,
+  onPrimary,
+}: {
+  back: ActionButton | null
+  primary: ActionButton | null
+  onNavigate: (action: ActionDescriptor) => void
+  onPrimary: () => void
+}) {
+  return (
+    <div data-footer="true" className="flex-shrink-0 px-5 pb-[calc(24px+var(--safe-bottom))] pt-1">
+      {(back || primary) && (
+        <div className="flex items-center gap-3">
+          {back && (
+            <button type="button" onClick={() => onNavigate(back.action)} className="h-[60px] flex-none pl-1 pr-[18px] text-[17px] font-bold text-home-ink">
+              Back
+            </button>
+          )}
+          {primary && (
+            <button type="button" onClick={onPrimary} className={`flex-1 ${PILL}`}>
+              {primary.label}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface MessageButton {
+  label: string
+  onClick: () => void
+}
+
+/** The message layout's body (V2Conflict): a 34/800 heading at 88% width, one 17px line,
+ * then a terracotta pill and an outlined pill, centred in the screen. */
+function MessageBody({
+  heading,
+  line,
+  primary,
+  secondary,
+  note,
+}: {
+  heading: string
+  line: ReactNode
+  primary: MessageButton | null
+  secondary?: MessageButton | null
+  note?: string | null
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col justify-center gap-6 overflow-y-auto px-6 pb-[calc(24px+var(--safe-bottom))]">
+      <div className="flex flex-col gap-2.5">
+        <h1 className="text-[34px] font-extrabold leading-[1.06] text-home-ink" style={{ fontStretch: '88%' }}>
+          {heading}
+        </h1>
+        {line && <p className="text-[17px] leading-[1.45] text-home-ink-2">{line}</p>}
+      </div>
+      <div className="flex flex-col gap-2.5">
+        {primary && (
+          <button type="button" onClick={primary.onClick} className={`flex w-full items-center justify-center px-3.5 ${PILL}`}>
+            {primary.label}
+          </button>
+        )}
+        {secondary && (
+          <button type="button" onClick={secondary.onClick} className={`flex w-full items-center justify-center ${OUTLINED}`}>
+            {secondary.label}
+          </button>
+        )}
+        {note && <p className="text-[15px] leading-[1.45] text-home-terracotta-text">{note}</p>}
+      </div>
+    </div>
+  )
+}
+
+/** PR 2 CP4: a full screen in the message layout with no top bar (V2Conflict, and the honest
+ * "couldn't start" line). */
+export function MessageScreen(props: {
+  heading: string
+  line: ReactNode
+  primary: MessageButton | null
+  secondary?: MessageButton | null
+  note?: string | null
+}) {
+  return (
+    <div className="flex h-full flex-col bg-home-ground pt-[var(--safe-top)]">
+      <MessageBody {...props} />
     </div>
   )
 }

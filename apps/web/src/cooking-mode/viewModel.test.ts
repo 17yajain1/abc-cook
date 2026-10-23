@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { handsOffLine, timerLength } from './copy'
-import type { RailView } from './timers'
-import { buildConflictView, buildCookingView, buildEntryView, buildSheetView } from './viewModel'
+import type { StripView } from './timers'
+import { buildConflictView, buildCookingView, conflictTimer, doneLine, recipeThumbnail, type ScreenId } from './viewModel'
 import { ingredientsById } from './quantity'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
@@ -15,11 +15,11 @@ import pizzaDough from '@/__fixtures__/pizza-dough.plan-response.json'
 import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-response.json'
 import syntheticTwoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
 import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
+import { ADD_TIME_MS } from '@/cooking/constants'
 import { createSessionStore, type StorageLike } from '@/cooking/store'
 import * as engine from '@/cooking/engine'
 import { deriveCookingModel } from '@/cooking/model'
 import type { CookingModel, CookingSession, Rejected, SessionConflict } from '@/cooking/types'
-import { headerTiming } from '@/lib/duration'
 import type { ServingsChoice } from '@/lib/servings'
 
 /**
@@ -27,13 +27,13 @@ import type { ServingsChoice } from '@/lib/servings'
  * `engine.ts` actions and read through the real `@/cooking/select` functions (via
  * `viewModel.ts`) — every `now` here is an explicit literal passed to the engine/view
  * builders, never a real timer, `setTimeout`, or `Date.now()`. This exercises
- * `resolveScreen`'s composition (lifecycle -> leaving -> leftAt -> role) and the copy
- * each screen derives from it, not the selectors themselves — those are proved by
- * `select.test.ts` / `engine.test.ts` already.
+ * `resolveScreen`'s composition (lifecycle -> viewed step -> current -> the waiting
+ * screen) and the copy each screen derives from it, not the selectors themselves —
+ * those are proved by `select.test.ts` / `engine.test.ts` already.
  *
- * Scenario names below are keyed to the M3.4 design handoff's own prototype frame
- * names (`Cooking Mode - M3.4 UI.dc.html`'s `SC` array) so this file's coverage can be
- * checked frame-by-frame against that list.
+ * PR 2 CP4: the entry, handover, leaving, returning and sitting_resume screens are gone,
+ * and so is the What's cooking sheet. A timer's end is a banner (`strips`); with nothing to
+ * do, the waiting screen (V2Wait) shows the step whose timer is running.
  */
 
 const MIN = 60_000
@@ -43,9 +43,15 @@ function must(result: CookingSession | Rejected): CookingSession {
   return result
 }
 
+const stripTexts = (v: { strips: StripView[] }) =>
+  v.strips.map((s) => (s.kind === 'timer' ? `${s.name}: ${s.left}` : s.kind === 'more' ? s.text : `${s.title} / ${s.line}`))
+
+// The waiting screen's ready line, wake lock held / released.
+const RING = /^Ready around .+\. We'll ring when it's done\.$/
+const ALARM = /^Ready around .+\. Set an alarm too; we can't ring once your phone locks\.$/
+
 // ---------------------------------------------------------------------------
-// kadai-paneer — entry, task, handsoff_pending, task_window, wait, handover_late,
-// sheet (single row), done, stale
+// kadai-paneer — task, handsoff_pending, task_window, the waiting screen, done, stale
 // ---------------------------------------------------------------------------
 
 describe('kadai-paneer', () => {
@@ -53,25 +59,28 @@ describe('kadai-paneer', () => {
   const T0 = 1_700_000_000_000
   const model: CookingModel = deriveCookingModel(KADAI)
   const ingredients = ingredientsById(KADAI.graph.ingredients)
-  const timing = headerTiming(KADAI.summary ?? null, KADAI.plan.total_min)
 
-  function view(session: CookingSession, now: number, leaving = false) {
-    return buildCookingView(model, session, now, ingredients, { recipeTitle: KADAI.graph.title, leaving })
+  function view(session: CookingSession, now: number) {
+    return buildCookingView(model, session, now, ingredients, { recipeTitle: KADAI.graph.title })
   }
 
-  it('entry: quotes the header timing range and the node count', () => {
-    const v = buildEntryView(model, KADAI.graph.title, timing)
-    expect(v.screenId).toBe('entry')
-    expect(v.title).toBe('Kadai Paneer')
-    expect(v.instr).toContain(timing.primary)
-    expect(v.note).toBe(`${model.order.length} things to do.`)
-    expect(v.primary).toEqual({ label: 'Start cooking', solid: true, action: { kind: 'start' } })
-  })
+  /** The base running (ends +22) with every window task done: nothing left for the cook. */
+  function baseWaiting(): CookingSession {
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
+    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
+    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
+    se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
+    se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
+    return must(engine.markDone(se, model, 'make_kadai_masala', T0 + 16 * MIN))
+  }
 
   it('task: shows the hands-on task screen for the first node', () => {
     const se = must(engine.start(null, model, 'server:kadai', T0))
     const v = view(se, T0)
     expect(v.screenId).toBe('task')
+    expect(v.layout).toBe('step')
     expect(v.label).toBe('Chop onion')
     // F2: the step screen's amounts move from the quantity line to ingredient chips —
     // the same structured phrase, one chip per ingredient; the quantity line is gone.
@@ -108,7 +117,7 @@ describe('kadai-paneer', () => {
     expect(v.qty).toBeNull()
   })
 
-  it('task_window: shows a task inside the wait window with a rail naming the host (CP3: was the whisper)', () => {
+  it('task_window: shows a task inside the wait window with a rail naming the host', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
     se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
@@ -118,9 +127,7 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 10 * MIN + 1000)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Cube capsicum')
-    expect(v.showLink).toBe(false)
-    expect(v.whisperText).toBeNull()
-    expect(v.rails).toMatchObject([{ kind: 'timer', name: 'Cook tomato base' }])
+    expect(v.strips).toMatchObject([{ kind: 'timer', name: 'Cook tomato base' }])
     expect(v.step).toBe('Step 5 of 10')
     expect(v.upNext?.name).toBe('Cube paneer')
     expect(v.chips).toEqual(['1 large capsicum'])
@@ -153,7 +160,7 @@ describe('kadai-paneer', () => {
     for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) {
       se = must(engine.markDone(se, model, id, T0 + 16 * MIN))
     }
-    se = must(engine.acknowledge(se, model, T0 + 22 * MIN))
+    se = must(engine.markDone(se, model, 'cook_tomato_base', T0 + 22 * MIN))
     se = must(engine.markDone(se, model, 'add_veggies', T0 + 27 * MIN))
     se = must(engine.markDone(se, model, 'add_paneer', T0 + 32 * MIN))
 
@@ -164,151 +171,82 @@ describe('kadai-paneer', () => {
     expect(v.upNext).toBeNull()
   })
 
-  it('wait: shows the cue as title/instr with a primary once the running host is the wait subject', () => {
-    // Renamed from a prior test that claimed "no primary" without asserting it — the
-    // audit found `cook_tomato_base` carries a doneness cue, so this frame *does* have
-    // a primary ("It's done"). The no-primary case is `wait_two_pans`, covered
-    // separately below on the `bowl` fixture, where `waitSubject` genuinely is null.
-    let se = must(engine.start(null, model, 'server:kadai', T0))
-    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
-    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
-    se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
-    se = must(engine.markDone(se, model, 'make_kadai_masala', T0 + 16 * MIN))
-
-    // cook_tomato_base started at +10, duration 12 -> ends at +22. At +16 it is running
-    // and its only consumer (add_veggies) is now unblocked by everything else, so it IS
-    // the wait subject — this is the design's `K_WAIT` scenario.
-    // Viewed at exactly +16 min — the same instant as the last markDone above — the
-    // undo link (P1 #6 §C3) is still within its 10 s window and overrides the secondary.
-    const atTransition = view(se, T0 + 16 * MIN)
+  it('waiting (CP4, V2Wait): nothing left for the cook, so the running base gets the waiting screen', () => {
+    // Viewed at exactly +16 min — the same instant as the last markDone — Undo is still
+    // within its 10 s window.
+    const atTransition = view(baseWaiting(), T0 + 16 * MIN)
     expect(atTransition.screenId).toBe('wait')
-    expect(atTransition.title.toLowerCase()).toContain('oil pooling')
-    expect(atTransition.primary).toEqual({
-      label: "It's done",
+    expect(atTransition.layout).toBe('waiting')
+    expect(atTransition.label).toBe('Cook tomato base')
+    expect(atTransition.nodeId).toBe('cook_tomato_base')
+    expect(atTransition.step).toBe('Step 4 of 10')
+    expect(atTransition.waiting).toMatchObject({ big: '6', unit: 'min left', ended: false })
+    expect(atTransition.waiting!.line).toMatch(RING)
+    expect(atTransition.waiting!.add).toEqual({
+      label: 'Add 5 min',
       solid: false,
-      action: { kind: 'markDone', nodeId: 'cook_tomato_base' },
+      action: { kind: 'extend', nodeId: 'cook_tomato_base', ms: ADD_TIME_MS },
     })
-    expect(atTransition.secondary).toEqual({
-      label: 'Undo',
-      solid: false,
-      action: { kind: 'undo' },
-    })
-    // cook_tomato_base ends at +22; viewed at +16 leaves exactly 6 min.
-    expect(atTransition.waitTime).not.toBeNull()
-    expect(atTransition.waitTime!.left).toBe('About 6 min left')
-    expect(atTransition.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
-    // No current step on a wait screen — no step count, no preview.
-    expect(atTransition.step).toBeNull()
-    expect(atTransition.upNext).toBeNull()
-    // F2 chips are step-screen only.
-    expect(atTransition.chips).toEqual([])
+    // The base hosts the window: every task is done.
+    expect(atTransition.waiting!.meanwhile.map((r) => [r.nodeId, r.right])).toEqual([
+      ['chop_capsicum', 'Done'],
+      ['cube_paneer', 'Done'],
+      ['make_kadai_masala', 'Done'],
+    ])
+    expect(atTransition.upNext).toMatchObject({ label: "When it's done", name: 'Add veggies' })
+    expect(atTransition.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: 'cook_tomato_base' } })
+    // Its own timer has no rail (no duplicate); nothing else runs.
+    expect(atTransition.strips).toEqual([])
+    // Undo names what it undoes, as on the step pages (item 12).
+    expect(atTransition.secondary).toEqual({ label: 'Undo Done on Make kadai masala', solid: false, action: { kind: 'undo' } })
+    // No step text, chips or You'll need on the waiting screen.
+    expect([atTransition.chips, atTransition.need, atTransition.title]).toEqual([[], [], ''])
 
-    // Past the 10 s undo window, "Give it longer" is back.
-    const v = view(se, T0 + 16 * MIN + 10_000)
-    expect(v.secondary).toEqual({
-      label: 'Give it longer',
-      solid: false,
-      action: { kind: 'extend', nodeId: 'cook_tomato_base' },
-    })
+    expect(view(baseWaiting(), T0 + 16 * MIN + 10_000).secondary).toBeNull()
   })
 
-  it('wait: "Give it longer" before expiry moves the end clock by one minute', () => {
-    let se = must(engine.start(null, model, 'server:kadai', T0))
-    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
-    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
-    se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
-    se = must(engine.markDone(se, model, 'make_kadai_masala', T0 + 16 * MIN))
-
-    const before = view(se, T0 + 16 * MIN).waitTime!.readyAt
-    se = must(engine.extend(se, model, 'cook_tomato_base', T0 + 16 * MIN))
-    const after = view(se, T0 + 16 * MIN).waitTime!.readyAt
-
-    const beforeMinute = Number(before.match(/:(\d{2})/)![1])
-    const afterMinute = Number(after.match(/:(\d{2})/)![1])
-    expect((afterMinute - beforeMinute + 60) % 60).toBe(1)
+  it('waiting: "Add 5 min" adds five minutes to the time left', () => {
+    let se = baseWaiting()
+    expect(view(se, T0 + 16 * MIN).waiting?.big).toBe('6')
+    se = must(engine.extend(se, model, 'cook_tomato_base', T0 + 16 * MIN, ADD_TIME_MS))
+    expect(view(se, T0 + 16 * MIN).waiting?.big).toBe('11')
   })
 
-  it('handover_late: shows the elapsed/overrun wording once the host node has expired', () => {
-    let se = must(engine.start(null, model, 'server:kadai', T0))
-    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
-    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'chop_capsicum', T0 + 12 * MIN))
-    se = must(engine.markDone(se, model, 'cube_paneer', T0 + 14 * MIN))
-    se = must(engine.markDone(se, model, 'make_kadai_masala', T0 + 16 * MIN))
-
-    const v = view(se, T0 + 23 * MIN) // ends at +22, so this is 1 min past
-    expect(v.screenId).toBe('handover')
-    expect(v.shell).toBe('dark')
-    // must_attend (periodic) + overrun >= 60s -> the elapsed-fact wording, not the
-    // plain "is done"/"wants a look" copy (that's handover_ready's distinguishing case).
-    expect(v.title).toBe('One minute past.')
-    // F2 does not touch the dark handover screen: no chips, no quantity line.
+  it('waiting, its timer ended (no handover takeover): "Time\'s up", when it ended, the bar full, Add 5 min and It\'s done', () => {
+    const v = view(baseWaiting(), T0 + 23 * MIN) // ends at +22, so this is 1 min past
+    expect(v.screenId).toBe('wait')
+    expect(v.label).toBe('Cook tomato base')
+    expect(v.waiting).toMatchObject({ big: "Time's up", unit: null, ended: true, line: 'Timer ended 1 min ago', fraction: 1 })
+    expect(v.waiting?.add.action).toEqual({ kind: 'extend', nodeId: 'cook_tomato_base', ms: ADD_TIME_MS })
+    expect(v.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: 'cook_tomato_base' } })
+    // Its own banner hides, as its rail does: one control per job on the screen.
+    expect(v.strips).toEqual([])
     expect(v.chips).toEqual([])
-    expect(v.qty).toBeNull()
-    expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'acknowledge' } })
-    expect(v.secondary).toEqual({
-      label: 'Needs a minute more',
-      solid: false,
-      action: { kind: 'extend', nodeId: 'cook_tomato_base' },
-    })
-    expect(v.step).toBeNull()
-    expect(v.upNext).toBeNull()
   })
 
-  it('sheet: lists the single running host', () => {
-    let se = must(engine.start(null, model, 'server:kadai', T0))
-    se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
-    se = must(engine.markDone(se, model, 'chop_tomato', T0 + 10 * MIN))
-    se = must(engine.markDone(se, model, 'saute_onion', T0 + 8 * MIN))
-    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
-
-    const sheet = buildSheetView(model, se, T0 + 12 * MIN)
-    expect(sheet.rows).toHaveLength(1)
-    expect(sheet.rows[0].label).toBe('Cook tomato base')
-  })
-
-  it('done: reports completion only — no total, no saved figure, no ongoing chrome', () => {
-    let se = must(engine.start(null, model, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
-      se = must(engine.markDone(se, model, id, T0 + 10 * MIN))
-    }
-    se = must(engine.startNode(se, model, 'cook_tomato_base', T0 + 10 * MIN))
-    for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) {
-      se = must(engine.markDone(se, model, id, T0 + 16 * MIN))
-    }
-    se = must(engine.acknowledge(se, model, T0 + 22 * MIN))
+  it('done (V2Done): the title, one line from the session, Back to the steps, "Finished cooking", Undo for 10 s', () => {
+    let se = baseWaiting()
+    se = must(engine.markDone(se, model, 'cook_tomato_base', T0 + 22 * MIN))
     se = must(engine.markDone(se, model, 'add_veggies', T0 + 27 * MIN))
     se = must(engine.markDone(se, model, 'add_paneer', T0 + 32 * MIN))
     se = must(engine.markDone(se, model, 'finish', T0 + 34 * MIN))
 
     const v = view(se, T0 + 34 * MIN)
     expect(v.screenId).toBe('done')
+    expect(v.layout).toBe('done')
     expect(v.title).toBe('Kadai Paneer is done.')
-    // B0 (N6): the done screen no longer repeats the last step's instruction.
-    expect(v.instr).toBeNull()
-    expect(v.note).toBeNull()
-    expect(v.qty).toBeNull()
-    expect(v.chips).toEqual([])
+    expect(v.done).toEqual({ thumbnail: null, alt: "Kadai Paneer, from the recipe's video", line: 'All 10 steps, in 34 min.' })
+    expect([v.instr, v.note, v.qty, v.chips, v.strips, v.step, v.upNext]).toEqual([null, null, null, [], [], null, null])
     expect(v.topRecipe).toBe('')
     expect(v.showTopRight).toBe(false)
+    expect(v.back).toEqual({ label: 'Back', solid: false, action: { kind: 'review' } })
     expect(v.primary).toEqual({ label: 'Finished cooking', solid: true, action: { kind: 'finish' } })
-    // P1 #6 §C3: the done screen is itself the undo buffer for an accidental final Done —
-    // "Undo" for 10 s, then gone.
+    // P1 #6 §C3: the done screen is itself the undo buffer for an accidental final Done.
     expect(v.secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
     expect(view(se, T0 + 34 * MIN + 10_000).secondary).toBeNull()
     // M5: completion counting is wired behind this `finish` action, so the screen's one
     // primary must stay exactly this — before and after the undo window — with no new action.
     expect(view(se, T0 + 34 * MIN + 10_000).primary).toEqual(v.primary)
-    expect(v.step).toBeNull()
-    expect(v.upNext).toBeNull()
 
     // Undo from the done screen returns to the finish step, restoring its step count.
     const undone = must(engine.undo(se, model, T0 + 34 * MIN + 1000))
@@ -318,51 +256,36 @@ describe('kadai-paneer', () => {
     expect(undoneView.step).toBe('Step 10 of 10')
   })
 
-  it('stale: offers Continue / Start again with the elapsed-since-start copy', () => {
+  it('stale (CP4): "You were last here …", Carry on / Start again', () => {
     const se = must(engine.start(null, model, 'server:kadai', T0))
     const v = view(se, T0 + 361 * MIN) // staleThresholdMs(34) = 6h floor
     expect(v.screenId).toBe('stale')
-    expect(v.title).toBe('You started this six hours ago.')
-    expect(v.instr).toBe('Every timer here is long past.')
-    expect(v.primary).toEqual({ label: 'Continue', solid: true, action: { kind: 'touch' } })
-    expect(v.secondary).toEqual({ label: 'Start again', solid: false, action: { kind: 'end' } })
+    expect(v.layout).toBe('message')
+    expect(v.title).toBe('You were last here 6 hr 1 min ago.')
+    expect(v.instr).toBe('Carry on where you left off, or start again.')
+    expect(v.primary).toEqual({ label: 'Carry on', solid: true, action: { kind: 'touch' } })
+    expect(v.secondary).toEqual({ label: 'Start again', solid: false, action: { kind: 'startAgain' } })
   })
 
-  it('returning: no handover pending — "everything kept its own time", not the ready-and-waiting copy', () => {
+  it('stale is timed from the last action (CP4.0), not from the start', () => {
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    se = must(engine.markDone(se, model, 'chop_onion', T0 + 300 * MIN))
+    expect(view(se, T0 + 361 * MIN).screenId).toBe('task')
+    expect(view(se, T0 + 300 * MIN + 7 * 60 * MIN).title).toBe('You were last here 7 hr ago.')
+  })
+
+  it('a cook coming back after leaving gets the step they left (leftAt is ignored; no returning screen)', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 3 * MIN))
     se = must(engine.leave(se, model, T0 + 5 * MIN))
-
-    const v = view(se, T0 + 9 * MIN) // 4 min later, nothing running, nothing to hand over
-    expect(v.screenId).toBe('returning')
-    expect(v.title).toBe('You left about four minutes ago.')
-    expect(v.instr).toBe('Everything kept its own time.')
-    expect(v.primary).toEqual({ label: 'Back to cooking', solid: true, action: { kind: 'resume' } })
-    // P1 #6 §C4: ending early from "returning" exits Cooking Mode (that recipe's Plan),
-    // not just the entry screen `end` alone would produce.
-    expect(v.secondary).toEqual({
-      label: 'End the cook and clear the timers',
-      solid: false,
-      action: { kind: 'endAndExit' },
-    })
-  })
-
-  it('leaving: "End the cook and clear the timers" is endAndExit, not the bare `end` stale uses', () => {
-    const se = must(engine.start(null, model, 'server:kadai', T0))
-    const v = view(se, T0 + 1 * MIN, true) // leaving=true
-    expect(v.screenId).toBe('leaving')
-    expect(v.primary).toEqual({ label: 'Back to cooking', solid: true, action: { kind: 'stay' } })
-    expect(v.secondary).toEqual({
-      label: 'End the cook and clear the timers',
-      solid: false,
-      action: { kind: 'endAndExit' },
-    })
+    const v = view(se, T0 + 9 * MIN)
+    expect(v.screenId).toBe('task')
+    expect(v.label).toBe('Chop tomato')
   })
 })
 
 // ---------------------------------------------------------------------------
-// P1 #6 orientation/recovery — undo link, next preview, finish/endAndExit wiring
-// across a wider spread of fixtures than the kadai-only coverage above.
+// P1 #6 orientation/recovery — the undo link across a wider spread of fixtures.
 // ---------------------------------------------------------------------------
 
 describe('undo link — P1 #6 §C3', () => {
@@ -372,27 +295,10 @@ describe('undo link — P1 #6 §C3', () => {
   const kadaiModel = deriveCookingModel(KADAI)
   const kadaiIngredients = ingredientsById(KADAI.graph.ingredients)
 
-  it('reserves the secondary slot on every undo-eligible screen so the primary never moves (B0, N3)', () => {
-    let se = must(engine.start(null, kadaiModel, 'server:kadai', T0))
-    se = must(engine.markDone(se, kadaiModel, 'chop_onion', T0 + 1 * MIN))
-    const view = (now: number) =>
-      buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
-
-    // CP3: a step page reserves no slot, with the undo link showing or not — its Undo
-    // sits outside the footer (the shell), so the primary still never moves.
-    expect(view(T0 + 1 * MIN).screenId).toBe('task')
-    expect(view(T0 + 1 * MIN).reserveSecondary).toBe(false)
-    expect(view(T0 + 1 * MIN + 10_000).reserveSecondary).toBe(false)
-    // Entry screen is not undo-eligible: no reserved slot.
-    const timing = headerTiming(KADAI.summary ?? null, KADAI.plan.total_min)
-    expect(buildEntryView(kadaiModel, KADAI.graph.title, timing).reserveSecondary).toBe(false)
-  })
-
   it('shows at +0 s and +9.9 s, gone at +10 s, and names the started step right after a startNode (CP2a)', () => {
     let se = must(engine.start(null, kadaiModel, 'server:kadai', T0))
     se = must(engine.markDone(se, kadaiModel, 'chop_onion', T0 + 1 * MIN))
-    const view = (now: number) =>
-      buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
+    const view = (now: number) => buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title })
 
     // CP3: the page now shows chop_tomato, not the acted-on step, so the link names it.
     expect(view(T0 + 1 * MIN).secondary).toEqual({
@@ -421,30 +327,25 @@ describe('undo link — P1 #6 §C3', () => {
     expect(view(T0 + 2 * MIN + 10_000).secondary).toBeNull()
   })
 
-  it('is present after a multi-producer acknowledge, naming the first producer, and never on the handover screen it followed', () => {
+  it('two timers ending at once are two banners over the step page; after a multi-producer acknowledge, Undo names the first producer', () => {
     const model = deriveCookingModel(BIRYANI)
     const biryaniIngredients = ingredientsById(BIRYANI.graph.ingredients)
     const view = (session: CookingSession, now: number) =>
-      buildCookingView(model, session, now, biryaniIngredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
+      buildCookingView(model, session, now, biryaniIngredients, { recipeTitle: BIRYANI.graph.title })
 
     let se = must(engine.start(null, model, 'server:biryani', T0))
     se = must(engine.startNode(se, model, 'boil_spiced_water', T0))
     se = must(engine.startNode(se, model, 'soak_rice', T0))
-    // boil_spiced_water ends +6, soak_rice ends +20 — at +20 both are expired and
-    // parboil_rice (their shared consumer) is ready, producing one handover.
+    // boil_spiced_water ends +6, soak_rice ends +20 — at +20 both have ended.
     const beforeAck = view(se, T0 + 20 * MIN)
-    expect(beforeAck.screenId).toBe('handover')
-    expect(beforeAck.secondary).toEqual({
-      label: 'Needs a minute more',
-      solid: false,
-      action: { kind: 'extend', nodeId: 'boil_spiced_water' },
-    })
+    expect(beforeAck.layout).toBe('step')
+    expect(stripTexts(beforeAck)).toEqual([
+      'Boil spiced water is ready / Timer ended 14 min ago',
+      'Soak rice is ready / Timer ended just now',
+    ])
 
     se = must(engine.acknowledge(se, model, T0 + 20 * MIN))
     const afterAck = view(se, T0 + 20 * MIN)
-    // Whatever screen follows the acknowledge (task/wait/handsoff_pending), the undo
-    // link names the earliest-in-order producer — boil_spiced_water — not soak_rice
-    // (CP3: by name, since the page that follows is another step).
     expect(afterAck.secondary).toEqual({
       label: 'Undo Done on Boil spiced water',
       solid: false,
@@ -454,8 +355,8 @@ describe('undo link — P1 #6 §C3', () => {
 })
 
 // ---------------------------------------------------------------------------
-// maggi-2min — wait_floor (no whisper, no link — the design's floor case),
-// sheet_short (m:ss), return_expired
+// maggi-2min — the waiting screen's floor (one timer, nothing else), under a minute,
+// coming back after the timer ended
 // ---------------------------------------------------------------------------
 
 describe('maggi-2min', () => {
@@ -465,61 +366,44 @@ describe('maggi-2min', () => {
   const ingredients = ingredientsById(MAGGI.graph.ingredients)
 
   function view(session: CookingSession, now: number) {
-    return buildCookingView(model, session, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+    return buildCookingView(model, session, now, ingredients, { recipeTitle: MAGGI.graph.title })
   }
 
-  it('wait_floor: nothing else is running, so whisper and link are both absent — four elements is the floor', () => {
+  it('waiting floor: one timer, nothing else running, no Meanwhile block, no strips', () => {
     let se = must(engine.start(null, model, 'server:maggi', T0))
     se = must(engine.startNode(se, model, 'boil_water', T0))
 
     const v = view(se, T0 + MIN) // 1 min into a 3-min boil, not yet expired
     expect(v.screenId).toBe('wait')
     expect(v.label).toBe('Boil water')
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(false)
-    expect(v.note).toBeNull()
-    expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'markDone', nodeId: 'boil_water' } })
-    // Boil ends at +3; viewed at +1 leaves exactly 2 min.
-    expect(v.waitTime).not.toBeNull()
-    expect(v.waitTime!.left).toBe('About 2 min left')
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
+    expect(v.strips).toEqual([])
+    expect(v.waiting).toMatchObject({ big: '2', unit: 'min left', meanwhile: [] })
+    expect(v.waiting!.line).toMatch(RING)
+    expect(v.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: 'boil_water' } })
   })
 
-  it('wait: under a minute left reads "Less than a minute left", never m:ss or "no time"', () => {
+  it('under a minute left: whole minutes, rounded up, never m:ss', () => {
     let se = must(engine.start(null, model, 'server:maggi', T0))
     se = must(engine.startNode(se, model, 'boil_water', T0))
 
     const v = view(se, T0 + 3 * MIN - 20_000) // 20s left of the 3-min boil
-    expect(v.screenId).toBe('wait')
-    expect(v.waitTime!.left).toBe('Less than a minute left')
+    expect(v.waiting).toMatchObject({ big: '1', unit: 'min left' })
+    expect(JSON.stringify(v)).not.toMatch(/\d:\d\d\b(?!\s?(am|pm|AM|PM))/)
   })
 
-  it('sheet_short: a short timer renders as m:ss, not a tilde estimate', () => {
-    let se = must(engine.start(null, model, 'server:maggi', T0))
-    se = must(engine.startNode(se, model, 'boil_water', T0))
-
-    const sheet = buildSheetView(model, se, T0 + MIN) // 1 min in, 2 min left of a 3-min boil
-    expect(sheet.rows).toHaveLength(1)
-    expect(sheet.rows[0].time).toBe('2:00')
-    expect(sheet.rows[0].time).toMatch(/^\d+:\d{2}$/)
-  })
-
-  it('return_expired: reopening after the boil finished while away shows the handover-pending copy', () => {
+  it('back after the boil ended while away: its waiting screen says when it ended', () => {
     let se = must(engine.start(null, model, 'server:maggi', T0))
     se = must(engine.startNode(se, model, 'boil_water', T0))
     se = must(engine.leave(se, model, T0 + MIN))
 
-    const v = view(se, T0 + 8 * MIN) // boil ended at +3; 5 min ago now, 7 min since leaving
-    expect(v.screenId).toBe('returning')
-    expect(v.title).toBe('You left about seven minutes ago.')
-    expect(v.instr).toBe('Something is ready and waiting for you.')
+    const v = view(se, T0 + 8 * MIN) // boil ended at +3
+    expect(v.screenId).toBe('wait')
+    expect(v.waiting).toMatchObject({ big: "Time's up", line: 'Timer ended 5 min ago' })
   })
 })
 
 // ---------------------------------------------------------------------------
-// homemade-donuts — long_wait (wall-clock expectation), handover_ready
-// (consumer_ready, distinct from handover_late's overrun wording), sheet with two
-// concurrent hands-off nodes (multi-row + dot-priority reordering)
+// homemade-donuts — long_wait (the alarm line), a timer end over a step page
 // ---------------------------------------------------------------------------
 
 describe('homemade-donuts', () => {
@@ -529,97 +413,52 @@ describe('homemade-donuts', () => {
   const ingredients = ingredientsById(DONUTS.graph.ingredients)
 
   function view(session: CookingSession, now: number) {
-    return buildCookingView(model, session, now, ingredients, { recipeTitle: DONUTS.graph.title, leaving: false })
+    return buildCookingView(model, session, now, ingredients, { recipeTitle: DONUTS.graph.title })
   }
 
-  /** Rise started, tray greased — the state both `long_wait` and `handover_ready`
-   * branch from. */
+  /** Rise started, tray greased. */
   function riseRunning(): CookingSession {
     let se = must(engine.start(null, model, 'server:donuts', T0))
     se = must(engine.markDone(se, model, 'bloom_yeast', T0 + 4 * MIN))
     se = must(engine.markDone(se, model, 'mix_dough', T0 + 10 * MIN))
     se = must(engine.markDone(se, model, 'knead_dough', T0 + 18 * MIN))
     se = must(engine.startNode(se, model, 'first_rise', T0 + 18 * MIN)) // 60-min typical -> ends +78
-    se = must(engine.markDone(se, model, 'grease_pan', T0 + 21 * MIN))
-    return se
+    return must(engine.markDone(se, model, 'grease_pan', T0 + 21 * MIN))
   }
 
-  it('long_wait: idle stretch clears the 45-min threshold and states a wall-clock end', () => {
-    // `long_wait` requires `current() === null` — but `make_glaze` has no dependencies
-    // of its own (`dependsOn: []`), so it is executable, and therefore `current`, from
-    // the very start of the recipe, regardless of schedule position. This is the exact
-    // reachability gap the M3.4 design handoff records at §8.14/§8.15: "only reachable
-    // by completing make_glaze during the rise, which max_lead_min=15 says is the wrong
-    // moment... the graph cannot express 'needed later, but not yet'." Driving through
-    // it (not around it) with a real `markDone` is the same route the design's own
-    // prototype scenario takes (`[...D_RISE, ['adv', 5], ['markDone', 'make_glaze']]`) —
-    // this is not new scheduling semantics, it's the existing, documented path.
+  it('long_wait: the wake lock is released, so the ready line says to set an alarm, never "We\'ll ring"', () => {
+    // `make_glaze` has no dependencies, so it is current until done (the M3.4 handoff's
+    // §8.14/§8.15 reachability note); done here, nothing is left for the cook.
     let se = riseRunning()
     se = must(engine.markDone(se, model, 'make_glaze', T0 + 26 * MIN))
-    const v = view(se, T0 + 28 * MIN) // 10 min into the rise, 50 min left -> long_wait, not sitting_break
+    const v = view(se, T0 + 28 * MIN) // 50 min left -> long_wait, not sitting_break
     expect(v.screenId).toBe('long_wait')
     expect(v.label).toBe('First rise')
-    expect(v.note).toBeNull() // the long_wait-only note is replaced by waitTime
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
-    expect(v.waitTime!.left).toBe('About 50 min left')
-    expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'markDone', nodeId: 'first_rise' } })
+    expect(v.waiting).toMatchObject({ big: '50', unit: 'min left' })
+    expect(v.waiting!.line).toMatch(ALARM)
+    expect(v.waiting!.meanwhile).toMatchObject([{ nodeId: 'grease_pan', state: 'done', right: 'Done' }])
+    expect(v.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: 'first_rise' } })
   })
 
-  it('handover_ready: consumer_ready reason gives a solid "On it", not the elapsed wording', () => {
-    const se = riseRunning()
-    // Rise ends at +78; read 30s past — under the 60s overrun threshold, so the title
-    // stays the plain "is done" fact rather than handover_late's "N minutes past."
-    const v = view(se, T0 + 78 * MIN + 30_000)
-    expect(v.screenId).toBe('handover')
-    expect(v.title).toBe('First rise is done.')
-    expect(v.instr).toBe(model.nodes.shape_and_cut.instruction)
-    expect(v.primary).toEqual({ label: 'On it', solid: true, action: { kind: 'acknowledge' } })
-  })
-
-  /** Both fry-adjacent hands-off nodes running concurrently, neither yet expired. */
-  function twoPansRunning(): { se: CookingSession; now: number } {
-    let se = riseRunning()
-    se = must(engine.acknowledge(se, model, T0 + 79 * MIN)) // marks first_rise done (handover pending)
-    se = must(engine.markDone(se, model, 'shape_and_cut', T0 + 89 * MIN))
-    se = must(engine.startNode(se, model, 'heat_oil', T0 + 89 * MIN)) // 12-min typical -> ends +101
-    se = must(engine.startNode(se, model, 'proof_donuts', T0 + 89 * MIN)) // 25-min typical -> ends +114
-    return { se, now: T0 + 91 * MIN }
-  }
-
-  it('sheet: two concurrent hands-off nodes render independently — m:ss for the short one, a tilde for the wide-range one', () => {
-    const { se, now } = twoPansRunning()
-    const sheet = buildSheetView(model, se, now)
-    expect(sheet.rows).toHaveLength(2)
-    const heatOil = sheet.rows.find((r) => r.nodeId === 'heat_oil')!
-    const proofDonuts = sheet.rows.find((r) => r.nodeId === 'proof_donuts')!
-    expect(heatOil.time).toBe('10:00') // 9-16 min range (<=15 spread) -> m:ss
-    expect(proofDonuts.time).toBe('~23m') // 20-40 min range (>15 spread) -> tilde
-    expect(heatOil.dot).toBe(false)
-    expect(proofDonuts.dot).toBe(false)
-    expect(sheet.note).toBe('Nothing here needs you yet.')
-  })
-
-  it('sheet: reorders the node whose own expiry will need the cook ahead of the merely-sooner-ending one, with a dot', () => {
-    const { se } = twoPansRunning()
-    // heat_oil's own timer has now genuinely elapsed (endsAt +101); proof_donuts has
-    // not (+114). Once heat_oil is done/expired, fry_donuts's other dependency is
-    // satisfied under proof_donuts's own "if it expired now" reading, so proof_donuts
-    // — not heat_oil — is the one whose completion would actually need the cook next.
-    const sheet = buildSheetView(model, se, T0 + 102 * MIN)
-    expect(sheet.rows.map((r) => r.nodeId)).toEqual(['proof_donuts', 'heat_oil'])
-    expect(sheet.rows[0].dot).toBe(true)
-    expect(sheet.rows[1].dot).toBe(false)
-    // heat_oil's own timer is already past zero — sheetTime reports it plainly, not as
-    // a negative countdown.
-    expect(sheet.rows[1].time).toBe('done')
-    expect(sheet.note).toBe('The marked one will want you first.')
+  it('a timer that ends while a step is still to do is a banner over that step, not a takeover', () => {
+    const v = view(riseRunning(), T0 + 78 * MIN + 30_000)
+    expect(v.screenId).toBe('task')
+    expect(v.label).toBe('Make glaze')
+    expect(v.strips).toEqual([
+      {
+        kind: 'banner',
+        nodeId: 'first_rise',
+        title: 'First rise is ready',
+        line: 'Timer ended just now',
+        add: { label: '+5 min', action: { kind: 'extend', nodeId: 'first_rise', ms: ADD_TIME_MS } },
+        done: { label: 'Done', action: { kind: 'markDone', nodeId: 'first_rise' } },
+      },
+    ])
   })
 })
 
 // ---------------------------------------------------------------------------
-// synthetic-two-windows ("bowl") — wait_two_pans: two hands-off nodes running,
-// neither one's own expiry would unblock their shared consumer, so there is
-// genuinely nothing to name — no primary, no whisper.
+// synthetic-two-windows ("bowl") — two pans, neither one the wait subject
 // ---------------------------------------------------------------------------
 
 describe('synthetic-two-windows (bowl)', () => {
@@ -628,7 +467,7 @@ describe('synthetic-two-windows (bowl)', () => {
   const model: CookingModel = deriveCookingModel(BOWL)
   const ingredients = ingredientsById(BOWL.graph.ingredients)
 
-  it('wait_two_pans: waitSubject is null, so the screen states the fact and offers nothing', () => {
+  it('two pans, no wait subject: the soonest running timer gets the waiting screen, the other its rail', () => {
     let se = must(engine.start(null, model, 'server:bowl', T0))
     se = must(engine.markDone(se, model, 'chop_vegetables', T0 + 5 * MIN))
     se = must(engine.markDone(se, model, 'toast_whole_spices', T0 + 8 * MIN))
@@ -639,28 +478,17 @@ describe('synthetic-two-windows (bowl)', () => {
     se = must(engine.markDone(se, model, 'mince_garlic_ginger', T0 + 18 * MIN))
     se = must(engine.markDone(se, model, 'rinse_rice', T0 + 21 * MIN))
 
-    const v = buildCookingView(model, se, T0 + 21 * MIN, ingredients, {
-      recipeTitle: BOWL.graph.title,
-      leaving: false,
-    })
+    const v = buildCookingView(model, se, T0 + 21 * MIN, ingredients, { recipeTitle: BOWL.graph.title })
     expect(v.screenId).toBe('wait')
-    expect(v.title).toBe('Two pans are running.')
-    expect(v.instr).toBe('Nothing needs you until they are all done.')
-    expect(v.primary).toBeNull()
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(true) // the sheet still lists both — just no single subject to judge
-    // Multi-pan wait (owner decision 3): per-pan end clocks only, soonest-ending first —
-    // no aggregate time-left, no primary.
-    expect(v.waitTime).toBeNull()
-    expect(v.note).toMatch(
-      /^Soak dried beans, around \d{1,2}:\d{2}\u00a0(am|pm) · Simmer stew, around \d{1,2}:\d{2}\u00a0(am|pm)\.$/,
-    )
+    expect(v.nodeId).toBe('soak_dried_beans')
+    expect(v.waiting).toMatchObject({ big: '7', unit: 'min left' })
+    expect(stripTexts(v)).toEqual(['Simmer stew: 12 min left'])
   })
 })
 
 // ---------------------------------------------------------------------------
 // strawberry-shortcake — task_overlap: a hands-on task is current while two
-// hands-off nodes run; the whisper names exactly one of them, never both.
+// hands-off nodes run; both get a rail.
 // ---------------------------------------------------------------------------
 
 describe('strawberry-shortcake', () => {
@@ -669,41 +497,28 @@ describe('strawberry-shortcake', () => {
   const model: CookingModel = deriveCookingModel(SHORTCAKE)
   const ingredients = ingredientsById(SHORTCAKE.graph.ingredients)
 
-  it('task_overlap: whisper identifies the one host that will need the cook next, not the other running timer', () => {
+  it('task_overlap: both running timers get a rail, soonest to finish on top', () => {
     let se = must(engine.start(null, model, 'server:shortcake', T0))
     se = must(engine.markDone(se, model, 'mix_dough', T0 + 6 * MIN))
     se = must(engine.startNode(se, model, 'bake_shortcakes', T0 + 6 * MIN)) // 18-min typical -> ends +24
     se = must(engine.markDone(se, model, 'hull_and_slice_berries', T0 + 11 * MIN))
     se = must(engine.startNode(se, model, 'macerate_berries', T0 + 11 * MIN)) // 20-min typical -> ends +31
 
-    const v = buildCookingView(model, se, T0 + 11 * MIN, ingredients, {
-      recipeTitle: SHORTCAKE.graph.title,
-      leaving: false,
-    })
+    const v = buildCookingView(model, se, T0 + 11 * MIN, ingredients, { recipeTitle: SHORTCAKE.graph.title })
     // cool_shortcakes (next in schedule order) isn't executable yet (bake_shortcakes
     // not done), so current() skips it and lands on whip_cream, which has no
     // dependencies of its own.
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Whip cream')
-    // CP3: the V2.1 strip named only bake_shortcakes (the one that unblocks the next
-    // step); the rails show every running timer, soonest to finish on top, so the cook
-    // can see both. No whisper and no What's cooking link on a step page.
-    expect(v.showLink).toBe(false)
-    expect(v.whisperText).toBeNull()
-    expect(v.rails.map((r) => r.kind === 'timer' && `${r.name}: ${r.left}`)).toEqual([
-      'Bake shortcakes: 13 min left',
-      'Macerate berries: 20 min left',
-    ])
+    expect(stripTexts(v)).toEqual(['Bake shortcakes: 13 min left', 'Macerate berries: 20 min left'])
   })
 })
 
 // ---------------------------------------------------------------------------
-// PR 2 CP3: the timer rails replace the V2.1 running-work strip, the whisper and the
-// What's cooking link on step screens (same scenarios the strip tests used). The wait
-// screen keeps its whisper until CP4.
+// PR 2 CP3 rails and CP4 banners on the step and waiting screens.
 // ---------------------------------------------------------------------------
 
-describe('CP3 timer rails (formerly the V2.1 running-work strip)', () => {
+describe('rails and banners (CP3, CP4)', () => {
   const SHORTCAKE = strawberryShortcake as RecipePlanResponse
   const KADAI = kadaiPaneer as RecipePlanResponse
   const T0 = 1_700_000_000_000
@@ -712,8 +527,8 @@ describe('CP3 timer rails (formerly the V2.1 running-work strip)', () => {
   const shortcakeIngredients = ingredientsById(SHORTCAKE.graph.ingredients)
   const kadaiIngredients = ingredientsById(KADAI.graph.ingredients)
 
-  function shortcakeView(session: CookingSession, now: number, leaving = false) {
-    return buildCookingView(shortcake, session, now, shortcakeIngredients, { recipeTitle: SHORTCAKE.graph.title, leaving })
+  function shortcakeView(session: CookingSession, now: number) {
+    return buildCookingView(shortcake, session, now, shortcakeIngredients, { recipeTitle: SHORTCAKE.graph.title })
   }
 
   /** bake_shortcakes running (ends +24), hull_and_slice_berries current. */
@@ -723,25 +538,21 @@ describe('CP3 timer rails (formerly the V2.1 running-work strip)', () => {
     return must(engine.startNode(se, shortcake, 'bake_shortcakes', T0 + 6 * MIN))
   }
 
-  /** Bake handed over at +24 and cool_shortcakes started (ends +34); macerate_berries
+  /** Bake done at +24 and cool_shortcakes started (ends +34); macerate_berries
    * (ends +31) runs on with whip_cream current. */
   function coolingWithMacerateRunning(): CookingSession {
     let se = bakeRunning()
     se = must(engine.markDone(se, shortcake, 'hull_and_slice_berries', T0 + 11 * MIN))
     se = must(engine.startNode(se, shortcake, 'macerate_berries', T0 + 11 * MIN))
-    se = must(engine.acknowledge(se, shortcake, T0 + 24 * MIN))
+    se = must(engine.markDone(se, shortcake, 'bake_shortcakes', T0 + 24 * MIN))
     return must(engine.startNode(se, shortcake, 'cool_shortcakes', T0 + 24 * MIN))
   }
 
-  const railTexts = (v: { rails: RailView[] }) => v.rails.map((r) => (r.kind === 'timer' ? `${r.name}: ${r.left}` : r.text))
-
-  it('exactly one other node running: one rail; no whisper, no What\'s cooking link', () => {
+  it('exactly one other node running: one rail', () => {
     const v = shortcakeView(bakeRunning(), T0 + 6 * MIN)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Hull and slice berries')
-    expect(railTexts(v)).toEqual(['Bake shortcakes: 18 min left'])
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(false)
+    expect(stripTexts(v)).toEqual(['Bake shortcakes: 18 min left'])
   })
 
   it('handsoff_pending: the rail names the running node while the pending one waits to be started', () => {
@@ -749,84 +560,58 @@ describe('CP3 timer rails (formerly the V2.1 running-work strip)', () => {
     const v = shortcakeView(se, T0 + 11 * MIN)
     expect(v.screenId).toBe('handsoff_pending')
     expect(v.label).toBe('Macerate berries')
-    expect(railTexts(v)).toEqual(['Bake shortcakes: 13 min left'])
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(false)
+    expect(stripTexts(v)).toEqual(['Bake shortcakes: 13 min left'])
   })
 
-  it('an expired timer nothing needs yet stays on its rail as "Time\'s up" (CP4\'s banner replaces this)', () => {
+  it('an expired timer nothing needs yet is a banner (CP4), the other timer its rail', () => {
     // macerate_berries ended at +31 and nothing requires it yet; cool_shortcakes ends +34.
     const v = shortcakeView(coolingWithMacerateRunning(), T0 + 32 * MIN)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Whip cream')
-    expect(railTexts(v)).toEqual(["Macerate berries: Time's up", 'Cool shortcakes: 2 min left'])
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(false)
+    expect(stripTexts(v)).toEqual(['Macerate berries is ready / Timer ended 1 min ago', 'Cool shortcakes: 2 min left'])
   })
 
-  it('periodic host: a rail like any other timer, no "give it a stir" whisper', () => {
+  it('periodic host: a rail like any other timer', () => {
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
     se = must(engine.markDone(se, kadai, 'chop_onion', T0 + 3 * MIN))
     se = must(engine.markDone(se, kadai, 'chop_tomato', T0 + 10 * MIN))
     se = must(engine.markDone(se, kadai, 'saute_onion', T0 + 8 * MIN))
     se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN)) // periodic, 12-min typical
 
-    const v = buildCookingView(kadai, se, T0 + 10 * MIN + 1000, kadaiIngredients, {
-      recipeTitle: KADAI.graph.title,
-      leaving: false,
-    })
+    const v = buildCookingView(kadai, se, T0 + 10 * MIN + 1000, kadaiIngredients, { recipeTitle: KADAI.graph.title })
     expect(v.screenId).toBe('task')
-    expect(railTexts(v)).toEqual(['Cook tomato base: 12 min left'])
-    expect(v.whisperText).toBeNull()
-    expect(v.showLink).toBe(false)
+    expect(stripTexts(v)).toEqual(['Cook tomato base: 12 min left'])
   })
 
-  it('wait screen: no rail, and the whisper names a past-its-time node other than the wait subject', () => {
+  it('waiting screen: its own timer has no strip; another timer\'s end is still a banner', () => {
     let se = coolingWithMacerateRunning()
     se = must(engine.markDone(se, shortcake, 'whip_cream', T0 + 28 * MIN))
     se = must(engine.markDone(se, shortcake, 'slice_garnish_berries', T0 + 30 * MIN))
-    // cool_shortcakes (ends +34) is the wait subject; macerate_berries expired at +31
-    // and nothing requires it yet.
+    // cool_shortcakes (ends +34) is the wait subject; macerate_berries expired at +31.
     const v = shortcakeView(se, T0 + 32 * MIN)
     expect(v.screenId).toBe('wait')
     expect(v.label).toBe('Cool shortcakes')
-    expect(v.rails).toEqual([])
-    expect(v.whisperText).toBe('Macerate berries is past its time and holding.')
+    expect(stripTexts(v)).toEqual(['Macerate berries is ready / Timer ended 1 min ago'])
   })
 
-  it('non-step screens never carry a rail: handover, leaving, done', () => {
-    const handoverView = shortcakeView(bakeRunning(), T0 + 24 * MIN)
-    expect(handoverView.screenId).toBe('handover')
-    expect(handoverView.rails).toEqual([])
-
-    const leavingView = shortcakeView(bakeRunning(), T0 + 7 * MIN, true)
-    expect(leavingView.screenId).toBe('leaving')
-    expect(leavingView.rails).toEqual([])
-
+  it('the done and stale screens carry no strips', () => {
     let se = must(engine.start(null, kadai, 'server:kadai', T0))
-    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) {
-      se = must(engine.markDone(se, kadai, id, T0 + 10 * MIN))
-    }
-    se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0 + 10 * MIN))
-    for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) {
-      se = must(engine.markDone(se, kadai, id, T0 + 16 * MIN))
-    }
-    se = must(engine.acknowledge(se, kadai, T0 + 22 * MIN))
-    for (const id of ['add_veggies', 'add_paneer', 'finish'] as const) {
-      se = must(engine.markDone(se, kadai, id, T0 + 34 * MIN))
-    }
-    const doneView = buildCookingView(kadai, se, T0 + 34 * MIN, kadaiIngredients, {
-      recipeTitle: KADAI.graph.title,
-      leaving: false,
-    })
+    se = must(engine.startNode(se, kadai, 'cook_tomato_base', T0))
+    se = must(engine.markDone(se, kadai, 'finish', T0 + MIN))
+    const doneView = buildCookingView(kadai, se, T0 + MIN, kadaiIngredients, { recipeTitle: KADAI.graph.title })
     expect(doneView.screenId).toBe('done')
-    expect(doneView.rails).toEqual([])
+    expect(doneView.strips).toEqual([])
+
+    const stale = must(engine.startNode(must(engine.start(null, kadai, 'server:kadai', T0)), kadai, 'cook_tomato_base', T0))
+    const staleView = buildCookingView(kadai, stale, T0 + 3 * 24 * 60 * MIN, kadaiIngredients, { recipeTitle: KADAI.graph.title })
+    expect(staleView.screenId).toBe('stale')
+    expect(staleView.strips).toEqual([])
   })
 })
 
 // ---------------------------------------------------------------------------
-// synthetic-two-sittings ("rajma") — sitting_break_soak (idle >= 120 min inside the
-// first sitting) and sitting_resume (reopened after crossing into the second sitting)
+// synthetic-two-sittings ("rajma") — sitting_break (the alarm line), coming back after
+// the overnight soak ended
 // ---------------------------------------------------------------------------
 
 describe('synthetic-two-sittings (rajma)', () => {
@@ -836,50 +621,37 @@ describe('synthetic-two-sittings (rajma)', () => {
   const ingredients = ingredientsById(RAJMA.graph.ingredients)
 
   function view(session: CookingSession, now: number) {
-    return buildCookingView(model, session, now, ingredients, { recipeTitle: RAJMA.graph.title, leaving: false })
+    return buildCookingView(model, session, now, ingredients, { recipeTitle: RAJMA.graph.title })
   }
 
-  it('sitting_break_soak: the overnight soak clears the session-break threshold with nothing to tap', () => {
+  function soaking(): CookingSession {
     let se = must(engine.start(null, model, 'server:rajma', T0))
     se = must(engine.markDone(se, model, 'rinse_beans', T0 + 3 * MIN))
-    se = must(engine.startNode(se, model, 'soak_beans', T0 + 3 * MIN)) // 480-min typical -> ends +483
+    return must(engine.startNode(se, model, 'soak_beans', T0 + 3 * MIN)) // 480-min typical -> ends +483
+  }
 
-    const v = view(se, T0 + 5 * MIN) // idle to next-required is ~478 min, well over 120
+  it('sitting_break: the overnight soak, hours and minutes left, the alarm line', () => {
+    const v = view(soaking(), T0 + 5 * MIN)
     expect(v.screenId).toBe('sitting_break')
-    expect(v.instr).toBe(model.nodes.soak_beans.instruction)
-    expect(v.note).toBe('Nothing here needs you before then.')
-    expect(v.title).toMatch(/^Nothing until \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
-    expect(v.primary).toBeNull()
+    expect(v.layout).toBe('waiting')
+    expect(v.label).toBe(model.nodes.soak_beans.label)
+    expect(v.waiting).toMatchObject({ big: '7 hr 58 min', unit: 'left' })
+    expect(v.waiting!.line).toMatch(ALARM)
+    expect(v.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: 'soak_beans' } })
   })
 
-  it('sitting_resume: reopened after crossing the session-break boundary', () => {
-    let se = must(engine.start(null, model, 'server:rajma', T0))
-    se = must(engine.markDone(se, model, 'rinse_beans', T0 + 3 * MIN))
-    se = must(engine.startNode(se, model, 'soak_beans', T0 + 3 * MIN)) // ends +483
-    se = must(engine.leave(se, model, T0 + 5 * MIN))
-
-    const v = view(se, T0 + 490 * MIN) // 7 min past the soak's own expiry
-    expect(v.screenId).toBe('sitting_resume')
-    expect(v.title).toBe('Ready when you are.')
-    expect(v.instr).toBe(model.nodes.saute_and_add_beans.instruction)
-    expect(v.primary).toEqual({ label: 'Back to cooking', solid: true, action: { kind: 'resume' } })
-  })
-
-  it('sheet_long: an 8-hour soak renders as a tilde estimate, not m:ss', () => {
-    let se = must(engine.start(null, model, 'server:rajma', T0))
-    se = must(engine.markDone(se, model, 'rinse_beans', T0 + 3 * MIN))
-    se = must(engine.startNode(se, model, 'soak_beans', T0 + 3 * MIN))
-
-    const sheet = buildSheetView(model, se, T0 + 33 * MIN) // 30 min into the soak
-    expect(sheet.rows).toHaveLength(1)
-    expect(sheet.rows[0].time).toBe('~450m')
-    expect(sheet.rows[0].time).toMatch(/^~\d+m$/)
+  it('back after the soak ended (no sitting_resume screen): its waiting screen says when it ended', () => {
+    const se = must(engine.leave(soaking(), model, T0 + 5 * MIN))
+    const v = view(se, T0 + 490 * MIN) // 7 min past the soak's own end
+    expect(v.layout).toBe('waiting')
+    expect(v.nodeId).toBe('soak_beans')
+    expect(v.waiting).toMatchObject({ ended: true, line: 'Timer ended 7 min ago' })
+    expect(v.upNext?.action).toEqual({ kind: 'view', nodeId: 'saute_and_add_beans' })
   })
 })
 
 // ---------------------------------------------------------------------------
-// pizza-dough — sitting_break (the non-soak case: a room-temperature rise, not an
-// overnight soak, still classifies the same way)
+// pizza-dough — a hands-off step with no doneness cue; a 270-min rise
 // ---------------------------------------------------------------------------
 
 describe('pizza-dough', () => {
@@ -887,60 +659,38 @@ describe('pizza-dough', () => {
   const T0 = 1_700_000_000_000
   const model: CookingModel = deriveCookingModel(PIZZA)
   const ingredients = ingredientsById(PIZZA.graph.ingredients)
+  const bloom = 'step_in_a_small_bowl_stir_together'
 
-  it('wait: a hands-off node with no doneness cue still gets a time-left, end clock and "It\'s done" primary', () => {
-    const se = must(engine.start(null, model, 'server:pizza', T0))
-    const withNode = must(engine.startNode(se, model, 'step_in_a_small_bowl_stir_together', T0))
-
-    // 5-min typical, no dependents ready to run in the meantime -> nothing else is
-    // executable, so this is the wait subject despite having no cue to judge it by.
-    const v = buildCookingView(model, withNode, T0 + 1 * MIN, ingredients, {
-      recipeTitle: PIZZA.graph.title,
-      leaving: false,
-    })
+  it('waiting: a hands-off node with no doneness cue still gets the time left and "It\'s done"', () => {
+    const se = must(engine.startNode(must(engine.start(null, model, 'server:pizza', T0)), model, bloom, T0))
+    const v = buildCookingView(model, se, T0 + 1 * MIN, ingredients, { recipeTitle: PIZZA.graph.title })
     expect(v.screenId).toBe('wait')
-    expect(v.title).toBe('In a small bowl')
-    expect(v.primary).toEqual({
-      label: "It's done",
-      solid: false,
-      action: { kind: 'markDone', nodeId: 'step_in_a_small_bowl_stir_together' },
-    })
-    expect(v.waitTime).not.toBeNull()
-    expect(v.waitTime!.left).toBe('About 4 min left') // ends at +5, viewed at +1
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
+    expect(v.label).toBe(model.nodes[bloom].label)
+    expect(v.cue).toBeNull()
+    expect(v.waiting).toMatchObject({ big: '4', unit: 'min left' }) // ends at +5, viewed at +1
+    expect(v.primary).toEqual({ label: "It's done", solid: true, action: { kind: 'markDone', nodeId: bloom } })
   })
 
-  it('sitting_break: a 270-min room-temperature rise reads the same as rajma’s overnight soak, with its own copy', () => {
+  it('sitting_break: a 270-min room-temperature rise', () => {
     let se = must(engine.start(null, model, 'server:pizza', T0))
-    se = must(engine.startNode(se, model, 'step_in_a_small_bowl_stir_together', T0)) // 5-min typical -> ends +5
-    se = must(engine.acknowledge(se, model, T0 + 5 * MIN)) // marks it done; unblocks step_measure...
+    se = must(engine.startNode(se, model, bloom, T0)) // 5-min typical -> ends +5
+    se = must(engine.markDone(se, model, bloom, T0 + 5 * MIN))
     se = must(engine.markDone(se, model, 'step_measure_3_1_3_cups_flour', T0 + 8 * MIN))
     se = must(engine.markDone(se, model, 'step_knead_by_hand_2_minutes_dough', T0 + 10 * MIN))
     se = must(engine.startNode(se, model, 'step_cover_the_bowl_with_plastic_wrap', T0 + 10 * MIN)) // 270-min -> ends +280
 
-    const v = buildCookingView(model, se, T0 + 12 * MIN, ingredients, {
-      recipeTitle: PIZZA.graph.title,
-      leaving: false,
-    })
+    const v = buildCookingView(model, se, T0 + 12 * MIN, ingredients, { recipeTitle: PIZZA.graph.title })
     expect(v.screenId).toBe('sitting_break')
-    expect(v.instr).toBe(model.nodes.step_cover_the_bowl_with_plastic_wrap.instruction)
-    expect(v.instr).toContain('Cover the bowl with plastic wrap') // pizza's own copy, not rajma's
-    expect(v.title).toMatch(/^Nothing until /)
+    expect(v.label).toBe(model.nodes.step_cover_the_bowl_with_plastic_wrap.label)
+    expect(v.waiting!.line).toMatch(ALARM)
   })
 })
 
 // ---------------------------------------------------------------------------
-// conflict — engine/store layer only. `CookingModeScreen` short-circuits to a
-// dedicated `ConflictScreen` before `buildCookingView` is ever reached (see
-// `CookingModeScreen.tsx`), so there is no `(model, session)` pair for `viewModel.ts`
-// to build a view from; the UI-layer contract under test here is `SessionStore.open`,
-// the exact call `CookingModeScreen`/`useSession` make. Component-level rendering of
-// `ConflictScreen` is not covered by an automated test: this repo has no
-// `@testing-library/react`/`jsdom` set up (`vite.config.ts` runs tests with
-// `environment: 'node'`), and per the M3.4 checkpoint instructions that
-// infrastructure is not to be added solely for this. That render-layer gap is
-// unchanged from Checkpoint 1's audit and remains manually verified in a live browser
-// only.
+// conflict — engine/store layer. `CookingModeScreen` renders `ConflictScreen` from
+// `OpenResult.conflict`, before `buildCookingView` is ever reached; the UI-layer contract
+// under test here is `SessionStore.open`, the exact call `CookingModeScreen`/`useSession`
+// make.
 // ---------------------------------------------------------------------------
 
 describe('conflict (engine/store layer)', () => {
@@ -978,125 +728,94 @@ describe('conflict (engine/store layer)', () => {
       conflict: { planKey: 'server:kadai', title: null, state: 'active' },
     })
     expect(store.getState()).toEqual(before) // no mutation, no replacement, no new session
-    expect(store.getState()).not.toBeNull()
     expect(store.getState()?.planKey).toBe('server:kadai') // the original session is still the one stored
   })
 })
 
-describe('buildConflictView — CP1a (M3.4.5 session-lockout plan)', () => {
-  it('a resolvable, known conflict names the recipe, its state, and offers all three actions', () => {
-    const conflict: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
-    const v = buildConflictView(conflict)
+describe('buildConflictView (V2Conflict, PR 2 CP4)', () => {
+  const T0 = 1_700_000_000_000
+  const opts = (timer: { stepName: string | null; endsAt: number } | null = null) => ({ recipeTitle: 'Kurkuri Bhindi', timer, now: T0 })
+  const view = (conflict: SessionConflict, canGoTo: (planKey: string) => boolean = () => true, timer: Parameters<typeof opts>[0] = null) =>
+    buildConflictView(conflict, canGoTo, opts(timer))
+  const KADAI: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
 
-    expect(v.planKey).toBe('library:kadai-id')
-    expect(v.title).toBe('Kadai Paneer')
-    expect(v.state).toBe('active')
-    expect(v.message).toBe('Kadai Paneer is still cooking.')
-    expect(v.actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
-    expect(v.actions[0].label).toBe('Go to Kadai Paneer')
+  it('heading by state, through sentence(); a title ending in "." never doubles it', () => {
+    expect(view(KADAI).heading).toBe("You're still cooking Kadai Paneer.")
+    expect(view({ ...KADAI, state: 'unknown' }).heading).toBe("You're still cooking Kadai Paneer.")
+    expect(view({ ...KADAI, state: 'stale' }).heading).toBe('You left Kadai Paneer a while ago.')
+    expect(view({ ...KADAI, state: 'finished' }).heading).toBe('You finished Kadai Paneer.')
+    expect(view({ ...KADAI, title: 'Pizza dough.' }).heading).toBe("You're still cooking Pizza dough.")
+    expect(view({ ...KADAI, title: null }).heading).toBe("You're still cooking another recipe.")
   })
 
-  it('an import: planKey is never offered as a "Go to" destination — no durable address to return to', () => {
-    const conflict: SessionConflict = { planKey: 'import:abc123', title: 'Kadai Paneer', state: 'active' }
-    const v = buildConflictView(conflict)
-    expect(v.actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
+  it('the line names the soonest timer, with the step name\'s own casing, then "Pick one cook to carry on with."', () => {
+    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 + 6 * MIN }).line).toBe(
+      'Tomato base has 6 min left on its timer. Pick one cook to carry on with.',
+    )
+    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 - 4 * MIN }).line).toBe(
+      "Tomato base's timer ended 4 min ago. Pick one cook to carry on with.",
+    )
+    expect(view(KADAI, () => true, { stepName: null, endsAt: T0 + 6 * MIN }).line).toBe('A timer has 6 min left. Pick one cook to carry on with.')
+    expect(view(KADAI).line).toBe('Pick one cook to carry on with.')
   })
 
-  it('close and endAndStart are always present regardless of state', () => {
-    const states: SessionConflict['state'][] = ['active', 'finished', 'stale', 'unknown']
-    for (const state of states) {
-      const v = buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state })
-      expect(v.actions.some((a) => a.kind === 'endAndStart')).toBe(true)
-      expect(v.actions.some((a) => a.kind === 'close')).toBe(true)
+  it('two choices: "Back to ‹A›" (primary) and "End it and cook ‹B›"', () => {
+    expect(view(KADAI).actions).toEqual([
+      { kind: 'goTo', label: 'Back to Kadai Paneer' },
+      { kind: 'endAndStart', label: 'End it and cook Kurkuri Bhindi' },
+    ])
+  })
+
+  it('CP-C order: stale and finished lead with "End it"; active and unknown with "Back to"', () => {
+    for (const state of ['stale', 'finished'] as const) {
+      expect(view({ ...KADAI, state }).actions.map((a) => a.kind)).toEqual(['endAndStart', 'goTo'])
+    }
+    for (const state of ['active', 'unknown'] as const) {
+      expect(view({ ...KADAI, state }).actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart'])
     }
   })
 
-  it('a legacy conflict with no title snapshot falls back to a generic message and label, never inventing a name', () => {
-    const conflict: SessionConflict = { planKey: 'server:kadai', title: null, state: 'active' }
-    const v = buildConflictView(conflict)
-    expect(v.message).toBe('Another cook is already on.')
-    expect(v.actions.find((a) => a.kind === 'goTo')?.label).toBe('Go to that recipe')
-  })
-
-  it('finished and stale states produce distinct messages naming the recipe', () => {
-    expect(buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state: 'finished' }).message).toBe(
-      'You already finished cooking Kadai Paneer.',
-    )
-    expect(buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state: 'stale' }).message).toBe(
-      'Kadai Paneer was left a while ago.',
-    )
-  })
-})
-
-describe('buildConflictView — canGoTo wiring (CP1b)', () => {
-  it('an injected canGoTo overrides the prefix-only default, e.g. a deleted library entry', () => {
-    const conflict: SessionConflict = { planKey: 'library:deleted-id', title: 'Kadai Paneer', state: 'active' }
-
-    // Default (no predicate passed): prefix-only, presumes the library id still exists.
-    expect(buildConflictView(conflict).actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
-
-    // CP1b's real, App-wired predicate: the library id is gone, so "Go to" is hidden.
-    expect(buildConflictView(conflict, () => false).actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
-  })
-
-  it('an injected canGoTo can also allow what the default would hide (never for import:, which stays out of scope for CP1b)', () => {
-    const conflict: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
-    expect(buildConflictView(conflict, () => true).actions.map((a) => a.kind)).toEqual([
-      'goTo',
+  it('cannot go to it (an import: key, a deleted entry): "End it and cook ‹B›" and "Back", for every state', () => {
+    for (const state of ['active', 'unknown', 'stale', 'finished'] as const) {
+      expect(view({ ...KADAI, state }, () => false).actions).toEqual([
+        { kind: 'endAndStart', label: 'End it and cook Kurkuri Bhindi' },
+        { kind: 'close', label: 'Back' },
+      ])
+    }
+    // The default predicate is the prefix rule: an import: key is never a destination.
+    expect(buildConflictView({ ...KADAI, planKey: 'import:abc' }, undefined, opts()).actions.map((a) => a.kind)).toEqual([
       'endAndStart',
       'close',
     ])
   })
+
+  it('a legacy conflict with no title: "Back to that recipe"', () => {
+    expect(view({ ...KADAI, title: null }).actions[0].label).toBe('Back to that recipe')
+  })
 })
 
-describe('buildConflictView — action priority by lifecycle state (CP-C)', () => {
-  const ALL_STATES: SessionConflict['state'][] = ['active', 'finished', 'stale', 'unknown']
-  const view = (state: SessionConflict['state'], canGoTo: (planKey: string) => boolean = () => true) =>
-    buildConflictView({ planKey: 'server:kadai', title: 'Kadai Paneer', state }, canGoTo)
+describe('conflictTimer (PR 2 CP4)', () => {
+  const T0 = 1_700_000_000_000
+  const BIRYANI = chickenBiryani as RecipePlanResponse
+  const model = deriveCookingModel(BIRYANI)
 
-  it('active: "Go to" leads, "End it and start this" is secondary', () => {
-    expect(view('active').actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
+  it('the soonest running timer of the stored session, named by the given lookup', () => {
+    let se = must(engine.start(null, model, 'library:b', T0))
+    se = must(engine.startNode(se, model, 'soak_rice', T0)) // ends +20
+    se = must(engine.startNode(se, model, 'boil_spiced_water', T0)) // ends +6
+    expect(conflictTimer(se, (id) => model.nodes[id].label)).toEqual({ stepName: 'Boil spiced water', endsAt: T0 + 6 * MIN })
+    expect(conflictTimer(se, () => null)).toEqual({ stepName: null, endsAt: T0 + 6 * MIN })
   })
 
-  it('unknown: treated like active — "Go to" still leads (missing metadata is not evidence of stale/finished)', () => {
-    expect(view('unknown').actions.map((a) => a.kind)).toEqual(['goTo', 'endAndStart', 'close'])
-  })
-
-  it('stale: "End it and start this" leads, "Go to" is secondary', () => {
-    expect(view('stale').actions.map((a) => a.kind)).toEqual(['endAndStart', 'goTo', 'close'])
-  })
-
-  it('finished: "End it and start this" leads, "Go to" is secondary', () => {
-    expect(view('finished').actions.map((a) => a.kind)).toEqual(['endAndStart', 'goTo', 'close'])
-  })
-
-  it('canGoTo=false collapses to endAndStart-only regardless of state (regression guard, restated from CP1b)', () => {
-    for (const state of ALL_STATES) {
-      expect(view(state, () => false).actions.map((a) => a.kind)).toEqual(['endAndStart', 'close'])
-    }
-  })
-
-  it('canGoTo=true: priority reorders goTo/endAndStart but never drops either — all three actions present for every state', () => {
-    for (const state of ALL_STATES) {
-      const kinds = view(state).actions.map((a) => a.kind)
-      expect(kinds).toHaveLength(3)
-      expect(kinds).toEqual(expect.arrayContaining(['goTo', 'endAndStart', 'close']))
-    }
-  })
-
-  it('canGoTo=false: priority never introduces goTo for any state — only endAndStart/close are ever present', () => {
-    for (const state of ALL_STATES) {
-      const kinds = view(state, () => false).actions.map((a) => a.kind)
-      expect(kinds).not.toContain('goTo')
-      expect(kinds).toEqual(['endAndStart', 'close'])
-    }
+  it('no timer running, or no session: none', () => {
+    expect(conflictTimer(must(engine.start(null, model, 'library:b', T0)), () => 'x')).toBeNull()
+    expect(conflictTimer(null, () => 'x')).toBeNull()
   })
 })
 
 // ---------------------------------------------------------------------------
-// PR 2 CP1 — today's screens on the new engine rules (no visible change): out-of-order
-// states give sane screens, and the undo link is offered for the new transitions only
-// inside UNDO_WINDOW_MS.
+// PR 2 CP1 — out-of-order states give sane screens, and the undo link is offered for the
+// new transitions only inside UNDO_WINDOW_MS.
 // ---------------------------------------------------------------------------
 
 describe('CP1 — screens tolerate out-of-order states', () => {
@@ -1113,13 +832,13 @@ describe('CP1 — screens tolerate out-of-order states', () => {
     se = must(engine.markDone(se, model, 'cook_tomato_base', T0 + MIN))
     se = must(engine.markDone(se, model, 'add_veggies', T0 + 2 * MIN))
 
-    const v = buildCookingView(model, se, T0 + 2 * MIN, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
+    const v = buildCookingView(model, se, T0 + 2 * MIN, ingredients, { recipeTitle: KADAI.graph.title })
     expect(v.screenId).toBe('task')
     expect(v.label).toBe(model.nodes.cube_paneer.label)
     expect(v.primary?.action).toEqual({ kind: 'markDone', nodeId: 'cube_paneer' })
   })
 
-  it('biryani: a timer whose consumer is done stays on its rail ("Time\'s up"), never a handover', () => {
+  it('biryani: a timer whose consumer is done ends as a banner, never a takeover', () => {
     const BIRYANI = chickenBiryani as RecipePlanResponse
     const model = deriveCookingModel(BIRYANI)
     const ingredients = ingredientsById(BIRYANI.graph.ingredients)
@@ -1127,9 +846,9 @@ describe('CP1 — screens tolerate out-of-order states', () => {
     se = must(engine.startNode(se, model, 'soak_rice', T0))
     se = must(engine.markDone(se, model, 'parboil_rice', T0 + MIN))
 
-    const v = buildCookingView(model, se, T0 + 30 * MIN, ingredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
+    const v = buildCookingView(model, se, T0 + 30 * MIN, ingredients, { recipeTitle: BIRYANI.graph.title })
     expect(v.screenId).toBe('task')
-    expect(v.rails).toMatchObject([{ kind: 'timer', nodeId: 'soak_rice', left: "Time's up" }])
+    expect(v.strips).toMatchObject([{ kind: 'banner', nodeId: 'soak_rice', line: 'Timer ended 10 min ago' }])
   })
 
   it('maggi: a stopped timer is back on the hands-off screen with its timer start', () => {
@@ -1140,10 +859,26 @@ describe('CP1 — screens tolerate out-of-order states', () => {
     se = must(engine.startNode(se, model, 'boil_water', T0))
     se = must(engine.stopNode(se, model, 'boil_water', T0 + MIN))
 
-    const v = buildCookingView(model, se, T0 + MIN, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+    const v = buildCookingView(model, se, T0 + MIN, ingredients, { recipeTitle: MAGGI.graph.title })
     expect(v.screenId).toBe('handsoff_pending')
     expect(v.primary).toEqual({ label: 'Start 3-min timer', solid: true, action: { kind: 'startNode', nodeId: 'boil_water' } })
     expect(v.step).toBe(`Step 1 of ${model.order.length}`)
+  })
+
+  it('every fixture, any state the random replay reaches: only the CP4 screens, never a removed one', () => {
+    const allowed: ScreenId[] = ['task', 'handsoff_pending', 'step_running', 'step_done', 'wait', 'long_wait', 'sitting_break', 'stale', 'done']
+    const KADAI = kadaiPaneer as RecipePlanResponse
+    const model = deriveCookingModel(KADAI)
+    const ingredients = ingredientsById(KADAI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    let now = T0
+    for (const id of model.order) {
+      for (const at of [now, now + 30 * MIN]) {
+        expect(allowed).toContain(buildCookingView(model, se, at, ingredients, { recipeTitle: 'k' }).screenId)
+      }
+      se = model.nodes[id].occupiesCook ? must(engine.markDone(se, model, id, now)) : must(engine.startNode(se, model, id, now))
+      now += 5 * MIN
+    }
   })
 })
 
@@ -1155,7 +890,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const model = deriveCookingModel(KADAI)
     const ingredients = ingredientsById(KADAI.graph.ingredients)
     const se = must(engine.markDone(must(engine.start(null, model, 'server:kadai', T0)), model, 'add_paneer', T0 + MIN))
-    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title })
 
     // CP3: the page shows the suggestion (Chop onion), so the link names the step it undoes.
     const undoLink = { label: 'Undo Done on Add paneer', solid: false, action: { kind: 'undo' } }
@@ -1169,7 +904,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const model = deriveCookingModel(MAGGI)
     const ingredients = ingredientsById(MAGGI.graph.ingredients)
     const se = must(engine.markDone(must(engine.start(null, model, 'server:maggi', T0)), model, 'boil_water', T0))
-    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title })
 
     expect(view(T0).secondary).toEqual({ label: 'Undo Done on Boil water', solid: false, action: { kind: 'undo' } })
     expect(view(T0 + 10_000).secondary?.action.kind).not.toBe('undo')
@@ -1183,15 +918,10 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     se = must(engine.startNode(se, model, 'soak_rice', T0))
     const timer = se.nodes.soak_rice
     se = must(engine.markDone(se, model, 'rest_and_serve', T0 + MIN))
-    const view = (s: CookingSession, now: number) =>
-      buildCookingView(model, s, now, ingredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
+    const view = (s: CookingSession, now: number) => buildCookingView(model, s, now, ingredients, { recipeTitle: BIRYANI.graph.title })
 
     expect(view(se, T0 + MIN).screenId).toBe('done')
-    expect(view(se, T0 + MIN).secondary).toEqual({
-      label: 'Undo',
-      solid: false,
-      action: { kind: 'undo' },
-    })
+    expect(view(se, T0 + MIN).secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
     expect(view(se, T0 + MIN + 10_000).secondary).toBeNull()
 
     const undone = must(engine.undo(se, model, T0 + MIN + 5_000))
@@ -1210,8 +940,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     se = must(engine.startNode(se, model, sink, T0))
     const at = T0 + model.nodes[sink].durationTypical * MIN
     se = must(engine.acknowledge(se, model, at))
-    const view = (s: CookingSession, now: number) =>
-      buildCookingView(model, s, now, ingredients, { recipeTitle: PIZZA.graph.title, leaving: false })
+    const view = (s: CookingSession, now: number) => buildCookingView(model, s, now, ingredients, { recipeTitle: PIZZA.graph.title })
 
     expect(se.nodes.step_cover_and_refrigerate_overnight_18_hours).toEqual({ state: 'pending' })
     expect(view(se, at).screenId).toBe('done')
@@ -1231,7 +960,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     se = must(engine.startNode(se, model, 'boil_water', T0))
     const timer = se.nodes.boil_water
     se = must(engine.stopNode(se, model, 'boil_water', T0 + MIN))
-    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title })
 
     expect(view(T0 + MIN).secondary?.action).toEqual({ kind: 'undo' })
     expect(view(T0 + MIN + 10_000).secondary).toBeNull()
@@ -1255,7 +984,7 @@ describe('PR 2 CP3 step screens', () => {
     const model = deriveCookingModel(payload)
     const ingredients = ingredientsById(payload.graph.ingredients)
     const view = (se: CookingSession, now: number, choice: ServingsChoice | null = null) =>
-      buildCookingView(model, se, now, ingredients, { recipeTitle: payload.graph.title, leaving: false, choice })
+      buildCookingView(model, se, now, ingredients, { recipeTitle: payload.graph.title, choice })
     const fresh = () => must(engine.start(null, model, `server:${model.graphId}`, T0))
     const done = (se: CookingSession, ids: string[], now: number) =>
       ids.reduce((s, id) => must(engine.markDone(s, model, id, now)), se)
@@ -1267,35 +996,31 @@ describe('PR 2 CP3 step screens', () => {
   const FIRST_THREE = ['bloom_yeast', 'mix_dough', 'knead_dough']
 
   describe('timer rail', () => {
-    it('a step page while a timer runs: one rail; no strip, whisper or What\'s cooking link', () => {
+    it('a step page while a timer runs: one rail', () => {
       let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
       se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
       const v = DONUTS.view(se, T0 + 8 * MIN)
       expect(v.screenId).toBe('task')
-      expect(v.rails).toEqual([
+      expect(v.strips).toEqual([
         { kind: 'timer', nodeId: 'first_rise', name: 'First rise', left: '52 min left', aria: 'First rise, 52 min left. Open timer' },
       ])
-      expect('strip' in v).toBe(false) // the V2.1 strip is gone
-      expect(v.whisperText).toBeNull()
-      expect(v.showLink).toBe(false)
     })
 
-    it('a periodic timer gets a rail too (Kadai base), where the whisper used to be', () => {
+    it('a periodic timer gets a rail too (Kadai base)', () => {
       let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
       se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
       const v = KADAI.view(se, T0 + MIN)
-      expect(v.rails.map((r) => r.kind === 'timer' && r.nodeId)).toEqual(['cook_tomato_base'])
-      expect(v.whisperText).toBeNull()
+      expect(v.strips.map((r) => r.kind === 'timer' && r.nodeId)).toEqual(['cook_tomato_base'])
     })
 
-    it('no timer, no rail; non-step screens never carry rails (they keep the link until CP4)', () => {
-      expect(DONUTS.view(DONUTS.fresh(), T0).rails).toEqual([])
+    it('no timer, no rail; the waiting screen leaves its own timer off', () => {
+      expect(DONUTS.view(DONUTS.fresh(), T0).strips).toEqual([])
       let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
       se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
       se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
       const wait = KADAI.view(se, T0 + 2 * MIN)
       expect(wait.screenId).toBe('wait')
-      expect(wait.rails).toEqual([])
+      expect(wait.strips).toEqual([])
     })
   })
 
@@ -1367,7 +1092,7 @@ describe('PR 2 CP3 step screens', () => {
 
     it('a step without a duration: "I\'ve started it", the tag and no line', () => {
       const model = { ...DONUTS.model, nodes: { ...DONUTS.model.nodes, first_rise: { ...DONUTS.model.nodes.first_rise, durationTypical: 0.4 } } }
-      const v = buildCookingView(model, pending(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts', leaving: false })
+      const v = buildCookingView(model, pending(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts' })
       expect(v.primary).toEqual({ label: "I've started it", solid: true, action: { kind: 'startNode', nodeId: 'first_rise' } })
       expect(v.handsOff).toMatchObject({ tag: 'Hands-off', line: null })
     })
@@ -1390,7 +1115,7 @@ describe('PR 2 CP3 step screens', () => {
   })
 
   describe('cue', () => {
-    it('shown as stored when the text does not say it (Donuts first rise), on the pending, running and suggested pages', () => {
+    it('shown as stored when the text does not say it (Donuts first rise), on the pending, waiting and suggested pages', () => {
       let se = DONUTS.done(DONUTS.fresh(), FIRST_THREE, T0)
       expect(DONUTS.view(se, T0).cue).toBe('doubled in bulk, holds a dimple when poked')
       se = must(engine.startNode(se, DONUTS.model, 'first_rise', T0))
@@ -1413,7 +1138,7 @@ describe('PR 2 CP3 step screens', () => {
 
     it('a non-Latin cue is hidden, as on the recipe page (displayCue)', () => {
       const model = { ...DONUTS.model, nodes: { ...DONUTS.model.nodes, bloom_yeast: { ...DONUTS.model.nodes.bloom_yeast, donenessCue: 'हल्का झाग' } } }
-      const v = buildCookingView(model, DONUTS.fresh(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts', leaving: false })
+      const v = buildCookingView(model, DONUTS.fresh(), T0, DONUTS.ingredients, { recipeTitle: 'Donuts' })
       expect(v.cue).toBeNull()
     })
 
@@ -1443,7 +1168,7 @@ describe('PR 2 CP3 step screens', () => {
       const model = KADHI.model
       const ing = new Map(KADHI.ingredients)
       ing.set('ing_curd', { ...ing.get('ing_curd')!, qty_amount: null, qty_text: '1 (400 g) tub', unit: null })
-      const w = buildCookingView(model, KADHI.fresh(), T0, ing, { recipeTitle: 'Kadhi', leaving: false, choice })
+      const w = buildCookingView(model, KADHI.fresh(), T0, ing, { recipeTitle: 'Kadhi', choice })
       expect(w.need[0]).toEqual({ name: 'Curd', amount: '1 (400 g) tub', unscaled: true, label: 'Curd, 1 (400 g) tub — amount for 4 servings' })
     })
 
@@ -1459,12 +1184,12 @@ describe('PR 2 CP3 step screens', () => {
       expect(v.factor).toBe(1)
     })
 
-    it('off the step pages: no rows, nothing consumed', () => {
+    it('the waiting screen: no rows, nothing consumed (its step is named, not described)', () => {
       let se = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
       se = must(engine.startNode(se, KADAI.model, 'cook_tomato_base', T0))
       se = KADAI.done(se, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
       const wait = KADAI.view(se, T0 + 2 * MIN)
-      expect([wait.need, wait.consumed, wait.nodeId]).toEqual([[], [], null])
+      expect([wait.need, wait.consumed, wait.nodeId]).toEqual([[], [], 'cook_tomato_base'])
     })
   })
 
@@ -1475,14 +1200,13 @@ describe('PR 2 CP3 step screens', () => {
       expect(v.secondary).toBeNull()
     })
 
-    it('step pages reserve no slot (Undo sits outside the footer); wait screens keep theirs until CP4', () => {
-      const se = must(engine.markDone(KADAI.fresh(), KADAI.model, 'chop_onion', T0))
-      expect(KADAI.view(se, T0).reserveSecondary).toBe(false)
-      expect(KADAI.view(se, T0 + 10_000).reserveSecondary).toBe(false)
+    it('the waiting screen\'s only secondary is Undo (no "Give it longer", no reserved slot)', () => {
       let w = KADAI.done(KADAI.fresh(), ['chop_onion', 'chop_tomato', 'saute_onion'], T0)
       w = must(engine.startNode(w, KADAI.model, 'cook_tomato_base', T0))
       w = KADAI.done(w, ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'], T0 + MIN)
-      expect(KADAI.view(w, T0 + 2 * MIN).reserveSecondary).toBe(true)
+      expect(KADAI.view(w, T0 + MIN).secondary?.action).toEqual({ kind: 'undo' })
+      expect(KADAI.view(w, T0 + 2 * MIN).secondary).toBeNull()
+      expect('reserveSecondary' in KADAI.view(w, T0 + 2 * MIN)).toBe(false)
     })
 
     it('nodeId names the step on the page', () => {
@@ -1503,9 +1227,12 @@ describe('PR 2 CP3 step screens', () => {
       expect(DONUTS.view(back, T0).secondary).toEqual(undo('Undo'))
     })
 
-    it('timer start and stop name their kind', () => {
+    it('timer start and stop name their kind; on its own waiting screen just "Undo"', () => {
       let se = must(engine.startNode(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
       expect(DONUTS.view(se, T0).secondary).toEqual(undo('Undo timer start on First rise'))
+      const waiting = must(engine.view(se, DONUTS.model, 'first_rise', T0))
+      expect(DONUTS.view(waiting, T0).screenId).toBe('step_running')
+      expect(DONUTS.view(waiting, T0).secondary).toEqual(undo('Undo'))
       se = must(engine.stopNode(se, DONUTS.model, 'first_rise', T0 + MIN))
       expect(DONUTS.view(se, T0 + MIN).secondary).toEqual(undo('Undo timer stop on First rise'))
       se = must(engine.view(se, DONUTS.model, 'first_rise', T0 + MIN))
@@ -1539,5 +1266,117 @@ describe('PR 2 CP3 step screens', () => {
       const se = must(engine.startNode(DONUTS.fresh(), DONUTS.model, 'first_rise', T0))
       expect(DONUTS.view(se, T0 + 10_000).secondary).toBeNull()
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP4 — the done screen's line, picture and Back
+// ---------------------------------------------------------------------------
+
+describe('PR 2 CP4 done screen', () => {
+  const T0 = 1_700_000_000_000
+  const KADAI = kadaiPaneer as RecipePlanResponse
+  const MAGGI = maggi2min as RecipePlanResponse
+  const model = deriveCookingModel(KADAI)
+  const ingredients = ingredientsById(KADAI.graph.ingredients)
+  const view = (se: CookingSession, now: number, reviewing = false) =>
+    buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, reviewing })
+  const allDone = (finishAt: number) =>
+    model.order.reduce((s, id) => must(engine.markDone(s, model, id, id === 'finish' ? finishAt : T0)), must(engine.start(null, model, 'k', T0)))
+
+  it('every step done: "All N steps, in …" (measured, finishedAt − startedAt)', () => {
+    expect(doneLine(model, allDone(T0 + 82 * MIN))).toBe('All 10 steps, in 1 hr 22 min.')
+  })
+
+  it('finished early or with steps never marked done: "Done in …", no count, no order', () => {
+    const early = must(engine.markDone(must(engine.start(null, model, 'k', T0)), model, 'finish', T0 + 82 * MIN))
+    expect(doneLine(model, early)).toBe('Done in 1 hr 22 min.')
+  })
+
+  it('under a minute: "in under a minute"', () => {
+    expect(doneLine(model, allDone(T0 + 30_000))).toBe('All 10 steps, in under a minute.')
+    const early = must(engine.markDone(must(engine.start(null, model, 'k', T0)), model, 'finish', T0 + 30_000))
+    expect(doneLine(model, early)).toBe('Done in under a minute.')
+  })
+
+  it('a one-step recipe: "1 step, in …"', () => {
+    const one = { ...model, order: ['finish'] }
+    const se = must(engine.markDone(must(engine.start(null, model, 'k', T0)), model, 'finish', T0 + 12 * MIN))
+    expect(doneLine(one, se)).toBe('1 step, in 12 min.')
+  })
+
+  it('the picture: the recipe\'s YouTube thumbnail only; anything else has none', () => {
+    expect(recipeThumbnail({ ...KADAI.graph.source, kind: 'url', value: 'https://www.youtube.com/watch?v=abc123DEF45' })).toBe(
+      'https://i.ytimg.com/vi/abc123DEF45/hqdefault.jpg',
+    )
+    expect(recipeThumbnail(KADAI.graph.source)).toBeNull()
+    expect(recipeThumbnail(MAGGI.graph.source)).toBeNull()
+    expect(view(allDone(T0 + MIN), T0 + MIN).done?.thumbnail).toBeNull()
+    const withPicture = buildCookingView(model, allDone(T0 + MIN), T0 + MIN, ingredients, { recipeTitle: 'K', thumbnail: 'https://i.ytimg.com/vi/x/hqdefault.jpg' })
+    expect(withPicture.done?.thumbnail).toBe('https://i.ytimg.com/vi/x/hqdefault.jpg')
+  })
+
+  it('Back (review) shows the last step: "Finished cooking" its primary; no Up next, Mark as done or strips', () => {
+    let se = allDone(T0 + 34 * MIN)
+    se = must(engine.view(se, model, 'finish', T0 + 34 * MIN))
+    const v = view(se, T0 + 34 * MIN, true)
+    expect(v.screenId).toBe('step_done')
+    expect(v.label).toBe('Finish')
+    expect(v.primary).toEqual({ label: 'Finished cooking', solid: true, action: { kind: 'finish' } })
+    expect([v.upNext, v.handsOff, v.strips]).toEqual([null, null, []])
+    expect(v.back?.action).toEqual({ kind: 'view', nodeId: 'add_paneer' })
+    // Back and All steps still move between steps.
+    const earlier = view(must(engine.view(se, model, 'add_paneer', T0 + 35 * MIN)), T0 + 35 * MIN, true)
+    expect(earlier.label).toBe('Add paneer')
+    expect(earlier.primary?.action).toEqual({ kind: 'finish' })
+  })
+
+  it('without reviewing (a reload, or finishing from a banner on another step), finished is the done screen', () => {
+    let se = allDone(T0 + 34 * MIN)
+    se = must(engine.view(se, model, 'chop_onion', T0 + 34 * MIN))
+    expect(view(se, T0 + 34 * MIN).screenId).toBe('done')
+  })
+
+  it('reviewing a session that is not finished changes nothing', () => {
+    const se = must(engine.start(null, model, 'k', T0))
+    expect(view(se, T0, true).screenId).toBe('task')
+    expect(view(se, T0, true).primary?.label).toBe('Done')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP4 — the waiting screen: when it shows
+// ---------------------------------------------------------------------------
+
+describe('PR 2 CP4 waiting screen: when it shows', () => {
+  const T0 = 1_700_000_000_000
+  const DONUTS = homemadeDonuts as RecipePlanResponse
+  const model = deriveCookingModel(DONUTS)
+  const ingredients = ingredientsById(DONUTS.graph.ingredients)
+  const view = (se: CookingSession, now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: DONUTS.graph.title })
+
+  it('(a) the viewed step\'s timer is running (Up next, Back, All steps or the timer sheet\'s Go to)', () => {
+    let se = must(engine.start(null, model, 'd', T0))
+    se = must(engine.startNode(se, model, 'first_rise', T0))
+    se = must(engine.startNode(se, model, 'heat_oil', T0))
+    se = must(engine.view(se, model, 'first_rise', T0 + 8 * MIN))
+    const v = view(se, T0 + 8 * MIN)
+    expect(v.screenId).toBe('step_running')
+    expect(v.layout).toBe('waiting')
+    expect(v.label).toBe('First rise')
+    expect(v.waiting).toMatchObject({ big: '52', unit: 'min left' })
+    // Its own rail hides; the other timer keeps its rail.
+    expect(stripTexts(v)).toEqual(['Heat oil: 4 min left'])
+    expect(v.waiting?.meanwhile).toMatchObject([{ nodeId: 'grease_pan', state: 'todo', right: null, action: { kind: 'view', nodeId: 'grease_pan' } }])
+  })
+
+  it('(b) a step still to do wins over a running timer; with nothing left, the waiting screen', () => {
+    let se = must(engine.start(null, model, 'd', T0))
+    se = must(engine.startNode(se, model, 'first_rise', T0))
+    expect(view(se, T0).screenId).toBe('task')
+    for (const id of ['bloom_yeast', 'mix_dough', 'knead_dough', 'grease_pan', 'make_glaze']) se = must(engine.markDone(se, model, id, T0))
+    const v = view(se, T0 + 5 * MIN)
+    expect(v.layout).toBe('waiting')
+    expect(v.nodeId).toBe('first_rise')
   })
 })

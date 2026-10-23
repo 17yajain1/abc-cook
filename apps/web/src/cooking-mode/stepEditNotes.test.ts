@@ -47,7 +47,7 @@ function taskView(raw: RecipePlanResponse, edits: RecipeEdit[], nodeId: string, 
       store.dispatch({ type: 'markDone', model, nodeId: run, now: T0 })
       continue
     }
-    const v = buildCookingView(model, s, T0, ings, { recipeTitle: raw.graph.title, leaving: false, choice, editedSteps: overlay.editedSteps, importedSteps: overlay.importedSteps })
+    const v = buildCookingView(model, s, T0, ings, { recipeTitle: raw.graph.title, choice, editedSteps: overlay.editedSteps, importedSteps: overlay.importedSteps })
     if (cur === nodeId && (v.screenId === 'task' || v.screenId === 'handsoff_pending')) return v
     store.dispatch({ type: model.nodes[cur].occupiesCook ? 'markDone' : 'startNode', model, nodeId: cur, now: T0 })
   }
@@ -126,17 +126,18 @@ describe('D10: a linked add shows as a chip on its step, with no marks', () => {
 })
 
 describe('non-task screens', () => {
-  it('the entry-style views carry a null stepTimeNote', () => {
+  it('a non-step view (CP4: the stale screen; the leaving screen is gone) carries a null stepTimeNote', () => {
     const overlay = applyEdits(KADHI, [stepEdit('s1', KADHI, COOK, 'Cook for 40 minutes.')])
     const model = deriveCookingModel(overlay.payload)
     const store = createSessionStore(memoryStorage(), () => T0)
     store.dispatch({ type: 'start', model, planKey: 't', now: T0, recipeTitle: 'k', servingsChoice: null })
-    const v = buildCookingView(model, store.getState()!, T0, ingredientsById(overlay.payload.graph.ingredients), {
+    const later = T0 + 3 * 24 * 60 * 60_000
+    const v = buildCookingView(model, store.getState()!, later, ingredientsById(overlay.payload.graph.ingredients), {
       recipeTitle: 'k',
-      leaving: true,
       choice: null,
       editedSteps: overlay.editedSteps,
     })
+    expect(v.screenId).toBe('stale')
     expect(v.stepTimeNote).toBeNull()
   })
 })

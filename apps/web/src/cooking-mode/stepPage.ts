@@ -21,8 +21,9 @@ export interface Tick {
 }
 
 export interface UpNextView {
-  /** "Up next", or "Meanwhile" (the recipe page's word) for a hands-off step's window task. */
-  label: 'Up next' | 'Meanwhile'
+  /** "Up next", "Meanwhile" (the recipe page's word) for a hands-off step's window task, or
+   * "When it's done" on a waiting screen (PR 2 CP4, owner answer 1). */
+  label: 'Up next' | 'Meanwhile' | "When it's done"
   /** "Step N", the recipe-page number. */
   stepRef: string
   name: string
@@ -104,17 +105,104 @@ function suggestion(model: CookingModel, session: CookingSession): string | null
   )
 }
 
-/** The first not-done task of the wait window(s) `hostId` hosts, by `rankInWindow`. */
-function meanwhileTask(model: CookingModel, session: CookingSession, hostId: string): string | null {
+/** The tasks of the wait window(s) `hostId` hosts, by `rankInWindow` (the host itself never). */
+function windowTasks(model: CookingModel, hostId: string): string[] {
   const windowIds = new Set(model.windows.filter((w) => w.host_node_id === hostId).map((w) => w.id))
-  if (windowIds.size === 0) return null
-  const tasks = model.order
+  if (windowIds.size === 0) return []
+  return model.order
     .filter((id) => {
       const w = model.nodes[id].windowId
-      return w != null && windowIds.has(w)
+      return id !== hostId && w != null && windowIds.has(w)
     })
     .sort((a, b) => (model.nodes[a].rankInWindow ?? 0) - (model.nodes[b].rankInWindow ?? 0))
-  return tasks.find((id) => id !== hostId && session.nodes[id].state !== 'done') ?? null
+}
+
+/** The first not-done task of the wait window(s) `hostId` hosts, by `rankInWindow`. */
+function meanwhileTask(model: CookingModel, session: CookingSession, hostId: string): string | null {
+  return windowTasks(model, hostId).find((id) => session.nodes[id].state !== 'done') ?? null
+}
+
+/** PR 2 CP4: one row of the waiting screen's "Meanwhile, do these" block. */
+export interface MeanwhileRow {
+  nodeId: string
+  /** The recipe-page number. */
+  n: number
+  name: string
+  state: 'done' | 'running' | 'todo'
+  /** "Done", the time left of a running task, or `null` for one still to do. */
+  right: string | null
+  /** A row views its task (P2: the cook can go anywhere). */
+  action: { kind: 'view'; nodeId: string }
+}
+
+/** PR 2 CP4: every task of the windows `hostId` hosts (the recipe page's Meanwhile block),
+ * by `rankInWindow`, each with its state. `[]` when the step hosts no window. */
+export function meanwhileRows(
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  hostId: string,
+  order: string[],
+): MeanwhileRow[] {
+  return windowTasks(model, hostId).map((nodeId) => {
+    const s = session.nodes[nodeId]
+    const state: MeanwhileRow['state'] = s.state === 'done' ? 'done' : s.state === 'running' ? 'running' : 'todo'
+    const right = s.state === 'done' ? 'Done' : s.state === 'running' ? timeLeft(s.endsAt - now).text : null
+    return { nodeId, n: order.indexOf(nodeId) + 1, name: model.nodes[nodeId].label, state, right, action: { kind: 'view', nodeId } }
+  })
+}
+
+/** PR 2 CP4: the waiting screen's "When it's done" block: the step's first not-done consumer
+ * in execution order; with none, the suggestion after a simulated Done; nothing for the
+ * finish step. Navigation only, never the step itself. */
+export function waitingNext(
+  model: CookingModel,
+  session: CookingSession,
+  now: number,
+  hostId: string,
+  order: string[],
+): UpNextView | null {
+  const info = model.nodes[hostId]
+  if (info.isSink) return null
+  let nextId = model.order.find((id) => info.consumers.includes(id) && session.nodes[id].state !== 'done') ?? null
+  if (nextId == null) {
+    const simulated = markDone(session, model, hostId, now)
+    if (isRejected(simulated)) return null
+    nextId = suggestion(model, simulated)
+  }
+  if (nextId == null || nextId === hostId) return null
+  return upNextFor(model, nextId, "When it's done", order)
+}
+
+function upNextFor(model: CookingModel, nextId: string, label: UpNextView['label'], order: string[]): UpNextView {
+  const next = model.nodes[nextId]
+  return {
+    label,
+    stepRef: `Step ${order.indexOf(nextId) + 1}`,
+    name: next.label,
+    tag: attentionTag(next.attention),
+    text: next.instruction,
+    action: { kind: 'view', nodeId: nextId },
+  }
+}
+
+/** A control at the foot of the All steps sheet: it either dispatches `action`, or moves
+ * the foot to (`confirm: true`) or from (`confirm: false`) the confirm. */
+export type EndCookButton = { label: string; action: { kind: 'endAndExit' } } | { label: string; confirm: boolean }
+
+/** PR 2 CP4: "End this cook" at the foot of All steps, in place of the old leaving screen's
+ * "End the cook and clear the timers". Two taps: the first only swaps the foot for the
+ * confirm (no browser dialog); "End cook" ends the session and leaves; "Keep cooking"
+ * dispatches nothing and goes back to the list. */
+export function endCookFoot(confirming: boolean): { prompt: string | null; buttons: EndCookButton[] } {
+  if (!confirming) return { prompt: null, buttons: [{ label: 'End this cook', confirm: true }] }
+  return {
+    prompt: 'End this cook? Running timers will stop.',
+    buttons: [
+      { label: 'End cook', action: { kind: 'endAndExit' } },
+      { label: 'Keep cooking', confirm: false },
+    ],
+  }
 }
 
 /**
@@ -157,14 +245,5 @@ export function upNext(
     }
   }
   if (nextId == null || nextId === viewedId) return null
-
-  const next = model.nodes[nextId]
-  return {
-    label,
-    stepRef: `Step ${order.indexOf(nextId) + 1}`,
-    name: next.label,
-    tag: attentionTag(next.attention),
-    text: next.instruction,
-    action: { kind: 'view', nodeId: nextId },
-  }
+  return upNextFor(model, nextId, label, order)
 }

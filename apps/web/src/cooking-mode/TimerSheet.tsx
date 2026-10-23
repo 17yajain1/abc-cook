@@ -12,7 +12,8 @@ const OUTLINE =
  * PR 2 CP3: the timer sheet. Cream panel with a 24px top radius and a grab bar over a
  * scrim; tapping the scrim closes it. One timer: name, "Go to step N" (or "Step N" when
  * the cook is already there), minutes left (rounded up, never seconds), "Ready around
- * ...", a thin bar, "Add 5 min" + "Stop timer", and "It's done". Every action closes the
+ * ...", a thin bar, "Add 5 min" (from now once the time is up, CP4) + "Stop timer", and
+ * "It's done". Ended timers come first in the list (soonest end first). Every action closes the
  * sheet (the screen's `runEngine`). List mode: one row per running timer, soonest first;
  * a row switches the sheet to that timer.
  */
@@ -69,16 +70,10 @@ function OneTimer({ sheet, onAction }: { sheet: TimerSheetView; onAction: (actio
         <div className="bg-home-terracotta" style={{ width: `${Math.round(sheet.fraction * 1000) / 10}%` }} />
       </div>
       <div className="mt-1 grid grid-cols-2 gap-2.5">
-        {sheet.add && (
-          <button type="button" onClick={() => sheet.add && onAction(sheet.add.action)} className={OUTLINE}>
-            {sheet.add.label}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => onAction(sheet.stop.action)}
-          className={`${OUTLINE} ${sheet.add ? '' : 'col-span-2'}`}
-        >
+        <button type="button" onClick={() => onAction(sheet.add.action)} className={OUTLINE}>
+          {sheet.add.label}
+        </button>
+        <button type="button" onClick={() => onAction(sheet.stop.action)} className={OUTLINE}>
           {sheet.stop.label}
         </button>
       </div>
