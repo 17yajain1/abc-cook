@@ -65,6 +65,9 @@ export type ActionDescriptor =
   | { kind: 'start' }
   | { kind: 'startNode'; nodeId: string }
   | { kind: 'markDone'; nodeId: string }
+  /** PR 2 CP1: the single command path CP3's screens will use. No view emits these yet. */
+  | { kind: 'stopNode'; nodeId: string }
+  | { kind: 'view'; nodeId: string | null }
   | { kind: 'skip'; nodeId: string }
   | { kind: 'extend'; nodeId: string }
   | { kind: 'acknowledge' }

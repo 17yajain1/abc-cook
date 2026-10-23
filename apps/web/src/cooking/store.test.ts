@@ -71,8 +71,9 @@ describe('createSessionStore — dispatch/getState/subscribe wiring', () => {
     store.dispatch({ type: 'markDone', model, nodeId: 'chop_tomato', now: T0 })
     expect(notifications).toBe(2) // no further notification after unsubscribe
 
-    // A rejected dispatch does not persist or notify.
-    const rejected = store.dispatch({ type: 'markDone', model, nodeId: 'add_veggies', now: T0 })
+    // A rejected dispatch does not persist or notify. (PR 2 CP1: Done is allowed in any
+    // order, so the rejection used here is Done on a step that is already done.)
+    const rejected = store.dispatch({ type: 'markDone', model, nodeId: 'chop_onion', now: T0 })
     expect(rejected.ok).toBe(false)
   })
 
@@ -207,6 +208,76 @@ describe('createSessionStore — tolerant read and write-failure handling (row 3
     expect(store.getState()).toEqual(before)
 
     storage.setItem = originalSetItem
+  })
+})
+
+describe('createSessionStore — PR 2 CP1 viewing and stopNode', () => {
+  it('view round-trips through storage, so a reopened store returns to the same step', () => {
+    const model = deriveCookingModel(KADAI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
+
+    const viewed = store.dispatch({ type: 'view', model, nodeId: 'saute_onion', now: T0 + m(1) })
+    expect(viewed.ok).toBe(true)
+    expect(store.getState()?.viewing).toBe('saute_onion')
+
+    const reopened = createSessionStore(storage, clock(T0 + m(2)))
+    expect(reopened.getState()).toEqual(store.getState())
+    expect(reopened.getState()?.viewing).toBe('saute_onion')
+
+    expect(store.dispatch({ type: 'view', model, nodeId: 'nope', now: T0 })).toEqual({ ok: false, reason: 'unknown_node' })
+  })
+
+  it('stopNode dispatches and persists', () => {
+    const model = deriveCookingModel(BIRYANI)
+    const storage = new MemoryStorage()
+    const store = createSessionStore(storage, clock(T0))
+    store.dispatch({ type: 'start', model, planKey: 'server:biryani', now: T0 })
+    store.dispatch({ type: 'startNode', model, nodeId: 'soak_rice', now: T0 })
+
+    const stopped = store.dispatch({ type: 'stopNode', model, nodeId: 'soak_rice', now: T0 + m(1) })
+    expect(stopped.ok).toBe(true)
+    expect(createSessionStore(storage, clock(T0)).getState()?.nodes.soak_rice).toEqual({ state: 'pending' })
+    expect(store.dispatch({ type: 'stopNode', model, nodeId: 'soak_rice', now: T0 })).toEqual({ ok: false, reason: 'not_running' })
+  })
+
+  it('a legacy session with no viewing field is read as-is', () => {
+    const model = deriveCookingModel(KADAI)
+    const storage = new MemoryStorage()
+    const first = createSessionStore(storage, clock(T0))
+    first.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
+    const raw = storage.raw('abc-cook:session:v1')!
+    expect(raw).not.toContain('viewing')
+
+    const reopened = createSessionStore(storage, clock(T0))
+    expect(reopened.getState()).toEqual(first.getState())
+    expect(reopened.getState() && 'viewing' in reopened.getState()!).toBe(false)
+  })
+
+  it('a stored viewing that is not a string or null is dropped; the session is kept', () => {
+    const model = deriveCookingModel(KADAI)
+    const storage = new MemoryStorage()
+    const first = createSessionStore(storage, clock(T0))
+    first.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
+    const body = JSON.parse(storage.raw('abc-cook:session:v1')!)
+    body.session.viewing = 42
+    storage.setItem('abc-cook:session:v1', JSON.stringify(body))
+
+    const reopened = createSessionStore(storage, clock(T0))
+    expect(reopened.getState()).toEqual(first.getState())
+    expect(reopened.getState() && 'viewing' in reopened.getState()!).toBe(false)
+    expect(storage.keys().some((k) => k.includes('unreadable'))).toBe(false)
+  })
+
+  it('a stored viewing of null is kept', () => {
+    const model = deriveCookingModel(KADAI)
+    const storage = new MemoryStorage()
+    const first = createSessionStore(storage, clock(T0))
+    first.dispatch({ type: 'start', model, planKey: 'server:kadai', now: T0 })
+    first.dispatch({ type: 'view', model, nodeId: null, now: T0 })
+
+    expect(createSessionStore(storage, clock(T0)).getState()?.viewing).toBeNull()
   })
 })
 

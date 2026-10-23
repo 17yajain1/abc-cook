@@ -47,6 +47,8 @@ export type SessionAction =
     }
   | { type: 'startNode'; model: CookingModel; nodeId: string; now: number }
   | { type: 'markDone'; model: CookingModel; nodeId: string; now: number }
+  | { type: 'stopNode'; model: CookingModel; nodeId: string; now: number }
+  | { type: 'view'; model: CookingModel; nodeId: string | null; now: number }
   | { type: 'acknowledge'; model: CookingModel; now: number }
   | { type: 'skip'; model: CookingModel; nodeId: string; now: number }
   | { type: 'extend'; model: CookingModel; nodeId: string; now: number }
@@ -140,6 +142,14 @@ export function createSessionStore(storage: StorageLike = window.localStorage, n
           const current = requireSession()
           return engine.isRejected(current) ? current : applying(engine.markDone(current, action.model, action.nodeId, action.now))
         }
+        case 'stopNode': {
+          const current = requireSession()
+          return engine.isRejected(current) ? current : applying(engine.stopNode(current, action.model, action.nodeId, action.now))
+        }
+        case 'view': {
+          const current = requireSession()
+          return engine.isRejected(current) ? current : applying(engine.view(current, action.model, action.nodeId, action.now))
+        }
         case 'acknowledge': {
           const current = requireSession()
           return engine.isRejected(current) ? current : applying(engine.acknowledge(current, action.model, action.now))
@@ -188,7 +198,7 @@ function readSession(storage: StorageLike, now: () => number): CookingSession | 
     return null
   }
 
-  return parsed.session == null ? null : withValidChoice(parsed.session)
+  return parsed.session == null ? null : withValidViewing(withValidChoice(parsed.session))
 }
 
 /** A stored `servingsChoice` that isn't one of the two shapes is dropped (factor 1); the
@@ -198,6 +208,14 @@ function withValidChoice(session: CookingSession): CookingSession {
   const { servingsChoice, ...rest } = session
   const choice = parseChoice(servingsChoice)
   return choice == null ? rest : { ...rest, servingsChoice: choice }
+}
+
+/** PR 2 CP1: a stored `viewing` that isn't a string or `null` is dropped (follow the
+ * suggestion); the session itself is never lost over it. */
+function withValidViewing(session: CookingSession): CookingSession {
+  if (!('viewing' in session)) return session
+  const { viewing, ...rest } = session
+  return typeof viewing === 'string' || viewing === null ? session : rest
 }
 
 function writeSession(storage: StorageLike, session: CookingSession | null): { ok: true } | Rejected {

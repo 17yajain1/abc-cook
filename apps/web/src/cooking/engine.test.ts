@@ -83,7 +83,7 @@ describe('kadai — current progression and startNode (rows 3-4)', () => {
 })
 
 describe('kadai — startNode rejections (row 5)', () => {
-  it('rejects a hands-on node it is not current, and a hands-on node it is (K2: only hands-off nodes ever start)', () => {
+  it('rejects a hands-on node whether or not it is current (K2: only hands-off nodes ever start)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
@@ -92,8 +92,10 @@ describe('kadai — startNode rejections (row 5)', () => {
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
     expect(current(model, s)).toBe('chop_capsicum')
 
+    // PR 2 CP1: startNode no longer requires `current`, so a hands-on node that isn't
+    // current is rejected for being hands-on.
     const notCurrent = engine.startNode(s, model, 'add_veggies', T0 + m(10))
-    expect(notCurrent).toEqual({ ok: false, reason: 'not_current' })
+    expect(notCurrent).toEqual({ ok: false, reason: 'hands_on_node' })
 
     const handsOn = engine.startNode(s, model, 'chop_capsicum', T0 + m(10))
     expect(handsOn).toEqual({ ok: false, reason: 'hands_on_node' })
@@ -101,7 +103,7 @@ describe('kadai — startNode rejections (row 5)', () => {
 })
 
 describe('kadai — done gating on a periodic host (row 6)', () => {
-  it('add_veggies is rejected while cook_tomato_base has not been acknowledged, allowed once it is', () => {
+  it('add_veggies can be Done before cook_tomato_base is acknowledged, and the base keeps running (PR 2 CP1)', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
@@ -109,7 +111,9 @@ describe('kadai — done gating on a periodic host (row 6)', () => {
     s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
 
-    expect(engine.markDone(s, model, 'add_veggies', T0 + m(10))).toEqual({ ok: false, reason: 'not_current' })
+    const early = must(engine.markDone(s, model, 'add_veggies', T0 + m(10)))
+    expect(early.nodes.add_veggies).toEqual({ state: 'done', at: T0 + m(10), endsAt: null })
+    expect(early.nodes.cook_tomato_base).toEqual(s.nodes.cook_tomato_base)
 
     s = must(engine.markDone(s, model, 'chop_capsicum', T0 + m(10)))
     s = must(engine.markDone(s, model, 'cube_paneer', T0 + m(12)))
@@ -122,7 +126,9 @@ describe('kadai — done gating on a periodic host (row 6)', () => {
       reason: 'must_attend',
       overrunMs: 0,
     })
-    expect(engine.markDone(s, model, 'add_veggies', T0 + m(22))).toEqual({ ok: false, reason: 'not_current' })
+    const beforeAck = must(engine.markDone(s, model, 'add_veggies', T0 + m(22)))
+    expect(beforeAck.nodes.add_veggies.state).toBe('done')
+    expect(beforeAck.nodes.cook_tomato_base).toEqual(s.nodes.cook_tomato_base)
 
     s = must(engine.acknowledge(s, model, T0 + m(22)))
     expect(s.nodes.cook_tomato_base.state).toBe('done')
@@ -759,5 +765,276 @@ describe('Date.now() audit (row 36)', () => {
       })
       expect(codeLines.some((line) => line.includes('Date.now'))).toBe(false)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP1 — engine freedom: the cook leads, the app suggests
+// ---------------------------------------------------------------------------
+
+/** Every node whose state differs between `a` and `b`. */
+function changedNodes(a: CookingSession, b: CookingSession): string[] {
+  return Object.keys(a.nodes).filter((id) => JSON.stringify(a.nodes[id]) !== JSON.stringify(b.nodes[id]))
+}
+
+describe('CP1 rule 1 — Done on any step, in any order', () => {
+  it('a later hands-on step is Done first, then an earlier one; a done step rejects already_done', () => {
+    const model = deriveCookingModel(KADAI)
+    const s0 = freshSession(model, 'server:kadai', T0)
+    expect(current(model, s0)).toBe('chop_onion')
+
+    // saute_onion depends on chop_onion, which isn't done.
+    const s1 = must(engine.markDone(s0, model, 'saute_onion', T0 + m(1)))
+    expect(s1.nodes.saute_onion).toEqual({ state: 'done', at: T0 + m(1), endsAt: null })
+    expect(changedNodes(s0, s1)).toEqual(['saute_onion'])
+    expect(s1.lastTransition).toEqual({ kind: 'done', at: T0 + m(1), entries: [{ nodeId: 'saute_onion', prev: { state: 'pending' } }] })
+
+    const s2 = must(engine.markDone(s1, model, 'chop_onion', T0 + m(2)))
+    expect(s2.nodes.chop_onion).toEqual({ state: 'done', at: T0 + m(2), endsAt: null })
+    expect(changedNodes(s1, s2)).toEqual(['chop_onion'])
+
+    expect(engine.markDone(s2, model, 'chop_onion', T0 + m(3))).toEqual({ ok: false, reason: 'already_done' })
+    expect(engine.markDone(s2, model, 'saute_onion', T0 + m(3))).toEqual({ ok: false, reason: 'already_done' })
+  })
+})
+
+describe('CP1 rule 2 — a hands-off step is Done without its timer', () => {
+  it('stores endsAt: null and changes no other node', () => {
+    const model = deriveCookingModel(MAGGI)
+    const s0 = freshSession(model, 'server:maggi', T0)
+    expect(model.nodes.boil_water.occupiesCook).toBe(false)
+
+    const s1 = must(engine.markDone(s0, model, 'boil_water', T0 + m(1)))
+    expect(s1.nodes.boil_water).toEqual({ state: 'done', at: T0 + m(1), endsAt: null })
+    expect(changedNodes(s0, s1)).toEqual(['boil_water'])
+    expect(running(model, s1)).toEqual([])
+    expect(current(model, s1)).toBe('add_noodles_masala')
+  })
+})
+
+describe('CP1 rule 3 — startNode on any pending hands-off step', () => {
+  it('starts a hands-off step that is not current, even with its earlier steps not done; hands-on and running still reject', () => {
+    const model = deriveCookingModel(KADAI)
+    const s0 = freshSession(model, 'server:kadai', T0)
+    expect(current(model, s0)).toBe('chop_onion')
+    expect(executable(model, s0, 'cook_tomato_base')).toBe(false)
+
+    const s1 = must(engine.startNode(s0, model, 'cook_tomato_base', T0 + m(1)))
+    expect(s1.nodes.cook_tomato_base).toEqual({
+      state: 'running',
+      startedAt: T0 + m(1),
+      endsAt: T0 + m(1) + model.nodes.cook_tomato_base.durationTypical * 60_000,
+      extendedMs: 0,
+    })
+    expect(changedNodes(s0, s1)).toEqual(['cook_tomato_base'])
+    expect(s1.lastTransition).toBeNull()
+    expect(current(model, s1)).toBe('chop_onion')
+
+    expect(engine.startNode(s1, model, 'chop_tomato', T0 + m(1))).toEqual({ ok: false, reason: 'hands_on_node' })
+    expect(engine.startNode(s1, model, 'cook_tomato_base', T0 + m(2))).toEqual({ ok: false, reason: 'not_pending' })
+  })
+
+  it('clears lastTransition (the existing undo rule)', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = freshSession(model, 'server:biryani', T0)
+    s = must(engine.markDone(s, model, 'slice_onions', T0))
+    expect(s.lastTransition).not.toBeNull()
+    s = must(engine.startNode(s, model, 'dum', T0))
+    expect(s.lastTransition).toBeNull()
+  })
+})
+
+describe('CP1 rule 4 — stopNode', () => {
+  it('running -> pending; every other node, viewing and finishedAt unchanged; undo restores the timer exactly, after an extend too', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = freshSession(model, 'server:biryani', T0)
+    s = must(engine.startNode(s, model, 'soak_rice', T0))
+    s = must(engine.startNode(s, model, 'boil_spiced_water', T0))
+    s = must(engine.extend(s, model, 'soak_rice', T0 + m(1)))
+    s = must(engine.view(s, model, 'slice_onions', T0 + m(1)))
+    const runningBefore = s.nodes.soak_rice
+    expect(runningBefore).toEqual({
+      state: 'running',
+      startedAt: T0,
+      endsAt: T0 + m(model.nodes.soak_rice.durationTypical) + m(1),
+      extendedMs: m(1),
+    })
+
+    const stopped = must(engine.stopNode(s, model, 'soak_rice', T0 + m(3)))
+    expect(stopped.nodes.soak_rice).toEqual({ state: 'pending' })
+    expect(changedNodes(s, stopped)).toEqual(['soak_rice'])
+    expect(stopped.viewing).toBe('slice_onions')
+    expect(stopped.finishedAt).toBeNull()
+    expect(stopped.lastTransition).toEqual({
+      kind: 'stop',
+      at: T0 + m(3),
+      entries: [{ nodeId: 'soak_rice', prev: runningBefore }],
+      viewing: 'slice_onions',
+    })
+
+    // Undo after the timer would already have expired still restores it verbatim.
+    const undone = must(engine.undo(stopped, model, T0 + m(30)))
+    expect(undone.nodes.soak_rice).toEqual(runningBefore)
+    expect(changedNodes(s, undone)).toEqual([])
+    expect(undone.lastTransition).toBeNull()
+    expect(engine.undo(undone, model, T0 + m(30))).toEqual({ ok: false, reason: 'nothing_to_undo' })
+  })
+
+  it('rejects not_running for a pending or done step', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    expect(engine.stopNode(s, model, 'boil_water', T0)).toEqual({ ok: false, reason: 'not_running' })
+    s = must(engine.markDone(s, model, 'boil_water', T0))
+    expect(engine.stopNode(s, model, 'boil_water', T0)).toEqual({ ok: false, reason: 'not_running' })
+    expect(engine.stopNode(s, model, 'add_noodles_masala', T0)).toEqual({ ok: false, reason: 'not_running' })
+  })
+
+  it('replaces the previous lastTransition', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    s = must(engine.startNode(s, model, 'cook_noodles', T0))
+    s = must(engine.markDone(s, model, 'boil_water', T0 + m(1)))
+    expect(s.lastTransition?.kind).toBe('done')
+    s = must(engine.stopNode(s, model, 'cook_noodles', T0 + m(2)))
+    expect(s.lastTransition?.kind).toBe('stop')
+    s = must(engine.undo(s, model, T0 + m(2)))
+    // Only the stop is reversed; boil_water stays done.
+    expect(s.nodes.cook_noodles.state).toBe('running')
+    expect(s.nodes.boil_water.state).toBe('done')
+  })
+})
+
+describe('CP1 rule 5 — view is navigation, never completion', () => {
+  it('only viewing changes; null is allowed; an unknown id rejects unknown_node', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = freshSession(model, 'server:kadai', T0)
+    s = must(engine.markDone(s, model, 'chop_onion', T0))
+
+    const viewed = must(engine.view(s, model, 'add_paneer', T0 + m(1)))
+    expect(viewed.viewing).toBe('add_paneer')
+    const { viewing: _viewing, ...rest } = viewed
+    expect(rest).toEqual(s)
+    expect(viewed.lastTransition).toEqual(s.lastTransition)
+
+    const back = must(engine.view(viewed, model, null, T0 + m(1)))
+    expect(back.viewing).toBeNull()
+    expect(back.nodes).toEqual(s.nodes)
+
+    expect(engine.view(s, model, 'no_such_step', T0)).toEqual({ ok: false, reason: 'unknown_node' })
+  })
+
+  it('Done on the viewed step clears the view; undo restores it', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = freshSession(model, 'server:kadai', T0)
+    s = must(engine.view(s, model, 'saute_onion', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0 + m(1)))
+    expect(s.viewing).toBeNull()
+    expect(s.lastTransition?.viewing).toBe('saute_onion')
+
+    s = must(engine.undo(s, model, T0 + m(1)))
+    expect(s.viewing).toBe('saute_onion')
+    expect(s.nodes.saute_onion).toEqual({ state: 'pending' })
+  })
+
+  it('Done on another step keeps the view', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = freshSession(model, 'server:kadai', T0)
+    s = must(engine.view(s, model, 'saute_onion', T0))
+    s = must(engine.markDone(s, model, 'chop_onion', T0 + m(1)))
+    expect(s.viewing).toBe('saute_onion')
+  })
+
+  it('acknowledge clears a view naming a producer it completed; undo restores it', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    s = must(engine.startNode(s, model, 'boil_water', T0))
+    s = must(engine.view(s, model, 'boil_water', T0))
+    expect(handover(model, s, T0 + m(10))?.producers).toEqual(['boil_water'])
+    s = must(engine.acknowledge(s, model, T0 + m(10)))
+    expect(s.viewing).toBeNull()
+    s = must(engine.undo(s, model, T0 + m(10)))
+    expect(s.viewing).toBe('boil_water')
+    expect(s.nodes.boil_water.state).toBe('running')
+  })
+
+  it('a session that never viewed anything keeps no viewing field through Done and undo', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = freshSession(model, 'server:kadai', T0)
+    s = must(engine.markDone(s, model, 'chop_onion', T0))
+    expect('viewing' in s).toBe(false)
+    expect(s.lastTransition && 'viewing' in s.lastTransition).toBe(false)
+    s = must(engine.undo(s, model, T0))
+    expect('viewing' in s).toBe(false)
+  })
+})
+
+describe('CP1 rule 7 — undo after the new transitions', () => {
+  it('after an out-of-order Done', () => {
+    const model = deriveCookingModel(KADAI)
+    const s0 = freshSession(model, 'server:kadai', T0)
+    const s1 = must(engine.markDone(s0, model, 'add_paneer', T0 + m(1)))
+    const s2 = must(engine.undo(s1, model, T0 + m(1)))
+    expect(s2.nodes).toEqual(s0.nodes)
+    expect(current(model, s2)).toBe('chop_onion')
+  })
+
+  it('after a no-timer Done', () => {
+    const model = deriveCookingModel(MAGGI)
+    const s0 = freshSession(model, 'server:maggi', T0)
+    const s1 = must(engine.markDone(s0, model, 'boil_water', T0))
+    const s2 = must(engine.undo(s1, model, T0))
+    expect(s2.nodes.boil_water).toEqual({ state: 'pending' })
+    expect(current(model, s2)).toBe('boil_water')
+  })
+
+  it('after an early finish: the timers come back with their original startedAt/endsAt/extendedMs, finishedAt cleared', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = freshSession(model, 'server:biryani', T0)
+    s = must(engine.startNode(s, model, 'soak_rice', T0))
+    s = must(engine.startNode(s, model, 'boil_spiced_water', T0 + m(1)))
+    s = must(engine.extend(s, model, 'boil_spiced_water', T0 + m(2)))
+    const before = s
+
+    const finished = must(engine.markDone(s, model, 'rest_and_serve', T0 + m(3)))
+    expect(finished.finishedAt).toBe(T0 + m(3))
+    expect(finished.lastTransition?.entries[0].nodeId).toBe('rest_and_serve')
+
+    const undone = must(engine.undo(finished, model, T0 + m(3)))
+    expect(undone.finishedAt).toBeNull()
+    expect(undone.nodes).toEqual(before.nodes)
+    expect(lifecycle(model, undone, T0 + m(3))).toBe('active')
+  })
+})
+
+describe('CP1 rule 8 — early finish stops the running timers', () => {
+  it('Done on the finish step finishes the cook and nothing is left running', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = freshSession(model, 'server:biryani', T0)
+    s = must(engine.startNode(s, model, 'soak_rice', T0))
+    s = must(engine.startNode(s, model, 'boil_spiced_water', T0))
+    s = must(engine.startNode(s, model, 'marinate_chicken', T0))
+    s = must(engine.markDone(s, model, 'slice_onions', T0 + m(1)))
+    const before = s
+
+    const finished = must(engine.markDone(s, model, 'rest_and_serve', T0 + m(2)))
+    expect(finished.finishedAt).toBe(T0 + m(2))
+    expect(lifecycle(model, finished, T0 + m(2))).toBe('finished')
+    expect(running(model, finished)).toEqual([])
+    for (const id of ['soak_rice', 'boil_spiced_water', 'marinate_chicken']) {
+      expect(finished.nodes[id]).toEqual({ state: 'pending' })
+    }
+    expect(finished.nodes.rest_and_serve).toEqual({ state: 'done', at: T0 + m(2), endsAt: null })
+    expect(new Set(changedNodes(before, finished))).toEqual(
+      new Set(['rest_and_serve', 'soak_rice', 'boil_spiced_water', 'marinate_chicken']),
+    )
+    // Done on the finish step marks no other step done.
+    expect(model.order.filter((id) => finished.nodes[id].state === 'done' && before.nodes[id].state !== 'done')).toEqual([
+      'rest_and_serve',
+    ])
+    expect(finished.lastTransition?.kind).toBe('done')
+    expect(finished.lastTransition?.entries.map((e) => e.nodeId)).toEqual([
+      'rest_and_serve',
+      ...running(model, before),
+    ])
   })
 })

@@ -187,6 +187,13 @@ export function CookingModeScreen({
       case 'markDone':
         runEngine(() => session.markDone(model, action.nodeId))
         return
+      // PR 2 CP1: unreachable from today's views; CP3's screens emit them.
+      case 'stopNode':
+        runEngine(() => session.stopNode(model, action.nodeId))
+        return
+      case 'view':
+        runEngine(() => session.view(model, action.nodeId))
+        return
       case 'skip':
         runEngine(() => session.skip(model, action.nodeId))
         return

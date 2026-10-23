@@ -1089,3 +1089,129 @@ describe('buildConflictView — action priority by lifecycle state (CP-C)', () =
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// PR 2 CP1 — today's screens on the new engine rules (no visible change): out-of-order
+// states give sane screens, and the undo link is offered for the new transitions only
+// inside UNDO_WINDOW_MS.
+// ---------------------------------------------------------------------------
+
+describe('CP1 — screens tolerate out-of-order states', () => {
+  const T0 = 1_700_000_000_000
+
+  it('kadai: a consumer done first leaves a task screen on the next unpassed step', () => {
+    const KADAI = kadaiPaneer as RecipePlanResponse
+    const model = deriveCookingModel(KADAI)
+    const ingredients = ingredientsById(KADAI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    se = must(engine.markDone(se, model, 'chop_onion', T0))
+    se = must(engine.markDone(se, model, 'chop_tomato', T0))
+    se = must(engine.markDone(se, model, 'saute_onion', T0))
+    se = must(engine.markDone(se, model, 'cook_tomato_base', T0 + MIN))
+    se = must(engine.markDone(se, model, 'add_veggies', T0 + 2 * MIN))
+
+    const v = buildCookingView(model, se, T0 + 2 * MIN, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
+    expect(v.screenId).toBe('task')
+    expect(v.label).toBe(model.nodes.cube_paneer.label)
+    expect(v.primary?.action).toEqual({ kind: 'markDone', nodeId: 'cube_paneer' })
+  })
+
+  it('biryani: a timer whose consumer is done shows as holding on the strip, never a handover', () => {
+    const BIRYANI = chickenBiryani as RecipePlanResponse
+    const model = deriveCookingModel(BIRYANI)
+    const ingredients = ingredientsById(BIRYANI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:biryani', T0))
+    se = must(engine.startNode(se, model, 'soak_rice', T0))
+    se = must(engine.markDone(se, model, 'parboil_rice', T0 + MIN))
+
+    const v = buildCookingView(model, se, T0 + 30 * MIN, ingredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
+    expect(v.screenId).toBe('task')
+    expect(v.strip).toEqual({
+      label: model.nodes.soak_rice.label,
+      right: 'Holding',
+      holding: true,
+      sub: 'Nothing needs you for it yet.',
+    })
+  })
+
+  it('maggi: a stopped timer is back on the hands-off screen with "I\'ve started it"', () => {
+    const MAGGI = maggi2min as RecipePlanResponse
+    const model = deriveCookingModel(MAGGI)
+    const ingredients = ingredientsById(MAGGI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:maggi', T0))
+    se = must(engine.startNode(se, model, 'boil_water', T0))
+    se = must(engine.stopNode(se, model, 'boil_water', T0 + MIN))
+
+    const v = buildCookingView(model, se, T0 + MIN, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+    expect(v.screenId).toBe('handsoff_pending')
+    expect(v.primary).toEqual({ label: "I've started it", solid: false, action: { kind: 'startNode', nodeId: 'boil_water' } })
+    expect(v.step).toBe(`Step 1 of ${model.order.length}`)
+  })
+})
+
+describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_MS', () => {
+  const T0 = 1_700_000_000_000
+
+  it('after an out-of-order Done', () => {
+    const KADAI = kadaiPaneer as RecipePlanResponse
+    const model = deriveCookingModel(KADAI)
+    const ingredients = ingredientsById(KADAI.graph.ingredients)
+    const se = must(engine.markDone(must(engine.start(null, model, 'server:kadai', T0)), model, 'add_paneer', T0 + MIN))
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
+
+    const undoLink = { label: `Back to ${model.nodes.add_paneer.label}`, solid: false, action: { kind: 'undo' } }
+    expect(view(T0 + MIN).secondary).toEqual(undoLink)
+    expect(view(T0 + MIN + 9_999).secondary).toEqual(undoLink)
+    expect(view(T0 + MIN + 10_000).secondary?.action.kind).not.toBe('undo')
+  })
+
+  it('after a no-timer Done', () => {
+    const MAGGI = maggi2min as RecipePlanResponse
+    const model = deriveCookingModel(MAGGI)
+    const ingredients = ingredientsById(MAGGI.graph.ingredients)
+    const se = must(engine.markDone(must(engine.start(null, model, 'server:maggi', T0)), model, 'boil_water', T0))
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+
+    expect(view(T0).secondary).toEqual({ label: `Back to ${model.nodes.boil_water.label}`, solid: false, action: { kind: 'undo' } })
+    expect(view(T0 + 10_000).secondary?.action.kind).not.toBe('undo')
+  })
+
+  it('after an early finish: the done screen offers it, and undo brings the timers back', () => {
+    const BIRYANI = chickenBiryani as RecipePlanResponse
+    const model = deriveCookingModel(BIRYANI)
+    const ingredients = ingredientsById(BIRYANI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:biryani', T0))
+    se = must(engine.startNode(se, model, 'soak_rice', T0))
+    const timer = se.nodes.soak_rice
+    se = must(engine.markDone(se, model, 'rest_and_serve', T0 + MIN))
+    const view = (s: CookingSession, now: number) =>
+      buildCookingView(model, s, now, ingredients, { recipeTitle: BIRYANI.graph.title, leaving: false })
+
+    expect(view(se, T0 + MIN).screenId).toBe('done')
+    expect(view(se, T0 + MIN).secondary).toEqual({
+      label: `Back to ${model.nodes.rest_and_serve.label}`,
+      solid: false,
+      action: { kind: 'undo' },
+    })
+    expect(view(se, T0 + MIN + 10_000).secondary).toBeNull()
+
+    const undone = must(engine.undo(se, model, T0 + MIN + 5_000))
+    expect(undone.nodes.soak_rice).toEqual(timer)
+    expect(view(undone, T0 + MIN + 5_000).screenId).not.toBe('done')
+  })
+
+  it('after stopNode', () => {
+    const MAGGI = maggi2min as RecipePlanResponse
+    const model = deriveCookingModel(MAGGI)
+    const ingredients = ingredientsById(MAGGI.graph.ingredients)
+    let se = must(engine.start(null, model, 'server:maggi', T0))
+    se = must(engine.startNode(se, model, 'boil_water', T0))
+    const timer = se.nodes.boil_water
+    se = must(engine.stopNode(se, model, 'boil_water', T0 + MIN))
+    const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
+
+    expect(view(T0 + MIN).secondary?.action).toEqual({ kind: 'undo' })
+    expect(view(T0 + MIN + 10_000).secondary).toBeNull()
+    expect(must(engine.undo(se, model, T0 + MIN)).nodes.boil_water).toEqual(timer)
+  })
+})

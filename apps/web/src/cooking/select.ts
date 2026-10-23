@@ -37,7 +37,10 @@ function endsAtOf(session: CookingSession, nodeId: string): number {
 /** A dependency is satisfied for `consumerReady` purposes iff it is `done`, or it is
  * hands-off, running and expired (plan §F3) — or, for the `requiredIfExpired` reading
  * (§F6), iff it is the node `assumeExpired` names, presumed expired regardless of its
- * actual state. */
+ * actual state. A consumer that is already `done` (PR 2 CP1: the cook did it out of
+ * order) is never "ready", so it makes its producer not required: an expired timer whose
+ * consumers are all done holds quietly instead of opening a handover. A periodic host and
+ * the sink are still `must_attend`/`finish` when their own timer ends. */
 function isDepSatisfied(
   model: CookingModel,
   session: CookingSession,
@@ -77,14 +80,23 @@ export function executable(model: CookingModel, session: CookingSession, nodeId:
   return model.nodes[nodeId].dependsOn.every((d) => session.nodes[d].state === 'done')
 }
 
-/** The first executable `pending` node in execution order; if none, the first
- * executable `deferred` node; if none, `null` (plan §C2/§F2). */
+/** PR 2 CP1: a node is passed when it has consumers and every one of them is already
+ * `done` — the cook went past it. It stays not done and can still be marked Done, but is
+ * no longer suggested. The sink has no consumers, so it is never passed. */
+function isPassed(model: CookingModel, session: CookingSession, nodeId: string): boolean {
+  const consumers = model.nodes[nodeId].consumers
+  return consumers.length > 0 && consumers.every((c) => session.nodes[c].state === 'done')
+}
+
+/** The first executable, non-passed `pending` node in execution order; if none, the
+ * first executable, non-passed `deferred` node; if none, `null` (plan §C2/§F2). This is
+ * the app's suggestion only (PR 2 CP1): the cook may act on any step. */
 export function current(model: CookingModel, session: CookingSession): string | null {
   for (const id of model.order) {
-    if (session.nodes[id].state === 'pending' && executable(model, session, id)) return id
+    if (session.nodes[id].state === 'pending' && executable(model, session, id) && !isPassed(model, session, id)) return id
   }
   for (const id of model.order) {
-    if (session.nodes[id].state === 'deferred' && executable(model, session, id)) return id
+    if (session.nodes[id].state === 'deferred' && executable(model, session, id) && !isPassed(model, session, id)) return id
   }
   return null
 }
@@ -217,7 +229,9 @@ export type AwayClass = 'sitting_break' | 'long_wait' | 'wait'
  * `endsAt <= endsAt(H)` — i.e. the moment `H` finishes is the moment everything that
  * consumer needs converges. A node that contributes nothing arrives with a later
  * node's `endsAt` or a cook action, and is excluded from the `min`. `null` if no
- * running node contributes (see K4's pizza walk-through for the worked example).
+ * running node contributes (see K4's pizza walk-through for the worked example). A
+ * consumer that is already `done` is skipped (PR 2 CP1), matching `requiredInfo` and
+ * `waitSubject`, which skip it through `isConsumerReady`.
  */
 export function nextRequiredAt(model: CookingModel, session: CookingSession): number | null {
   let best: number | null = null
@@ -228,6 +242,7 @@ export function nextRequiredAt(model: CookingModel, session: CookingSession): nu
       info.attention === 'periodic' ||
       info.isSink ||
       info.consumers.some((c) =>
+        session.nodes[c].state !== 'done' &&
         model.nodes[c].dependsOn
           .filter((d) => d !== id)
           .every((d) => {

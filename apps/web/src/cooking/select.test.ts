@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
+import * as engine from './engine'
 import { deriveCookingModel } from './model'
 import {
   awayClass,
@@ -18,7 +19,7 @@ import {
   stepPosition,
   waitSubject,
 } from './select'
-import type { CookingModel, CookingSession, NodeState } from './types'
+import type { CookingModel, CookingSession, NodeState, Rejected } from './types'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
@@ -631,5 +632,89 @@ describe('audit gap: awayClass() when nextRequiredAt == null (§F7/§M2 resoluti
     const s = emptySession(model)
     expect(nextRequiredAt(model, s)).toBeNull()
     expect(awayClass(model, s, T0)).toBe('wait')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP1 rule 6 — `current` and the screens tolerate out-of-order states. Driven
+// through real engine actions, since these states only exist because CP1 allows them.
+// ---------------------------------------------------------------------------
+
+function must(result: CookingSession | Rejected): CookingSession {
+  if (engine.isRejected(result)) throw new Error(`unexpected rejection: ${result.reason}`)
+  return result
+}
+
+describe('CP1 — current tolerates out-of-order states', () => {
+  it('kadai: once a consumer is done first, its passed producers are not suggested, but stay not done and can still be Done', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = must(engine.start(null, model, 'server:kadai', T0))
+    s = must(engine.markDone(s, model, 'chop_onion', T0))
+    s = must(engine.markDone(s, model, 'chop_tomato', T0))
+    s = must(engine.markDone(s, model, 'saute_onion', T0))
+    // A hands-off step done without its timer.
+    s = must(engine.markDone(s, model, 'cook_tomato_base', T0 + m(1)))
+    expect(current(model, s)).toBe('chop_capsicum')
+    expect(role(model, s, T0 + m(1))).toBe('task')
+
+    // add_veggies (consumer of chop_capsicum and make_kadai_masala) is done first.
+    s = must(engine.markDone(s, model, 'add_veggies', T0 + m(2)))
+    expect(current(model, s)).toBe('cube_paneer')
+    expect(s.nodes.chop_capsicum).toEqual({ state: 'pending' })
+    expect(s.nodes.make_kadai_masala).toEqual({ state: 'pending' })
+    expect(executable(model, s, 'chop_capsicum')).toBe(true)
+    expect(sittingIndex(model, s)).toBe(model.sittingOf.cube_paneer ?? null)
+
+    s = must(engine.markDone(s, model, 'chop_capsicum', T0 + m(3)))
+    expect(s.nodes.chop_capsicum.state).toBe('done')
+    s = must(engine.markDone(s, model, 'cube_paneer', T0 + m(4)))
+    // The sink has no consumers, so it is never treated as passed.
+    s = must(engine.markDone(s, model, 'add_paneer', T0 + m(5)))
+    expect(current(model, s)).toBe('finish')
+  })
+
+  it('maggi: a stopped timer is suggested again', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = must(engine.start(null, model, 'server:maggi', T0))
+    s = must(engine.startNode(s, model, 'boil_water', T0))
+    expect(current(model, s)).toBeNull()
+    s = must(engine.stopNode(s, model, 'boil_water', T0 + m(1)))
+    expect(current(model, s)).toBe('boil_water')
+    expect(role(model, s, T0 + m(1))).toBe('task')
+    expect(stepPosition(model, s)).toEqual({ n: 1, total: model.order.length })
+  })
+
+  it('biryani: a timer whose consumer is already done holds quietly — no handover, no wait subject, no nextRequiredAt', () => {
+    const model = deriveCookingModel(BIRYANI)
+    let s = must(engine.start(null, model, 'server:biryani', T0))
+    s = must(engine.startNode(s, model, 'soak_rice', T0))
+    s = must(engine.startNode(s, model, 'boil_spiced_water', T0))
+    // Before the consumer is done, soak_rice converges with boil_spiced_water.
+    expect(nextRequiredAt(model, s)).toBe((s.nodes.soak_rice as { endsAt: number }).endsAt)
+
+    // parboil_rice (their only consumer) is done first, without its own timer.
+    s = must(engine.markDone(s, model, 'parboil_rice', T0 + m(1)))
+    expect(nextRequiredAt(model, s)).toBeNull()
+
+    const later = T0 + m(30) // both timers are up
+    expect(handover(model, s, later)).toBeNull()
+    expect(holding(model, s, later)).toEqual(['boil_spiced_water', 'soak_rice'])
+    expect(waitSubject(model, s, later)).toBeNull()
+    expect(role(model, s, later)).toBe('task')
+    expect(awayClass(model, s, later)).toBe('wait')
+    // The timers keep running until the cook ends or stops them.
+    expect(s.nodes.soak_rice.state).toBe('running')
+  })
+
+  it('two sittings: a step from the later sitting done first leaves the sitting index on the suggestion', () => {
+    const model = deriveCookingModel(TWO_SITTINGS)
+    let s = must(engine.start(null, model, 'server:two', T0))
+    const lateStep = model.order.find((id) => (model.sittingOf[id] ?? 0) > 0 && !model.nodes[id].isSink)!
+    expect(lateStep).toBeDefined()
+    s = must(engine.markDone(s, model, lateStep, T0 + m(1)))
+    const cur = current(model, s)
+    expect(cur).not.toBeNull()
+    expect(sittingIndex(model, s)).toBe(model.sittingOf[cur!] ?? null)
+    expect(lifecycle(model, s, T0 + m(1))).toBe('active')
   })
 })
