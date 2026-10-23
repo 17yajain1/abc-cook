@@ -155,6 +155,7 @@ export function startNode(session: CookingSession, model: CookingModel, nodeId: 
   if (prev.state !== 'pending') return reject('not_pending')
   return {
     ...session,
+    lastSeenAt: now,
     nodes: {
       ...session.nodes,
       [nodeId]: { state: 'running', startedAt: now, endsAt: now + info.durationTypical * 60_000, extendedMs: 0 },
@@ -222,6 +223,7 @@ export function markDone(session: CookingSession, model: CookingModel, nodeId: s
   const { nodes, entries, finishedAt } = complete(session, model, [nodeId], now)
   return {
     ...session,
+    lastSeenAt: now,
     nodes,
     lastTransition: { kind: 'done', at: now, entries, ...viewingBefore(session) },
     finishedAt,
@@ -241,6 +243,7 @@ export function acknowledge(session: CookingSession, model: CookingModel, now: n
   const { nodes, entries, finishedAt } = complete(session, model, h.producers, now)
   return {
     ...session,
+    lastSeenAt: now,
     nodes,
     lastTransition: { kind: 'acknowledge', at: now, entries, ...viewingBefore(session) },
     finishedAt,
@@ -262,6 +265,7 @@ export function stopNode(session: CookingSession, _model: CookingModel, nodeId: 
   if (prev.state !== 'running') return reject('not_running')
   return {
     ...session,
+    lastSeenAt: now,
     nodes: { ...session.nodes, [nodeId]: { state: 'pending' } },
     lastTransition: { kind: 'stop', at: now, entries: [{ nodeId, prev }], ...viewingBefore(session) },
   }
@@ -270,10 +274,10 @@ export function stopNode(session: CookingSession, _model: CookingModel, nodeId: 
 /** `view(id | null, now)` (PR 2 CP1): navigation only — which step the cook is looking
  * at. `null` means "follow the suggestion". Never touches `nodes`, `lastTransition` or
  * `finishedAt`, so going to a step never completes it. An unknown id rejects
- * `unknown_node`. `now` is unused (signature parity with every other action). */
-export function view(session: CookingSession, model: CookingModel, nodeId: string | null, _now: number): CookingSession | Rejected {
+ * `unknown_node`. Like every cook action it refreshes `lastSeenAt` (PR 2 CP4.0). */
+export function view(session: CookingSession, model: CookingModel, nodeId: string | null, now: number): CookingSession | Rejected {
   if (nodeId != null && !(nodeId in model.nodes)) return reject('unknown_node')
-  return { ...session, viewing: nodeId }
+  return { ...session, viewing: nodeId, lastSeenAt: now }
 }
 
 // ---------------------------------------------------------------------------
@@ -292,32 +296,36 @@ export function skip(session: CookingSession, model: CookingModel, nodeId: strin
   const prev = session.nodes[nodeId]
   return {
     ...session,
+    lastSeenAt: now,
     nodes: { ...session.nodes, [nodeId]: { state: 'deferred', at: now } },
     lastTransition: { kind: 'skip', at: now, entries: [{ nodeId, prev }] },
   }
 }
 
 /** `extend(id, now, ms?)` (plan §E/§C4/§K5 "Give it longer"): adds `ms` (`EXTEND_MS` by
- * default; the timer sheet's "Add 5 min" passes `ADD_TIME_MS`, PR 2 CP3.0) whether or
- * not the node has expired; does not touch `lastTransition` (§E lists no undo effect —
- * only `done`/`skip`/`acknowledge`/`stop`/`start` do). Per §C4's own wording, the increment is
- * added to the *existing* `endsAt` — not `now + ms` — so neither
- * `model` nor `now` is read; both stay in the signature only for parity with every
- * other action in §E, which is `(session, model, ..., now)` throughout. */
+ * default; "Add 5 min" / "+5 min" pass `ADD_TIME_MS`, PR 2 CP3.0) whether or not the node
+ * has expired; does not touch `lastTransition` (§E lists no undo effect — only
+ * `done`/`skip`/`acknowledge`/`stop`/`start` do). PR 2 CP4.0 replaces §C4's "added to the
+ * existing `endsAt`": the new end is `max(endsAt, now) + ms`, so "+5 min" on a timer that
+ * ended 4 min ago means 5 min from now, not 1. Before the end nothing changes. `extendedMs`
+ * grows by the same amount as `endsAt`, so `endsAt = startedAt + planned + extendedMs`
+ * still holds. `model` stays in the signature only for parity with every other action. */
 export function extend(
   session: CookingSession,
   _model: CookingModel,
   nodeId: string,
-  _now: number,
+  now: number,
   ms: number = EXTEND_MS,
 ): CookingSession | Rejected {
   const prev = session.nodes[nodeId]
   if (prev.state !== 'running') return reject('not_running')
+  const endsAt = Math.max(prev.endsAt, now) + ms
   return {
     ...session,
+    lastSeenAt: now,
     nodes: {
       ...session.nodes,
-      [nodeId]: { ...prev, endsAt: prev.endsAt + ms, extendedMs: prev.extendedMs + ms },
+      [nodeId]: { ...prev, endsAt, extendedMs: prev.extendedMs + (endsAt - prev.endsAt) },
     },
   }
 }
@@ -327,10 +335,9 @@ export function extend(
  * finish's stopped timers included; a `start` takes its step back to not started, CP2a)
  * — then clears `lastTransition` (so a second `undo` rejects). Clears `finishedAt` when
  * the sink's completion is among the entries being undone, and restores the `viewing`
- * the transition recorded. `now` is unused: restoring `prev` verbatim, including its own
- * timestamp, is the entire effect — kept as a parameter only for signature parity with
- * every other action in §E. */
-export function undo(session: CookingSession, model: CookingModel, _now: number): CookingSession | Rejected {
+ * the transition recorded. Restoring `prev` verbatim, including its own timestamp, is the
+ * entire effect on nodes; `now` only refreshes `lastSeenAt` (PR 2 CP4.0). */
+export function undo(session: CookingSession, model: CookingModel, now: number): CookingSession | Rejected {
   const t = session.lastTransition
   if (t == null) return reject('nothing_to_undo')
 
@@ -343,6 +350,7 @@ export function undo(session: CookingSession, model: CookingModel, _now: number)
 
   return {
     ...session,
+    lastSeenAt: now,
     nodes,
     lastTransition: null,
     finishedAt,

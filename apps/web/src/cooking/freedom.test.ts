@@ -170,8 +170,14 @@ function checkStep(
     const a = prev.nodes[step.nodeId!]
     const b = next.nodes[step.nodeId!]
     if (a.state !== 'running' || b.state !== 'running') throw new Error(`${where}: extend on a timer that isn't running`)
-    expect(b.endsAt - a.endsAt, `${where}: extend amount`).toBe(step.ms ?? EXTEND_MS)
+    // CP4.0: an expired timer is extended from now, not from its old end.
+    expect(b.endsAt, `${where}: extend amount`).toBe(Math.max(a.endsAt, now) + (step.ms ?? EXTEND_MS))
+    expect(b.endsAt, `${where}: endsAt = startedAt + planned + extendedMs`).toBe(
+      b.startedAt + model.nodes[step.nodeId!].durationTypical * 60_000 + b.extendedMs,
+    )
   }
+  // CP4.0: every accepted cook action refreshes lastSeenAt.
+  expect(next.lastSeenAt, `${where}: lastSeenAt after ${step.kind}`).toBe(now)
   if (step.kind === 'view') expect(next.nodes, `${where}: view changed a node`).toEqual(prev.nodes)
   if (earlyFinish) expect(running(model, next), `${where}: running after finish`).toEqual([])
 
@@ -212,8 +218,13 @@ describe('CP1 — random-order replay over every fixture', () => {
         const step: Step = { kind, nodeId, ...(kind === 'extend' && rand() < 0.5 ? { ms: ADD_TIME_MS } : {}) }
         const where = `${path} seq ${seq} action ${i}`
 
+        const seenBefore = s.lastSeenAt
         const result = apply(model, s, step, now)
-        if (engine.isRejected(result)) continue
+        if (engine.isRejected(result)) {
+          // CP4.0: a rejected action never touches lastSeenAt.
+          expect(s.lastSeenAt, `${where}: lastSeenAt after a rejected ${kind}`).toBe(seenBefore)
+          continue
+        }
         accepted++
         if (kind === 'extend') extendsAccepted[step.ms === ADD_TIME_MS ? 'five' : 'one']++
         checkStep(model, s, result, step, now, where)

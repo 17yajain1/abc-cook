@@ -246,10 +246,129 @@ describe('extend by a given amount (PR 2 CP3.0, the timer sheet\'s "Add 5 min")'
     for (const id of model.order) if (id !== 'first_rise') expect(next.nodes[id]).toBe(viewed.nodes[id])
   })
 
-  it('adds to an expired timer\'s existing endsAt, not to now (same §C4 semantics)', () => {
+})
+
+describe('extend an expired timer from now (PR 2 CP4.0, the banner\'s "+5 min")', () => {
+  // first_rise: started T0+18, 60 min, so it ends at T0+78.
+  function donutsRising(): { model: CookingModel; s: CookingSession } {
+    const model = deriveCookingModel(DONUTS)
+    let s = freshSession(model, 'server:donuts', T0)
+    s = must(engine.markDone(s, model, 'bloom_yeast', T0))
+    s = must(engine.startNode(s, model, 'first_rise', T0 + m(18)))
+    return { model, s }
+  }
+
+  it('4 min expired + 5 min ends 5 min from now; extendedMs grows by 9 min', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(82), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toEqual({ state: 'running', startedAt: T0 + m(18), endsAt: T0 + m(87), extendedMs: m(9) })
+  })
+
+  it('not yet expired: adds to the existing endsAt, as before', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(70), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(83), extendedMs: m(5) })
+  })
+
+  it('exactly at endsAt: endsAt + ms', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(78), ADD_TIME_MS))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(83), extendedMs: m(5) })
+  })
+
+  it('the default one minute on an expired timer is also from now', () => {
+    const { model, s } = donutsRising()
+    const next = must(engine.extend(s, model, 'first_rise', T0 + m(100)))
+    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(100) + EXTEND_MS, extendedMs: m(22) + EXTEND_MS })
+  })
+
+  it('keeps endsAt = startedAt + planned + extendedMs', () => {
     const { model, s } = donutsRising()
     const next = must(engine.extend(s, model, 'first_rise', T0 + m(200), ADD_TIME_MS))
-    expect(next.nodes.first_rise).toMatchObject({ endsAt: T0 + m(83) })
+    const n = next.nodes.first_rise
+    if (n.state !== 'running') throw new Error('expected running')
+    expect(n.endsAt).toBe(n.startedAt + model.nodes.first_rise.durationTypical * 60_000 + n.extendedMs)
+  })
+
+  it('still rejects a node that is not running', () => {
+    const { model, s } = donutsRising()
+    expect(engine.extend(s, model, 'mix_dough', T0 + m(100), ADD_TIME_MS)).toEqual({ ok: false, reason: 'not_running' })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR 2 CP4.0 — every cook action refreshes lastSeenAt
+// ---------------------------------------------------------------------------
+
+describe('every cook action refreshes lastSeenAt (PR 2 CP4.0)', () => {
+  const later = T0 + m(30)
+
+  function donuts(): { model: CookingModel; s: CookingSession } {
+    const model = deriveCookingModel(DONUTS)
+    return { model, s: freshSession(model, 'server:donuts', T0) }
+  }
+
+  it('startNode', () => {
+    const { model, s } = donuts()
+    expect(must(engine.startNode(s, model, 'first_rise', later)).lastSeenAt).toBe(later)
+  })
+
+  it('markDone', () => {
+    const { model, s } = donuts()
+    expect(must(engine.markDone(s, model, 'bloom_yeast', later)).lastSeenAt).toBe(later)
+  })
+
+  it('acknowledge', () => {
+    const model = deriveCookingModel(KADAI)
+    let s = freshSession(model, 'server:kadai', T0)
+    s = must(engine.startNode(s, model, 'cook_tomato_base', T0))
+    const at = T0 + m(30)
+    expect(handover(model, s, at)).not.toBeNull()
+    expect(must(engine.acknowledge(s, model, at)).lastSeenAt).toBe(at)
+  })
+
+  it('stopNode', () => {
+    const { model, s } = donuts()
+    const started = must(engine.startNode(s, model, 'first_rise', T0 + m(1)))
+    expect(must(engine.stopNode(started, model, 'first_rise', later)).lastSeenAt).toBe(later)
+  })
+
+  it('view', () => {
+    const { model, s } = donuts()
+    expect(must(engine.view(s, model, 'mix_dough', later)).lastSeenAt).toBe(later)
+    expect(must(engine.view(s, model, null, later)).lastSeenAt).toBe(later)
+  })
+
+  it('extend', () => {
+    const { model, s } = donuts()
+    const started = must(engine.startNode(s, model, 'first_rise', T0 + m(1)))
+    expect(must(engine.extend(started, model, 'first_rise', later, ADD_TIME_MS)).lastSeenAt).toBe(later)
+  })
+
+  it('undo', () => {
+    const { model, s } = donuts()
+    const done = must(engine.markDone(s, model, 'bloom_yeast', T0 + m(1)))
+    expect(must(engine.undo(done, model, later)).lastSeenAt).toBe(later)
+  })
+
+  it('skip', () => {
+    const { model, s } = donuts()
+    const cur = current(model, s)!
+    if (!skipAllowed(model, s)) throw new Error('expected skip allowed on a fresh donuts session')
+    expect(must(engine.skip(s, model, cur, later)).lastSeenAt).toBe(later)
+  })
+
+  it('a rejected action leaves lastSeenAt alone (nothing is returned to store)', () => {
+    const { model, s } = donuts()
+    expect(engine.isRejected(engine.extend(s, model, 'first_rise', later))).toBe(true)
+    expect(s.lastSeenAt).toBe(T0)
+  })
+
+  it('an active cook with no timer running stays active past 6 hr while tapping Done', () => {
+    const { model, s } = donuts()
+    const at = T0 + m(7 * 60)
+    const tapped = must(engine.markDone(s, model, 'bloom_yeast', at))
+    expect(lifecycle(model, tapped, at + m(1))).toBe('active')
   })
 })
 
@@ -942,7 +1061,8 @@ describe('CP2a — starting a timer is undoable (owner amendment 2, option A)', 
     const s1 = must(engine.startNode(s0, model, 'boil_water', T0))
     expect(s1.lastTransition && 'viewing' in s1.lastTransition).toBe(false)
     const undone = must(engine.undo(s1, model, T0 + 1_000))
-    expect(undone).toEqual({ ...s0, lastTransition: null })
+    // CP4.0: undo refreshes lastSeenAt like every cook action.
+    expect(undone).toEqual({ ...s0, lastTransition: null, lastSeenAt: T0 + 1_000 })
     expect('viewing' in undone).toBe(false)
   })
 
@@ -1035,7 +1155,8 @@ describe('CP1 rule 5 — view is navigation, never completion', () => {
     const viewed = must(engine.view(s, model, 'add_paneer', T0 + m(1)))
     expect(viewed.viewing).toBe('add_paneer')
     const { viewing: _viewing, ...rest } = viewed
-    expect(rest).toEqual(s)
+    // CP4.0: view refreshes lastSeenAt like every cook action.
+    expect(rest).toEqual({ ...s, lastSeenAt: T0 + m(1) })
     expect(viewed.lastTransition).toEqual(s.lastTransition)
 
     const back = must(engine.view(viewed, model, null, T0 + m(1)))
