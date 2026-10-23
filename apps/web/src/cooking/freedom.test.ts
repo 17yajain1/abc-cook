@@ -146,7 +146,12 @@ function checkStep(
           (step.kind === 'stopNode' && own) ||
           (step.kind === 'markDone' && own) ||
           (step.kind === 'acknowledge' && ackProducers.includes(id)) ||
-          (earlyFinish && b.state === 'pending')
+          (earlyFinish && b.state === 'pending') ||
+          // CP2a: undoing the start that began this timer takes it back to not started.
+          (step.kind === 'undo' &&
+            prev.lastTransition?.kind === 'start' &&
+            prev.lastTransition.entries.some((e) => e.nodeId === id) &&
+            b.state === 'pending')
         expect(allowed, `${where}: running ${id} changed by ${step.kind}(${step.nodeId})`).toBe(true)
       }
     }

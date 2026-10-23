@@ -380,7 +380,7 @@ describe('undo link — P1 #6 §C3', () => {
     expect(buildEntryView(kadaiModel, KADAI.graph.title, timing).reserveSecondary).toBe(false)
   })
 
-  it('shows at +0 s and +9.9 s, gone at +10 s, and is absent right after startNode clears lastTransition', () => {
+  it('shows at +0 s and +9.9 s, gone at +10 s, and names the started step right after a startNode (CP2a)', () => {
     let se = must(engine.start(null, kadaiModel, 'server:kadai', T0))
     se = must(engine.markDone(se, kadaiModel, 'chop_onion', T0 + 1 * MIN))
     const view = (now: number) =>
@@ -404,13 +404,17 @@ describe('undo link — P1 #6 §C3', () => {
       action: { kind: 'skip', nodeId: 'chop_tomato' },
     })
 
-    // "I've started it" on the next hands-off step clears lastTransition (engine
-    // contract) — the link disappears immediately, well inside the 10 s window.
+    // "I've started it" on the next hands-off step is itself undoable (PR 2 CP2a, owner
+    // option A): the link names the started step for 10 s, then Skip is back.
     se = must(engine.markDone(se, kadaiModel, 'chop_tomato', T0 + 2 * MIN))
     se = must(engine.markDone(se, kadaiModel, 'saute_onion', T0 + 2 * MIN))
     se = must(engine.startNode(se, kadaiModel, 'cook_tomato_base', T0 + 2 * MIN))
-    // startNode cleared lastTransition — the ordinary Skip control shows, never undo.
-    expect(view(T0 + 2 * MIN).secondary?.action.kind).toBe('skip')
+    expect(view(T0 + 2 * MIN).secondary).toEqual({
+      label: `Back to ${kadaiModel.nodes.cook_tomato_base.label}`,
+      solid: false,
+      action: { kind: 'undo' },
+    })
+    expect(view(T0 + 2 * MIN + 10_000).secondary?.action.kind).toBe('skip')
   })
 
   it('is present after a multi-producer acknowledge, naming the first producer, and never on the handover screen it followed', () => {

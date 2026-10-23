@@ -318,7 +318,7 @@ describe('skip (rows 21-24)', () => {
 // ---------------------------------------------------------------------------
 
 describe('undo (row 25)', () => {
-  it('undoes a done, restoring pending and current; a second undo (or one after startNode) rejects', () => {
+  it('undoes a done, restoring pending and current; a second undo rejects; a startNode replaces the done as the thing undo reverses', () => {
     const model = deriveCookingModel(KADAI)
     let s = freshSession(model, 'server:kadai', T0)
     s = must(engine.markDone(s, model, 'chop_onion', T0))
@@ -334,13 +334,20 @@ describe('undo (row 25)', () => {
     s = must(engine.markDone(s, model, 'chop_onion', T0))
     expect(s.lastTransition).toEqual({ kind: 'done', at: T0, entries: [{ nodeId: 'chop_onion', prev: { state: 'pending' } }] })
 
-    // "no startNode has happened since" — demonstrated with the next real hands-off
-    // node: startNode clears lastTransition even though the transition it clears was
-    // for a different, already-done node.
+    // PR 2 CP2a (owner option A): a startNode is itself undoable, so it replaces the
+    // previous done as the transition undo reverses. Undo stops the timer (back to
+    // pending) and leaves the earlier done steps done.
     s = must(engine.markDone(s, model, 'chop_tomato', T0))
     s = must(engine.markDone(s, model, 'saute_onion', T0))
     s = must(engine.startNode(s, model, 'cook_tomato_base', T0 + m(10)))
-    expect(s.lastTransition).toBeNull()
+    expect(s.lastTransition).toEqual({
+      kind: 'start',
+      at: T0 + m(10),
+      entries: [{ nodeId: 'cook_tomato_base', prev: { state: 'pending' } }],
+    })
+    s = must(engine.undo(s, model, T0 + m(10)))
+    expect(s.nodes.cook_tomato_base).toEqual({ state: 'pending' })
+    expect(s.nodes.saute_onion.state).toBe('done')
     expect(engine.undo(s, model, T0 + m(10))).toEqual({ ok: false, reason: 'nothing_to_undo' })
   })
 
@@ -829,20 +836,87 @@ describe('CP1 rule 3 — startNode on any pending hands-off step', () => {
       extendedMs: 0,
     })
     expect(changedNodes(s0, s1)).toEqual(['cook_tomato_base'])
-    expect(s1.lastTransition).toBeNull()
+    expect(s1.lastTransition).toEqual({
+      kind: 'start',
+      at: T0 + m(1),
+      entries: [{ nodeId: 'cook_tomato_base', prev: { state: 'pending' } }],
+    })
     expect(current(model, s1)).toBe('chop_onion')
 
     expect(engine.startNode(s1, model, 'chop_tomato', T0 + m(1))).toEqual({ ok: false, reason: 'hands_on_node' })
     expect(engine.startNode(s1, model, 'cook_tomato_base', T0 + m(2))).toEqual({ ok: false, reason: 'not_pending' })
   })
 
-  it('clears lastTransition (the existing undo rule)', () => {
+  it('replaces the previous lastTransition with an undoable start (CP2a)', () => {
     const model = deriveCookingModel(BIRYANI)
     let s = freshSession(model, 'server:biryani', T0)
     s = must(engine.markDone(s, model, 'slice_onions', T0))
-    expect(s.lastTransition).not.toBeNull()
+    expect(s.lastTransition?.kind).toBe('done')
     s = must(engine.startNode(s, model, 'dum', T0))
-    expect(s.lastTransition).toBeNull()
+    expect(s.lastTransition).toEqual({ kind: 'start', at: T0, entries: [{ nodeId: 'dum', prev: { state: 'pending' } }] })
+    // Only the start is reversed; slice_onions stays done.
+    s = must(engine.undo(s, model, T0 + m(1)))
+    expect(s.nodes.dum).toEqual({ state: 'pending' })
+    expect(s.nodes.slice_onions.state).toBe('done')
+  })
+})
+
+describe('CP2a — starting a timer is undoable (owner amendment 2, option A)', () => {
+  it('undo returns the started step to not started; every other node, finishedAt and viewing are as before', () => {
+    const model = deriveCookingModel(DONUTS)
+    let s = freshSession(model, 'server:donuts', T0)
+    for (const id of ['bloom_yeast', 'mix_dough', 'knead_dough']) s = must(engine.markDone(s, model, id, T0 + m(1)))
+    s = must(engine.view(s, model, 'first_rise', T0 + m(2)))
+    const before = s
+
+    // "I've started it" from the viewed step: startNode, then view(null) so the cook moves on.
+    s = must(engine.startNode(s, model, 'first_rise', T0 + m(3)))
+    expect(s.lastTransition).toEqual({
+      kind: 'start',
+      at: T0 + m(3),
+      entries: [{ nodeId: 'first_rise', prev: { state: 'pending' } }],
+      viewing: 'first_rise',
+    })
+    s = must(engine.view(s, model, null, T0 + m(3)))
+    // The view is navigation: the start is still what undo reverses.
+    expect(s.lastTransition?.kind).toBe('start')
+
+    const undone = must(engine.undo(s, model, T0 + m(3) + 9_000))
+    expect(undone.nodes.first_rise).toEqual({ state: 'pending' })
+    expect(undone.nodes).toEqual(before.nodes)
+    expect(undone.finishedAt).toBe(before.finishedAt)
+    expect(undone.viewing).toBe('first_rise')
+    expect(undone.lastTransition).toBeNull()
+    expect(engine.undo(undone, model, T0 + m(4))).toEqual({ ok: false, reason: 'nothing_to_undo' })
+  })
+
+  it('a start from a session that never navigated records no viewing, and undo adds none', () => {
+    const model = deriveCookingModel(MAGGI)
+    const s0 = freshSession(model, 'server:maggi', T0)
+    const s1 = must(engine.startNode(s0, model, 'boil_water', T0))
+    expect(s1.lastTransition && 'viewing' in s1.lastTransition).toBe(false)
+    const undone = must(engine.undo(s1, model, T0 + 1_000))
+    expect(undone).toEqual({ ...s0, lastTransition: null })
+    expect('viewing' in undone).toBe(false)
+  })
+
+  it('undo after an extend still returns the step to not started', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    s = must(engine.startNode(s, model, 'boil_water', T0))
+    s = must(engine.extend(s, model, 'boil_water', T0 + 1_000))
+    s = must(engine.undo(s, model, T0 + 2_000))
+    expect(s.nodes.boil_water).toEqual({ state: 'pending' })
+  })
+
+  it('a later Done replaces the start: undo then reverses only the Done, and the timer keeps running', () => {
+    const model = deriveCookingModel(MAGGI)
+    let s = freshSession(model, 'server:maggi', T0)
+    s = must(engine.startNode(s, model, 'cook_noodles', T0))
+    s = must(engine.markDone(s, model, 'boil_water', T0 + 1_000))
+    s = must(engine.undo(s, model, T0 + 2_000))
+    expect(s.nodes.boil_water).toEqual({ state: 'pending' })
+    expect(s.nodes.cook_noodles.state).toBe('running')
   })
 })
 

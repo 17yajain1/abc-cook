@@ -144,21 +144,22 @@ export function end(): null {
 /** `startNode(id, now)` (plan §E/§C4/§K2): the one explicit action that creates a
  * hands-off node's timer. Allowed on any *pending* hands-off node, even one whose earlier
  * steps aren't done (PR 2 CP1: never a gate, no warning). Rejected for a hands-on node
- * (it never has a timer), or for one already running/done. */
+ * (it never has a timer), or for one already running/done. Undoable for `UNDO_WINDOW_MS`
+ * like Done (PR 2 CP2a, owner option A — reverses §E's "lastTransition = null" and §L's
+ * "undo allowed iff no startNode has happened since"): `undo` takes the step back to
+ * not started and restores the `viewing` from before the start. */
 export function startNode(session: CookingSession, model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
   const info = model.nodes[nodeId]
   if (info.occupiesCook) return reject('hands_on_node')
-  const state = session.nodes[nodeId]
-  if (state.state !== 'pending') return reject('not_pending')
+  const prev = session.nodes[nodeId]
+  if (prev.state !== 'pending') return reject('not_pending')
   return {
     ...session,
     nodes: {
       ...session.nodes,
       [nodeId]: { state: 'running', startedAt: now, endsAt: now + info.durationTypical * 60_000, extendedMs: 0 },
     },
-    // §E: "lastTransition = null" — starting a node clears undo history (§L "undo
-    // allowed iff no startNode has happened since").
-    lastTransition: null,
+    lastTransition: { kind: 'start', at: now, entries: [{ nodeId, prev }], ...viewingBefore(session) },
   }
 }
 
@@ -298,7 +299,7 @@ export function skip(session: CookingSession, model: CookingModel, nodeId: strin
 
 /** `extend(id, now)` (plan §E/§C4/§K5 "Give it longer"): adds `EXTEND_MS` whether or
  * not the node has expired; does not touch `lastTransition` (§E lists no undo effect —
- * only `done`/`skip`/`acknowledge`/`stop` do). Per §C4's own wording, the increment is a fixed
+ * only `done`/`skip`/`acknowledge`/`stop`/`start` do). Per §C4's own wording, the increment is a fixed
  * `EXTEND_MS` added to the *existing* `endsAt` — not `now + EXTEND_MS` — so neither
  * `model` nor `now` is read; both stay in the signature only for parity with every
  * other action in §E, which is `(session, model, ..., now)` throughout. */
@@ -315,9 +316,9 @@ export function extend(session: CookingSession, _model: CookingModel, nodeId: st
 }
 
 /** `undo(now)` (plan §E/§L1): reverses every entry of `lastTransition` — one
- * `done`/`skip`/`acknowledge`/`stop` action, all its nodes or none (an early finish's
- * stopped timers included) — then clears `lastTransition` (so a second `undo` rejects,
- * and so does one after a `startNode`, which already clears it). Clears `finishedAt` when
+ * `done`/`skip`/`acknowledge`/`stop`/`start` action, all its nodes or none (an early
+ * finish's stopped timers included; a `start` takes its step back to not started, CP2a)
+ * — then clears `lastTransition` (so a second `undo` rejects). Clears `finishedAt` when
  * the sink's completion is among the entries being undone, and restores the `viewing`
  * the transition recorded. `now` is unused: restoring `prev` verbatim, including its own
  * timestamp, is the entire effect — kept as a parameter only for signature parity with

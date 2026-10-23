@@ -76,7 +76,8 @@ export interface TransitionEntry {
  * biryani t=20's two producers, and `undo` must reverse all of them or none).
  */
 export interface Transition {
-  kind: 'done' | 'skip' | 'acknowledge' | 'stop'
+  /** `start` (PR 2 CP2a): a `startNode`, undone back to not started. */
+  kind: 'done' | 'skip' | 'acknowledge' | 'stop' | 'start'
   at: number
   entries: TransitionEntry[]
   /** PR 2 CP1: `session.viewing` before the action, restored by `undo`. Absent when the
