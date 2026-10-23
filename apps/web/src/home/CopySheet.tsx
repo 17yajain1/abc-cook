@@ -8,7 +8,7 @@ import { CloseIcon, InstagramIcon, LinkIcon, YoutubeIcon } from './icons'
 
 /** The bottom sheet behind the hero's CTA: a clipboard shortcut (when one was found), the
  * Paste text route, and a URL field. Import itself runs in the shell's `useImportJob`; the
- * sheet only collects input and shows the inline phases (`error`, `slow`). */
+ * sheet only collects input and shows the inline `error` phase (`slow` takes over the whole screen). */
 export function CopySheet({
   url,
   onUrlChange,
@@ -17,7 +17,6 @@ export function CopySheet({
   onSubmit,
   onPasteTap,
   onPasteText,
-  onKeepWaiting,
   onClose,
 }: {
   url: string
@@ -28,7 +27,6 @@ export function CopySheet({
   onSubmit: (url: string) => void
   onPasteTap: () => Promise<string | null>
   onPasteText: () => void
-  onKeepWaiting: () => void
   onClose: () => void
 }) {
   const [pasting, setPasting] = useState(false)
@@ -114,18 +112,6 @@ export function CopySheet({
         <p className="mt-2 text-[13px] text-home-ink-2">{SHEET.hint}</p>
 
         {phase.kind === 'error' && <p className="mt-3 text-[13px] text-home-nonveg">{phase.message}</p>}
-        {phase.kind === 'slow' && (
-          <p className="mt-3 text-[13px] text-home-ink-2">
-            {SHEET.slow}{' '}
-            <button
-              type="button"
-              onClick={onKeepWaiting}
-              className="font-semibold text-home-terracotta-text underline underline-offset-4"
-            >
-              {SHEET.keepWaiting}
-            </button>
-          </p>
-        )}
 
         <button
           type="button"
