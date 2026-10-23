@@ -8,6 +8,9 @@ import type { SessionConflict } from '@/cooking/types'
 import { useSession } from '@/cooking/useSession'
 import { headerTiming } from '@/lib/duration'
 import type { ServingsChoice } from '@/lib/servings'
+import { derivePlan } from '@/plan/derive'
+import { stepNumbers } from '@/plan/stepNumbers'
+import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { CookingShell } from './CookingShell'
 import { finishCooking, replaceSession, type SessionFinished } from './finalizeSession'
@@ -81,6 +84,10 @@ export function CookingModeScreen({
   const model = useMemo(() => deriveCookingModel(payload, provenance), [payload, provenance])
   const ingredients = useMemo(() => ingredientsById(payload.graph.ingredients), [payload])
   const timing = useMemo(() => headerTiming(payload.summary ?? null, payload.plan.total_min), [payload])
+  // PR 2 CP2: "Step N of M" is the recipe-page number, counted the way the page counts it.
+  const pageNumbers = useMemo(() => stepNumbers(derivePlan(payload, provenance).stages), [payload, provenance])
+  // PR 2 CP2: cooking mode is on the Home register's cream ground, safe-area strip included.
+  useHomeSurface(true)
 
   const session = useSession(store)
   const [now, setNow] = useState(() => Date.now())
@@ -182,12 +189,17 @@ export function CookingModeScreen({
         })
         return
       case 'startNode':
-        runEngine(() => session.startNode(model, action.nodeId))
+        runEngine(() => {
+          // Started from a view naming it: move on, as Done does (CP2 `clearView`). The
+          // view is navigation, so the start stays what Undo reverses.
+          const result = session.startNode(model, action.nodeId)
+          if (result.ok && action.clearView) session.view(model, null)
+        })
         return
       case 'markDone':
         runEngine(() => session.markDone(model, action.nodeId))
         return
-      // PR 2 CP1: unreachable from today's views; CP3's screens emit them.
+      // PR 2 CP1: unreachable from today's views; CP3's screens emit it.
       case 'stopNode':
         runEngine(() => session.stopNode(model, action.nodeId))
         return
@@ -249,6 +261,7 @@ export function CookingModeScreen({
           onSecondary={() => view.secondary && dispatchAction(view.secondary.action)}
           onLeave={() => setLeaving(true)}
           onSheet={() => setSheetOpen(true)}
+          onNavigate={dispatchAction}
         />
       </div>
     )
@@ -284,6 +297,7 @@ export function CookingModeScreen({
           choice: openResult.session.servingsChoice ?? null,
           editedSteps,
           importedSteps,
+          pageNumbers,
         })
 
   const sheet =
@@ -298,6 +312,7 @@ export function CookingModeScreen({
         onSecondary={() => view.secondary && dispatchAction(view.secondary.action)}
         onLeave={() => setLeaving(true)}
         onSheet={() => setSheetOpen(true)}
+        onNavigate={dispatchAction}
       />
       {sheet && <WhatsCookingSheet sheet={sheet} onClose={() => setSheetOpen(false)} />}
     </div>
@@ -314,7 +329,7 @@ export function CookingModeScreen({
  */
 function ReplaceNotice({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-[13px] text-paper">
+    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 border-b border-home-rule bg-home-ground px-4 pb-3 pt-[calc(12px+var(--safe-top))] text-[13px] text-home-ink">
       <p>That cooking session changed — showing the current state.</p>
       <button type="button" onClick={onDismiss} className="shrink-0 underline underline-offset-[3px]">
         Dismiss
@@ -347,7 +362,7 @@ function ReplaceNotice({ onDismiss }: { onDismiss: () => void }) {
  *
  * Bypasses `CookingShell`/`CookingView` (unlike every other screen in this file) because
  * this screen needs three action slots, not `CookingShell`'s two — reusing the same
- * design tokens (`bg-paper`/`text-ink`/`rounded-control`) rather than a new shell.
+ * Home-register tokens and pill as the shell (PR 2 CP2) rather than a new shell.
  */
 function ConflictScreen({
   conflict,
@@ -379,12 +394,12 @@ function ConflictScreen({
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-paper px-6 text-center">
-      <p className="text-[13px] text-ink-3">Already cooking</p>
-      <h1 className="mt-3 text-[26px] font-semibold leading-[1.2] text-ink" style={{ fontStretch: '88%' }}>
+    <div className="flex h-full flex-col items-center justify-center bg-home-ground px-6 text-center">
+      <p className="text-[13px] text-home-ink-2">Already cooking</p>
+      <h1 className="mt-3 text-[26px] font-semibold leading-[1.2] text-home-ink" style={{ fontStretch: '88%' }}>
         {view.message}
       </h1>
-      <p className="mt-3 text-[15px] leading-[1.5] text-ink-2">One cook at a time.</p>
+      <p className="mt-3 text-[15px] leading-[1.5] text-home-ink-2">One cook at a time.</p>
       <div className="mt-8 flex w-full flex-col gap-3">
         {view.actions.map((action, i) =>
           i === 0 ? (
@@ -392,8 +407,7 @@ function ConflictScreen({
               key={action.kind}
               type="button"
               onClick={() => onAction(action)}
-              className="flex h-[56px] w-full items-center justify-center rounded-control border border-ink bg-ink text-[18px] font-semibold text-paper"
-              style={{ fontStretch: '106%' }}
+              className="flex h-[60px] w-full items-center justify-center rounded-full bg-home-terracotta text-[18px] font-bold text-home-ground"
             >
               {action.label}
             </button>
@@ -402,7 +416,7 @@ function ConflictScreen({
               key={action.kind}
               type="button"
               onClick={() => onAction(action)}
-              className="text-[15px] underline underline-offset-[3px] text-ink-3"
+              className="text-[15px] underline underline-offset-[3px] text-home-ink-2"
             >
               {action.label}
             </button>
@@ -411,7 +425,7 @@ function ConflictScreen({
               key={action.kind}
               type="button"
               onClick={() => onAction(action)}
-              className="flex min-h-[56px] w-full items-center justify-center rounded-control border border-ink px-3.5 py-2 text-center text-[18px] font-medium leading-[1.3] text-ink"
+              className="flex min-h-[60px] w-full items-center justify-center rounded-full border border-home-ink px-3.5 py-2 text-center text-[18px] font-medium leading-[1.3] text-home-ink"
             >
               {action.label}
             </button>

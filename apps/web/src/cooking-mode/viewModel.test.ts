@@ -76,7 +76,7 @@ describe('kadai-paneer', () => {
     expect(v.primary).toEqual({ label: 'Done', solid: true, action: { kind: 'markDone', nodeId: 'chop_onion' } })
     // P1 #6 §C1/§C2: "Step 1 of 10" and a preview of what Done would unblock next.
     expect(v.step).toBe('Step 1 of 10')
-    expect(v.next).toBe('Next: Chop tomato')
+    expect(v.upNext?.name).toBe('Chop tomato')
   })
 
   it('handsoff_pending: shows the hands-off-pending screen once every hands-on prerequisite is done', () => {
@@ -96,7 +96,7 @@ describe('kadai-paneer', () => {
     // Three hands-on steps done -> Step 4 of 10. The preview simulates "I've started
     // it" and finds the first window prep task it unblocks.
     expect(v.step).toBe('Step 4 of 10')
-    expect(v.next).toBe('Next: Cube capsicum')
+    expect(v.upNext?.name).toBe('Cube capsicum')
     // F2 covers the pending hands-off start screen too: cook_tomato_base consumes ing_salt
     // ("to taste") plus two comp_* ids, which have no ingredient row and no chip.
     expect(v.chips).toEqual(['salt to taste'])
@@ -116,7 +116,7 @@ describe('kadai-paneer', () => {
     expect(v.showLink).toBe(true)
     expect(v.whisperText).toContain('Cook tomato base')
     expect(v.step).toBe('Step 5 of 10')
-    expect(v.next).toBe('Next: Cube paneer')
+    expect(v.upNext?.name).toBe('Cube paneer')
     expect(v.chips).toEqual(['1 large capsicum'])
   })
 
@@ -135,7 +135,7 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 15 * MIN)
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Make kadai masala')
-    expect(v.next).toBe('Next: Add veggies')
+    expect(v.upNext?.name).toBe('Add veggies')
   })
 
   it('finish: the last step has no preview', () => {
@@ -155,7 +155,7 @@ describe('kadai-paneer', () => {
     expect(v.screenId).toBe('task')
     expect(v.label).toBe('Finish')
     expect(v.step).toBe('Step 10 of 10')
-    expect(v.next).toBeNull()
+    expect(v.upNext).toBeNull()
   })
 
   it('wait: shows the cue as title/instr with a primary once the running host is the wait subject', () => {
@@ -186,7 +186,7 @@ describe('kadai-paneer', () => {
       action: { kind: 'markDone', nodeId: 'cook_tomato_base' },
     })
     expect(atTransition.secondary).toEqual({
-      label: 'Back to Make kadai masala',
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -196,7 +196,7 @@ describe('kadai-paneer', () => {
     expect(atTransition.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
     // No current step on a wait screen — no step count, no preview.
     expect(atTransition.step).toBeNull()
-    expect(atTransition.next).toBeNull()
+    expect(atTransition.upNext).toBeNull()
     // F2 chips are step-screen only.
     expect(atTransition.chips).toEqual([])
 
@@ -254,7 +254,7 @@ describe('kadai-paneer', () => {
       action: { kind: 'extend', nodeId: 'cook_tomato_base' },
     })
     expect(v.step).toBeNull()
-    expect(v.next).toBeNull()
+    expect(v.upNext).toBeNull()
   })
 
   it('sheet: lists the single running host', () => {
@@ -295,14 +295,14 @@ describe('kadai-paneer', () => {
     expect(v.showTopRight).toBe(false)
     expect(v.primary).toEqual({ label: 'Finished cooking', solid: true, action: { kind: 'finish' } })
     // P1 #6 §C3: the done screen is itself the undo buffer for an accidental final Done —
-    // "Back to <finish label>" for 10 s, then gone.
-    expect(v.secondary).toEqual({ label: 'Back to Finish', solid: false, action: { kind: 'undo' } })
+    // "Undo" for 10 s, then gone.
+    expect(v.secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
     expect(view(se, T0 + 34 * MIN + 10_000).secondary).toBeNull()
     // M5: completion counting is wired behind this `finish` action, so the screen's one
     // primary must stay exactly this — before and after the undo window — with no new action.
     expect(view(se, T0 + 34 * MIN + 10_000).primary).toEqual(v.primary)
     expect(v.step).toBeNull()
-    expect(v.next).toBeNull()
+    expect(v.upNext).toBeNull()
 
     // Undo from the done screen returns to the finish step, restoring its step count.
     const undone = must(engine.undo(se, model, T0 + 34 * MIN + 1000))
@@ -387,12 +387,12 @@ describe('undo link — P1 #6 §C3', () => {
       buildCookingView(kadaiModel, se, now, kadaiIngredients, { recipeTitle: KADAI.graph.title, leaving: false })
 
     expect(view(T0 + 1 * MIN).secondary).toEqual({
-      label: 'Back to Chop onion',
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
     expect(view(T0 + 1 * MIN + 9_900).secondary).toEqual({
-      label: 'Back to Chop onion',
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -410,7 +410,7 @@ describe('undo link — P1 #6 §C3', () => {
     se = must(engine.markDone(se, kadaiModel, 'saute_onion', T0 + 2 * MIN))
     se = must(engine.startNode(se, kadaiModel, 'cook_tomato_base', T0 + 2 * MIN))
     expect(view(T0 + 2 * MIN).secondary).toEqual({
-      label: `Back to ${kadaiModel.nodes.cook_tomato_base.label}`,
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -441,7 +441,7 @@ describe('undo link — P1 #6 §C3', () => {
     // Whatever screen follows the acknowledge (task/wait/handsoff_pending), the undo
     // link names the earliest-in-order producer — boil_spiced_water — not soak_rice.
     expect(afterAck.secondary).toEqual({
-      label: 'Back to Boil spiced water',
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -1163,7 +1163,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const se = must(engine.markDone(must(engine.start(null, model, 'server:kadai', T0)), model, 'add_paneer', T0 + MIN))
     const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
 
-    const undoLink = { label: `Back to ${model.nodes.add_paneer.label}`, solid: false, action: { kind: 'undo' } }
+    const undoLink = { label: 'Undo', solid: false, action: { kind: 'undo' } }
     expect(view(T0 + MIN).secondary).toEqual(undoLink)
     expect(view(T0 + MIN + 9_999).secondary).toEqual(undoLink)
     expect(view(T0 + MIN + 10_000).secondary?.action.kind).not.toBe('undo')
@@ -1176,7 +1176,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
     const se = must(engine.markDone(must(engine.start(null, model, 'server:maggi', T0)), model, 'boil_water', T0))
     const view = (now: number) => buildCookingView(model, se, now, ingredients, { recipeTitle: MAGGI.graph.title, leaving: false })
 
-    expect(view(T0).secondary).toEqual({ label: `Back to ${model.nodes.boil_water.label}`, solid: false, action: { kind: 'undo' } })
+    expect(view(T0).secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
     expect(view(T0 + 10_000).secondary?.action.kind).not.toBe('undo')
   })
 
@@ -1193,7 +1193,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
 
     expect(view(se, T0 + MIN).screenId).toBe('done')
     expect(view(se, T0 + MIN).secondary).toEqual({
-      label: `Back to ${model.nodes.rest_and_serve.label}`,
+      label: 'Undo',
       solid: false,
       action: { kind: 'undo' },
     })
@@ -1220,7 +1220,7 @@ describe('CP1 — undo link after the new transitions, only inside UNDO_WINDOW_M
 
     expect(se.nodes.step_cover_and_refrigerate_overnight_18_hours).toEqual({ state: 'pending' })
     expect(view(se, at).screenId).toBe('done')
-    expect(view(se, at).secondary).toEqual({ label: `Back to ${model.nodes[sink].label}`, solid: false, action: { kind: 'undo' } })
+    expect(view(se, at).secondary).toEqual({ label: 'Undo', solid: false, action: { kind: 'undo' } })
     expect(view(se, at + 10_000).secondary).toBeNull()
 
     const undone = must(engine.undo(se, model, at + 5_000))

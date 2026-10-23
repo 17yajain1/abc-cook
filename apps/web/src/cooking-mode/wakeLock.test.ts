@@ -15,6 +15,8 @@ describe('shouldHoldWakeLock', () => {
     const table: Record<ScreenId, boolean> = {
       task: true,
       handsoff_pending: true,
+      step_running: true,
+      step_done: true,
       wait: true,
       handover: true,
       entry: false,

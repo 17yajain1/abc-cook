@@ -9,7 +9,8 @@ import type { ScreenId } from './viewModel'
 
 /**
  * Screen state -> hold or release (CP2 plan's decided table): `task`,
- * `handsoff_pending`, `wait` and `handover` hold; everything else releases. An
+ * `handsoff_pending`, `wait` and `handover` hold, and so do PR 2 CP2's two step pages
+ * (`step_running`, `step_done`); everything else releases. An
  * exhaustive `switch` with no `default` — adding a `ScreenId` without deciding its
  * wake-lock behaviour fails the type-check (TS2366) rather than silently defaulting.
  */
@@ -17,6 +18,8 @@ export function shouldHoldWakeLock(screenId: ScreenId): boolean {
   switch (screenId) {
     case 'task':
     case 'handsoff_pending':
+    case 'step_running':
+    case 'step_done':
     case 'wait':
     case 'handover':
       return true

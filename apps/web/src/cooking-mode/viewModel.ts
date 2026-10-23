@@ -1,7 +1,6 @@
 import type { Ingredient } from '@abc-cook/schema'
 
 import { UNDO_WINDOW_MS } from '@/cooking/constants'
-import { isRejected, markDone, startNode } from '@/cooking/engine'
 import {
   handover,
   holding,
@@ -27,6 +26,7 @@ import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE, stepAmountHint, stepNeedsAmountNote, 
 import { aboutMinutes, cap, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 import { canResolveConflictTarget } from './conflictResolve'
 import { quantityChips } from './quantity'
+import { backTarget, pageOrder, ticks, upNext, type Tick, type UpNextView } from './stepPage'
 
 /**
  * The screen-selection and copy layer for Cooking Mode (M3.4), ported from the design
@@ -48,6 +48,10 @@ export type ScreenId =
   | 'entry'
   | 'task'
   | 'handsoff_pending'
+  /** PR 2 CP2: the step page for a viewed step whose timer is running. */
+  | 'step_running'
+  /** PR 2 CP2: the step page for a viewed step that is already done. */
+  | 'step_done'
   | 'wait'
   | 'long_wait'
   | 'handover'
@@ -63,10 +67,13 @@ export type ScreenId =
 
 export type ActionDescriptor =
   | { kind: 'start' }
-  | { kind: 'startNode'; nodeId: string }
+  /** `clearView` (PR 2 CP2): the step was started from a view naming it, so the caller
+   * follows the start with `view(null)` and the cook moves on, as Done does. */
+  | { kind: 'startNode'; nodeId: string; clearView?: boolean }
   | { kind: 'markDone'; nodeId: string }
-  /** PR 2 CP1: the single command path CP3's screens will use. No view emits these yet. */
+  /** PR 2 CP1: the single command path CP3's screens will use. No view emits it yet. */
   | { kind: 'stopNode'; nodeId: string }
+  /** PR 2 CP1: navigation only. CP2's Up next and Back emit it. */
   | { kind: 'view'; nodeId: string | null }
   | { kind: 'skip'; nodeId: string }
   | { kind: 'extend'; nodeId: string }
@@ -78,7 +85,7 @@ export type ActionDescriptor =
   | { kind: 'stay' }
   /** Navigate back to the Plan view. Local UI only — never an engine action. */
   | { kind: 'seePlan' }
-  /** P1 #6 §C3: reverses `lastTransition` — the "Back to ‹step›" link. */
+  /** P1 #6 §C3: reverses `lastTransition` — the "Undo" link (PR 2 CP2's label). */
   | { kind: 'undo' }
   /** P1 #6 §C4: the done screen's "Finished cooking" — ends the session, then
    * navigates to the Library (`onFinish`), distinct from the stale screen's `end`,
@@ -132,13 +139,19 @@ export interface CookingView {
    * (FGC-3). `null` on every other screen and for every step from the source. */
   addedNote: string | null
   note: string | null
-  /** "Step n of N" (P1 #6 plan §C1) — only on `task`/`handsoff_pending`, where there is
-   * a current step to count. `null` everywhere else. */
+  /** "Step N of M" on the step pages (PR 2 CP2: N is the recipe-page number, `stepNumbers`,
+   * falling back to the execution order). `null` everywhere else. */
   step: string | null
-  /** "Next: ‹label›" (P1 #6 plan §C2) — the engine's own `current()` re-run on a
-   * simulated copy of the session after this screen's primary action, never a new
-   * ordering rule. `null` on the finish step and everywhere without a current step. */
-  next: string | null
+  /** PR 2 CP2: the Up next block (`stepPage.ts`'s `upNext`), navigation only. `null` on the
+   * finish step and off the step pages. */
+  upNext: UpNextView | null
+  /** PR 2 CP2: one progress tick per page step, on the step pages only. */
+  ticks: Tick[] | null
+  /** PR 2 CP2: "Back" to the previous page step (a view, never a completion). `null` on page
+   * step 1 and off the step pages. */
+  back: ActionButton | null
+  /** PR 2 CP2: "Done." under the text of a done step (`step_done`), which has no primary. */
+  stateLine: string | null
   /** Time-left + end-clock line for a single-subject `wait`/`long_wait` screen (P0 #4,
    * owner decision 2026-09-27). A separate slot from `note` so `note`'s existing meaning
    * (and its existing assertions) are untouched — the `long_wait` `note` this replaces
@@ -157,7 +170,7 @@ export interface CookingView {
   /** B0 (N3): true on every screen where the undo link can appear in `secondary`
    * (`UNDO_ELIGIBLE_SCREENS`). The shell then keeps that slot's height whether or not a
    * secondary is showing, so the primary never moves when the undo link comes or goes —
-   * a quick second tap where Done *was* must not land on "Back to …". */
+   * a quick second tap where Done *was* must not land on "Undo". */
   reserveSecondary: boolean
 }
 
@@ -211,9 +224,11 @@ interface ScreenResolution {
 }
 
 /** `screenOf` (dc.html), ported: `lifecycle` first, then the local "leaving" UI flag,
- * then the `leftAt` overlay, then `role` — the exact composition order the M3.4 session
- * summary's decision 2 settled on. `leaving` is local component state, never persisted
- * (mirrors the prototype's `s.leaving`) — see `CookingModeScreen`. */
+ * then the `leftAt` overlay, then a handover, then the viewed step (PR 2 CP2), then
+ * `role` — the composition order the M3.4 session summary's decision 2 settled on, with
+ * `viewing` slotted in after the handover (which CP4 replaces with a banner). `leaving` is
+ * local component state, never persisted (mirrors the prototype's `s.leaving`) — see
+ * `CookingModeScreen`. */
 function resolveScreen(
   model: CookingModel,
   session: CookingSession,
@@ -237,6 +252,11 @@ function resolveScreen(
 
   const r = role(model, session, now)
   if (r === 'handover') return { ...empty, id: 'handover' }
+  // The cook chose to look at a step: show it whatever its state, over a wait too.
+  const viewed = session.viewing
+  if (viewed != null && viewed in model.nodes) {
+    return { id: viewedScreen(model, session, viewed), currentNodeId: viewed, nextNodeId: null }
+  }
   if (r === 'task') {
     const cur = current(model, session)
     if (cur == null) return { ...empty, id: 'wait' } // unreachable per select.ts's own contract; safe fallback
@@ -244,6 +264,17 @@ function resolveScreen(
   }
   return { ...empty, id: r }
 }
+
+/** The step page a viewed step gets, by its state. */
+function viewedScreen(model: CookingModel, session: CookingSession, nodeId: string): ScreenId {
+  const s = session.nodes[nodeId].state
+  if (s === 'done') return 'step_done'
+  if (s === 'running') return 'step_running'
+  return model.nodes[nodeId].occupiesCook ? 'task' : 'handsoff_pending'
+}
+
+/** The screens that show one step's page: the suggested step, or the viewed one. */
+const STEP_SCREENS: ScreenId[] = ['task', 'handsoff_pending', 'step_running', 'step_done']
 
 interface BackgroundSubject {
   nodeId: string
@@ -328,37 +359,24 @@ export interface CookingViewOptions {
   editedSteps?: ReadonlySet<string>
   /** R6b: for each edited step, its instruction as imported (`OverlayResult.importedSteps`). */
   importedSteps?: ReadonlyMap<string, string>
+  /** PR 2 CP2: the recipe-page number of each step (`stepNumbers(derivePlan(...).stages)`).
+   * Absent, or missing a step, falls back to the execution order. */
+  pageNumbers?: ReadonlyMap<string, number>
 }
 
-/** `nextPreview` (P1 #6 plan §C2): runs the current screen's own primary action
- * through the real engine on a copy of `session`, then asks `current()` — reusing the
- * engine's own scheduling semantics rather than inventing a new ordering rule. `null`
- * for the finish step (nothing follows a Done there) or if the simulated action is
- * rejected (shouldn't happen for a genuinely current node, but never surfaces a stale
- * preview if it does). Falls back to the first `pending`/`deferred` node in `order` when
- * nothing is immediately executable afterward — the next thing that will need the
- * cook's hands once a wait ends (e.g. the step blocked behind the window just started). */
-function nextPreview(model: CookingModel, session: CookingSession, now: number, curId: string): string | null {
-  const info = model.nodes[curId]
-  if (info.isSink) return null
-  const simulated = info.occupiesCook
-    ? markDone(session, model, curId, now)
-    : startNode(session, model, curId, now)
-  if (isRejected(simulated)) return null
-  const nextId =
-    current(model, simulated) ??
-    model.order.find((id) => {
-      const s = simulated.nodes[id].state
-      return s === 'pending' || s === 'deferred'
-    }) ??
-    null
-  return nextId != null ? model.nodes[nextId].label : null
-}
+const UNDO_ELIGIBLE_SCREENS: ScreenId[] = [
+  'task',
+  'handsoff_pending',
+  'step_running',
+  'step_done',
+  'wait',
+  'long_wait',
+  'sitting_break',
+  'done',
+]
 
-const UNDO_ELIGIBLE_SCREENS: ScreenId[] = ['task', 'handsoff_pending', 'wait', 'long_wait', 'sitting_break', 'done']
-
-/** The undo link's secondary-slot override (P1 #6 plan §C3): "Back to ‹label of
- * `lastTransition.entries[0]`›", shown for `UNDO_WINDOW_MS` timed from the *persisted*
+/** The undo link's secondary-slot override (P1 #6 plan §C3): "Undo" (PR 2 CP2's label,
+ * formerly "Back to ‹step›"), shown for `UNDO_WINDOW_MS` timed from the *persisted*
  * `lastTransition.at` — never a timer of its own, so it survives the phone sleeping.
  * Mutates `v.secondary` in place, replacing whatever Skip/Give it longer/etc. that
  * screen would otherwise show. Screens outside `UNDO_ELIGIBLE_SCREENS` (handover, the
@@ -366,7 +384,7 @@ const UNDO_ELIGIBLE_SCREENS: ScreenId[] = ['task', 'handsoff_pending', 'wait', '
  * eligibility list, not the shell grouping, decides. */
 function applyUndoOverride(
   v: CookingView,
-  model: CookingModel,
+  _model: CookingModel,
   session: CookingSession,
   now: number,
   screenId: ScreenId,
@@ -375,8 +393,7 @@ function applyUndoOverride(
   const t = session.lastTransition
   if (t == null) return
   if (now - t.at >= UNDO_WINDOW_MS) return
-  const label = model.nodes[t.entries[0].nodeId].label
-  v.secondary = { label: `Back to ${label}`, solid: false, action: { kind: 'undo' } }
+  v.secondary = { label: 'Undo', solid: false, action: { kind: 'undo' } }
 }
 
 /** The entry screen (`open()` -> no stored session): the one screen that quotes a
@@ -408,7 +425,10 @@ export function buildEntryView(
     addedNote: null,
     note: `${copy.timesNote && scaled ? `${copy.timesNote} ` : ''}${model.order.length} things to do${degraded ? ', and this one was read off a video, so the timings are rough.' : '.'}`,
     step: null,
-    next: null,
+    upNext: null,
+    ticks: null,
+    back: null,
+    stateLine: null,
     waitTime: null,
     whisperText: null,
     showLink: false,
@@ -450,7 +470,10 @@ export function buildCookingView(
     addedNote: null,
     note: null,
     step: null,
-    next: null,
+    upNext: null,
+    ticks: null,
+    back: null,
+    stateLine: null,
     waitTime: null,
     whisperText: null,
     showLink: false,
@@ -460,7 +483,7 @@ export function buildCookingView(
     reserveSecondary: UNDO_ELIGIBLE_SCREENS.includes(scr.id),
   }
 
-  if (scr.id === 'task' || scr.id === 'handsoff_pending') {
+  if (STEP_SCREENS.includes(scr.id)) {
     const cur = scr.currentNodeId!
     const n = model.nodes[cur]
     // V2.1 (1a order, reweighted): the step label is the screen's title and the full
@@ -484,18 +507,30 @@ export function buildCookingView(
     v.strip = stripFor(model, session, now, cur)
     if (v.strip == null) v.whisperText = whisperFor(model, session, now, cur)
     v.showLink = running(model, session).length > 0
-    const pos = stepPosition(model, session)
-    v.step = factor !== 1 ? copy.stepMeta(pos.n, pos.total) : `Step ${pos.n} of ${pos.total}`
-    v.timesNote = pos.n === 1 ? copy.timesNote : null
-    const preview = nextPreview(model, session, now, cur)
-    v.next = preview != null ? `Next: ${preview}` : null
+    // "Step N of M": the recipe-page number of the step on the page.
+    const order = pageOrder(model, options.pageNumbers)
+    const pageN = order.indexOf(cur) + 1
+    v.step = factor !== 1 ? copy.stepMeta(pageN, order.length) : `Step ${pageN} of ${order.length}`
+    // R4 F1: once per session, on its first step screen — the live count, not the page number.
+    v.timesNote = stepPosition(model, session).n === 1 ? copy.timesNote : null
+    v.ticks = ticks(session, order, cur)
+    const prev = backTarget(order, cur)
+    v.back = prev != null ? { label: 'Back', solid: false, action: { kind: 'view', nodeId: prev } } : null
+    v.upNext = upNext(model, session, now, cur, order)
     if (scr.id === 'task') {
       v.primary = { label: 'Done', solid: true, action: { kind: 'markDone', nodeId: cur } }
-      if (skipAllowed(model, session)) {
+      // Skip stays the suggested step's control (until CP3); a viewed step never offers it.
+      if (current(model, session) === cur && skipAllowed(model, session)) {
         v.secondary = { label: 'Skip for now', solid: false, action: { kind: 'skip', nodeId: cur } }
       }
+    } else if (scr.id === 'handsoff_pending') {
+      const action: ActionDescriptor =
+        session.viewing === cur ? { kind: 'startNode', nodeId: cur, clearView: true } : { kind: 'startNode', nodeId: cur }
+      v.primary = { label: "I've started it", solid: false, action }
+    } else if (scr.id === 'step_running') {
+      v.primary = { label: "It's done", solid: true, action: { kind: 'markDone', nodeId: cur } }
     } else {
-      v.primary = { label: "I've started it", solid: false, action: { kind: 'startNode', nodeId: cur } }
+      v.stateLine = 'Done.'
     }
     applyUndoOverride(v, model, session, now, scr.id)
     return v

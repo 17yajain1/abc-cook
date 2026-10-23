@@ -103,9 +103,9 @@ describe('cooking step at factor != 1', () => {
     expect(marked[0].label).toBe(`${marked[0].text} — amount as written`)
     expect(v.chipItems.filter((c) => !c.unscaled).every((c) => c.label === undefined)).toBe(true)
   })
-  it('the "Next:" preview line is never noted or changed', () => {
-    const { v } = viewAt(PIZZA, S(16, 8), () => true)
-    expect(v.next === null || v.next.startsWith('Next: ')).toBe(true)
+  it('the Up next block is never noted or changed', () => {
+    const { v, model } = viewAt(PIZZA, S(16, 8), () => true)
+    expect(v.upNext === null || v.upNext.name === model.nodes[v.upNext.action.nodeId].label).toBe(true)
   })
 })
 

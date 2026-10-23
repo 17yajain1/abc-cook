@@ -7,10 +7,13 @@ import type { RecipePlanResponse } from '@abc-cook/schema'
 import { CookingShell } from './CookingShell'
 import { ingredientsById } from './quantity'
 import { buildCookingView, type CookingView } from './viewModel'
+import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import * as engine from '@/cooking/engine'
 import { deriveCookingModel } from '@/cooking/model'
 import type { CookingSession, Rejected } from '@/cooking/types'
+import { derivePlan } from '@/plan/derive'
+import { stepNumbers } from '@/plan/stepNumbers'
 
 /**
  * F2 ingredient chips, render layer. Static markup only (`react-dom/server`, already a
@@ -34,7 +37,7 @@ function must(result: CookingSession | Rejected): CookingSession {
 const view = (se: CookingSession, now: number) =>
   buildCookingView(model, se, now, ingredients, { recipeTitle: KADAI.graph.title, leaving: false })
 const render = (v: CookingView) =>
-  renderToStaticMarkup(createElement(CookingShell, { view: v, onPrimary: noop, onSecondary: noop, onLeave: noop, onSheet: noop }))
+  renderToStaticMarkup(createElement(CookingShell, { view: v, onPrimary: noop, onSecondary: noop, onLeave: noop, onSheet: noop, onNavigate: noop }))
 
 /** The <ul> ingredient list, or null. */
 function chipList(html: string): string | null {
@@ -49,10 +52,10 @@ describe('CookingShell — F2 ingredient chips', () => {
     const html = render(view(se, T0))
     const list = chipList(html)
     expect(list).not.toBeNull()
-    expect(list).toMatch(/^<ul role="list" aria-label="Ingredients" class="mt-4 flex flex-wrap gap-x-1.5 gap-y-1">/)
+    expect(list).toMatch(/^<ul role="list" aria-label="Ingredients" class="flex flex-wrap gap-x-1.5 gap-y-1">/)
     expect(chipTexts(list!)).toEqual(['2 medium onion'])
     const li = list!.match(/<li class="([^"]*)"/)![1].split(' ')
-    for (const c of ['rounded-control', 'border', 'px-2.5', 'py-[2.25px]', 'text-[14px]', 'leading-[1.25]', 'border-rule', 'text-ink']) {
+    for (const c of ['rounded-control', 'border', 'px-2.5', 'py-[2.25px]', 'text-[14px]', 'leading-[1.25]', 'border-home-rule', 'text-home-ink']) {
       expect(li, c).toContain(c)
     }
     // Display only: nothing focusable or clickable inside the list.
@@ -107,5 +110,55 @@ describe('CookingShell — F2 ingredient chips', () => {
     expect(html).not.toContain('<li')
     // The non-step branch never reads `chips`: forcing a value changes nothing.
     expect(render({ ...v, chips: ['2 medium onion'] })).toBe(html)
+  })
+})
+
+describe('CookingShell — PR 2 CP2 step page', () => {
+  const DONUTS = homemadeDonuts as RecipePlanResponse
+  const dModel = deriveCookingModel(DONUTS)
+  const dIngredients = ingredientsById(DONUTS.graph.ingredients)
+  const pageNumbers = stepNumbers(derivePlan(DONUTS).stages)
+  const dView = (se: CookingSession, now: number) =>
+    buildCookingView(dModel, se, now, dIngredients, { recipeTitle: DONUTS.graph.title, leaving: false, pageNumbers })
+  const fresh = () => must(engine.start(null, dModel, 'server:donuts', T0))
+
+  it('step 1: Up next is one button with its aria-label; no Back; the step line is plain text', () => {
+    const html = render(dView(fresh(), T0))
+    const name = dModel.nodes.mix_dough.label
+    expect(html).toContain(`aria-label="Up next: step 2, ${name}. Go to it"`)
+    expect(html).not.toMatch(/>Back</)
+    expect(html).toMatch(/<span[^>]*>(<svg[^>]*aria-hidden="true"[^>]*>.*?<\/svg>)Step 1 of 11<\/span>/)
+    expect(html).not.toMatch(/<button[^>]*>[^<]*(<svg[^>]*>.*?<\/svg>)?Step 1 of 11/)
+  })
+
+  it('step 2: Back is a button; the primary is the terracotta pill', () => {
+    const se = must(engine.markDone(fresh(), dModel, 'bloom_yeast', T0))
+    const html = render(dView(se, T0 + 20_000))
+    expect(html).toMatch(/<button[^>]*>Back<\/button>/)
+    expect(html).toMatch(/<button[^>]*class="[^"]*bg-home-terracotta[^"]*"[^>]*>Done<\/button>/)
+  })
+
+  it('ticks: one aria-hidden segment per page step', () => {
+    const html = render(dView(fresh(), T0))
+    const ticks = html.match(/<div aria-hidden="true" data-ticks="true"[^>]*>(.*?)<\/div><\/div>/)
+    expect(ticks).not.toBeNull()
+    expect(ticks![0].match(/<div class="h-\[3px\]/g)).toHaveLength(pageNumbers.size)
+  })
+
+  it('no Plan ground or ink token is left on a step, wait or handover screen', () => {
+    let se = must(engine.start(null, model, 'server:kadai', T0))
+    const screens = [render(view(se, T0))]
+    for (const id of ['chop_onion', 'chop_tomato', 'saute_onion'] as const) se = must(engine.markDone(se, model, id, T0))
+    se = must(engine.startNode(se, model, 'cook_tomato_base', T0))
+    for (const id of ['chop_capsicum', 'cube_paneer', 'make_kadai_masala'] as const) se = must(engine.markDone(se, model, id, T0 + MIN))
+    const wait = view(se, T0 + 2 * MIN)
+    expect(wait.screenId).toBe('wait')
+    screens.push(render(wait))
+    const handover = view(se, T0 + 23 * MIN)
+    expect(handover.screenId).toBe('handover')
+    screens.push(render(handover))
+    for (const html of screens) {
+      expect(html).not.toMatch(/\b(bg|text|border)-(paper|ink|ink-2|ink-3|field|rule|signal)(\/\d+)?\b/)
+    }
   })
 })
