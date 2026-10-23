@@ -1,12 +1,10 @@
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { servingsCopy } from '@/lib/servingsCopy'
-import { unscaledCount } from '@/lib/quantity'
 
 import type { RenderIngredientGroup } from './derive'
-import { EditableIngredientList, EditToolbar, type IngredientsEdit } from './EditableIngredientList'
+import { EditableIngredientList, type IngredientsEdit } from './EditableIngredientList'
 import { IngredientList } from './IngredientList'
 import { panelIngredientGroups } from './ingredientGroups'
-import { ServingsControl } from './ServingsControl'
 
 /** R4: the servings control's state for this recipe. `choice` is the factor the amounts are
  * drawn at; it is `null` when the control is gated, and the amounts stay as written. */
@@ -17,10 +15,9 @@ export interface PanelServings {
 }
 
 /**
- * The Ingredients tab. A plain grouped list — a dead tab is worse than a quiet one.
- * Quantities sit in the same right-aligned tabular column the durations use on the Plan
- * tab, so the two tabs scan the same way. With `servings`, the control sits above the list
- * and every amount is drawn at the cook's factor (R4).
+ * "What you need" (D7): the full ingredient list, never folded, between the header and the steps.
+ * Amounts sit in the right-hand column in bold, drawn at the cook's servings factor (R4), and each row is
+ * editable in edit mode (R6a). The servings control itself lives in the header's tile.
  */
 export function IngredientsPanel({
   groups,
@@ -35,33 +32,22 @@ export function IngredientsPanel({
   const choice = servings?.kind === 'gated' ? null : (servings?.choice ?? null)
   const factor = choiceFactor(choice)
   const marker = choice != null && factor !== 1 ? servingsCopy(choice).marker : undefined
-  const unscaled = unscaledCount(
-    groups.flatMap((g) => g.items),
-    factor,
-  )
+  const count = groups.reduce((n, g) => n + g.items.length, 0)
+  const listGroups = panelIngredientGroups(groups, factor, marker)
 
   return (
-    <>
-      {servings && (
-        <ServingsControl
-          state={
-            servings.kind === 'gated' || choice == null
-              ? { kind: 'gated' }
-              : servings.kind === 'locked'
-                ? { kind: 'locked', choice }
-                : { kind: 'live', choice, unscaled }
-          }
-          onChange={servings.onChange}
-        />
-      )}
-      {edit && <EditToolbar edit={edit} hint="Tap an ingredient to change it." />}
-      <div className="px-5 py-5">
-        {edit ? (
-          <EditableIngredientList groups={panelIngredientGroups(groups, factor, marker)} edit={edit} />
-        ) : (
-          <IngredientList groups={panelIngredientGroups(groups, factor, marker)} />
-        )}
+    <section className="px-5 pt-[22px]" aria-labelledby="need-heading" data-anchor="need">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="need-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
+          What you need
+        </h2>
+        <span className="tabular text-[13px] text-home-ink-2">
+          {count} {count === 1 ? 'ingredient' : 'ingredients'}
+        </span>
       </div>
-    </>
+      <div className="mt-2.5">
+        {edit ? <EditableIngredientList groups={listGroups} edit={edit} /> : <IngredientList groups={listGroups} />}
+      </div>
+    </section>
   )
 }

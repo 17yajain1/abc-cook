@@ -59,6 +59,15 @@ function formatBound(min: number): string {
   return min < 120 ? `${min} min` : formatMinutes(min)
 }
 
+/** "45 min", "4h 15m", "4h": the fact tile's short form of `formatMinutes`, so a long range fits one line. */
+function formatMinutesCompact(min: number): string {
+  const whole = roundMin(min)
+  if (whole < 60) return `${whole} min`
+  const hours = Math.floor(whole / 60)
+  const rest = whole % 60
+  return rest ? `${hours}h ${rest}m` : `${hours}h`
+}
+
 /**
  * The header's primary timing range (M3.2), from a sitting's `elapsed_min` (low) and
  * `elapsed_high_min` (high). Never shows raw scheduler bounds — a 5-minute bucket is
@@ -69,14 +78,14 @@ function formatBound(min: number): string {
  * split on a 7-9 min recipe misleads more than it clarifies), so this skips bucketing
  * entirely and reports the plain typical time instead.
  */
-export function formatRange(low: number, high: number): string {
+export function formatRange(low: number, high: number, compact = false): string {
   if (low < 15) return `about ${roundMin(low)} min`
 
   const lowR = roundTo5(low)
   const highR = roundUpTo5(high)
   if (lowR === highR) return `about ${formatBound(lowR)}`
   if (highR < 120) return `${lowR}–${highR} min`
-  return `${formatMinutes(lowR)} – ${formatMinutes(highR)}`
+  return compact ? `${formatMinutesCompact(lowR)}–${formatMinutesCompact(highR)}` : `${formatMinutes(lowR)} – ${formatMinutes(highR)}`
 }
 
 /** Whether `formatRange(low, high)` renders as a genuine two-sided range rather than
@@ -110,9 +119,9 @@ export interface HeaderTiming {
  * M3.1 (or one that failed to summarize); that legacy shape falls back to the old
  * bare total, so an existing saved recipe keeps rendering.
  */
-export function headerTiming(summary: PlanSummary | null | undefined, totalMin: number): HeaderTiming {
+export function headerTiming(summary: PlanSummary | null | undefined, totalMin: number, compact = false): HeaderTiming {
   if (!summary || summary.sessions.length === 0) {
-    return { primary: `${formatMinutes(totalMin)} total`, secondary: null }
+    return { primary: compact ? formatMinutesCompact(totalMin) : `${formatMinutes(totalMin)} total`, secondary: null }
   }
 
   const sessions = summary.sessions
@@ -123,7 +132,7 @@ export function headerTiming(summary: PlanSummary | null | undefined, totalMin: 
   // so it can never read below the number it's supposed to bound.
   const high = Math.max(last.elapsed_high_min, low)
 
-  const primary = formatRange(low, high)
+  const primary = formatRange(low, high, compact)
 
   if (sessions.length > 1) {
     return { primary, secondary: `Start about ${approxDurationPhrase(summary.elapsed_min)} before you eat` }
@@ -137,6 +146,27 @@ export function headerTiming(summary: PlanSummary | null | undefined, totalMin: 
   }
 
   return { primary, secondary: null }
+}
+
+/**
+ * A duration inside a sentence: "12 min" under an hour, "about 1 hr" (or "about 1 hr 30 min") from an hour
+ * up. The compact "4h 45m" form is for the fact tiles only.
+ */
+export function sentenceMinutes(min: number): string {
+  const whole = roundMin(min)
+  return whole < 60 ? `${whole} min` : `about ${formatMinutes(min)}`
+}
+
+/**
+ * The recipe page's hands-on tile: `summary.active_min` to the nearest 5 min with the same `~` as
+ * `headerTiming`'s hands-on line. Unlike that line it is always available: it is a fact tile, not a
+ * claim that competes with the range, so the "only when informative" suppression doesn't apply. `null`
+ * for a plan saved before `summary` existed. Under 5 min the figure is shown whole rather than as 0.
+ */
+export function handsOnTileText(summary: PlanSummary | null | undefined): string | null {
+  if (!summary) return null
+  const rounded = roundTo5(summary.active_min)
+  return `~${formatMinutesCompact(rounded >= 5 ? rounded : summary.active_min)}`
 }
 
 /**

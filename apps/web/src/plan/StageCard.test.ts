@@ -9,7 +9,6 @@ import {
   collapsedStageDurationText,
   expandedStageDurationText,
   meanwhileLabels,
-  stageOrdinal,
   taskDurationText,
   youllNeedText,
 } from './StageCard'
@@ -20,6 +19,7 @@ import strawberryShortcake from '@/__fixtures__/strawberry-shortcake.plan-respon
 import syntheticTwoSittings from '@/__fixtures__/synthetic-two-sittings.plan-response.json'
 import syntheticTwoWindows from '@/__fixtures__/synthetic-two-windows.plan-response.json'
 import sabudanaKhichdi from '@/__fixtures__/sabudana-khichdi.plan-response.json'
+import { stageOrdinals } from './stepNumbers'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 
@@ -35,24 +35,26 @@ const TWO_WINDOWS = syntheticTwoWindows as RecipePlanResponse
 
 const ALL_FIXTURES = [KADAI, MAGGI, BIRYANI, DONUTS, SHORTCAKE, PIZZA, TWO_SITTINGS, TWO_WINDOWS]
 
-describe('stageOrdinal — badge number and badge tint agree', () => {
-  it('derives the ordinal from the same stage.index the tint uses, for every stage', () => {
-    for (const payload of [KADAI, BIRYANI]) {
-      const plan = derivePlan(payload)
-      for (const stage of plan.stages) {
-        expect(stageOrdinal(stage)).toBe(stage.index + 1)
-        // Both come from `stage.index` — they cannot disagree by construction.
-        expect(stageColor(stage.index)).toBe(stageColor(stageOrdinal(stage) - 1))
-      }
-    }
-  })
-
-  it('drops Chicken Biryani\'s Prep stage (fully windowed) and starts numbering at 2 — the exact M2 defect case', () => {
+describe('stageOrdinals — badge numbers run 1..N over the rendered cards; the tint keeps the graph index', () => {
+  it('numbers Chicken Biryani Rice 1 and Chicken 2: its fully windowed Prep stage has no card and takes no number', () => {
     const plan = derivePlan(BIRYANI)
     expect(plan.stages.map((s) => s.stageId)).not.toContain('prep')
-    const first = plan.stages[0]
-    expect(first.index).not.toBe(0)
-    expect(stageOrdinal(first)).toBe(first.index + 1)
+    const ordinals = stageOrdinals(plan.stages)
+    expect(plan.stages.map((s) => ordinals.get(s.stageId))).toEqual([1, 2, 3, 4])
+    // The colour is still the graph index: Rice is graph stage 1, so it is not recoloured to stage 0.
+    expect(plan.stages[0].index).toBe(1)
+    expect(stageColor(plan.stages[0].index)).not.toBe(stageColor(0))
+  })
+
+  it('gives a stage drawn as more than one card one number', () => {
+    const plan = derivePlan(PIZZA)
+    const ordinals = stageOrdinals(plan.stages)
+    const ids = plan.stages.map((s) => s.stageId)
+    for (const id of new Set(ids)) {
+      const numbers = plan.stages.filter((s) => s.stageId === id).map(() => ordinals.get(id))
+      expect(new Set(numbers).size).toBe(1)
+    }
+    expect([...ordinals.values()]).toEqual([...new Set(ids)].map((_, i) => i + 1))
   })
 })
 
@@ -131,6 +133,7 @@ function task(overrides: Partial<RenderTask>): RenderTask {
     homeStageIndex: 0,
     tip: null,
     addedLabel: null,
+    consumed: [],
     ...overrides,
   }
 }

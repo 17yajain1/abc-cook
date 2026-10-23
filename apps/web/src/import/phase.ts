@@ -1,4 +1,3 @@
-import type { FinishedImport } from './handOff'
 import type {
   AcquiredSource,
   ImportJobResponse,
@@ -24,15 +23,6 @@ export type Phase =
       acquired: AcquiredSource | null
       /** What the extraction has streamed so far; kept on every later phase. */
       draft: StreamedDraft | null
-    }
-  /** The plan is built and already saved; the reading screen stays as it was and offers a tap
-   * to open it. Carries what the screen last showed, so the draft stays readable. */
-  | {
-      kind: 'ready'
-      preview: SourcePreview | null
-      acquired: AcquiredSource | null
-      draft: StreamedDraft | null
-      finished: FinishedImport
     }
   | { kind: 'not_grounded'; job: ImportJobResponse }
   | { kind: 'no_recipe' }
@@ -64,10 +54,14 @@ export type Phase =
       draft: StreamedDraft | null
     }
 
+/** A failed job with no failure kind (an older server, or the last-resort handler). The server's own `job.error`
+ * is for the console, not the cook; the footer's Try again carries the action, so this says what happened only. */
+export const GENERIC_ERROR = 'Something went wrong reading this recipe.'
+
 /** The screen's own sentence for each failure kind. The server sends an equivalent one in
  * `job.error` for older web builds; this build reads `failure` and writes its own. */
 export const FAILURE_COPY: Record<ImportFailure, string> = {
-  unavailable: 'We couldn’t reach our recipe reader. Try again in a minute.',
+  unavailable: 'We couldn’t reach our recipe reader. Give it a minute.',
   incomplete: 'We couldn’t finish reading this recipe.',
   refused: 'We couldn’t read this recipe.',
 }
@@ -75,6 +69,19 @@ export const FAILURE_COPY: Record<ImportFailure, string> = {
 /** A second line under the sentence, for the failure kinds that have one. */
 export const FAILURE_HINT: Partial<Record<ImportFailure, string>> = {
   refused: 'Paste the recipe text, or try another link.',
+}
+
+/** What the footer's retry button can actually do. `none`: there is no link or text to resubmit, so the button
+ * must say it goes back to the entry form rather than promise a retry. */
+export type RetryTarget = { kind: 'url'; url: string } | { kind: 'text' } | { kind: 'none' }
+
+/** A `failed` job retries the link it came from, or a pasted text. An `error` retries the last link, else the
+ * text in the box. Anything else, or nothing to resubmit, is `none`. */
+export function retryTargetFor(phase: Phase, lastUrl: string | null, text: string): RetryTarget {
+  if (phase.kind !== 'failed' && phase.kind !== 'error') return { kind: 'none' }
+  const url = phase.kind === 'failed' ? phase.url : lastUrl
+  if (url) return { kind: 'url', url }
+  return text.trim() ? { kind: 'text' } : { kind: 'none' }
 }
 
 export type PollDecision =
@@ -107,7 +114,7 @@ export function phaseFor(
       const failure = job.result?.failure
       const phase: Phase = failure
         ? { kind: 'failed', failure, url: ctx.url, preview, acquired, draft }
-        : { kind: 'error', message: job.error ?? 'The import failed.', preview, acquired, draft }
+        : { kind: 'error', message: GENERIC_ERROR, preview, acquired, draft }
       return { kind: 'phase', phase, keepPolling: false }
     }
     default:

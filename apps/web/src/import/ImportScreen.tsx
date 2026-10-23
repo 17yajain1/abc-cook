@@ -32,7 +32,7 @@ export function ImportScreen({
   skipDuplicateCheck?: boolean
 }) {
   const job = useImportJob(importHandlers, { initialUrl, findSaved, onDuplicate, skipDuplicateCheck })
-  const { phase, url, setUrl, setPhase, submit, keepWaiting } = job
+  const { phase, url, setUrl, setPhase, submit } = job
 
   if (isProgressPhase(phase)) return <ImportProgress job={job} onCancel={onCancel} />
 
@@ -56,19 +56,6 @@ export function ImportScreen({
       {phase.kind === 'error' && (
         <p className="mt-3 text-[13px] text-signal">{phase.message}</p>
       )}
-      {phase.kind === 'slow' && (
-        <p className="mt-3 text-[13px] text-signal">
-          This is taking longer than expected.{' '}
-          <button
-            type="button"
-            onClick={keepWaiting}
-            className="font-semibold underline underline-offset-4"
-          >
-            Keep waiting
-          </button>
-        </p>
-      )}
-
       <button
         type="button"
         onClick={() => submit()}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { AcquiredSource, SourcePreview, StreamedDraft } from '@abc-cook/schema'
 
-import { footerFor, importViewFor } from './importView'
+import { importViewFor } from './importView'
 import type { InstantHeader } from './instantPreview'
 
 const THUMB = 'https://i.ytimg.com/vi/abc/hqdefault.jpg'
@@ -292,40 +292,5 @@ describe('the streamed draft', () => {
     expect(keys.filter((k) => /min|dur|time|timer|saved|parallel|start|offset|lead|serv|total/i.test(k))).toEqual(
       [],
     )
-  })
-})
-
-describe('footerFor', () => {
-  const none = importViewFor(base)
-  const withIngredients = importViewFor({ ...base, draft: draft({ ingredients: [onion] }) })
-  const withOpenSteps = importViewFor({
-    ...base,
-    draft: draft({ ingredients: [onion], steps: [{ text: 'Heat oil.' }] }),
-  })
-  const withClosedSteps = importViewFor({
-    ...base,
-    draft: draft({ ingredients: [onion], steps: [{ text: 'Heat oil.' }], steps_complete: true }),
-  })
-
-  it.each([
-    ['acquiring, nothing yet', none, 'acquiring', 'Getting the recipe…'],
-    ['acquiring, even with a draft in hand', withIngredients, 'acquiring', 'Getting the recipe…'],
-    ['extracting, no ingredients yet', none, 'extracting', 'Reading the ingredients…'],
-    ['extracting, ingredients but no steps', withIngredients, 'extracting', 'Reading the steps…'],
-    ['extracting, steps still arriving', withOpenSteps, 'extracting', 'Reading the steps…'],
-    ['extracting, steps closed', withClosedSteps, 'extracting', 'Building your cooking plan…'],
-    ['validating', withOpenSteps, 'validating', 'Building your cooking plan…'],
-    ['validating, no draft (cache hit or streaming off)', none, 'validating', 'Building your cooking plan…'],
-    ['plan_building', none, 'plan_building', 'Building your cooking plan…'],
-  ] as const)('%s', (_name, view, status, copy) => {
-    expect(footerFor(view, status)).toBe(copy)
-  })
-
-  it('never states a time, a count or a percentage', () => {
-    for (const view of [none, withIngredients, withOpenSteps, withClosedSteps]) {
-      for (const status of ['acquiring', 'extracting', 'validating', 'plan_building'] as const) {
-        expect(footerFor(view, status)).not.toMatch(/\d|min|sec|%/i)
-      }
-    }
   })
 })

@@ -13,6 +13,7 @@ import type {
 import { executionOrder } from '@/cooking/model'
 import { addedStepLabel } from '@/lib/addedStep'
 import { displayCue } from '@/lib/displayCue'
+import { canonicalSourceKey } from '@/library/sourceKey'
 import type { ServingsSource } from '@/lib/servings'
 
 import { deriveCookOutline, type CookOutline } from './cookOutline'
@@ -52,6 +53,9 @@ export interface RenderTask {
    * is `added` (FGC-3); `null` for every step from the source. Its time is already an
    * estimate: an added step is always hands-on, so it renders `~N min`. */
   addedLabel: string | null
+  /** The graph ingredients this step consumes (by `Node.consumes`, in graph order): what D6 may bold an
+   * amount for. Rows as the page draws them, so an edited amount is the edited one. */
+  consumed: Ingredient[]
 }
 
 /** A task the scheduler placed inside a wait window — borrowed from another stage. */
@@ -193,6 +197,11 @@ export interface RenderPlan {
   outline: CookOutline | null
   /** R2: `graph.source.value` when the source is a URL, else `null` (text imports). */
   sourceUrl: string | null
+  /** D5: the scheduler put at least one task inside a wait window (`hasParallelWork`). */
+  hasParallelWork: boolean
+  /** D4: the canonical source key, which the header's thumbnail is derived from. A Cookbook open
+   * replaces it with the saved entry's own `source_key`. */
+  sourceKey: string | null
 }
 
 function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
@@ -208,7 +217,9 @@ function toTask(
   homeStageIndex: number,
   provenance: GraphProvenance | null,
   source: CookingGraph['source'],
+  ingredients: readonly Ingredient[],
 ): RenderTask {
+  const consumes = new Set(node.consumes ?? [])
   return {
     nodeId: node.id,
     label: node.label,
@@ -220,6 +231,7 @@ function toTask(
     homeStageIndex,
     tip: node.tip ?? null,
     addedLabel: provenance?.nodes?.[node.id]?.origin === 'added' ? addedStepLabel(source) : null,
+    consumed: ingredients.filter((i) => consumes.has(i.id)),
   }
 }
 
@@ -361,7 +373,7 @@ export function derivePlan(
       tasks: window.assigned.map((nodeId) => {
         const node = nodes.get(nodeId)!
         return {
-          ...toTask(node, homeIndexOf(nodeId), provenance, graph.source),
+          ...toTask(node, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients),
           rankInWindow: scheduledByNode.get(nodeId)?.rank_in_window ?? 0,
         }
       }),
@@ -408,7 +420,7 @@ export function derivePlan(
       // a stage with no nodes at all.
       span: spanByStage.get(run.stageId)!,
       inlineTasks: run.nodeIds.map((nodeId) =>
-        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance, graph.source),
+        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients),
       ),
       windows: run.nodeIds
         .map((nodeId) => windowByHostNodeId.get(nodeId))
@@ -443,6 +455,8 @@ export function derivePlan(
     summary: payload.summary ?? null,
     waitRows,
     sourceUrl: graph.source?.kind === 'url' ? graph.source.value : null,
+    sourceKey: graph.source ? canonicalSourceKey(graph.source) : null,
+    hasParallelWork: hasParallelWork(payload),
     outline: deriveCookOutline({
       summary: payload.summary,
       nodes: graph.nodes,
@@ -524,4 +538,13 @@ function deriveWaitRows(
     })
   }
   return rows
+}
+
+/**
+ * D5: whether the plan has anything to do while something else is going: a wait window the scheduler
+ * filled with at least one task. The one test for "How this cook goes". Reads the scheduler's windows;
+ * adds nothing.
+ */
+export function hasParallelWork(payload: Pick<RecipePlanResponse, 'plan'>): boolean {
+  return payload.plan.windows.some((w) => w.assigned.length > 0)
 }

@@ -32,7 +32,7 @@ export interface ImportViewModel {
     | { kind: 'pending' }
     | { kind: 'none' }
     | { kind: 'lines'; lines: string[] }
-    | { kind: 'items'; groups: IngredientListGroup[] }
+    | { kind: 'items'; groups: IngredientListGroup[]; complete: boolean }
   method:
     | { kind: 'pending' }
     | { kind: 'none' }
@@ -95,7 +95,11 @@ export function importViewFor({
     lines.length > 0
       ? { kind: 'lines', lines }
       : draftIngredients.length > 0
-        ? { kind: 'items', groups: draftIngredientGroups(draftIngredients) }
+        ? {
+            kind: 'items',
+            groups: draftIngredientGroups(draftIngredients),
+            complete: draft?.ingredients_complete === true,
+          }
         : empty(draft?.ingredients_complete === true)
 
   const method: ImportViewModel['method'] =
@@ -116,32 +120,4 @@ export function importViewFor({
     method,
     status,
   }
-}
-
-/** Whether the screen is showing any recipe text (the source's or the draft's), as opposed to
- * a header and placeholders. It decides whether the hand-off waits for a tap (`handOffFor`). */
-export function hasReadable(view: ImportViewModel): boolean {
-  const { ingredients, method } = view
-  return (
-    ingredients.kind === 'lines' ||
-    ingredients.kind === 'items' ||
-    method.kind === 'sections' ||
-    method.kind === 'steps'
-  )
-}
-
-/**
- * The quiet line under the page, keyed only on what the server has said: its status and
- * which sections have arrived. It names what is being read, never how long it will take.
- * A blog source keeps its own two-line footer (`PreviewFooter`), so this is not asked then.
- */
-export function footerFor(view: ImportViewModel, status: ImportStatus): string {
-  if (status === 'acquiring') return 'Getting the recipe…'
-  if (status === 'extracting') {
-    if (view.ingredients.kind === 'pending') return 'Reading the ingredients…'
-    const stepsOpen =
-      view.method.kind === 'pending' || (view.method.kind === 'steps' && !view.method.complete)
-    if (stepsOpen) return 'Reading the steps…'
-  }
-  return 'Building your cooking plan…'
 }

@@ -133,7 +133,6 @@ export function AppShell({
           }}
           onPasteTap={clipboard.readOnPasteTap}
           onPasteText={() => job.setPhase({ kind: 'paste', error: null })}
-          onKeepWaiting={job.keepWaiting}
           onClose={() => setSheetOpen(false)}
         />
       )}

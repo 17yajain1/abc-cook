@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { aboutMinutes, cap, clockStr, dayClock, minutesLeft, splitCopy, wordFor } from './copy'
 
 const MIN = 60_000
+// A clock time joins its am/pm with a no-break space (U+00A0); expectations are written with a plain one.
+const nb = (s: string) => s.replace(/(\d) (am|pm)/, '$1\u00a0$2')
 
 describe('wordFor', () => {
   it('spells small numbers, falls back to digits past the table', () => {
@@ -84,12 +86,18 @@ describe('minutesLeft', () => {
 describe('clockStr', () => {
   it('formats 12-hour wall-clock time with am/pm', () => {
     const t = new Date(2026, 8, 22, 16, 18, 0).getTime()
-    expect(clockStr(t)).toBe('4:18 pm')
+    expect(clockStr(t)).toBe(nb('4:18 pm'))
+  })
+
+  it('joins the time and am/pm with a no-break space', () => {
+    const t = new Date(2026, 8, 22, 16, 18, 0).getTime()
+    expect(clockStr(t)).toMatch(/\d:\d\d\u00a0pm$/)
+    expect(dayClock(t - 86_400_000, t)).not.toMatch(/\d:\d\d (am|pm)/)
   })
 
   it('renders midnight as 12 am', () => {
     const t = new Date(2026, 8, 22, 0, 5, 0).getTime()
-    expect(clockStr(t)).toBe('12:05 am')
+    expect(clockStr(t)).toBe(nb('12:05 am'))
   })
 })
 
@@ -98,17 +106,17 @@ describe('dayClock', () => {
 
   it('reads a same-day target as a bare clock time', () => {
     const target = new Date(2026, 8, 22, 16, 18, 0).getTime()
-    expect(dayClock(now, target)).toBe('4:18 pm')
+    expect(dayClock(now, target)).toBe(nb('4:18 pm'))
   })
 
   it('reads next-day as "tomorrow, …"', () => {
     const target = new Date(2026, 8, 23, 7, 0, 0).getTime()
-    expect(dayClock(now, target)).toBe('tomorrow, 7:00 am')
+    expect(dayClock(now, target)).toBe(nb('tomorrow, 7:00 am'))
   })
 
   it('reads further out as "in N days, …"', () => {
     const target = new Date(2026, 8, 25, 9, 0, 0).getTime()
-    expect(dayClock(now, target)).toBe('in 3 days, 9:00 am')
+    expect(dayClock(now, target)).toBe(nb('in 3 days, 9:00 am'))
   })
 })
 

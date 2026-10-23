@@ -60,6 +60,4 @@ export const SHEET = {
   hint: 'YouTube, Instagram reels and most recipe blogs',
   copyIt: 'Copy it',
   close: 'Close',
-  slow: 'This is taking longer than expected.',
-  keepWaiting: 'Keep waiting',
 } as const

@@ -193,7 +193,7 @@ describe('kadai-paneer', () => {
     // cook_tomato_base ends at +22; viewed at +16 leaves exactly 6 min.
     expect(atTransition.waitTime).not.toBeNull()
     expect(atTransition.waitTime!.left).toBe('About 6 min left')
-    expect(atTransition.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(atTransition.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
     // No current step on a wait screen — no step count, no preview.
     expect(atTransition.step).toBeNull()
     expect(atTransition.next).toBeNull()
@@ -473,7 +473,7 @@ describe('maggi-2min', () => {
     // Boil ends at +3; viewed at +1 leaves exactly 2 min.
     expect(v.waitTime).not.toBeNull()
     expect(v.waitTime!.left).toBe('About 2 min left')
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
   })
 
   it('wait: under a minute left reads "Less than a minute left", never m:ss or "no time"', () => {
@@ -551,7 +551,7 @@ describe('homemade-donuts', () => {
     expect(v.screenId).toBe('long_wait')
     expect(v.label).toBe('First rise')
     expect(v.note).toBeNull() // the long_wait-only note is replaced by waitTime
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
     expect(v.waitTime!.left).toBe('About 50 min left')
     expect(v.primary).toEqual({ label: "It's done", solid: false, action: { kind: 'markDone', nodeId: 'first_rise' } })
   })
@@ -644,7 +644,7 @@ describe('synthetic-two-windows (bowl)', () => {
     // no aggregate time-left, no primary.
     expect(v.waitTime).toBeNull()
     expect(v.note).toMatch(
-      /^Soak dried beans, around \d{1,2}:\d{2} (am|pm) · Simmer stew, around \d{1,2}:\d{2} (am|pm)\.$/,
+      /^Soak dried beans, around \d{1,2}:\d{2}\u00a0(am|pm) · Simmer stew, around \d{1,2}:\d{2}\u00a0(am|pm)\.$/,
     )
   })
 })
@@ -845,7 +845,7 @@ describe('synthetic-two-sittings (rajma)', () => {
     expect(v.screenId).toBe('sitting_break')
     expect(v.instr).toBe(model.nodes.soak_beans.instruction)
     expect(v.note).toBe('Nothing here needs you before then.')
-    expect(v.title).toMatch(/^Nothing until \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.title).toMatch(/^Nothing until \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
     expect(v.primary).toBeNull()
   })
 
@@ -904,7 +904,7 @@ describe('pizza-dough', () => {
     })
     expect(v.waitTime).not.toBeNull()
     expect(v.waitTime!.left).toBe('About 4 min left') // ends at +5, viewed at +1
-    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2} (am|pm)\.$/)
+    expect(v.waitTime!.readyAt).toMatch(/^Ready around \d{1,2}:\d{2}\u00a0(am|pm)\.$/)
   })
 
   it('sitting_break: a 270-min room-temperature rise reads the same as rajma’s overnight soak, with its own copy', () => {

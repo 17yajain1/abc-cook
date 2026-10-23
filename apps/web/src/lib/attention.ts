@@ -25,3 +25,13 @@ export function attentionNote(attention: Node['attention']): string | null {
 export function attentionLine(attention: Node['attention']): string {
   return attention === 'periodic' ? 'checking the pan now and then' : 'your hands are free'
 }
+
+/**
+ * The pill under a step on the recipe page: "Hands-off" for an unattended step, "Low attention" for a
+ * periodic one, nothing for a hands-on one. The same categorical fact as `attentionNote`, as a label.
+ */
+export function attentionTag(attention: Node['attention']): string | null {
+  if (attention === 'unattended') return 'Hands-off'
+  if (attention === 'periodic') return 'Low attention'
+  return null
+}

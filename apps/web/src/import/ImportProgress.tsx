@@ -1,45 +1,37 @@
+import type { ReactNode } from 'react'
+
 import type { ImportJobResponse } from '@abc-cook/schema'
 
 import { IngredientList } from '../plan/IngredientList'
 import { addedStepLabel } from '@/lib/addedStep'
+import { canonicalUrlSourceKey } from '@/library/sourceKey'
 import { useHomeSurface } from '@/shell/useHomeSurface'
 
 import { draftIngredientGroups } from './draftView'
-import { ImportDraft } from './ImportDraft'
-import { footerFor, importViewFor } from './importView'
+import { ImportingPage, type ImportingFooter } from './ImportingPage'
+import { importViewFor } from './importView'
 import { notGroundedCopy } from './notGroundedCopy'
 import { FAILURE_COPY, FAILURE_HINT, type ImportFailure } from './phase'
+import { progressStripFor, sourceKindFor } from './progressStrip'
 import { useImportJob, type Phase } from './useImportJob'
 
 /** Home's primary button: a terracotta pill, sentence case (DESIGN_SYSTEM.md, Register: Home). */
 const PRIMARY =
-  'h-14 w-full rounded-full bg-home-terracotta text-[15px] font-semibold text-home-ground disabled:bg-[#f1e7de] disabled:text-[#8c7a6f]'
+  'h-14 w-full rounded-full bg-home-terracotta text-[15px] font-semibold text-home-ground disabled:bg-home-disabled disabled:text-home-disabled-ink'
 const LINK =
   'flex min-h-[44px] items-center justify-center text-[15px] text-home-ink-2 underline underline-offset-4'
 /** Home's screen title: 22 / 700 / 26. */
 const TITLE = 'text-[22px] font-bold leading-[26px] tracking-[-0.3px] text-home-ink'
 
-const WORKING_OUT = 'Working out what can happen at the same time…'
-
-/** Under a blog page's recipe: what has happened (the page gave us its recipe) and what is happening. */
-function PreviewFooter() {
-  return (
-    <>
-      <p className="text-home-ink">Found the recipe on the page.</p>
-      <p>{WORKING_OUT}</p>
-    </>
-  )
-}
-
 const NO_RECIPE_COPY = 'That page doesn’t have a recipe we can read.'
 
-/** Phases `ImportProgress` takes over the whole screen for. `entry`, `slow` and `error`
- * with nothing read stay inline wherever the entry form lives (the Cookbook's form, or the
- * Home Copy sheet). */
+/** Phases `ImportProgress` takes over the whole screen for. `entry` and `error` with nothing read
+ * stay inline wherever the entry form lives (the Cookbook's form, or the Home Copy sheet). `slow`
+ * is a running job that has outlasted the poll ceiling, so the page stays up with "Keep waiting". */
 export function isProgressPhase(phase: Phase): boolean {
   return (
     phase.kind === 'polling' ||
-    phase.kind === 'ready' ||
+    phase.kind === 'slow' ||
     phase.kind === 'no_recipe' ||
     phase.kind === 'paste' ||
     phase.kind === 'failed' ||
@@ -50,10 +42,11 @@ export function isProgressPhase(phase: Phase): boolean {
 }
 
 /**
- * The non-entry branches of the import flow: reading (polling), ready, no recipe, paste,
- * failed, error with something read, no method found. Render only when
- * `isProgressPhase(job.phase)`. Every branch is the Home register, the same ground as the
- * Copy sheet and the recipe page, so nothing flips at the hand-off.
+ * The non-entry branches of the import flow: reading (polling, slow), failed, error with something read,
+ * no recipe, paste, no method found. Render only when `isProgressPhase(job.phase)`. Reading, failed and
+ * error are the importing mode of the recipe page itself (`ImportingPage`): the finished plan replaces
+ * its draft in place, so there is no ready screen. Every branch is the Home register, the same ground as
+ * the Copy sheet and the recipe page, so nothing flips at the hand-off.
  */
 export function ImportProgress({
   job,
@@ -62,19 +55,18 @@ export function ImportProgress({
   job: ReturnType<typeof useImportJob>
   onCancel: () => void
 }) {
-  const { phase, setPhase, text, setText, submitText, reset, retry, instant, isText, markThumbnail, openReady, url } =
+  const { phase, setPhase, text, setText, submitText, reset, retry, canRetry, keepWaiting, instant, isText, markThumbnail, anchorRef, url } =
     job
   // FGC-3: the line under a step the model added; the wording follows the source being read.
   const addedLabel = addedStepLabel(isText ? { kind: 'text', value: '' } : { kind: 'url', value: url })
   // The page behind the app is the Home ground too (safe-area strip, over-scroll).
   useHomeSurface(true)
 
-  if (phase.kind === 'polling') {
-    // Whatever the source has said so far (thumbnail and title at once for a YouTube link,
-    // then its description, a blog page's own recipe, and the extraction's draft as it
-    // streams) is shown, with one quiet line underneath naming what is being read. A pasted
-    // text has no header, but the sections are there from the start; for a link with nothing
-    // known yet, the plain status word.
+  if (phase.kind === 'polling' || phase.kind === 'slow') {
+    // Whatever the source has said so far (thumbnail and title at once for a YouTube link, then a blog
+    // page's own recipe, and the extraction's draft as it streams) fills the recipe page in place. A pasted
+    // text has no header, but the sections are there from the start; for a link with nothing known yet,
+    // the plain status word.
     const view = importViewFor({
       instant,
       acquired: phase.acquired,
@@ -82,71 +74,72 @@ export function ImportProgress({
       draft: phase.draft,
       status: phase.status,
     })
-    const footer = footerFor(view, phase.status)
-    if (view.header || phase.preview || phase.draft || isText) {
-      return (
-        <ImportDraft
-          addedLabel={addedLabel}
-          view={view}
-          footer={phase.preview ? <PreviewFooter /> : <p>{footer}</p>}
-          working
-          onCancel={reset}
-          onThumbnailLoaded={markThumbnail}
-        />
-      )
+    const strip = progressStripFor(view, phase.status, {
+      kind: sourceKindFor(url, isText),
+      preview: phase.preview != null,
+    })
+    if (phase.kind === 'polling' && !(view.header || phase.preview || phase.draft || isText)) {
+      return <Centered>{strip.headline}</Centered>
     }
-    return <Centered>{footer}</Centered>
-  }
-
-  if (phase.kind === 'ready') {
-    // The plan is built and already saved. The reading screen stays exactly as it was (the
-    // draft stays readable) and a button, not a page change, says so: the cook may be mid-line.
     return (
-      <ImportDraft
-        addedLabel={addedLabel}
-        view={importViewFor({
-          instant,
-          acquired: phase.acquired,
-          preview: phase.preview,
-          draft: phase.draft,
-          status: 'done',
-        })}
-        footer={
-          <button type="button" onClick={openReady} className={PRIMARY}>
-            Your plan is ready
-          </button>
+      <ImportingPage
+        view={view}
+        strip={strip}
+        slot={
+          phase.kind === 'slow' ? (
+            <div role="status" className="mt-3 border-t border-home-rule pt-3">
+              <p className="text-[15px] leading-[1.4] text-home-ink">This is taking longer than expected.</p>
+              <button
+                type="button"
+                onClick={keepWaiting}
+                className="-mb-2 mt-1 min-h-[44px] text-[15px] font-semibold text-home-ink underline underline-offset-4"
+              >
+                Keep waiting
+              </button>
+            </div>
+          ) : undefined
         }
-        cancelLabel="Close"
-        onCancel={reset}
+        footer={{ kind: 'working' }}
+        sourceKey={sourceKeyFor(instant != null, url)}
+        sourceUrl={isText ? null : url}
+        isText={isText}
+        addedLabel={addedLabel}
+        anchorRef={anchorRef}
+        stopped={false}
+        onBack={reset}
         onThumbnailLoaded={markThumbnail}
       />
     )
   }
 
-  if (phase.kind === 'failed') {
-    // The header stays (thumbnail, channel, title, description) and so does whatever was
-    // read: the message and what to do about it sit above it, the draft below under its label.
-    // With nothing read, the sections that were never going to fill are dropped. No footer,
-    // so the message appears once.
+  if (phase.kind === 'failed' || (phase.kind === 'error' && (phase.preview || phase.acquired || phase.draft))) {
+    // The page stays: header, thumbnail, and whatever was read. The message takes the progress strip's
+    // slot, and the footer button is the card's primary action, so each action is on screen once. With
+    // nothing read, the sections that were never going to fill are dropped.
+    const view = importViewFor({
+      instant,
+      acquired: phase.acquired,
+      preview: phase.preview,
+      draft: phase.draft,
+      status: 'failed',
+    })
+    const { card, footer } =
+      phase.kind === 'failed'
+        ? failureFor(phase.failure, { retry, canRetry, paste: () => setPhase({ kind: 'paste', error: null }), another: reset })
+        : errorFor(phase.message, retry, canRetry)
     return (
-      <ImportDraft
+      <ImportingPage
+        view={view}
+        strip={null}
+        slot={card}
+        footer={footer}
+        sourceKey={sourceKeyFor(instant != null, url)}
+        sourceUrl={isText ? null : url}
+        isText={isText}
         addedLabel={addedLabel}
-        view={importViewFor({
-          instant,
-          acquired: phase.acquired,
-          preview: phase.preview,
-          draft: phase.draft,
-          status: 'failed',
-        })}
-        failure={
-          <FailureBody
-            failure={phase.failure}
-            onTryAgain={retry}
-            onPaste={() => setPhase({ kind: 'paste', error: null })}
-            onTryAnother={reset}
-          />
-        }
-        onCancel={onCancel}
+        anchorRef={anchorRef}
+        stopped
+        onBack={onCancel}
         onThumbnailLoaded={markThumbnail}
       />
     )
@@ -174,52 +167,6 @@ export function ImportProgress({
     )
   }
 
-  if (phase.kind === 'error' && (phase.preview || phase.acquired || phase.draft)) {
-    // The import broke, but what was read is still worth reading. With a draft, the message
-    // sits above it (like a failed job); without one, today's layout: the message in the footer.
-    const view = importViewFor({
-      instant,
-      acquired: phase.acquired,
-      preview: phase.preview,
-      draft: phase.draft,
-      status: 'failed',
-    })
-    if (phase.draft) {
-      return (
-        <ImportDraft
-          addedLabel={addedLabel}
-          view={view}
-          failure={
-            <div role="alert">
-              <p className="text-[15px] leading-[1.45] text-home-ink">{phase.message}</p>
-              <button type="button" onClick={reset} className={`mt-5 ${PRIMARY}`}>
-                Try again
-              </button>
-            </div>
-          }
-          onCancel={onCancel}
-          onThumbnailLoaded={markThumbnail}
-        />
-      )
-    }
-    return (
-      <ImportDraft
-        addedLabel={addedLabel}
-        view={view}
-        footer={
-          <>
-            <span className="text-home-nonveg">{phase.message}</span>{' '}
-            <button type="button" onClick={reset} className="-my-3 py-3 underline underline-offset-4">
-              Try again
-            </button>
-          </>
-        }
-        onCancel={onCancel}
-        onThumbnailLoaded={markThumbnail}
-      />
-    )
-  }
-
   if (phase.kind === 'not_grounded') {
     return <NotGroundedResult job={phase.job} onTryAnother={reset} onCancel={onCancel} />
   }
@@ -227,42 +174,56 @@ export function ImportProgress({
   return null
 }
 
-/** What a failed import says and offers. `unavailable` is the provider's fault, so trying
- * again is reasonable; `incomplete` and `refused` would most likely fail the same way, so
- * they offer the other two routes in. */
-function FailureBody({
-  failure,
-  onTryAgain,
-  onPaste,
-  onTryAnother,
-}: {
-  failure: ImportFailure
-  onTryAgain: () => void
-  onPaste: () => void
-  onTryAnother: () => void
-}) {
-  return (
-    <div role="alert">
+/** The thumbnail's key: only a link the instant header recognised (YouTube) has a picture to show. */
+function sourceKeyFor(hasInstant: boolean, url: string): string | null {
+  return hasInstant ? canonicalUrlSourceKey(url.trim()) : null
+}
+
+const CARD = 'mt-4 rounded-home-card border border-home-rule bg-home-surface px-4 py-3.5'
+
+/** What a failed import says and offers. `unavailable` is the provider's fault, so trying again is
+ * reasonable; `incomplete` and `refused` would most likely fail the same way, so they offer the other two
+ * routes in: paste the text (the footer's button) or another link (under the message). */
+function failureFor(
+  failure: ImportFailure,
+  on: { retry: () => void; canRetry: boolean; paste: () => void; another: () => void },
+): { card: ReactNode; footer: ImportingFooter } {
+  const card = (
+    <div role="alert" className={CARD}>
       <p className="text-[15px] leading-[1.45] text-home-ink">{FAILURE_COPY[failure]}</p>
       {FAILURE_HINT[failure] && (
         <p className="mt-1 text-[15px] leading-[1.45] text-home-ink-2">{FAILURE_HINT[failure]}</p>
       )}
-      {failure === 'unavailable' ? (
-        <button type="button" onClick={onTryAgain} className={`mt-5 ${PRIMARY}`}>
-          Try again
+      {failure !== 'unavailable' && (
+        <button type="button" onClick={on.another} className={`-mb-2 mt-1 w-full justify-start ${LINK}`}>
+          Try another link
         </button>
-      ) : (
-        <>
-          <button type="button" onClick={onPaste} className={`mt-5 ${PRIMARY}`}>
-            Paste the recipe text
-          </button>
-          <button type="button" onClick={onTryAnother} className={`mt-2 w-full ${LINK}`}>
-            Try another link
-          </button>
-        </>
       )}
     </div>
   )
+  const footer: ImportingFooter =
+    failure === 'unavailable'
+      ? { kind: 'action', ...retryAction(on.canRetry), onClick: on.retry }
+      : { kind: 'action', label: 'Paste the recipe text', onClick: on.paste }
+  return { card, footer }
+}
+
+/** The footer's label for `retry`: it only says "Try again" when there is something to resubmit. Otherwise the
+ * same handler resets to the entry form, and the label says so (a primary button is never a no-op). */
+function retryAction(canRetry: boolean): { label: string } {
+  return { label: canRetry ? 'Try again' : 'Back to import' }
+}
+
+/** A broken import with something read (a lost connection, a server fault): the message, and Try again. */
+function errorFor(message: string, retry: () => void, canRetry: boolean): { card: ReactNode; footer: ImportingFooter } {
+  return {
+    card: (
+      <div role="alert" className={CARD}>
+        <p className="text-[15px] leading-[1.45] text-home-ink">{message}</p>
+      </div>
+    ),
+    footer: { kind: 'action', ...retryAction(canRetry), onClick: retry },
+  }
 }
 
 function NotGroundedResult({

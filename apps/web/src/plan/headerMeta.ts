@@ -15,8 +15,9 @@ export function headerMeta(
   summary: PlanSummary | null | undefined,
   totalMin: number,
   hasCard: boolean,
+  compact = false,
 ): { primary: HeaderTiming['primary'] | null; secondary: HeaderTiming['secondary'] } {
-  const timing = headerTiming(summary, totalMin)
+  const timing = headerTiming(summary, totalMin, compact)
   if (!hasCard) return timing
   if (summary && summary.sessions.length > 1) return { primary: null, secondary: null }
   return timing

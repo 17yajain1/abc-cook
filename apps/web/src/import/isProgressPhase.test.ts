@@ -22,8 +22,20 @@ const error = (over: Partial<Extract<Phase, { kind: 'error' }>> = {}): Phase => 
 })
 
 describe('isProgressPhase', () => {
-  it('takes over the screen while reading and once the plan is ready', () => {
+  it('takes over the screen while reading', () => {
     expect(isProgressPhase({ kind: 'polling', status: 'extracting', preview: null, acquired: null, draft: null })).toBe(true)
+  })
+
+  it('slow takes over too: the page stays up with Keep waiting, nothing read is dropped', () => {
+    expect(
+      isProgressPhase({ kind: 'slow', jobId: 'j', token: 1, status: 'extracting', preview: null, acquired: null, draft: null }),
+    ).toBe(true)
+  })
+
+  it('failed takes over, with or without anything read', () => {
+    expect(
+      isProgressPhase({ kind: 'failed', failure: 'unavailable', url: null, preview: null, acquired: null, draft: null }),
+    ).toBe(true)
   })
 
   it('keeps an error with nothing read inline, in the entry form or the Copy sheet', () => {
