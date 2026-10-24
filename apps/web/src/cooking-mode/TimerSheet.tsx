@@ -1,4 +1,4 @@
-import type { TimerRow, TimerSheetView } from './timers'
+import { SHEET_TOP_PX, type TimerRow, type TimerSheetView } from './timers'
 import type { ActionDescriptor } from './viewModel'
 
 /** What the timer sheet shows: one timer (V2TimerSheet), or every running timer (the
@@ -22,11 +22,15 @@ export function TimerSheet({
   onAction,
   onPick,
   onClose,
+  top = SHEET_TOP_PX,
 }: {
   content: TimerSheetContent
   onAction: (action: ActionDescriptor) => void
   onPick: (nodeId: string) => void
   onClose: () => void
+  /** CP4.1: the highest the sheet may reach, in px from the top of the screen (`sheetTop`):
+   * below any timer-end banner, so the sheet is never covered. */
+  top?: number
 }) {
   const label = content.mode === 'one' ? `${content.sheet.name} timer` : 'Timers'
   return (
@@ -35,7 +39,8 @@ export function TimerSheet({
       <div
         role="dialog"
         aria-label={label}
-        className="absolute inset-x-0 bottom-0 flex max-h-[calc(100%-150px)] flex-col gap-3.5 overflow-y-auto rounded-t-[24px] bg-home-ground px-5 pb-[calc(24px+var(--safe-bottom))] pt-2.5"
+        className="absolute inset-x-0 bottom-0 flex flex-col gap-3.5 overflow-y-auto rounded-t-[24px] bg-home-ground px-5 pb-[calc(24px+var(--safe-bottom))] pt-2.5"
+        style={{ maxHeight: `calc(100% - ${top}px)` }}
       >
         <div aria-hidden="true" className="h-1 w-10 flex-none self-center rounded bg-home-rule" />
         {content.mode === 'one' ? <OneTimer sheet={content.sheet} onAction={onAction} /> : <AllTimers rows={content.rows} onPick={onPick} />}

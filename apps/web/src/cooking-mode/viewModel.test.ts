@@ -261,7 +261,13 @@ describe('kadai-paneer', () => {
     const v = view(se, T0 + 361 * MIN) // staleThresholdMs(34) = 6h floor
     expect(v.screenId).toBe('stale')
     expect(v.layout).toBe('message')
-    expect(v.title).toBe('You were last here 6 hr 1 min ago.')
+    expect(v.title).toBe('You were last here 6 hr 1 min ago.')
+    // The CP4 form, with a breakable space before "ago.", is gone.
+    expect(v.title).not.toBe('You were last here 6 hr 1 min ago.')
+    // CP4.1: the last unit and "ago." stay together too (a no-break space).
+    expect(v.title.endsWith('min ago.')).toBe(true)
+    // CP4.1: Leave in its top bar, as on every cooking screen.
+    expect(v.showTopRight).toBe(true)
     expect(v.instr).toBe('Carry on where you left off, or start again.')
     expect(v.primary).toEqual({ label: 'Carry on', solid: true, action: { kind: 'touch' } })
     expect(v.secondary).toEqual({ label: 'Start again', solid: false, action: { kind: 'startAgain' } })
@@ -271,7 +277,8 @@ describe('kadai-paneer', () => {
     let se = must(engine.start(null, model, 'server:kadai', T0))
     se = must(engine.markDone(se, model, 'chop_onion', T0 + 300 * MIN))
     expect(view(se, T0 + 361 * MIN).screenId).toBe('task')
-    expect(view(se, T0 + 300 * MIN + 7 * 60 * MIN).title).toBe('You were last here 7 hr ago.')
+    expect(view(se, T0 + 300 * MIN + 7 * 60 * MIN).title).toBe('You were last here 7 hr ago.')
+    expect(view(se, T0 + 300 * MIN + 7 * 60 * MIN).title).not.toBe('You were last here 7 hr ago.')
   })
 
   it('a cook coming back after leaving gets the step they left (leftAt is ignored; no returning screen)', () => {

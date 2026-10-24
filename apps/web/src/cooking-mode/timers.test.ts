@@ -4,7 +4,7 @@ import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { readyClock } from './copy'
 import { pageOrder } from './stepPage'
-import { MAX_RAILS, runningTimers, strips, timerSheet } from './timers'
+import { MAX_RAILS, runningTimers, SHEET_TOP_PX, sheetTop, strips, timerSheet } from './timers'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import { ADD_TIME_MS } from '@/cooking/constants'
@@ -187,6 +187,15 @@ describe('strips, a timer ended: the V2Banner (PR 2 CP4)', () => {
     expect(strips(model, se, T0 + 16 * MIN, order)).toEqual([
       { kind: 'timer', nodeId: 'heat_oil', name: 'Heat oil', left: '5 min left', aria: 'Heat oil, 5 min left. Open timer' },
     ])
+  })
+})
+
+describe('sheetTop (PR 2 CP4.1: a sheet never sits under a banner)', () => {
+  it('150px with no banner, or banners ending above it; else the bottom of the banners', () => {
+    expect(SHEET_TOP_PX).toBe(150)
+    expect(sheetTop(null)).toBe(150)
+    expect(sheetTop(126)).toBe(150)
+    expect(sheetTop(213)).toBe(213)
   })
 })
 

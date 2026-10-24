@@ -1,11 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 import { EmphasisText } from '@/plan/EmphasisText'
 
-import { READY_WHEN } from './copy'
+import { noBreakWords, READY_WHEN } from './copy'
 import { needShown } from './quantity'
 import type { TickState } from './stepPage'
-import type { RailView, StripView } from './timers'
+import type { BannerView, RailView, StripView } from './timers'
 import type { ActionButton, ActionDescriptor, CookingView } from './viewModel'
 
 /**
@@ -67,8 +67,12 @@ export function CookingShell({
   onRail,
   onSteps,
   onExpandNeed,
+  onBannerBottom,
 }: {
   view: CookingView
+  /** CP4.1: where the timer-end banners end (px from the top of the screen), or `null`
+   * when none shows, so the screen can keep any open sheet below them. */
+  onBannerBottom?: (px: number | null) => void
   /** CP3 owner answer 4: "Show N more" was tapped on this step (state kept by the screen). */
   needExpanded: boolean
   onPrimary: () => void
@@ -98,7 +102,7 @@ export function CookingShell({
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div className={`flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-5 pt-6 ${undo ? 'pb-11' : ''}`}>
             <h1 className="text-[40px] font-extrabold leading-[1.02] tracking-[-0.01em] text-home-ink" style={{ fontStretch: '88%' }}>
-              {view.title}
+              <Headline text={view.title} />
             </h1>
             {view.done && <p className="text-[17px] text-home-ink-2">{view.done.line}</p>}
           </div>
@@ -147,7 +151,7 @@ export function CookingShell({
     <div className="flex h-full flex-col bg-home-ground">
       {topBar}
 
-      <Strips strips={view.strips} onRail={onRail} onAction={onAction} />
+      <Strips strips={view.strips} onRail={onRail} onAction={onAction} onBannerBottom={onBannerBottom} />
 
       {view.ticks && (
         <div
@@ -182,7 +186,7 @@ export function CookingShell({
                 </button>
               )}
               <h1 className="text-[26px] font-extrabold leading-[1.15] tracking-[-0.005em] text-home-ink" style={{ textWrap: 'balance' }}>
-                {view.label}
+                <Headline text={view.label ?? ''} />
               </h1>
             </div>
 
@@ -318,45 +322,54 @@ function CueLine({ cue }: { cue: string }) {
 /**
  * The strips under the top bar: CP3's sage rails and CP4's terracotta banners (V2Banner).
  * A banner takes a rail's slot, so the footer never moves; the text below moves down once,
- * by the height difference, when a timer ends. While a banner shows, the region sits above
- * any open sheet's scrim (`z-30`), so the banner stays visible and tappable over it.
+ * by the height difference, when a timer ends. CP4.1: only the banners sit above an open
+ * sheet's scrim (`z-30`), so they stay visible and tappable; the rails dim with the page.
+ * Where the banners end is reported (`onBannerBottom`) so a sheet's top sits below them.
  */
 function Strips({
   strips,
   onRail,
   onAction,
+  onBannerBottom,
 }: {
   strips: StripView[]
   onRail: (rail: RailView) => void
   onAction: (action: ActionDescriptor) => void
+  onBannerBottom?: (px: number | null) => void
 }) {
+  const bannersRef = useRef<HTMLDivElement>(null)
+  const banners = strips.filter((s): s is BannerView => s.kind === 'banner')
+  const rails = strips.filter((s): s is RailView => s.kind !== 'banner')
+  const hasBanners = banners.length > 0
+
+  // The banners' bottom edge, from the top of the cooking screen (their offset parent), kept
+  // current as they wrap, appear or go.
+  useLayoutEffect(() => {
+    const el = bannersRef.current
+    if (onBannerBottom == null) return
+    if (el == null) {
+      onBannerBottom(null)
+      return
+    }
+    const report = () => onBannerBottom(el.offsetTop + el.offsetHeight)
+    report()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(report)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasBanners, onBannerBottom])
+
   if (strips.length === 0) return null
-  const raised = strips.some((s) => s.kind === 'banner')
   return (
-    <div data-strips="true" className={`mt-1 flex flex-shrink-0 flex-col gap-px ${raised ? 'relative z-30' : ''}`}>
-      {strips.map((strip) =>
-        strip.kind === 'banner' ? (
-          <div key={`banner-${strip.nodeId}`} role="status" className="flex items-center gap-3 bg-home-terracotta px-5 py-3 text-home-ground">
-            <div className="min-w-0 flex-1">
-              <div className="text-[17px] font-extrabold leading-[1.25]">{strip.title}</div>
-              <div className="text-[14px] opacity-[.88]">{strip.line}</div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onAction(strip.add.action)}
-              className="h-11 flex-none whitespace-nowrap rounded-full border-[1.5px] border-home-ground px-4 text-[15px] font-bold text-home-ground"
-            >
-              {strip.add.label}
-            </button>
-            <button
-              type="button"
-              onClick={() => onAction(strip.done.action)}
-              className="h-11 flex-none whitespace-nowrap rounded-full bg-home-ground px-4 text-[15px] font-bold text-home-terracotta-text"
-            >
-              {strip.done.label}
-            </button>
-          </div>
-        ) : (
+    <div data-strips="true" className="mt-1 flex flex-shrink-0 flex-col gap-px">
+      {hasBanners && (
+        <div ref={bannersRef} data-banners="true" className="relative z-30 flex flex-col gap-px">
+          {banners.map((strip) => (
+            <Banner key={`banner-${strip.nodeId}`} strip={strip} onAction={onAction} />
+          ))}
+        </div>
+      )}
+      {rails.map((strip) => (
           // CP3 timer rails (V2Running): full-width sage, 48px; the summary rail has no dot
           // (the dot means a running timer), and a › at its right edge (CP3.1).
           <button
@@ -381,9 +394,51 @@ function Strips({
               </>
             )}
           </button>
+      ))}
+    </div>
+  )
+}
+
+/** V2Banner: one ended timer, with its own "+5 min" and "Done". */
+function Banner({ strip, onAction }: { strip: BannerView; onAction: (action: ActionDescriptor) => void }) {
+  return (
+    <div role="status" className="flex items-center gap-3 bg-home-terracotta px-5 py-3 text-home-ground">
+      <div className="min-w-0 flex-1">
+        <div className="text-[17px] font-extrabold leading-[1.25]">{strip.title}</div>
+        <div className="text-[14px] opacity-[.88]">{strip.line}</div>
+      </div>
+      <button
+        type="button"
+        onClick={() => onAction(strip.add.action)}
+        className="h-11 flex-none whitespace-nowrap rounded-full border-[1.5px] border-home-ground px-4 text-[15px] font-bold text-home-ground"
+      >
+        {strip.add.label}
+      </button>
+      <button
+        type="button"
+        onClick={() => onAction(strip.done.action)}
+        className="h-11 flex-none whitespace-nowrap rounded-full bg-home-ground px-4 text-[15px] font-bold text-home-terracotta-text"
+      >
+        {strip.done.label}
+      </button>
+    </div>
+  )
+}
+
+/** PR 2 CP4.1: headline text with every hyphenated word in a no-wrap span (`noBreakWords`). */
+function Headline({ text }: { text: string }) {
+  return (
+    <>
+      {noBreakWords(text).map((part, i) =>
+        part.nowrap ? (
+          <span key={i} className="whitespace-nowrap">
+            {part.text}
+          </span>
+        ) : (
+          part.text
         ),
       )}
-    </div>
+    </>
   )
 }
 
@@ -519,7 +574,7 @@ function MessageBody({
     <div className="flex min-h-0 flex-1 flex-col justify-center gap-6 overflow-y-auto px-6 pb-[calc(24px+var(--safe-bottom))]">
       <div className="flex flex-col gap-2.5">
         <h1 className="text-[34px] font-extrabold leading-[1.06] text-home-ink" style={{ fontStretch: '88%' }}>
-          {heading}
+          <Headline text={heading} />
         </h1>
         {line && <p className="text-[17px] leading-[1.45] text-home-ink-2">{line}</p>}
       </div>

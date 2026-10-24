@@ -52,6 +52,16 @@ export type StripView = BannerView | RailView
 /** At most two banners; any further ended timer folds into the strip below them. */
 export const MAX_BANNERS = 2
 
+/** Where a sheet's top sits when no banner reaches it (CP3). */
+export const SHEET_TOP_PX = 150
+
+/** PR 2 CP4.1: a sheet's top, in px from the top of the screen: below the banners (which
+ * stay above its scrim), so its heading and "You are here" are never covered. `bannerBottom`
+ * is where the banners end (`null`: none showing). */
+export function sheetTop(bannerBottom: number | null): number {
+  return Math.max(SHEET_TOP_PX, bannerBottom ?? 0)
+}
+
 export interface TimerSheetView {
   nodeId: string
   name: string

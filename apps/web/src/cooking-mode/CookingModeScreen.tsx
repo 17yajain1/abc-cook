@@ -16,7 +16,7 @@ import { finishCooking, replaceSession, type SessionFinished } from './finalizeS
 import { ingredientsById } from './quantity'
 import { StepListSheet } from './StepListSheet'
 import { pageOrder, stepList } from './stepPage'
-import { runningTimers, timerSheet, type RailView } from './timers'
+import { runningTimers, sheetTop, timerSheet, type RailView } from './timers'
 import { TimerSheet, type TimerSheetContent } from './TimerSheet'
 import { useWakeLock } from './useWakeLock'
 import {
@@ -101,6 +101,8 @@ export function CookingModeScreen({
   const [timerFor, setTimerFor] = useState<{ mode: 'one'; nodeId: string } | { mode: 'all' } | null>(null)
   const [stepsOpen, setStepsOpen] = useState(false)
   const [needOpenFor, setNeedOpenFor] = useState<string | null>(null)
+  // CP4.1: where the timer-end banners end, so an open sheet's top sits below them.
+  const [bannerBottom, setBannerBottom] = useState<number | null>(null)
   // PR 2 CP4: the done screen's Back shows the last step. Local UI, never persisted: it names
   // the `finishedAt` it was tapped on, so it lapses on its own once the session isn't that
   // finished session any more (Undo, a new cook), and a reload lands on the done screen.
@@ -276,9 +278,11 @@ export function CookingModeScreen({
         onRail={(rail: RailView) => setTimerFor(rail.kind === 'timer' ? { mode: 'one', nodeId: rail.nodeId } : { mode: 'all' })}
         onSteps={() => setStepsOpen(true)}
         onExpandNeed={() => setNeedOpenFor(view.nodeId)}
+        onBannerBottom={setBannerBottom}
       />
       {timerContent && (
         <TimerSheet
+          top={sheetTop(bannerBottom)}
           content={timerContent}
           onAction={dispatchAction}
           onPick={(nodeId) => setTimerFor({ mode: 'one', nodeId })}
@@ -287,6 +291,7 @@ export function CookingModeScreen({
       )}
       {steps && (
         <StepListSheet
+          top={sheetTop(bannerBottom)}
           rows={steps}
           onPick={(row) => dispatchAction(row.action)}
           onClose={() => setStepsOpen(false)}

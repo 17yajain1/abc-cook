@@ -429,8 +429,8 @@ export function buildCookingView(
   }
 
   // stale (PR 2 CP4): wired, not removed — Home's Continue strip resumes a stale session here.
-  v.showTopRight = false
-  v.title = `You were last here ${sinceText(now - session.lastSeenAt)} ago.`
+  // CP4.1: Leave in its top bar, as on every cooking screen; "7 hr ago." kept on one line.
+  v.title = `You were last here ${sinceText(now - session.lastSeenAt)} ago.`
   v.instr = 'Carry on where you left off, or start again.'
   v.primary = { label: 'Carry on', solid: true, action: { kind: 'touch' } }
   v.secondary = { label: 'Start again', solid: false, action: { kind: 'startAgain' } }

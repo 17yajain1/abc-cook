@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { endCookFoot, type StepListRow, type TickState } from './stepPage'
+import { SHEET_TOP_PX } from './timers'
 import type { ActionDescriptor } from './viewModel'
 
 /** Circle and name per row state (V2StepList): done = sage with a tick and a grey name;
@@ -32,13 +33,15 @@ function Tick() {
  * the screen, scrolling inside. Every page step with its recipe-page number; a tap views
  * that step (navigation only, never a completion) and closes; the viewed row just closes.
  * PR 2 CP4: a quiet "End this cook" at the foot (`endCookFoot`), confirmed in place; the
- * confirm resets when the sheet closes (it unmounts).
+ * confirm resets when the sheet closes (it unmounts). CP4.1: its top sits below any
+ * timer-end banner (`top`, `sheetTop`), and the confirm scrolls fully into view.
  */
 export function StepListSheet({
   rows,
   onPick,
   onClose,
   onAction,
+  top = SHEET_TOP_PX,
   confirmingEnd = false,
 }: {
   rows: StepListRow[]
@@ -46,22 +49,31 @@ export function StepListSheet({
   onClose: () => void
   /** "End cook" (`endAndExit`). */
   onAction: (action: ActionDescriptor) => void
+  /** The sheet's top, in px from the top of the screen (`sheetTop`). */
+  top?: number
   /** For the static render only: start with the confirm showing. */
   confirmingEnd?: boolean
 }) {
   const [confirming, setConfirming] = useState(confirmingEnd)
   const foot = endCookFoot(confirming)
+  const footRef = useRef<HTMLDivElement>(null)
+  // CP4.1: when the confirm appears, the whole of it (line, "End cook", "Keep cooking" and the
+  // padding over the home indicator) scrolls into view.
+  useEffect(() => {
+    if (confirming) footRef.current?.scrollIntoView({ block: 'end' })
+  }, [confirming])
   return (
     <div className="absolute inset-0">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-home-ink/40" />
       <div
         role="dialog"
         aria-label="All steps"
-        className="absolute inset-x-0 bottom-0 top-[150px] flex flex-col rounded-t-[24px] bg-home-ground px-3 pt-2.5"
+        className="absolute inset-x-0 bottom-0 flex flex-col rounded-t-[24px] bg-home-ground px-3 pt-2.5"
+        style={{ top }}
       >
         <div aria-hidden="true" className="h-1 w-10 flex-none self-center rounded bg-home-rule" />
         <div className="flex-none px-2 pb-3 pt-3.5 text-[22px] font-extrabold text-home-ink">All steps</div>
-        <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(24px+var(--safe-bottom))]">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {rows.map((row) => (
             <button
               key={row.nodeId}
@@ -96,7 +108,7 @@ export function StepListSheet({
               )}
             </button>
           ))}
-          <div data-end-cook="true" className="border-t border-home-rule px-2 pt-2">
+          <div ref={footRef} data-end-cook="true" className="border-t border-home-rule px-2 pb-[calc(24px+var(--safe-bottom))] pt-2">
             {foot.prompt && <p className="pb-2 pt-1 text-[16px] font-semibold text-home-ink">{foot.prompt}</p>}
             <div className="flex items-center gap-3">
               {foot.buttons.map((b) =>

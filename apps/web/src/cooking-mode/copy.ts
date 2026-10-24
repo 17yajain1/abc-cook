@@ -1,77 +1,11 @@
 /**
- * Copy helpers ported from the M3.4 design handoff's prototype (`Cooking Mode - M3.4
- * UI.dc.html`) — phrasing only, no scheduling or session logic. Every function here is
- * a pure string formatter over values the real selectors already computed.
+ * Cooking-mode copy helpers — phrasing only, no scheduling or session logic. Every function
+ * here is a pure string formatter over values the real selectors already computed.
  */
 
 import type { Node } from '@abc-cook/schema'
 
 import { formatMinutes, roundMin } from '@/lib/duration'
-
-const WORDS = [
-  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
-  'eighteen', 'nineteen', 'twenty',
-]
-
-export function wordFor(n: number): string {
-  return WORDS[n] ?? String(n)
-}
-
-export function cap(text: string): string {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
-}
-
-/** "about ‹n› minutes" phrasing (§6): spelled out to twenty, then 5-minute buckets,
- * then hours, then days — the wait-window / whisper / away-shell register, never a
- * bare minute count. */
-export function aboutMinutes(ms: number): string {
-  const n = Math.round(ms / 60_000)
-  if (n <= 0) return 'no time'
-  if (n <= 20) return `${wordFor(n)} ${n === 1 ? 'minute' : 'minutes'}`
-  if (n < 90) return `${Math.round(n / 5) * 5} minutes`
-  if (n >= 1440) {
-    const d = Math.round(n / 1440)
-    return `${wordFor(d)} ${d === 1 ? 'day' : 'days'}`
-  }
-  const h = Math.round(n / 60)
-  return `${wordFor(h)} ${h === 1 ? 'hour' : 'hours'}`
-}
-
-/** "About N min left" phrasing for a wait screen's time-left line (P0 #4, owner
- * decision 2026-09-27) — rounded, human-readable, and never m:ss. `Math.ceil`, not
- * `Math.round`: as time passes the displayed number must never go up (89s -> 1 min,
- * 90s -> 2 min would be a jump under `round`). Under a minute reads as its own phrase
- * rather than "0 min left". */
-export function minutesLeft(ms: number): string {
-  if (ms < 60_000) return 'Less than a minute left'
-  return `About ${Math.ceil(ms / 60_000)} min left`
-}
-
-/** "4:18 pm" with a no-break space (U+00A0), so a time never splits from its am/pm across lines. */
-export function clockStr(ms: number): string {
-  const d = new Date(ms)
-  const h = d.getHours() % 12 || 12
-  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'am' : 'pm'}`
-}
-
-/** The `long_wait` / `sitting_break` wall-clock line (§6, §8.1): "4:18 pm", "tomorrow,
- * 7:00 am", or "in 3 days, 9:00 am", by calendar-day difference from `now`. `clock`
- * formats the time itself (`clockStr` by default; `localClock` passes the device locale's). */
-export function dayClock(now: number, target: number, clock: (ms: number) => string = clockStr): string {
-  const days = calendarDays(now, target)
-  if (days === 0) return clock(target)
-  if (days === 1) return `tomorrow, ${clock(target)}`
-  return `in ${days} days, ${clock(target)}`
-}
-
-/** PR 2 CP3: `dayClock` with the time in the device locale's own clock ("1:42 PM",
- * "13:42"); `locale` is for tests. Every space inside the time becomes a no-break space,
- * so a time never splits from its am/pm. */
-export function localClock(now: number, target: number, locale?: string): string {
-  const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
-  return dayClock(now, target, (ms) => format.format(ms).replace(/\s/gu, ' '))
-}
 
 /** Whole calendar days from `now`'s date to `target`'s, in local time (never "under 24 h"). */
 function calendarDays(now: number, target: number): number {
@@ -85,7 +19,8 @@ function calendarDays(now: number, target: number): number {
 
 /** PR 2 CP4: "Ready around ‹this›", the time first in the device locale's clock: "1:42 PM",
  * "7:00 AM tomorrow", "7:00 AM in 3 days". "Tomorrow" is the next calendar day. Every space
- * inside the time is a no-break space, as in `localClock`. */
+ * inside the time is a no-break space, so a time never splits from its am/pm. `locale` is
+ * for tests. */
 export function readyClock(now: number, target: number, locale?: string): string {
   const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
   const time = format.format(target).replace(/\s/gu, ' ')
@@ -116,6 +51,23 @@ export function sinceText(ms: number): string {
 export function sentence(text: string): string {
   const t = text.trim()
   return /[.!?…]["'”’)\]]*$/u.test(t) ? t : `${t}.`
+}
+
+/** PR 2 CP4.1: `text` cut into pieces, every word with an inner hyphen ("2-Minute",
+ * "ginger-garlic") marked `nowrap`, so a headline never breaks it across lines. A no-wrap
+ * span, not U+2011: the self-hosted font subset may not have the non-breaking hyphen. A word
+ * is a run without ordinary spaces (a no-break space keeps its words together anyway). The
+ * pieces join back to `text` exactly. */
+export function noBreakWords(text: string): Array<{ text: string; nowrap: boolean }> {
+  const out: Array<{ text: string; nowrap: boolean }> = []
+  for (const part of text.split(/( +)/)) {
+    if (part === '') continue
+    const nowrap = /[\p{L}\p{N}]-[\p{L}\p{N}]/u.test(part)
+    const last = out[out.length - 1]
+    if (!nowrap && last != null && !last.nowrap) last.text += part
+    else out.push({ text: part, nowrap })
+  }
+  return out
 }
 
 /** PR 2 CP3: a timer's time left, as the rail, the timer sheet and All steps say it. Whole
@@ -154,32 +106,3 @@ export function handsOffLine(min: number, attention: Node['attention']): string 
 /** PR 2 CP3: the lead-in of the doneness cue line ("Ready when: golden brown"). One
  * constant, for later translation. */
 export const READY_WHEN = 'Ready when:'
-
-function firstClause(text: string): string {
-  const cuts = ['. ', ', ', ' and ', ' then ', ' until ', ' with ']
-  let best = text.length
-  for (const cut of cuts) {
-    const i = text.indexOf(cut)
-    if (i > 12 && i < best) best = i
-  }
-  return text.slice(0, best).replace(/[.,]$/, '')
-}
-
-export interface SplitCopy {
-  title: string
-  body: string | null
-}
-
-/**
- * Title and body from one instruction (design decision §8.7 / handoff §3): the first
- * sentence is the title, the remainder is the body, so nothing is ever printed twice.
- * A first sentence too long for a 30px title falls back to its first clause, and then
- * the whole instruction carries the body.
- */
-export function splitCopy(instruction: string): SplitCopy {
-  const t = instruction.trim()
-  const i = t.indexOf('. ')
-  const first = i > 0 ? t.slice(0, i + 1) : t
-  if (first.length <= 92) return { title: first.replace(/\.$/, ''), body: i > 0 ? t.slice(i + 2) : null }
-  return { title: firstClause(first), body: t }
-}

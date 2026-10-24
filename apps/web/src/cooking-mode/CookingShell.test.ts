@@ -391,20 +391,38 @@ describe('CookingShell — PR 2 CP4 non-step screens', () => {
   it('banner (V2Banner): a terracotta role=status strip, 17/800 title, the 14px line, outlined +5 min and cream Done; raised over any sheet', () => {
     const se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
     const html = render(dView(se, T0 + 12 * MIN + 10_000))
-    const strip = html.match(/<div data-strips="true" class="([^"]*)">(.*?)<\/div><\/div>(?=<div aria-hidden="true" data-ticks)/)
-    expect(strip).not.toBeNull()
-    expect(strip![1]).toContain('relative z-30')
-    expect(strip![2]).toMatch(/^<div role="status" class="[^"]*bg-home-terracotta[^"]*text-home-ground[^"]*"><div class="min-w-0 flex-1"><div class="text-\[17px\] font-extrabold[^"]*">Heat oil is ready<\/div><div class="text-\[14px\] opacity-\[\.88\]">Timer ended just now<\/div><\/div>/)
-    expect(strip![2]).toMatch(/<button type="button" class="[^"]*border-\[1\.5px\] border-home-ground[^"]*">\+5 min<\/button><button type="button" class="[^"]*bg-home-ground[^"]*text-home-terracotta-text">Done<\/button>/)
+    const banners = html.match(/<div data-banners="true" class="([^"]*)">(.*?)<\/div><\/div><\/div>(?=<div aria-hidden="true" data-ticks)/)
+    expect(banners).not.toBeNull()
+    expect(banners![1]).toContain('relative z-30')
+    expect(banners![2]).toMatch(/^<div role="status" class="[^"]*bg-home-terracotta[^"]*text-home-ground[^"]*"><div class="min-w-0 flex-1"><div class="text-\[17px\] font-extrabold[^"]*">Heat oil is ready<\/div><div class="text-\[14px\] opacity-\[\.88\]">Timer ended just now<\/div><\/div>/)
+    expect(banners![2]).toMatch(/<button type="button" class="[^"]*border-\[1\.5px\] border-home-ground[^"]*">\+5 min<\/button><button type="button" class="[^"]*bg-home-ground[^"]*text-home-terracotta-text">Done<\/button>/)
   })
 
-  it('rails alone are not raised; two banners stack, the one that ended first on top', () => {
+  it('CP4.1: only the banners are raised; a rail below them is not (it dims with the page under a sheet)', () => {
     expect(render(dView(must(engine.startNode(fresh(), dModel, 'heat_oil', T0)), T0))).not.toContain('z-30')
+    let se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
+    se = must(engine.startNode(se, dModel, 'first_rise', T0))
+    const html = render(dView(se, T0 + 13 * MIN))
+    const strips = html.match(/<div data-strips="true" class="([^"]*)">/)!
+    expect(strips[1]).not.toContain('z-30')
+    expect(html).toMatch(/<div data-banners="true" class="[^"]*relative z-30[^"]*">.*?<\/button><\/div><\/div><button type="button" aria-label="First rise, 47 min left\. Open timer"/)
+  })
+
+  it('two banners stack, the one that ended first on top', () => {
     let se = must(engine.startNode(fresh(), dModel, 'heat_oil', T0))
     se = must(engine.startNode(se, dModel, 'proof_donuts', T0))
     const html = render(dView(se, T0 + 26 * MIN))
     expect(html.match(/role="status"/g)).toHaveLength(2)
     expect(html.indexOf('Heat oil is ready')).toBeLessThan(html.indexOf('Proof donuts is ready'))
+  })
+
+  it('CP4.1: a sheet\'s top sits below the banners: All steps by `top`, the timer sheet by its max height', () => {
+    const rows = stepList(dModel, fresh(), T0, pageOrder(dModel, pageNumbers), 'bloom_yeast')
+    const steps = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop, onAction: noop, top: 213 }))
+    expect(steps).toMatch(/role="dialog" aria-label="All steps" class="[^"]*" style="top:213px"/)
+    const one = timerSheet(dModel, must(engine.startNode(fresh(), dModel, 'first_rise', T0)), T0, 'first_rise', pageOrder(dModel, pageNumbers), null)!
+    const sheet = renderToStaticMarkup(createElement(TimerSheet, { content: { mode: 'one', sheet: one }, onAction: noop, onPick: noop, onClose: noop, top: 213 }))
+    expect(sheet).toMatch(/role="dialog" aria-label="First rise timer" class="[^"]*" style="max-height:calc\(100% - 213px\)"/)
   })
 
   it('a banner takes the rail\'s slot: the footer is byte-identical before and after a timer ends', () => {
@@ -437,8 +455,13 @@ describe('CookingShell — PR 2 CP4 non-step screens', () => {
 
   it('stale: the message layout, 34/800 at 88% width, Carry on (pill) and Start again (outlined)', () => {
     const html = render(dView(fresh(), T0 + 3 * 24 * 60 * MIN))
-    expect(html).toMatch(/<h1 class="text-\[34px\] font-extrabold[^"]*" style="font-stretch:88%">You were last here \d+ hr( \d+ min)? ago\.<\/h1>/)
+    expect(html).toMatch(/<h1 class="text-\[34px\] font-extrabold[^"]*" style="font-stretch:88%">You were last here \d+ hr( \d+ min)? ago\.<\/h1>/)
+    // The CP4 form, with a breakable space before "ago.", is gone.
+    expect(html).not.toMatch(/<h1 class="text-\[34px\] font-extrabold[^"]*" style="font-stretch:88%">You were last here \d+ hr( \d+ min)? ago\.<\/h1>/)
     expect(html).toMatch(/<button type="button" class="[^"]*bg-home-terracotta[^"]*">Carry on<\/button><button type="button" class="[^"]*border-home-terracotta[^"]*">Start again<\/button>/)
+    // CP4.1: Leave in the stale screen's top bar; "ago." kept with the time.
+    expect(html).toMatch(/<button type="button" class="h-11[^"]*">Leave<\/button>/)
+    expect(html).toMatch(/ ago\.<\/h1>/)
   })
 
   it('conflict (MessageScreen): heading, line and two buttons, no top bar', () => {
@@ -462,6 +485,10 @@ describe('CookingShell — PR 2 CP4 non-step screens', () => {
     const confirming = renderToStaticMarkup(createElement(StepListSheet, { rows, onPick: noop, onClose: noop, onAction: noop, confirmingEnd: true }))
     expect(confirming).toContain('>End this cook? Running timers will stop.</p>')
     expect(confirming).toMatch(/<button[^>]*bg-home-terracotta[^>]*>End cook<\/button><button[^>]*>Keep cooking<\/button>/)
+    // CP4.1: the foot carries the bottom padding, safe-area inset included, so scrolling it
+    // into view shows the whole confirm above the home indicator.
+    expect(confirming).toMatch(/<div data-end-cook="true" class="[^"]*pb-\[calc\(24px\+var\(--safe-bottom\)\)\][^"]*">/)
+    expect(confirming).not.toMatch(/overflow-y-auto pb-\[calc/)
   })
 
   it('no m:ss anywhere in cooking mode\'s rendered screens', () => {
