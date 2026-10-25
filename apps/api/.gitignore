@@ -19,3 +19,6 @@ tests/fixtures/shortform/phase0_results.json
 
 # A3 result cache (ABC_COOK_RESULT_CACHE_DIR, e.g. .cache/results): regenerable, never committed.
 .cache/
+
+# 3a nutrition food-map cache (regenerable; the frozen copy is tests/fixtures/3a-eval/b2-food-map.json).
+/data/

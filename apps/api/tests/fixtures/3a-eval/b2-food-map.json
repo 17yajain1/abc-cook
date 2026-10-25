@@ -1,0 +1,349 @@
+{
+ "foods": {
+  "curry leaves||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:42.019207+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "tamarind chutney||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:43.686828+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "green chutney||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:43.686828+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "ginger garlic paste||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:46.122272+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "pav bhaji masala||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:52.897497+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "drops red food colour||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:52.897497+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "water consistency||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:174158",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:52.897497+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "natural citric acid||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:58.061997+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "raw coconut|raw|usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170169",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:58.061997+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "red chilli flakes||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170106",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:59.699456+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "reserved pasta cooking water||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:174158",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:59.699456+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "chinese cooking wine or mirin||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:169070",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:01.748060+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "can crushed tomato||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170501",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:03.663045+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "can red kidney beans||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:173744",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:03.663045+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "rice corn chips tortillas||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:169756",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:03.663045+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "brioche or white sandwich bread||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:167532",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:05.603028+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "maple syrup butter||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:169661",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:05.603028+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "mint and coriander leaves||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:169997",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "warm milk kesar||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:172217",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "oil as needed||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:171413",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "kewra water||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:174158",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "red food color||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170932",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "chaat masala powder||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:12.043112+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "green chilli paste||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170497",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:13.668270+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "oil for frying||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:172370",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:13.668270+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "black powder||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170931",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:13.668270+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "corn slurry||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:790276",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:16.212172+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "unsweetened coconut||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:170170",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:20.497840+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "boursin cheese||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": "fdc:173418",
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:21.845861+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "italian seasoning||usda-fdc-sr2018-04+foundation2026-04-30/b2-1": {
+   "food_id": null,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:21.845861+00:00",
+   "basis": "llm",
+   "reviewed": false
+  }
+ },
+ "grams": {
+  "b4715209007dc3c46c39c6f9": {
+   "grams": 12.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:42.019207+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "803db99ba6de771e3a0afdc2": {
+   "grams": 1.6,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:46.122272+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "fc3b2b934bbbb47a37ca526a": {
+   "grams": 2.5,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:46.122272+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "a2b4c3a1536b23c3dd812873": {
+   "grams": 1.2,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:46.122272+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "5464a435789eb42b8bc3297e": {
+   "grams": 12.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:13:55.237150+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "0777aa8e539ada307a7fe505": {
+   "grams": 9.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:03.663045+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "051f5573e857e08dd7bb5022": {
+   "grams": 43.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:05.603028+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "f3c5fa8cccc14d5e64937602": {
+   "grams": 1.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "a474dc5f0c8ad71fa1def9bd": {
+   "grams": 1.2,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "8f556ea97b54d32f7d4c6b8a": {
+   "grams": 1.5,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "694062a920f59f7c78d9f417": {
+   "grams": 1.6,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "ba07f1420aa614105e626cb4": {
+   "grams": 2.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "6ba3857f43e23999cbf2a829": {
+   "grams": 2.5,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:10.570153+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "7800be4dbcdcefb88b2805a7": {
+   "grams": 15.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:15.039753+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "574ffec6a3d7b29144b8f230": {
+   "grams": 2.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:17.872173+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "9e3b48e24dc4725501c7b3ce": {
+   "grams": 0.02,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:19.295943+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "c45dda3ab97995f0a805ca71": {
+   "grams": 113.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:21.845861+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "49ee3e4065d41b847c7853dd": {
+   "grams": 12.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:21.845861+00:00",
+   "basis": "llm",
+   "reviewed": false
+  },
+  "52857b80cda86d73efbcfd7a": {
+   "grams": 1.0,
+   "model": "gpt-5-mini",
+   "date": "2026-10-25T22:14:44.999178+00:00",
+   "basis": "llm",
+   "reviewed": false
+  }
+ }
+}
