@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import re
 from itertools import pairwise
+from typing import NamedTuple
 
+from abc_cook.extract.units import CANONICAL_UNITS, canonical_unit
 from abc_cook.schema.ingredient import QtyAmount
 
 VULGAR_FRACTIONS = {
@@ -137,3 +139,152 @@ def parse_amount(qty_text: str | None, unit: str | None) -> QtyAmount | None:
     if _is_package_size(rest, unit):
         return None
     return QtyAmount(low=low, high=high, prefix=prefix, rest=rest)
+
+
+# -- Amounts written inside the ingredient name ----------------------------------------------
+
+# A number token the name-splitters look for: mixed, vulgar, plain fraction, decimal or integer.
+_NAME_NUMBER = (
+    r"(?:\d+\s*[-&\s]\s*\d+\s*/\s*\d+|\d*\s?[" + _VULGAR + r"]|\d+\s*/\s*\d+|\d+(?:\.\d+)?)"
+)
+_NAME_RANGE = rf"(?:{_NAME_NUMBER}(?:\s*(?:-|[{_RANGE_DASHES}]|to)\s*{_NAME_NUMBER})?)"
+_UNIT_WORDS = "|".join(sorted(map(re.escape, CANONICAL_UNITS), key=len, reverse=True))
+_UNIT_AHEAD_RE = re.compile(rf"\s*(?:{_UNIT_WORDS})\b", re.IGNORECASE)
+_LEADING_RE = re.compile(
+    rf"\s*(?P<num>{_NAME_RANGE})(?:\s*(?P<unit>(?:{_UNIT_WORDS})\b\.?))?", re.IGNORECASE
+)
+_PLUS_RE = re.compile(r"\s*\+\s*")
+_TRAILING_RE = re.compile(
+    rf"(?<![\w/.])(?P<amt>{_NAME_RANGE}\s*(?:{_UNIT_WORDS})\b\.?)\s*$", re.IGNORECASE
+)
+_DANGLING_RANGE_RE = re.compile(r"\s*to\b\s*", re.IGNORECASE)
+
+
+class NameSplit(NamedTuple):
+    """What `split_amount_from_name` decided about one ingredient line.
+
+    `amount` is set only when this function parsed the amount itself (a leading or trailing
+    amount, the "A + B" sum included); otherwise it is None and the caller parses `qty_text`.
+    """
+
+    name: str
+    qty_text: str | None
+    amount: QtyAmount | None
+    changed: bool
+
+
+def is_garbled_amount(name: str) -> bool:
+    """True when a name opens with a number and a dangling range word ("3 to  mato")."""
+    text = name.lstrip()
+    first = _take_number(text, 0)
+    if first is None:
+        return False
+    word = _DANGLING_RANGE_RE.match(text, first[1])
+    return word is not None and _take_number(text, word.end()) is None
+
+
+def _unit_of(amount: QtyAmount) -> str | None:
+    return canonical_unit(None, amount.rest)
+
+
+def _leading(name: str) -> tuple[str, str, QtyAmount] | None:
+    """(qty_text, remaining name, amount) for a leading amount, or None."""
+    if is_garbled_amount(name):
+        return None
+    m = _LEADING_RE.match(name)
+    if m is None:
+        return None
+    end = m.end()
+    # "2%", "5-spice", "2x": the number belongs to the name, not to a quantity.
+    if end < len(name) and not (name[end].isspace() or name[end] == "("):
+        return None
+    candidate = name[:end].strip()
+    amount = parse_amount(candidate, None)
+    remainder = name[end:].strip()
+    if amount is None or not remainder:
+        return None
+    # "A + B": sum when both sides carry the same unit; any other "+" is left alone.
+    if plus := _PLUS_RE.match(remainder):
+        tail = remainder[plus.end() :]
+        second = _LEADING_RE.match(tail)
+        if second is None or not m.group("unit") or not second.group("unit"):
+            return None
+        second_text = tail[: second.end()].strip()
+        second_amount = parse_amount(second_text, None)
+        unit = _unit_of(amount)
+        if second_amount is None or unit is None or _unit_of(second_amount) != unit:
+            return None
+        if amount.high is not None or second_amount.high is not None:
+            return None
+        rest_name = tail[second.end() :].strip()
+        if not rest_name:
+            return None
+        total = QtyAmount(low=amount.low + second_amount.low, rest=amount.rest)
+        return f"{candidate} + {second_text}", rest_name, total
+    return candidate, remainder, amount
+
+
+def _trailing(name: str) -> tuple[str, str, QtyAmount] | None:
+    """(qty_text, remaining name, amount) for a trailing "<number> <unit>", or None."""
+    m = _TRAILING_RE.search(name)
+    if m is None:
+        return None
+    candidate = m.group("amt").strip()
+    remainder = name[: m.start()].strip()
+    amount = parse_amount(candidate, None)
+    if amount is None or not remainder:
+        return None
+    return candidate, remainder, amount
+
+
+def _strip_repeat(name: str, qty_text: str, unit: str | None) -> str | None:
+    """`name` with one word-bounded copy of the amount removed, or None when it has none."""
+    has_unit = bool(unit and unit.strip())
+    forms = [f"{qty_text} {unit.strip()}"] if unit and has_unit else []
+    forms.append(qty_text)
+    for form in forms:
+        pattern = re.compile(rf"(?<![\w/.]){re.escape(form)}(?![\w/%])", re.IGNORECASE)
+        found = pattern.search(name)
+        if found is None:
+            continue
+        # A bare number followed by a unit word ("1" + "cup onions") is a split the model
+        # left half-done; removing the number alone would strand the unit in the name.
+        if form == qty_text and not has_unit and _UNIT_AHEAD_RE.match(name, found.end()):
+            continue
+        stripped = name[: found.start()] + name[found.end() :]
+        stripped = re.sub(r"\(\s*\)", "", stripped)  # "salt (to taste)" must not leave "salt ()"
+        stripped = re.sub(r"\s{2,}", " ", stripped).strip()
+        if stripped:
+            return stripped
+    return None
+
+
+def split_amount_from_name(name: str, qty_text: str | None, unit: str | None) -> NameSplit:
+    """Move an amount the model left inside the ingredient name out of it.
+
+    With no `qty_text`, a leading amount ("½ cup peas", "2  potato") or a trailing
+    "<number> <unit>" ("Chicken boneless (thigh) 750 gm") becomes the quantity and is stripped
+    from the name. "A + B" with the same unit on both sides ("1 tbsp + 1 tbsp") keeps the text
+    verbatim and carries the sum in the returned amount. With a `qty_text` already set, a copy
+    of that amount in the name is stripped from the name only. Garbled text ("3 to  mato"),
+    mixed-unit sums and anything not certain are returned untouched.
+
+    Args:
+        name: The ingredient name as extracted.
+        qty_text: The quantity text as extracted, or None.
+        unit: The unit as extracted, or None.
+
+    Returns:
+        The (possibly unchanged) name and quantity text, a parsed amount when this function
+        made one, and whether anything changed.
+    """
+    if qty_text is not None and qty_text.strip():
+        stripped = _strip_repeat(name, qty_text.strip(), unit)
+        if stripped is None:
+            return NameSplit(name, qty_text, None, False)
+        return NameSplit(stripped, qty_text, None, True)
+    for found in (_leading(name), _trailing(name)):
+        if found is not None:
+            text, remainder, amount = found
+            return NameSplit(remainder, text, amount, True)
+    return NameSplit(name, qty_text, None, False)

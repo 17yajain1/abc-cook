@@ -9,6 +9,10 @@ class QtyAmount(BaseModel):
     Present only when the parser (`abc_cook.extract.quantity.parse_amount`) was certain; the
     line then reads back as `prefix + number(s) + rest`. Everything it is not certain about
     has no `QtyAmount`, and the line renders as the source wrote it.
+
+    One documented exception: an "A + B" amount with the same unit on both sides
+    ("1 tbsp + 1 tbsp") keeps `qty_text` verbatim while `low` holds the sum (2, rest " tbsp").
+    At the as-written factor the web shows `qty_text`; scaled, it shows the sum ("4 tbsp" at 2x).
     """
 
     low: float = Field(gt=0, description="The number, or the low end of a range.")

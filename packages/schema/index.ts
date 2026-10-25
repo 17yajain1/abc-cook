@@ -270,6 +270,10 @@ export interface Ingredient {
  * line then reads back as `prefix + number(s) + rest`. Everything it is not certain about
  * has no `QtyAmount`, and the line renders as the source wrote it.
  *
+ * One documented exception: an "A + B" amount with the same unit on both sides
+ * ("1 tbsp + 1 tbsp") keeps `qty_text` verbatim while `low` holds the sum (2, rest " tbsp").
+ * At the as-written factor the web shows `qty_text`; scaled, it shows the sum ("4 tbsp" at 2x).
+ *
  * This interface was referenced by `ABCCookSchema`'s JSON-Schema
  * via the `definition` "QtyAmount".
  */

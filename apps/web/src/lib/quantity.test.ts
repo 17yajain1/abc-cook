@@ -131,4 +131,13 @@ describe('quantityTrailing', () => {
     const line = item({ qty_text: '1', unit: 'cup', qty_amount: { low: 1, high: null, prefix: '', rest: '' } })
     expect(quantityTrailing(line, 2 / 3)).toBe('⅔ cup')
   })
+
+  it('an "A + B" amount reads as written at 1x and as the sum when scaled', () => {
+    const line = item({
+      qty_text: '1 tbsp + 1 tbsp',
+      qty_amount: { low: 2, high: null, prefix: '', rest: ' tbsp' },
+    })
+    expect(quantityTrailing(line)).toBe('1 tbsp + 1 tbsp')
+    expect(quantityTrailing(line, 2)).toBe('4 tbsp')
+  })
 })

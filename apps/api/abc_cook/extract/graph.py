@@ -38,7 +38,7 @@ from collections import Counter
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-from abc_cook.extract.quantity import VULGAR_FRACTIONS, parse_amount
+from abc_cook.extract.quantity import VULGAR_FRACTIONS, parse_amount, split_amount_from_name
 from abc_cook.extract.units import canonical_unit
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
@@ -1767,13 +1767,16 @@ def build_graph(
         # made an earlier occurrence permanently unconsumable regardless of what any
         # step claimed, a real bug found running repair.py against a real recipe.
         name_to_ids.setdefault(norm_ing.name.lower(), []).append(ing_id)
-        amount = parse_amount(norm_ing.qty, norm_ing.unit)
+        # The model sometimes leaves the amount inside the name ("½ cup peas"); `ing_id` and
+        # `name_to_ids` above keep the original name so ids and step matching never move.
+        split = split_amount_from_name(norm_ing.name, norm_ing.qty, norm_ing.unit)
+        amount = split.amount or parse_amount(split.qty_text, norm_ing.unit)
         ingredients.append(
             Ingredient(
                 id=ing_id,
-                name=norm_ing.name,
-                qty=_parse_qty(norm_ing.qty),
-                qty_text=norm_ing.qty,
+                name=split.name,
+                qty=split.amount.low if split.amount else _parse_qty(split.qty_text),
+                qty_text=split.qty_text,
                 qty_amount=amount,
                 unit=norm_ing.unit,
                 unit_canonical=canonical_unit(norm_ing.unit, amount.rest if amount else None),
