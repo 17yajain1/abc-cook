@@ -24,6 +24,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": "warm (80-90 ml)",
         "group": null,
         "optional": false
@@ -40,6 +41,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": "10g",
         "group": null,
         "optional": false
@@ -56,6 +58,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": "8g",
         "group": null,
         "optional": false
@@ -72,6 +75,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": "50 ml",
         "group": null,
         "optional": false
@@ -88,6 +92,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": "4g",
         "group": null,
         "optional": false
@@ -104,6 +109,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": "250g",
         "group": null,
         "optional": false
@@ -115,6 +121,7 @@
         "qty_text": "5 tbsp (50g) for dough and 15 tbsp (150g) for grease",
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": "soft butter",
         "group": null,
         "optional": false
@@ -126,6 +133,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false

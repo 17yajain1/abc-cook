@@ -24,6 +24,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -40,6 +41,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -56,6 +58,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": "sliced",
         "group": "FOR KADI",
         "optional": false
@@ -72,6 +75,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": "chopped",
         "group": "FOR KADI",
         "optional": false
@@ -88,6 +92,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": "chopped",
         "group": "FOR KADI",
         "optional": false
@@ -104,6 +109,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -120,6 +126,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -136,6 +143,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -152,6 +160,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -163,6 +172,7 @@
         "qty_text": "to taste",
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -179,6 +189,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -195,6 +206,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -211,6 +223,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -227,6 +240,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -243,6 +257,7 @@
           "rest": ""
         },
         "unit": "nos",
+        "unit_canonical": "count",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -259,6 +274,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR KADI",
         "optional": false
@@ -275,6 +291,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -286,6 +303,7 @@
         "qty_text": "to taste",
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -302,6 +320,7 @@
           "rest": ""
         },
         "unit": "no",
+        "unit_canonical": "count",
         "prep_note": "chopped",
         "group": "FOR PAKORA",
         "optional": false
@@ -318,6 +337,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -334,6 +354,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -350,6 +371,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -366,6 +388,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -382,6 +405,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -398,6 +422,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": "chopped",
         "group": "FOR PAKORA",
         "optional": false
@@ -414,6 +439,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": "FOR PAKORA",
         "optional": false
@@ -430,6 +456,7 @@
           "rest": ""
         },
         "unit": "tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
         "optional": false
@@ -446,6 +473,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
         "optional": false
@@ -462,6 +490,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
         "optional": false
@@ -478,6 +507,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": "FOR TEMPERING",
         "optional": false

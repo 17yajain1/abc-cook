@@ -19,6 +19,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "cup",
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -30,6 +31,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "cake",
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -41,6 +43,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "sachet",
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false

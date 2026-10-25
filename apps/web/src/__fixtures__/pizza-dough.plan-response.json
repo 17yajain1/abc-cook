@@ -24,6 +24,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": "105-110˚F",
         "group": null,
         "optional": false
@@ -40,6 +41,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -56,6 +58,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -72,6 +75,7 @@
           "rest": ""
         },
         "unit": "Tbsp",
+        "unit_canonical": "tbsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -88,6 +92,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": "420 grams",
         "group": null,
         "optional": false

@@ -19,6 +19,7 @@
         "qty_text": "15",
         "qty_amount": null,
         "unit": "oz can",
+        "unit_canonical": "oz",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -35,6 +36,7 @@
           "rest": ""
         },
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -51,6 +53,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -67,6 +70,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -83,6 +87,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -99,6 +104,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -115,6 +121,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -131,6 +138,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -147,6 +155,7 @@
           "rest": ""
         },
         "unit": "tsp",
+        "unit_canonical": "tsp",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -163,6 +172,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -179,6 +189,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -195,6 +206,7 @@
           "rest": ""
         },
         "unit": "cups",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": null,
         "optional": false
@@ -206,6 +218,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -217,6 +230,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": true
@@ -228,6 +242,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -239,6 +254,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -250,6 +266,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": null,
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false

@@ -19,6 +19,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "g",
+        "unit_canonical": null,
         "prep_note": "rinsed",
         "group": null,
         "optional": false
@@ -30,6 +31,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "L",
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -41,6 +43,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "medium",
+        "unit_canonical": null,
         "prep_note": "finely chopped",
         "group": null,
         "optional": false
@@ -52,6 +55,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "tbsp",
+        "unit_canonical": null,
         "prep_note": null,
         "group": null,
         "optional": false
@@ -63,6 +67,7 @@
         "qty_text": null,
         "qty_amount": null,
         "unit": "tsp",
+        "unit_canonical": null,
         "prep_note": "to taste",
         "group": null,
         "optional": false

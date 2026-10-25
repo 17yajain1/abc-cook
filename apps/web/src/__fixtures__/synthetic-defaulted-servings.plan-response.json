@@ -24,6 +24,7 @@
           "rest": ""
         },
         "unit": "cup",
+        "unit_canonical": "cup",
         "prep_note": null,
         "group": null,
         "optional": false
