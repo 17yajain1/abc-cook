@@ -41,6 +41,7 @@ _EXTRACT_MODULES = (
     "import_pipeline.py",
     "postprocess.py",
     "quantity.py",
+    "units.py",
 )
 
 

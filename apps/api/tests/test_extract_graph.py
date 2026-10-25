@@ -1443,6 +1443,30 @@ def test_qty_text_populated_alongside_parsed_qty() -> None:
     assert salt.qty_text == "a pinch"
 
 
+def test_unit_canonical_set_from_unit_or_amount_rest() -> None:
+    recipe = _recipe(
+        [_step(text="Do something.")],
+        ingredients=[
+            NormalizedIngredient(name="Rice", qty="200", unit="gms", prep_note=None),
+            NormalizedIngredient(name="Water", qty="4½ lts", unit=None, prep_note=None),
+            NormalizedIngredient(name="Egg", qty="2", unit="Nos", prep_note=None),
+            NormalizedIngredient(name="Onion", qty="1", unit="medium", prep_note=None),
+            NormalizedIngredient(name="Salt", qty="to taste", unit=None, prep_note=None),
+        ],
+    )
+    result = _build(recipe, "Do something.")
+    assert result.graph is not None
+    rice, water, egg, onion, salt = result.graph.ingredients
+    assert rice.unit == "gms"  # display unit is never rewritten
+    assert [i.unit_canonical for i in (rice, water, egg, onion, salt)] == [
+        "g",
+        "l",
+        "count",
+        None,
+        None,
+    ]
+
+
 # ---------------------------------------------------------------------------
 # A3 -- "until until": doneness_cue is stored without a leading until/till.
 # ---------------------------------------------------------------------------

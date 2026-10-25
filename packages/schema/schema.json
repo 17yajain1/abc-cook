@@ -796,6 +796,18 @@
             }
           ],
           "description": "Unit, e.g. \"medium\", \"g\", \"tbsp\"."
+        },
+        "unit_canonical": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "`unit` mapped to one canonical spelling (g, kg, ml, l, tsp, tbsp, cup, katori, glass, oz, lb, pinch, count), or null when the unit is absent or not in the closed alias table. Never guessed; `unit` itself is not rewritten."
         }
       },
       "required": [

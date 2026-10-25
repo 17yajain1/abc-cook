@@ -53,6 +53,14 @@ class Ingredient(BaseModel):
         ),
     )
     unit: str | None = Field(description='Unit, e.g. "medium", "g", "tbsp".')
+    unit_canonical: str | None = Field(
+        default=None,
+        description=(
+            "`unit` mapped to one canonical spelling (g, kg, ml, l, tsp, tbsp, cup, katori, "
+            "glass, oz, lb, pinch, count), or null when the unit is absent or not in the closed "
+            "alias table. Never guessed; `unit` itself is not rewritten."
+        ),
+    )
     prep_note: str | None = Field(
         description='Preparation stated on the ingredient line, e.g. "finely chopped".',
     )

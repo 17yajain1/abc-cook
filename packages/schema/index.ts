@@ -258,6 +258,10 @@ export interface Ingredient {
    * Unit, e.g. "medium", "g", "tbsp".
    */
   unit: string | null;
+  /**
+   * `unit` mapped to one canonical spelling (g, kg, ml, l, tsp, tbsp, cup, katori, glass, oz, lb, pinch, count), or null when the unit is absent or not in the closed alias table. Never guessed; `unit` itself is not rewritten.
+   */
+  unit_canonical?: string | null;
 }
 /**
  * A quantity parsed from the source text, structured so it can be multiplied.

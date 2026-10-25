@@ -39,6 +39,7 @@ from dataclasses import dataclass, field, replace
 from typing import Literal
 
 from abc_cook.extract.quantity import VULGAR_FRACTIONS, parse_amount
+from abc_cook.extract.units import canonical_unit
 from abc_cook.schema.graph import CookingGraph, SourceRef, Stage
 from abc_cook.schema.ingredient import Ingredient
 from abc_cook.schema.node import Attention, Node, NodeKind
@@ -1766,14 +1767,16 @@ def build_graph(
         # made an earlier occurrence permanently unconsumable regardless of what any
         # step claimed, a real bug found running repair.py against a real recipe.
         name_to_ids.setdefault(norm_ing.name.lower(), []).append(ing_id)
+        amount = parse_amount(norm_ing.qty, norm_ing.unit)
         ingredients.append(
             Ingredient(
                 id=ing_id,
                 name=norm_ing.name,
                 qty=_parse_qty(norm_ing.qty),
                 qty_text=norm_ing.qty,
-                qty_amount=parse_amount(norm_ing.qty, norm_ing.unit),
+                qty_amount=amount,
                 unit=norm_ing.unit,
+                unit_canonical=canonical_unit(norm_ing.unit, amount.rest if amount else None),
                 prep_note=norm_ing.prep_note,
                 group=norm_ing.group,
                 optional=False,
