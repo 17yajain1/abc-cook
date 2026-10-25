@@ -1,0 +1,408 @@
+{
+  "recipe": {
+    "title": "Egg Bhurji",
+    "channel": "Get Curried",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "onions",
+        "qty": "3",
+        "unit": "large",
+        "prep_note": "Chop onions finely",
+        "group": null
+      },
+      {
+        "name": "tomatoes",
+        "qty": "3",
+        "unit": "large",
+        "prep_note": "chop tomatoes",
+        "group": null
+      },
+      {
+        "name": "green chillies",
+        "qty": "4",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Ginger",
+        "qty": "1",
+        "unit": "inch piece",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "butter",
+        "qty": "2",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "vegetable oil",
+        "qty": "2",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": "as required",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "red chilly powder",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "turmeric powder",
+        "qty": "1/2",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "pav bhaji masala",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "coriander leaves",
+        "qty": "Handful",
+        "unit": null,
+        "prep_note": "fresh",
+        "group": null
+      },
+      {
+        "name": "eggs",
+        "qty": "6",
+        "unit": "large",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Chop onions finely (prep implied by ingredient line).",
+        "label": "Chop onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onions"
+        ],
+        "produces_component": "chopped onions",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat oil and butter in a moderately hot pan, add the chopped onions and allow the onions to sweat a little.",
+        "label": "Sweat onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 2.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "vegetable oil",
+          "butter",
+          "chopped onions"
+        ],
+        "produces_component": "sweated onion mixture",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "sweat a little"
+      },
+      {
+        "origin": "source",
+        "text": "Chop the green chillies and ginger (roughly/snipped) and add them to the pan with the onions; mix and sauté briefly.",
+        "label": "Add chilies & ginger",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "green chillies",
+          "Ginger",
+          "sweated onion mixture"
+        ],
+        "produces_component": "onion-ginger-chili base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Chop the tomatoes. Add the tomatoes to the pan and continue sautéing until they become nice and pulpy; sprinkle a little salt to aid the process.",
+        "label": "Cook tomatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tomatoes",
+          "Salt",
+          "onion-ginger-chili base"
+        ],
+        "produces_component": "tomato mixture",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till it becomes nice and pulpy"
+      },
+      {
+        "origin": "source",
+        "text": "Add turmeric, red chilli powder and pav bhaji masala to the tomato mixture and mix so the masala starts cooking.",
+        "label": "Add spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "turmeric powder",
+          "red chilly powder",
+          "pav bhaji masala",
+          "tomato mixture"
+        ],
+        "produces_component": "spiced masala base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Lower the flame and cook the masalas nicely for 5 to 7 Minutes so the spices cook into the mixture.",
+        "label": "Cook masalas",
+        "attention": "unattended",
+        "attention_cue": "cook the masalas need to cook nicely for 5 to 7 Minutes",
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 7.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "spiced masala base"
+        ],
+        "produces_component": "cooked masala base",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "cook the masalas need to cook nicely"
+      },
+      {
+        "origin": "source",
+        "text": "Break the eggs into a bowl, add a little salt and whisk them; beaten eggs go straight in when ready.",
+        "label": "Beat eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "eggs",
+          "Salt"
+        ],
+        "produces_component": "beaten eggs",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour the beaten eggs into the pan with the cooked masala base and mix them in on a very slow flame, keeping scraping the sides so the eggs mix evenly.",
+        "label": "Add eggs",
+        "attention": "periodic",
+        "attention_cue": "keep scraping the sides",
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5,
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "beaten eggs",
+          "cooked masala base"
+        ],
+        "produces_component": "mixed eggs",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "mixed nicely and evenly"
+      },
+      {
+        "origin": "source",
+        "text": "Increase the flame a little if desired and keep stirring until the egg is completely well done, adjusting for how moist or dry you want the bhurji.",
+        "label": "Finish eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "mixed eggs"
+        ],
+        "produces_component": "cooked egg bhurji",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till it's completely well done"
+      },
+      {
+        "origin": "source",
+        "text": "Turn off the flame and add fresh coriander leaves; mix and serve.",
+        "label": "Garnish & serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coriander leaves",
+          "cooked egg bhurji"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in video transcript and description; timing for masalas (\"5 to 7 Minutes\") quoted verbatim and used as stated duration. Ingredient prep notes inferred from ingredient lines (e.g., onions chopped) as allowed. 'keep scraping the sides' used as attention cue for periodic stirring."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Egg Bhurji Recipe | How To Make Anda Bhurji | The Bombay Chef - Varun Inamdar\n\nChannel: Get Curried\n\nVideo description:\n\nLearn how to make Egg Bhurji at home with chef Varun Inamdar only on Get Curried\n\nEgg Bhurji is a dish popular in the north and western India and Pakistan. It is often confused with scrambled eggs and the Parsi dish akuri but Egg Bhurji is a different dish in totality.So watch and learn how to make Egg Bhurji at home with chef Varun Inamdar only on Get Curried.\n\nIngredients\n3 large onions\n3 large tomatoes\n4 green chillies\n1 inch piece Ginger\n2 tbsp butter\n2 tbsp vegetable oil\nSalt as required\n1 tbsp red chilly powder\n1/2 tbsp turmeric powder\n1 tbsp pav bhaji masala\nHandful of coriander leaves\n6 large eggs\n\nMethod\n- Chop onions finely\n- Add oil, butter and onions and allow the onions to sweat\n- Chop chillies and ginger and add it to the pan\n- chop tomatoes and add into the pan \n- Add salt, turmeric, red chilli powder and pav bhaji masala\n- Mix everything\n- Beat the eggs add salt and put the eggs into the pan\n- Egg Bhurji is ready to be served.\n\n#EggBhurji #AndaBhurji #GetCurried #EggRecipe #BreakfastRecipe \n\nhost - Varun Inamdar\ncopyright - REPL\n\nSubscribe to YouTube: http://www.youtube.com/user/getcurried?sub_confirmation=1\n\nhttps://www.facebook.com/GetCurried\n\nhttps://twitter.com/Get_Curried\n\nhttps://instagram.com/getcurried\n\n\nEgg bhurji is a scrambled eggs dish originating from the Indian subcontinent. It is sometimes compared with the Parsi dish akuri. The difference lies in its preparation and addition of sautéed chopped onions, chilies and optional spices.It is usually served with rotis or naan or pav/bread in Mumbai. .\n\n\nFor brand collaborations and inquiries, reach out to us at: replcollabs@gmail.com\n\nTranscript (auto-generated captions, en):\n\n[Music] hi guys welcome to get CED this is the Bombay chef nandar and today I get a very typical Bombay street food to you it's called the andab bji or the Egg bji let's begin andab bji is a spicy scrambled egg for which I'm going to use some onions and chop them finely [Music] [Music] onions are cut and ready in a moderately hot pan I'm adding in a little bit of [Music] oil and along with this some butter while the butter is still melting I'm sliding in the chopped onions a quick stir and allow these onions to sweat a little in the interim let's chop the chilies and ginger I'm just going to snip the stock and chop these roughly well this two now goes with the onions a quick mix and while this is Sting let's chop some [Music] Tomatoes the tomatoes are chopped and ready also the onion Ginger and chili have sauteed well time to add in the tomatoes and continue sathing it till it becomes nice and pulpy to Aid this process I'm just sprinkling a little bit of salt along with this let's start adding the powder spices the first one that goes in is some turmeric the next red chili powder this can be as for your choice because remember you've also added some green chilies and finally the magic spice powder which all Mumbai stall owners by default have it in their Kitty so here is the Pow baji masala [Music] a nice mix just make sure the Masala is just cooking well this is the time when the flame can be lowered and the masalas need to cook nicely for 5 to 7 Minutes in the interim let's break the eggs and start whisking them [Music] [Music] a little bit of salt to season the eggs remember the masalas already have the salt and now let's whisk this the beaten eggs go straight in the [Music] mixture this needs to be mixed nicely and evenly on a very slow flame keep scraping the sides [Music] now that this mixture has mixed well you can increase the flame a little and just make sure you keep stirring it till it's completely well done one thing which is important for you to know is that an egg Cooks at 60° so any temperature beyond that the egg is well done but here you can keep stir frying it if you think you need it Dyer or you need it a little moist that choice is yours the B is done and ready off goes the flame and now let's add in some fresh [Music] [Music] coriander so here you have your ultimate Bombay style bji which is done and ready do try this at home do like do share do subscribe to the channel and tag us on social media not only when you make this at home but also when you eat this outside with your friends have fun [Music]",
+  "raw_title": "Egg Bhurji Recipe | How To Make Anda Bhurji | The Bombay Chef - Varun Inamdar",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=glUEnS8J84Q",
+    "imported_at": "2026-10-25T10:39:05.366224Z"
+  },
+  "graph_id": "g_3a_20",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

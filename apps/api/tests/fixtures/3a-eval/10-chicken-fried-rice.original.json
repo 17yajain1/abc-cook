@@ -1,0 +1,417 @@
+{
+  "recipe": {
+    "title": "Chicken Fried Rice",
+    "channel": "recipetineats.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": "4 - 5 people as a side",
+    "cuisine": "Chinese",
+    "stated_total_min": 20,
+    "ingredients": [
+      {
+        "name": "oil",
+        "qty": "2",
+        "unit": "tbsp",
+        "prep_note": "peanut, vegetable or canola",
+        "group": null
+      },
+      {
+        "name": "eggs",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "lightly whisked",
+        "group": null
+      },
+      {
+        "name": "chicken breast",
+        "qty": "150g (5oz)",
+        "unit": null,
+        "prep_note": "finely sliced into small pieces",
+        "group": null
+      },
+      {
+        "name": "garlic cloves",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "minced",
+        "group": null
+      },
+      {
+        "name": "onion",
+        "qty": "1/2",
+        "unit": null,
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "bacon",
+        "qty": "120g (4oz)",
+        "unit": null,
+        "prep_note": "excess fat trimmed, chopped (Note 1)",
+        "group": null
+      },
+      {
+        "name": "small carrot",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "peeled and diced 0.75cm / 1/3\"",
+        "group": null
+      },
+      {
+        "name": "frozen corn",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": "(or can or fresh)",
+        "group": null
+      },
+      {
+        "name": "frozen peas",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cooked white rice",
+        "qty": "2",
+        "unit": "cups (packed)",
+        "prep_note": "day old (Note 2)",
+        "group": null
+      },
+      {
+        "name": "green onions",
+        "qty": "3/4",
+        "unit": "cup",
+        "prep_note": "finely sliced",
+        "group": null
+      },
+      {
+        "name": "Chinese cooking wine or Mirin",
+        "qty": "2.5",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "Sauce"
+      },
+      {
+        "name": "oyster sauce",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "Sauce"
+      },
+      {
+        "name": "light soy sauce",
+        "qty": "3",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": "Sauce"
+      },
+      {
+        "name": "sesame oil",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": "optional",
+        "group": "Sauce"
+      },
+      {
+        "name": "white pepper",
+        "qty": "1/4",
+        "unit": "tsp",
+        "prep_note": "optional",
+        "group": "Sauce"
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Sauce & chicken: Mix Sauce in a bowl. Pour 2 tsp over chicken, toss to coat, then set aside for 10 minutes.",
+        "label": "Marinate chicken",
+        "attention": "unattended",
+        "attention_cue": "set aside for 10 minutes",
+        "duration_typical_min": 9.0,
+        "duration_min": 9.0,
+        "duration_max": 12.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chicken breast",
+          "Chinese cooking wine or Mirin",
+          "oyster sauce",
+          "light soy sauce",
+          "sesame oil",
+          "white pepper"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Egg: Heat 1 tbsp oil in a wok or skillet over medium heat. Add egg and scramble until just cooked (still a touch wet) then remove.",
+        "label": "Cook egg",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "eggs",
+          "oil"
+        ],
+        "produces_component": "scrambled egg",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until just cooked (still a touch wet)"
+      },
+      {
+        "origin": "source",
+        "text": "Fried Rice: Turn heat up to high, add remaining 1/2 tbsp oil and bacon into same skillet. Cook for 1 minute or so until fat starts to melt, then add onion and garlic.",
+        "label": "Start bacon",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.9,
+        "duration_min": 0.9,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "bacon",
+          "oil",
+          "onion",
+          "garlic cloves"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until fat starts to melt"
+      },
+      {
+        "origin": "source",
+        "text": "Cook until bacon is light golden - about 1 1/2 minutes.",
+        "label": "Cook bacon",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.3,
+        "duration_min": 1.3,
+        "duration_max": 1.8,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "bacon"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "light golden"
+      },
+      {
+        "origin": "source",
+        "text": "Add vegetables (still frozen is fine). Cook for 1 minute.",
+        "label": "Cook vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "frozen corn",
+          "frozen peas",
+          "small carrot"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add chicken and cook until it changes from pink to white - about 1 1/2 minutes.",
+        "label": "Cook chicken",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.3,
+        "duration_min": 1.3,
+        "duration_max": 1.8,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4,
+          2,
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chicken breast"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until it changes from pink to white"
+      },
+      {
+        "origin": "source",
+        "text": "Add rice and Sauce ingredients. Cook for 1 1/2 minutes, stirring consantly.",
+        "label": "Combine rice",
+        "attention": "periodic",
+        "attention_cue": "stirring consantly",
+        "duration_typical_min": 1.3,
+        "duration_min": 1.3,
+        "duration_max": 1.8,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5,
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked white rice",
+          "Chinese cooking wine or Mirin",
+          "oyster sauce",
+          "light soy sauce",
+          "sesame oil",
+          "white pepper"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add egg and green onion, toss through to disperse then remove from heat.",
+        "label": "Finish rice",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "scrambled egg",
+          "green onions"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve immediately!",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Serve immediately!",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and timings taken from the linked recipetineats.com JSON-LD HowToStep data. Ingredient names and prep notes are grounded to the recipeIngredient lines; parenthetical notes were moved to prep_note where they appeared on the same line.",
+      "Produced one component label: step 1 produces \"scrambled egg\" which is consumed in the finish step.",
+      "Attention cue for step 6 preserves the original misspelling exactly: \"stirring consantly\"."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Chicken Fried Rice\n\nChannel: recipetineats.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Chicken Fried Rice\",\n  \"author\": {\n    \"@id\": \"https://www.recipetineats.com/#/schema/person/1684e6a75e9f91ae2e33ca2de95b47e2\"\n  },\n  \"description\": \"Recipe video above. A fully loaded, completely delicious Chicken Fried Rice! Serve it as a side - or have it as a main! (See here for a classic side dish Fried Rice).\",\n  \"datePublished\": \"2019-10-09T16:00:01+00:00\",\n  \"image\": [\n    \"https://www.recipetineats.com/tachyon/2019/09/Chicken-fried-rice-copy.jpg\",\n    \"https://www.recipetineats.com/tachyon/2019/09/Chicken-fried-rice-copy.jpg?resize=500%2C500\",\n    \"https://www.recipetineats.com/tachyon/2019/09/Chicken-fried-rice-copy.jpg?resize=500%2C375\",\n    \"https://www.recipetineats.com/tachyon/2019/09/Chicken-fried-rice-copy.jpg?resize=480%2C270\"\n  ],\n  \"recipeYield\": [\n    \"4\",\n    \"4 - 5 people as a side\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT10M\",\n  \"totalTime\": \"PT20M\",\n  \"recipeIngredient\": [\n    \"2 tbsp oil (, peanut, vegetable or canola)\",\n    \"2  eggs (, lightly whisked)\",\n    \"150g (5oz)  chicken breast (, finely sliced into small pieces)\",\n    \"2  garlic cloves (, minced)\",\n    \"1/2  onion (, finely chopped)\",\n    \"120g (4oz)  bacon (, excess fat trimmed, chopped (Note 1))\",\n    \"1  small carrot* (, peeled and diced 0.75cm / 1/3\\\")\",\n    \"1/2 cup frozen corn* ((or can or fresh))\",\n    \"1/2 cup frozen peas*\",\n    \"2 cups (packed) cooked white rice (, day old (Note 2))\",\n    \"3/4 cup green onions (, finely sliced)\",\n    \"2.5 tbsp Chinese cooking wine or Mirin ((Note 3))\",\n    \"1 tbsp oyster sauce ((Note 4))\",\n    \"3 tbsp light soy sauce ((Note 5))\",\n    \"1/2 tsp sesame oil (, optional)\",\n    \"1/4 tsp white pepper (, optional)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Sauce &amp; chicken: Mix Sauce in a bowl. Pour 2 tsp over chicken, toss to coat, then set aside for 10 minutes.\",\n      \"name\": \"Sauce &amp; chicken: Mix Sauce in a bowl. Pour 2 tsp over chicken, toss to coat, then set aside for 10 minutes.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Egg: Heat 1 tbsp oil in a wok or skillet over medium heat. Add egg and scramble until just cooked (still a touch wet) then remove.\",\n      \"name\": \"Egg: Heat 1 tbsp oil in a wok or skillet over medium heat. Add egg and scramble until just cooked (still a touch wet) then remove.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Fried Rice: Turn heat up to high, add remaining 1/2 tbsp oil and bacon into same skillet. Cook for 1 minute or so until fat starts to melt, then add onion and garlic.\",\n      \"name\": \"Fried Rice: Turn heat up to high, add remaining 1/2 tbsp oil and bacon into same skillet. Cook for 1 minute or so until fat starts to melt, then add onion and garlic.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Cook until bacon is light golden - about 1 1/2 minutes.\",\n      \"name\": \"Cook until bacon is light golden - about 1 1/2 minutes.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add vegetables (still frozen is fine). Cook for 1 minute.\",\n      \"name\": \"Add vegetables (still frozen is fine). Cook for 1 minute.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add chicken and cook until it changes from pink to white - about 1 1/2 minutes.\",\n      \"name\": \"Add chicken and cook until it changes from pink to white - about 1 1/2 minutes.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add rice and Sauce ingredients. Cook for 1 1/2 minutes, stirring consantly.\",\n      \"name\": \"Add rice and Sauce ingredients. Cook for 1 1/2 minutes, stirring consantly.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-6\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add egg and green onion, toss through to disperse then remove from heat.\",\n      \"name\": \"Add egg and green onion, toss through to disperse then remove from heat.\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-7\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Serve immediately!\",\n      \"name\": \"Serve immediately!\",\n      \"url\": \"https://www.recipetineats.com/chicken-fried-rice/#wprm-recipe-39795-step-0-8\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.98\",\n    \"ratingCount\": \"123\",\n    \"reviewCount\": \"15\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made this recipe on 8/23/2026. I made few substitutes but I adding bacon. It turned out great and delicious. Will make again.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Pamela\"\n      },\n      \"datePublished\": \"2026-08-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Made this last night and all I can say is yum yum yum, truly delicious and thoroughly enjoyed by all and everyone went back for seconds.\\r\\nHighly recommend and can’t wait to make again, will definitely be on rotation in my house.\\r\\nPS. I added a pinch of msg to amplify the flavour.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Chrystal\"\n      },\n      \"datePublished\": \"2026-04-08\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My family loved this!  There were no leftovers at all!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Best Fried Rice\"\n      },\n      \"datePublished\": \"2026-03-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Best chicken fried rice I have cooked. Very simple, full of flavour.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sue\"\n      },\n      \"datePublished\": \"2026-03-03\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"It was delicious! I actually modified it to add more protien. I mixed in some cubed steak and 1 cup of cooked quinoa on top of this recipe and it was very good.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Katrina\"\n      },\n      \"datePublished\": \"2026-01-31\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Looks delicious! Can I marinate the chicken overnight?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"May\"\n      },\n      \"datePublished\": \"2026-01-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"What can I do with leftovers, keep in fridge or freeze?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Tracy Reeve\"\n      },\n      \"datePublished\": \"2026-01-07\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"4\"\n      },\n      \"reviewBody\": \"Cook chicken for one and a half minutes ???? Do you cook it over a roaring fire ?  Rest of the recipe is good lol\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Candy\"\n      },\n      \"datePublished\": \"2025-11-06\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Even though away in our van with minimal amount of needed ingredients, followed as close as possible and hubby loved it! Just shows you trust Nagi! Always! 😄\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Leone howard\"\n      },\n      \"datePublished\": \"2025-11-01\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This recipe was great. It had lare amounts of flavor, and was one of the best fried rice I've seen.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nathan\"\n      },\n      \"datePublished\": \"2025-10-21\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Great Recipe tastes just like I'm at a restaurant! Thanks Nagi.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Dave\"\n      },\n      \"datePublished\": \"2025-08-15\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I love it when a bunch of leftovers come together to create something that doesn't taste at all like leftovers!! This was delicious - flavors like I'd expect from a great Chinese restaurant. Can't wait to try more of your recipes!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"ChristineF\"\n      },\n      \"datePublished\": \"2025-08-02\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This is just the best chicken fried rice recipe I have ever tasted. Followed the instructions to the letter and it turned out perfectly, even better than the local takeaways. Shall definitely make this often. Thank you so much!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Helen McCabe\"\n      },\n      \"datePublished\": \"2025-06-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"As others have said, this is super tasty and easy to make with pantry staples. Only thing that I did differently and will continue to do is to velvet the chicken so that it’s soft like in Chinese restaurants. Mixed some soda bicarbonate in to the sliced chicken and left it for fifteen minutes then washed it off with cold water and then continued with the recipe as written. Doubled the recipe so just under one teaspoon of soda bicarbonate for about 350g chicken. I wonder why Nagi didn’t suggest velveting as an option @recipetin\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nina\"\n      },\n      \"datePublished\": \"2025-05-21\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"We love this recipe! The kids demolish this every time I make it. I was unprepared tonight and made it using 2 packets of microwave brown rice I had in the cupboard and it turned out just as great. I just ripped open the packets, loosened the grains and put it straight in the pan at the rice step. Will probably just do that from now in, instead of cooking rice in advance. The flavours in this are spot on!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Kristy Armstrong\"\n      },\n      \"datePublished\": \"2025-02-17\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Main\",\n    \"Side\"\n  ],\n  \"recipeCuisine\": [\n    \"Asian\",\n    \"Chinese\"\n  ],\n  \"keywords\": \"Chicken fried rice, fried rice recipe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"441 kcal\",\n    \"carbohydrateContent\": \"36 g\",\n    \"proteinContent\": \"21 g\",\n    \"fatContent\": \"23 g\",\n    \"saturatedFatContent\": \"6 g\",\n    \"cholesterolContent\": \"126 mg\",\n    \"sodiumContent\": \"1167 mg\",\n    \"fiberContent\": \"3 g\",\n    \"sugarContent\": \"4 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.recipetineats.com/chicken-fried-rice/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.recipetineats.com/chicken-fried-rice/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.recipetineats.com/chicken-fried-rice/\"\n}",
+  "raw_title": "Chicken Fried Rice",
+  "blog_name": "Chicken Fried Rice",
+  "source": {
+    "kind": "url",
+    "value": "https://www.recipetineats.com/chicken-fried-rice/",
+    "imported_at": "2026-10-25T10:33:39.548247Z"
+  },
+  "graph_id": "g_3a_10",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

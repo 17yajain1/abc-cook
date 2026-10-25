@@ -1,0 +1,464 @@
+{
+  "recipe": {
+    "title": "Egg Roast",
+    "channel": "Shaan Geo",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Egg (മുട്ട)",
+        "qty": "4",
+        "unit": "Nos",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt (ഉപ്പ്)",
+        "qty": "1½",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Water (വെള്ളം)",
+        "qty": "750ml (Approximately)",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Coconut Oil (വെളിച്ചെണ്ണ)",
+        "qty": "4",
+        "unit": "Tablespoons (60ml)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Mustard Seeds (കടുക്)",
+        "qty": "½",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Chopped Ginger (ഇഞ്ചി)",
+        "qty": "1",
+        "unit": "Tablespoon (10gm)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Chopped Garlic (വെളുത്തുള്ളി)",
+        "qty": "1½",
+        "unit": "Tablespoon (15gm)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Onion (സവോള)",
+        "qty": "4",
+        "unit": "Nos (medium size) / 500gm",
+        "prep_note": "sliced",
+        "group": null
+      },
+      {
+        "name": "Salt (ഉപ്പ്)",
+        "qty": "1",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Curry Leaves (കറിവേപ്പില)",
+        "qty": "1",
+        "unit": "Sprig",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Turmeric Powder (മഞ്ഞള്‍പൊടി)",
+        "qty": "¼",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Chilli Powder (മുളകുപൊടി)",
+        "qty": "½",
+        "unit": "Tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Kashmiri Chilli Powder (കാശ്മീരി മുളകുപൊടി)",
+        "qty": "1½",
+        "unit": "Tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Hot Water (ചൂടുവെള്ളം)",
+        "qty": "¼",
+        "unit": "Cup (60ml)",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Lime Juice (നാരങ്ങാനീര്)",
+        "qty": "½",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Crushed Black Pepper (കുരുമുളക് ചതച്ചത്)",
+        "qty": "½",
+        "unit": "Teaspoon",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Place the eggs in a pressure cooker, add 1½ Teaspoon Salt (so they sink), pour enough water to cover the eggs and pressure cook till the first whistle. Turn off the flame after first whistle and wait till the pressure releases from the cooker.",
+        "label": "Boil eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Egg (മുട്ട)",
+          "Salt (ഉപ്പ്)",
+          "Water (വെള്ളം)"
+        ],
+        "produces_component": "boiled eggs",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the first whistle"
+      },
+      {
+        "origin": "source",
+        "text": "When pressure releases, shift the eggs to cold water and when cooled, peel them.",
+        "label": "Cool and peel",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "boiled eggs"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Slit the white portion of each peeled egg on 4 sides so masalas can seep in.",
+        "label": "Slit eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Egg (മുട്ട)"
+        ],
+        "produces_component": "slitted boiled eggs",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat a pan or kadai and when hot add 4 Tablespoons of Coconut Oil.",
+        "label": "Heat oil",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Coconut Oil (വെളിച്ചെണ്ണ)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "When the oil is hot add ½ Teaspoon Mustard Seeds and let it splutter.",
+        "label": "Temper mustard",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Mustard Seeds (കടുക്)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Let it splutter"
+      },
+      {
+        "origin": "source",
+        "text": "Turn down the flame to medium and add 1 Tablespoon chopped Ginger and 1½ Tablespoon chopped Garlic. Sauté them for 30 seconds.",
+        "label": "Sauté aromatics",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 0.6,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Chopped Ginger (ഇഞ്ചി)",
+          "Chopped Garlic (വെളുത്തുള്ളി)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the sliced onions (4 medium), add 1 Teaspoon Salt and mix. Sauté on medium flame till the stage right before turning golden brown; when half done add 1 sprig Curry Leaves and mix again.",
+        "label": "Sauté onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 17.0,
+        "duration_min": 15.0,
+        "duration_max": 20.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Onion (സവോള)",
+          "Salt (ഉപ്പ്)",
+          "Curry Leaves (കറിവേപ്പില)"
+        ],
+        "produces_component": "sautéed onion masala",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Sauté till the stage right before turning golden brown"
+      },
+      {
+        "origin": "source",
+        "text": "Mix in ¼ Teaspoon Turmeric Powder, ½ Tablespoon Chilli Powder and 1½ Tablespoon Kashmiri Chilli Powder and stir till the raw flavour of Chilli Powder settles.",
+        "label": "Add spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Turmeric Powder (മഞ്ഞള്‍പൊടി)",
+          "Chilli Powder (മുളകുപൊടി)",
+          "Kashmiri Chilli Powder (കാശ്മീരി മുളകുപൊടി)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the raw flavour of Chilli Powder settles"
+      },
+      {
+        "origin": "source",
+        "text": "Add ¼ Cup hot Water (do not use cold water), ½ Teaspoon Lime Juice and ½ Teaspoon Crushed Black Pepper. Mix for 1 more minute till the water reduces.",
+        "label": "Add water and balance",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.2,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Hot Water (ചൂടുവെള്ളം)",
+          "Lime Juice (നാരങ്ങാനീര്)",
+          "Crushed Black Pepper (കുരുമുളക് ചതച്ചത്)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the water reduces"
+      },
+      {
+        "origin": "source",
+        "text": "Add the boiled and slitted eggs, mix and combine well with the masala.",
+        "label": "Combine eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "slitted boiled eggs",
+          "sautéed onion masala"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Push the eggs to the center and cover them with the masala. Turn off the flame and keep it like this for 15 minutes. Serve only after that so the raw flavour of the chilli powder settles.",
+        "label": "Rest covered",
+        "attention": "unattended",
+        "attention_cue": "keep it like this for 15 minutes",
+        "duration_typical_min": 15.0,
+        "duration_min": 15.0,
+        "duration_max": 15.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "slitted boiled eggs"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "so the raw flavour of the chilli powder settles"
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in the transcript (creator subtitles). Ingredient names/quantities taken verbatim from the video description. I created components \"boiled eggs\" and \"slitted boiled eggs\" to link egg preparation to later steps. Exact attention and doneness cues quoted from transcript where present. Multiple Salt (ഉപ്പ്) entries preserved as listed (one for boiling, one for sauté)."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: മുട്ട റോസ്റ്റ് | Egg Roast - Kerala Style Recipe | Mutta Roast Malayalam Recipe\n\nChannel: Shaan Geo\n\nVideo description:\n\nEgg roast is a staple Kerala side dish. It is also called ‘Mutta Roast’. It complements almost every main courses like Appam, Idiyappam, Pathiri, Chappathi etc. It so easy to make and so flavourful. Sautéing onions with spices is the only major step in this Kerala egg roast recipe. Friends, try this recipe and let me know your feedback in the comment section below.\n#StayHome and Learn #WithMe\n\n⚙️ WHAT I USE AT THIS CHANNEL\n  » Kadai (Pan) used for this video: https://amzn.to/3kpeEz9\n\n 🧺 INGREDIENTS\nEgg (മുട്ട) - 4 Nos\nSalt (ഉപ്പ്) - 1½ Teaspoon\nWater (വെള്ളം) - 750ml (Approximately)\n—————————————————\nCoconut Oil (വെളിച്ചെണ്ണ) - 4 Tablespoons (60ml)\nMustard Seeds (കടുക്) - ½ Teaspoon\nChopped Ginger (ഇഞ്ചി) - 1 Tablespoon (10gm)\nChopped Garlic (വെളുത്തുള്ളി) - 1½ Tablespoon (15gm)\nOnion (സവോള) - 4 Nos (medium size) / 500gm\nSalt (ഉപ്പ്) - 1 Teaspoon\nCurry Leaves (കറിവേപ്പില) - 1 Sprig\nTurmeric Powder (മഞ്ഞള്‍പൊടി) - ¼ Teaspoon\nChilli Powder (മുളകുപൊടി) - ½ Tablespoon\nKashmiri Chilli Powder (കാശ്മീരി മുളകുപൊടി) - 1½ Tablespoon\nHot Water (ചൂടുവെള്ളം) - ¼ Cup (60ml)\nLime Juice (നാരങ്ങാനീര്) - ½ Teaspoon\nCrushed Black Pepper (കുരുമുളക് ചതച്ചത്) - ½ Teaspoon\n\nINSTAGRAM: https://www.instagram.com/shaangeo/\nFACEBOOK: https://www.facebook.com/shaangeo/\nEnglish Website: https://www.tastycircle.com/\nMalayalam Website: https://www.pachakamonline.com/\n\nഈ യൂട്യൂബ് ചാനലിൽ നോക്കി നിങ്ങൾ തയാറാക്കിയ ഭക്ഷണത്തിന്റെ ഫോട്ടോകൾ പങ്കുവെക്കുവാനായി ഒരു ഫേസ്ബുക് ഗ്രൂപ്പ് ഉള്ള കാര്യം എല്ലാ സുഹൃത്തുക്കളുടെയും ശ്രദ്ധയിൽപ്പെടുത്തുന്നു. ഗ്രൂപ്പിന്റെ പേര് \"Shaan Geo Foodies Family\" എന്നാണ്. എല്ലാവരെയും സ്നേഹത്തോടെ ഗ്രൂപ്പിലേക്ക് സ്വാഗതം ചെയ്യുന്നു.\n\nDetails of Kadai/Pan used in this recipe: https://amzn.to/2CVKnXL\n\nTranscript (creator subtitles, en):\n\nGreetings... We are making a side dish which befits Appapam, Idiyappam, Chappathi etc. Mutta (Egg) Roast. For Egg Roast, let's boil the Eggs first. For serving 4 people, I've taken 4 Eggs here. You can boil the Eggs according to your preference. I'll share a simple trick to boil Eggs here. Keep Eggs in a pressure cooker and add some Salt to it. We need a bit more Salt so as to sink into the Eggs. Here, I've taken 1½ teaspoon of Salt. Pour enough Water to cover the Eggs. Pressure cook it till the first whistle. Turn off the flame after first whistle, and wait till the pressure releases from the Cooker. When the pressure releases, shift the Eggs to cold water. When the Eggs cool down, peel them. Slit the white portion of the Eggs to allow masalas to seep in. On each Egg, slit on 4 sides like this. To make Mutta Roast, heat a pan or kadai like this. When the kadai is hot, add 4 tablespoon of Oil. Its better to take Coconut Oil. When the Oil is hot, add ½ teaspoon of Mustard seeds. Let it splutter. Now turn down the flame to medium, and Add 1 tablespoon of chopped Ginger. Add 1½ tablespoon of chopped Garlic. Sauté them for 30 seconds. Ginger and Garlic can be chopped or crushed. It's better NOT to add Ginger-Garlic paste. Now add 4 medium sized Onions (sliced). If the onions are small, add 5 nos., and if they are big, add 5 nos. Add 1 teaspoon of Salt and mix well. Now sauté well in a medium flame. Sauté till the stage right before turning golden brown. When half done, add 1 sprig of Curry leaves and mix again. Egg roast will be tasty, when cooked slowly like this, in medium flame for about 15-20 minutes. Now, its sautéd for about 20 minutes. Now add ¼ teaspoon of Turmeric Powder. Add ½ tablespoon of Chilli Powder. Add 1½ tablespoon of Kashmiri Chilli Powder. Kashmiri Chilli Powder is used for low heat and enhanced colour. Now mix it till the raw flavour of Chilli Powder settles. Add ¼ cup of hot Water. DO NOT use cold water. Along with that,to balance the flavours of the dish, add ½ teaspoon of Lime Juice. Add ½ teaspoon of crushed Pepper. Mix for 1 more minute till the water reduces. We add water so that the spices spread and balance well. Now add the boiled and slitted Eggs. Mix and combine well. Now push the eggs to the center and cover it with the masala. Turn off the flame and keep it like this for 15 minutes. Serve it only after that. Only then will the raw flavour of the Chilli powder settle. Hope this video benefits everyone, especially bachelors and beginners. Ingredient list is given in the description box. Drop your opinions and suggestions in the description box below.",
+  "raw_title": "മുട്ട റോസ്റ്റ് | Egg Roast - Kerala Style Recipe | Mutta Roast Malayalam Recipe",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=BO1933RSVlw",
+    "imported_at": "2026-10-25T10:38:35.294066Z"
+  },
+  "graph_id": "g_3a_19",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

@@ -1,0 +1,533 @@
+{
+  "recipe": {
+    "title": "Chicken Curry Recipe",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": 3,
+    "servings_source": "stated",
+    "yield_text": "3 people",
+    "cuisine": "Indian",
+    "stated_total_min": 50,
+    "ingredients": [
+      {
+        "name": "chicken ((preferably bone-in, boneless is okay))",
+        "qty": "½ kg (1.1 lbs.)",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil",
+        "qty": "2 to 3 tablespoons",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "onions",
+        "qty": "1 cup (3 medium)",
+        "unit": "cup",
+        "prep_note": "fine chopped",
+        "group": null
+      },
+      {
+        "name": "green chilies",
+        "qty": "1 to 2",
+        "unit": null,
+        "prep_note": "slit, omit for less spicy",
+        "group": null
+      },
+      {
+        "name": "ginger garlic paste",
+        "qty": "1 tablespoon",
+        "unit": "tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "tomatoes",
+        "qty": "½ cup (2 medium)",
+        "unit": "cup",
+        "prep_note": "pureed or finely chopped",
+        "group": null
+      },
+      {
+        "name": "yogurt",
+        "qty": "¼ cup",
+        "unit": "cup",
+        "prep_note": "or 1½ tbsp cashew butter or 12 cashews powdered & pureed with ¼ cup water",
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "½ to ¾ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "adjust as needed",
+        "group": null
+      },
+      {
+        "name": "hot water",
+        "qty": "½ to 1 cup",
+        "unit": "cup",
+        "prep_note": "or light coconut milk",
+        "group": null
+      },
+      {
+        "name": "coriander leaves",
+        "qty": "2 tablespoons",
+        "unit": "tablespoons",
+        "prep_note": "or mint leaves finely chopped",
+        "group": null
+      },
+      {
+        "name": "turmeric powder",
+        "qty": "¼ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Kashmiri red chili powder",
+        "qty": "1 teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "or smoked paprika (½ tsp for less spicy)",
+        "group": null
+      },
+      {
+        "name": "garam masala",
+        "qty": "1 teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(½ tsp more if needed, adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "coriander powder",
+        "qty": "1 teaspoon",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "bay leaf",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "or 1 sprig curry leaves",
+        "group": null
+      },
+      {
+        "name": "cloves",
+        "qty": "4",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cinnamon piece",
+        "qty": "2 inch",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "green cardamom",
+        "qty": "3",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "On a medium flame, heat oil in a deep pan. Add the whole spices - bay leaf, cinnamon, cloves & green cardamoms.",
+        "label": "Bloom spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil",
+          "bay leaf",
+          "cinnamon piece",
+          "cloves",
+          "green cardamom"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Stir in the chopped onions and chilies. Saute until deep golden in color, for 7 to 8 mins.",
+        "label": "Saute onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 7.5,
+        "duration_min": 7.0,
+        "duration_max": 8.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onions",
+          "green chilies"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "deep golden in color"
+      },
+      {
+        "origin": "source",
+        "text": "Add ginger garlic paste and saute till you get a nice aroma, for about a minute.",
+        "label": "Add paste",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "ginger garlic paste"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "nice aroma"
+      },
+      {
+        "origin": "source",
+        "text": "Then add tomatoes, turmeric and salt. Mix well and cook until the tomatoes turn soft & mushy.",
+        "label": "Cook tomatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 4.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tomatoes",
+          "turmeric powder",
+          "salt"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "turn soft & mushy"
+      },
+      {
+        "origin": "source",
+        "text": "Turn down the heat to low, Stir in the yogurt (or cashew paste), red chili powder, garam masala & coriander powder.",
+        "label": "Add spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.5,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "yogurt",
+          "Kashmiri red chili powder",
+          "garam masala",
+          "coriander powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "smells good and aromatic"
+      },
+      {
+        "origin": "source",
+        "text": "Cook on low heat, until the mixture smells good and aromatic.",
+        "label": "Reduce and aroma",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "smells good and aromatic"
+      },
+      {
+        "origin": "source",
+        "text": "Add chicken and coriander leaves. Fry on a medium heat till the chicken turns white or pale in color. This takes around 3 mins.",
+        "label": "Brown chicken",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 3.0,
+        "duration_max": 3.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chicken ((preferably bone-in, boneless is okay))",
+          "coriander leaves"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "turns white or pale in color"
+      },
+      {
+        "origin": "source",
+        "text": "Cover and cook on a low heat for 3 to 4 minutes. This step is very important as the chicken absorbs all the flavors of the spices.",
+        "label": "Brief simmer",
+        "attention": "unattended",
+        "attention_cue": "Cover and cook on a low heat for 3 to 4 minutes.",
+        "duration_typical_min": 3.5,
+        "duration_min": 3.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chicken ((preferably bone-in, boneless is okay))"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "absorbs all the flavors of the spices"
+      },
+      {
+        "origin": "source",
+        "text": "Meanwhile in a separate pot, heat up 1 cup water. Using cold water most times toughens the chicken so it is good to use hot water.",
+        "label": "Heat water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "hot water"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour hot water just enough (about ½ cup) to make a thick gravy. As you cook, chicken lets out plenty of moisture, depending on that add more water.",
+        "label": "Add water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "hot water"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "make a thick gravy"
+      },
+      {
+        "origin": "source",
+        "text": "Cover and cook on a medium flame till the chicken is soft cooked and the curry/gravy turns thick. When the chicken is cooked completely it will fall off the bone easily.",
+        "label": "Cook through",
+        "attention": "unattended",
+        "attention_cue": "Cover and cook on a medium flame till the chicken is soft cooked and the curry/gravy turns thick.",
+        "duration_typical_min": 25.0,
+        "duration_min": 20.0,
+        "duration_max": 35.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chicken ((preferably bone-in, boneless is okay))"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "will fall off the bone easily"
+      },
+      {
+        "origin": "source",
+        "text": "Taste the curry & add more salt if needed. You can also add another ½ tsp garam masala at this stage if you feel it is less in flavors.",
+        "label": "Adjust seasoning",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "salt",
+          "garam masala"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Lastly garnish with coriander leaves, cover and off the heat. Serve chicken curry with butter naan or jeera rice.",
+        "label": "Finish & serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coriander leaves"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method, ingredients and timings taken from the linked recipe JSON-LD on indianhealthyrecipes.com. I preserved ingredient lines exactly and used phrasing from each HowToStep for attention and timing cues. Durations labeled as stated when the step includes numeric minutes in the source; others are estimates because the source uses vague cues (these estimates are noted here)."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Chicken Curry Recipe\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Chicken Curry Recipe\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"Simple Indian chicken curry made delicious, spicy and hot with minimum ingredients. This is a basic recipe that can be tried even by beginners. It pairs great with rice, roti or paratha.\",\n  \"datePublished\": \"2014-11-10T02:00:00+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/07/chicken-curry-recipe.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/07/chicken-curry-recipe-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/07/chicken-curry-recipe-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/07/chicken-curry-recipe-480x270.jpg\"\n  ],\n  \"recipeYield\": [\n    \"3\",\n    \"3 people\"\n  ],\n  \"prepTime\": \"PT15M\",\n  \"cookTime\": \"PT35M\",\n  \"totalTime\": \"PT50M\",\n  \"recipeIngredient\": [\n    \"½ kg (1.1 lbs.) chicken ((preferably bone-in, boneless is okay))\",\n    \"2 to 3 tablespoons oil\",\n    \"1 cup (3 medium) onions ((fine chopped))\",\n    \"1 to 2 green chilies ((slit, omit for less spicy, Thai or Indian chili peppers or serrano peppers))\",\n    \"1 tablespoon ginger garlic paste (or ¾ inch ginger, 3 cloves garlic minced)\",\n    \"½ cup (2 medium) tomatoes ((pureed or finely chopped))\",\n    \"¼ cup yogurt ((or 1½ tbsp cashew butter or 12 cashews powdered &amp; pureed with ¼ cup water, refer notes))\",\n    \"½ to ¾ teaspoon salt ((adjust as needed))\",\n    \"½ to 1 cup hot water ((or light coconut milk))\",\n    \"2 tablespoons coriander leaves (or mint leaves finely chopped)\",\n    \"¼ teaspoon turmeric powder\",\n    \"1 teaspoon Kashmiri red chili powder (or smoked paprika (½ tsp for less spicy))\",\n    \"1 teaspoon garam masala ((½ tsp more if needed, adjust to taste))\",\n    \"1 teaspoon coriander powder\",\n    \"1 bay leaf (or 1 sprig curry leaves)\",\n    \"4 cloves\",\n    \"2 inch cinnamon piece\",\n    \"3 green cardamom\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Preparation\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"On a medium flame, heat oil in a deep pan.  Add the whole spices - bay leaf, cinnamon, cloves &amp; green cardamoms.\",\n          \"name\": \"On a medium flame, heat oil in a deep pan.  Add the whole spices - bay leaf, cinnamon, cloves &amp; green cardamoms.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Stir in the chopped onions and chilies. Saute until deep golden in color, for 7 to 8 mins. \",\n          \"name\": \"Stir in the chopped onions and chilies. Saute until deep golden in color, for 7 to 8 mins. \",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add ginger garlic paste and saute till you get a nice aroma, for about a minute.\",\n          \"name\": \"Add ginger garlic paste and saute till you get a nice aroma, for about a minute.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Then add tomatoes, turmeric and salt. Mix well and cook until the tomatoes turn soft &amp; mushy.\",\n          \"name\": \"Then add tomatoes, turmeric and salt. Mix well and cook until the tomatoes turn soft &amp; mushy.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Turn down the heat to low, Stir in the yogurt (or cashew paste), red chili powder, garam masala &amp; coriander powder.\",\n          \"name\": \"Turn down the heat to low, Stir in the yogurt (or cashew paste), red chili powder, garam masala &amp; coriander powder.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cook on low heat, until the mixture smells good and aromatic.\",\n          \"name\": \"Cook on low heat, until the mixture smells good and aromatic.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add chicken and coriander leaves. Fry on a medium heat till the chicken turns white or pale in color. This takes around 3 mins.\",\n          \"name\": \"Add chicken and coriander leaves. Fry on a medium heat till the chicken turns white or pale in color. This takes around 3 mins.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cover and cook on a low heat for 3 to 4 minutes. This step is very important as the chicken absorbs all the flavors of the spices.\",\n          \"name\": \"Cover and cook on a low heat for 3 to 4 minutes. This step is very important as the chicken absorbs all the flavors of the spices.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-7\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Meanwhile in a separate pot, heat up 1 cup water. Using cold water most times toughens the chicken so it is good to use hot water.\",\n          \"name\": \"Meanwhile in a separate pot, heat up 1 cup water. Using cold water most times toughens the chicken so it is good to use hot water.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-0-8\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"How to make Chicken Curry\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour hot water just enough (about ½ cup) to make a thick gravy. As you cook, chicken lets out plenty of moisture, depending on that add more water. Check the pictures in the post for consistency.\",\n          \"name\": \"Pour hot water just enough (about ½ cup) to make a thick gravy. As you cook, chicken lets out plenty of moisture, depending on that add more water. Check the pictures in the post for consistency.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cover and cook on a medium flame till the chicken is soft cooked and the curry/gravy turns thick. When the chicken is cooked completely it will fall off the bone easily. \",\n          \"name\": \"Cover and cook on a medium flame till the chicken is soft cooked and the curry/gravy turns thick. When the chicken is cooked completely it will fall off the bone easily. \",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Taste the curry &amp; add more salt if needed. You can also add another ½ tsp garam masala at this stage if you feel it is less in flavors.\",\n          \"name\": \"Taste the curry &amp; add more salt if needed. You can also add another ½ tsp garam masala at this stage if you feel it is less in flavors.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Lastly garnish with coriander leaves, cover and off the heat. Serve chicken curry with butter naan or jeera rice.\",\n          \"name\": \"Lastly garnish with coriander leaves, cover and off the heat. Serve chicken curry with butter naan or jeera rice.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chicken-curry/#wprm-recipe-38246-step-1-3\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.98\",\n    \"ratingCount\": \"978\",\n    \"reviewCount\": \"9\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"nice for a shcool work\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"elliott\"\n      },\n      \"datePublished\": \"2026-10-19\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I have made this dish several times. Sometimes with water, others with coconut milk and it is always so tasty. Thank you for this simple yet delicious recipe!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Clara\"\n      },\n      \"datePublished\": \"2026-09-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I am using your recipe since quite a long time &amp; my son loves the output completely . \\r\\nFacing a little issue, some pieces are still chewy even after it is cooked properly. Why so?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Rajeev Mathur\"\n      },\n      \"datePublished\": \"2026-09-13\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I love this recipe for boneless chicken! Would it be okay if added some chopped spinach to this for more nutrition?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Taruna Singh\"\n      },\n      \"datePublished\": \"2026-09-01\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Best chicken curry on the internet. Tastes so good and love the real Indian flavors. We made it thrice so far and it's delicious\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Gabriella\"\n      },\n      \"datePublished\": \"2026-08-28\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I have poppy seeds. How would I be able to use it like your mom’s dish?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"SM math\"\n      },\n      \"datePublished\": \"2026-08-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"this recipe can cook for one person?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"ajay\"\n      },\n      \"datePublished\": \"2026-08-18\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I cooked this chicken curry yesterday..it's absolutely one of my tastiest chicken curry recipes..iv given it 5 stars ..it tasted divine!!!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Rookays\"\n      },\n      \"datePublished\": \"2026-08-09\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Absolutely delicious. Authentic tasting but simple to follow. I used bone in and skin on thighs and it was great. Thank you!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Siobhan\"\n      },\n      \"datePublished\": \"2026-07-29\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Main Course\",\n    \"Side\"\n  ],\n  \"recipeCuisine\": [\n    \"Asian\",\n    \"Indian\"\n  ],\n  \"keywords\": \"chicken curry\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"417 kcal\",\n    \"carbohydrateContent\": \"10 g\",\n    \"proteinContent\": \"33 g\",\n    \"fatContent\": \"26 g\",\n    \"saturatedFatContent\": \"7 g\",\n    \"cholesterolContent\": \"126 mg\",\n    \"sodiumContent\": \"143 mg\",\n    \"fiberContent\": \"3 g\",\n    \"sugarContent\": \"3 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/chicken-curry/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/chicken-curry/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/chicken-curry/\"\n}",
+  "raw_title": "Chicken Curry Recipe",
+  "blog_name": "Chicken Curry Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/chicken-curry/",
+    "imported_at": "2026-10-25T10:29:14.608068Z"
+  },
+  "graph_id": "g_3a_3",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

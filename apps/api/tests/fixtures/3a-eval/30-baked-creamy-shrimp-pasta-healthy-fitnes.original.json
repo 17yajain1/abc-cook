@@ -1,0 +1,245 @@
+{
+  "recipe": {
+    "title": "Baked Creamy Shrimp Pasta",
+    "channel": "healthyfitnessmeals",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "pasta",
+        "qty": "8",
+        "unit": "oz",
+        "prep_note": "I used thin spaghetti",
+        "group": null
+      },
+      {
+        "name": "Boursin cheese",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "you can use 4 oz cream cheese",
+        "group": null
+      },
+      {
+        "name": "cherry tomatoes",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "raw shrimp",
+        "qty": "1",
+        "unit": "lb",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "minced garlic",
+        "qty": "3-4",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "olive oil",
+        "qty": "2-3",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Italian seasoning",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt and pepper",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "chicken or vegetable broth",
+        "qty": "2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Bake covered at 350F for 15 minutes.",
+        "label": "Bake covered",
+        "attention": "unattended",
+        "attention_cue": "Bake covered at 350F for 15 minutes",
+        "duration_typical_min": 14.0,
+        "duration_min": 14.0,
+        "duration_max": 17.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "pasta",
+          "Boursin cheese",
+          "cherry tomatoes",
+          "raw shrimp",
+          "minced garlic",
+          "olive oil",
+          "Italian seasoning",
+          "Salt and pepper",
+          "chicken or vegetable broth"
+        ],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Uncover and continue to bake for another 15 minutes.",
+        "label": "Finish baking",
+        "attention": "unattended",
+        "attention_cue": "uncover and continue to bake for another 15 minutes",
+        "duration_typical_min": 14.0,
+        "duration_min": 14.0,
+        "duration_max": 17.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "pasta",
+          "Boursin cheese",
+          "cherry tomatoes",
+          "raw shrimp",
+          "minced garlic",
+          "olive oil",
+          "Italian seasoning",
+          "Salt and pepper",
+          "chicken or vegetable broth"
+        ],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Tips: depending on the pasta you use. You may need more broth or have to cook a bit longer",
+        "label": "Tips",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 2.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "optional",
+        "role_cue": "Tips:",
+        "attach_to_step": 0,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add ons: mushrooms, chopped zucchini or fresh spinach.",
+        "label": "Add-ons",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 2.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "optional",
+        "role_cue": "Add ons:",
+        "attach_to_step": 0,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Garnish with Parmesan or fresh basil.",
+        "label": "Garnish",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "optional",
+        "role_cue": "Garnish with Parmesan or fresh basil.",
+        "attach_to_step": 1,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method text in the source is minimal: the description only gives the bake times/temperatures and tips/add-ons/garnish. No explicit assembly or preheat instructions were provided, so steps only reflect the source's stated baking instructions and the optional tips/add-ons/garnish lines. Ingredient names and quantities are taken verbatim from the source list."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Baked Creamy Shrimp Pasta \n\nIngredient:\n8 oz pasta (I used thin spaghetti)\n1 Boursin cheese (you can use 4 oz cream cheese)\n1 cup cherry tomatoes \n1 lb raw shrimp \n3-4 minced garlic \n2-3 tbsp olive oil \n1 tbsp Italian seasoning \nSalt and pepper to taste \n2 cups chicken or vegetable broth\n\nBake covered at 350F for 15 minutes, uncover and continue to bake for another 15 minutes. \n\nTips: depending on the pasta you use. You may need more broth or have to cook a bit longer\n\nAdd ons: mushrooms, chopped zucchini or fresh spinach. Garnish with Parmesan or fresh basil.\n\nChannel: healthyfitnessmeals\n\nVideo description:\n\nBaked Creamy Shrimp Pasta \n\nIngredient:\n8 oz pasta (I used thin spaghetti)\n1 Boursin cheese (you can use 4 oz cream cheese)\n1 cup cherry tomatoes \n1 lb raw shrimp \n3-4 minced garlic \n2-3 tbsp olive oil \n1 tbsp Italian seasoning \nSalt and pepper to taste \n2 cups chicken or vegetable broth\n\nBake covered at 350F for 15 minutes, uncover and continue to bake for another 15 minutes. \n\nTips: depending on the pasta you use. You may need more broth or have to cook a bit longer\n\nAdd ons: mushrooms, chopped zucchini or fresh spinach. Garnish with Parmesan or fresh basil.",
+  "raw_title": "Baked Creamy Shrimp Pasta \n\nIngredient:\n8 oz pasta (I used thin spaghetti)\n1 Boursin cheese (you can use 4 oz cream cheese)\n1 cup cherry tomatoes \n1 lb raw shrimp \n3-4 minced garlic \n2-3 tbsp olive oil \n1 tbsp Italian seasoning \nSalt and pepper to taste \n2 cups chicken or vegetable broth\n\nBake covered at 350F for 15 minutes, uncover and continue to bake for another 15 minutes. \n\nTips: depending on the pasta you use. You may need more broth or have to cook a bit longer\n\nAdd ons: mushrooms, chopped zucchini or fresh spinach. Garnish with Parmesan or fresh basil.",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.instagram.com/reel/C5e2u0BrI4u/",
+    "imported_at": "2026-10-25T10:44:12.942389Z"
+  },
+  "graph_id": "g_3a_30",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

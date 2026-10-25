@@ -1,0 +1,387 @@
+{
+  "recipe": {
+    "title": "Chicken 65",
+    "channel": "Your Food Lab",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Chicken boneless (thigh) 750 gm",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt to taste",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Ginger garlic paste 2 tbsp",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Curry leaves 2 tbsp (chopped)",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": "(chopped)",
+        "group": "For marinade"
+      },
+      {
+        "name": "Kashmiri red chilli powder 2 tbsp",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Jeera powder 1 tsp",
+        "qty": "1 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Garam masala a pinch",
+        "qty": "a pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Green chilli paste 1 tsp",
+        "qty": "1 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Black pepper powder a large pinch",
+        "qty": "a large pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Curd 1/4th cup",
+        "qty": "1/4th cup",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Rice flour 2 tbsp",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Cornflour 4 tbsp",
+        "qty": "4 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Hot oil 1 tbsp",
+        "qty": "1 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "For marinade"
+      },
+      {
+        "name": "Oil for frying",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Oil 1 tbsp (use same oil used for frying)",
+        "qty": "1 tbsp",
+        "unit": null,
+        "prep_note": "(use same oil used for frying)",
+        "group": "For tossing"
+      },
+      {
+        "name": "Garlic 2 tbsp (chopped)",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": "(chopped)",
+        "group": "For tossing"
+      },
+      {
+        "name": "Green chillies 6-7 diagonally sliced",
+        "qty": "6-7",
+        "unit": null,
+        "prep_note": "diagonally sliced",
+        "group": "For tossing"
+      },
+      {
+        "name": "Curry leaves 20-25 nos.",
+        "qty": "20-25 nos.",
+        "unit": null,
+        "prep_note": null,
+        "group": "For tossing"
+      },
+      {
+        "name": "Black powder a pinch",
+        "qty": "a pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": "For tossing"
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Slice the chicken roughly into 1-inch cubes, cutting at a 45° angle.",
+        "label": "Prep chicken",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Chicken boneless (thigh) 750 gm"
+        ],
+        "produces_component": "sliced chicken",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Apply salt to the chicken and add the remaining ingredients of marinade, mix well and marinate for 30-35 minutes.",
+        "label": "Marinate",
+        "attention": "unattended",
+        "attention_cue": "marinate for 30-35 minutes",
+        "duration_typical_min": 30.0,
+        "duration_min": 30.0,
+        "duration_max": 35.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "sliced chicken",
+          "Ginger garlic paste 2 tbsp",
+          "Curry leaves 2 tbsp (chopped)",
+          "Kashmiri red chilli powder 2 tbsp",
+          "Jeera powder 1 tsp",
+          "Garam masala a pinch",
+          "Green chilli paste 1 tsp",
+          "Black pepper powder a large pinch",
+          "Curd 1/4th cup"
+        ],
+        "produces_component": "marinated chicken",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Once marinated add rice flour, corn flour and hot oil to the chicken, mix well so the flour gets coated well; add more flour if the moisture level is too much.",
+        "label": "Coat with flours",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "marinated chicken",
+          "Rice flour 2 tbsp",
+          "Cornflour 4 tbsp",
+          "Hot oil 1 tbsp"
+        ],
+        "produces_component": "coated chicken",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Set oil for deep frying, fry the chicken in hot oil on high flame initially for 2 minutes.",
+        "label": "Fry high",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.5,
+        "duration_max": 2.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coated chicken",
+          "Oil for frying"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Lower the heat to medium low and fry until the chicken is crisp, cooked and tender.",
+        "label": "Finish frying",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 4.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coated chicken",
+          "Oil for frying"
+        ],
+        "produces_component": "fried chicken",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the chicken is crisp, cooked and tender"
+      },
+      {
+        "origin": "source",
+        "text": "Set a wok on medium high heat, add oil, garlic, green chillies & curry leaves, sauté lightly, add the fried chicken, toss well and add black pepper powder a pinch, toss well.",
+        "label": "Toss and sauté",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "fried chicken",
+          "Oil 1 tbsp (use same oil used for frying)",
+          "Garlic 2 tbsp (chopped)",
+          "Green chillies 6-7 diagonally sliced",
+          "Curry leaves 20-25 nos.",
+          "Black powder a pinch"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in the video description's Methods section. Transcript mentions optional longer marination (up to 24 hours) and the creator states they sometimes add extra rice/corn flour; those optional/extra notes are not a separate optional step because the source framed them as commentary. Ingredient names are kept exactly as in the source (e.g. \"Black powder a pinch\" and \"Black pepper powder a large pinch\" appear as written)."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "Salt to taste"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Chicken 65 Recipe | Fried Chicken | चिकन 65 रेसिपी | Chef Sanjyot Keer\n\nChannel: Your Food Lab\n\nVideo description:\n\nFull written recipe for Chicken 65\n\nIngredients:\n Chicken boneless (thigh) 750 gm\n Salt to taste\n For marinade:\n Ginger garlic paste 2 tbsp\n Curry leaves 2 tbsp (chopped)\n Kashmiri red chilli powder 2 tbsp\n Jeera powder 1 tsp\n Garam masala a pinch\n Green chilli paste 1 tsp\n Black pepper powder a large pinch\n Curd 1/4th cup\n Rice flour 2 tbsp\n Cornflour 4 tbsp\n Hot oil 1 tbsp\n Oil for frying\n For tossing:\n Oil 1 tbsp (use same oil used for frying)\n Garlic 2 tbsp (chopped)\n Green chillies 6-7 diagonally sliced\n Curry leaves 20-25 nos. \n Black powder a pinch\nMethods:\n You can take chicken boneless of your choice, wash them well, slice the chicken roughly into 1-inch cube, cut the chicken keeping the knife at 45° angel.\n Apply salt to the chicken and add the remaining ingredients of marinade, mix well and marinade for 30-35 minutes. The longer you marinade the better the flavour of chicken will be.\n Once marinated add rice flour, corn flour and hot oil to the chicken, mix well so the flour gets coated well, you can more flour if the moisture level is too much, I've added 1 tbsp of rice flour and 2 tbsp of cornflour extra apart from the quantity mentioned above. \n Set oil for deep frying, fry the chicken in hot oil on high flame initially for 2 minutes and further lower the heat to medium low and fry until the chicken is crisp, cooked and tender.\n Set a wok on medium high heat, add oil, garlic, green chillies & curry leaves, sauté lightly and add the fried chicken, toss it well and add black pepper powder a pinch, toss well.\n Chicken 65 is ready, serve hot and crispy. \n\n\nThe Music I use in All my videos - https://bit.ly/3g4OjmW \n(Best for independent creators)\n\n\nFollow us on all platforms: \nFacebook - https://goo.gl/rxrqsq\nInstagram - https://goo.gl/rK6wFS \nTwitter  -  https://goo.gl/lDfrrQ\n\n\nFollow my personal handles here: (Chef Sanjyot Keer) \nFacebook - https://goo.gl/8zcF6N\nInstagram - https://goo.gl/ayTNL\n\nTranscript (auto-generated captions, hi):\n\nकि अ को व्हाट्सएप डिवाइस चिकन 65 की रेसिपी बना रहा हूं एकदम टेस्टी डिलीशियस क्रिस्पी और वह स्पाइसी वाले चिकन-65 मुझे बहुत पसंद स्पेशली ठंड के मौसम में एकदम क्विक रेसिपी है लहसुन इस पिछली अ हुआ है दयावंती इस वर्तमान है विड्रॉल से कुंवारा हूं मैं शाहरुख मॉडल 500 ब्लुटूथ रख्या नुव्वे नुव्वे इट्स ओके जुई ए पैक प्रॉब्लम चिल्ड्रन चिकन-65 नेट कर लिया अब मैं 1 घंटे में नेट कर रहा हूं लेकिन अगर आप 24 घंटे के लिए मैरीनेट करोगे तो बहुत रिजल्ट्स आते हैं मेंशन के बाद इसमें थोड़ा सा चावल का आटा लगाने से करना है वह कर लेते हैं हुआ था कि रख यह रख यूं बेवफा नमस्ते मिलें सब्सक्राइब वृक्ष से इस जैसा छत पर मीडिया में [संगीत] यह मेरा गांव [संगीत] कर दो कर दो कर दो [संगीत] कि अ [संगीत] कि तेजबीर वे थैंक्स पेपर प्रॉब्लम [संगीत] अपने उम्र और अपने प्यार हुआ था हंसते-हंसते ए विक्टिम सिक्सटी फाइव रेडी हो गया वह रिड्यूस एकदम क्रिस्पी और करा बनाएं आप जरूर ट्राई करो यह वाली रेसिपी चिकन 65 के बहुत सारे वर्जन में ग्रेवी वाले होते हैं मसाले वाले होते हैं ड्राइवर लेते हैं यह वाला जो वर्जन है मेरा पर्सनल फेवरेट है तो यह जरूर ट्राय करो आपको कौन सा वर्जन पसंद है वह मुझे कमेंट में बताओ यह रेसिपी जरूर शेयर करो अपने फ्रेंड्स और फैमिली के साथ है वन Amazing टाइम विद चिकन 65 10th",
+  "raw_title": "Chicken 65 Recipe | Fried Chicken | चिकन 65 रेसिपी | Chef Sanjyot Keer",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=_c6LkHxaSec",
+    "imported_at": "2026-10-25T10:37:57.089154Z"
+  },
+  "graph_id": "g_3a_18",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

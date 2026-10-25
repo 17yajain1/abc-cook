@@ -1,0 +1,384 @@
+{
+  "recipe": {
+    "title": "Chicken Stir Fry",
+    "channel": "Spice Eats",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Boneless Chicken",
+        "qty": "1 lb or 450 gms",
+        "unit": null,
+        "prep_note": "cut into bite sized pieces",
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": "1/2 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Seasoning for the Chicken"
+      },
+      {
+        "name": "White Pepper Powder",
+        "qty": "1/2 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Seasoning for the Chicken"
+      },
+      {
+        "name": "Dark Soy Sauce",
+        "qty": "1/2 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Seasoning for the Chicken"
+      },
+      {
+        "name": "Broccoli florets",
+        "qty": "2 US cup measure (100 gms)",
+        "unit": null,
+        "prep_note": null,
+        "group": "Vegetables"
+      },
+      {
+        "name": "Carrots, sliced",
+        "qty": "1 US cup measure (90 gms)",
+        "unit": null,
+        "prep_note": null,
+        "group": "Vegetables"
+      },
+      {
+        "name": "Red Bell Pepper",
+        "qty": "1 US cup measure (90 gms)",
+        "unit": null,
+        "prep_note": "cubed",
+        "group": "Vegetables"
+      },
+      {
+        "name": "Yellow Bell Pepper",
+        "qty": "1 US cup measure (90 gms)",
+        "unit": null,
+        "prep_note": "cubed",
+        "group": "Vegetables"
+      },
+      {
+        "name": "Garlic, chopped",
+        "qty": "2 tsp (around 4 cloves)",
+        "unit": null,
+        "prep_note": "chopped",
+        "group": "Vegetables"
+      },
+      {
+        "name": "Ginger, chopped",
+        "qty": "1.5 tsp",
+        "unit": null,
+        "prep_note": "chopped",
+        "group": "Vegetables"
+      },
+      {
+        "name": "Chicken Stock",
+        "qty": "1/4 cup",
+        "unit": null,
+        "prep_note": "can use readymade low sodium chicken broth/stock too",
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Dark Soy Sauce",
+        "qty": "2.5 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": "3 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Honey",
+        "qty": "1 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Corn slurry",
+        "qty": "2 tsp corn flour/starch (Mixed in 1 tbsp water)",
+        "unit": null,
+        "prep_note": null,
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Sesame Oil",
+        "qty": "2 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Stir Fry Sauces"
+      },
+      {
+        "name": "Oil",
+        "qty": "2-3 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Other Ingredients"
+      },
+      {
+        "name": "Salt",
+        "qty": "to season",
+        "unit": null,
+        "prep_note": null,
+        "group": "Other Ingredients"
+      },
+      {
+        "name": "Pepper Powder",
+        "qty": "1/4 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": "Other Ingredients"
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Prep: Cut the boneless chicken into bite sized pieces. Cut broccoli into florets, slice the carrots and cube the red & yellow peppers. Peel and chop the garlic and ginger.",
+        "label": "Prep ingredients",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 15.0,
+        "duration_min": 14.0,
+        "duration_max": 16.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Boneless Chicken",
+          "Broccoli florets",
+          "Carrots, sliced",
+          "Red Bell Pepper",
+          "Yellow Bell Pepper",
+          "Garlic, chopped",
+          "Ginger, chopped"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat oil in a wok and add the chicken pieces. Give a stir for 30 secs and then add salt & white pepper powder to season the chicken.",
+        "label": "Start chicken",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.4,
+        "duration_max": 0.6,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Oil",
+          "Boneless Chicken",
+          "Salt",
+          "White Pepper Powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Stir fry on high heat for around 2-3 mins then add 1/2 tsp Dark Soy Sauce, mix and continue to stir fry on high heat for another 2-3 mins till the water has completely dried up and the chicken is fried and browned. Remove and set aside on a plate.",
+        "label": "Finish chicken",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 4.0,
+        "duration_max": 6.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Dark Soy Sauce",
+          "Boneless Chicken"
+        ],
+        "produces_component": "sautéed chicken",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the water has completely dried up and the chicken is fried and browned"
+      },
+      {
+        "origin": "source",
+        "text": "In the same oil, add the chopped garlic & ginger. Give a stir for 15 secs and then add the sliced carrots and cubed red & yellow peppers. Mix and stir fry on high heat for 1 minute before adding the broccoli florets. Also add salt to season (a pinch) and 1/4 tsp pepper powder. Give a mix and continue to stir fry on high heat for 2 mins.",
+        "label": "Stir fry vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.25,
+        "duration_min": 3.0,
+        "duration_max": 3.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Garlic, chopped",
+          "Ginger, chopped",
+          "Carrots, sliced",
+          "Red Bell Pepper",
+          "Yellow Bell Pepper",
+          "Broccoli florets",
+          "Salt",
+          "Pepper Powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the sautéed chicken pieces and give a mix on high heat for 1 minute.",
+        "label": "Combine chicken and veg",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.9,
+        "duration_max": 1.2,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "sautéed chicken"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the Dark Soy Sauce, Chicken broth, Red Chilli Sauce and honey. Give a mix and stir fry on high heat for around 2 mins till the sauce has nearly dried up.",
+        "label": "Add sauces",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.8,
+        "duration_max": 2.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Dark Soy Sauce",
+          "Chicken Stock",
+          "Red Chilli Sauce",
+          "Honey"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the sauce has nearly dried up"
+      },
+      {
+        "origin": "source",
+        "text": "Add the corn slurry and the sesame oil, give a mix and continue to stir fry on high heat for 1 min till all the sauce has dried up and coats the chicken and vegetables.",
+        "label": "Finish sauce",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.9,
+        "duration_max": 1.2,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Corn slurry",
+          "Sesame Oil"
+        ],
+        "produces_component": "finished stir fry",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till all the sauce has dried up and coats the chicken and vegetables"
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in the video description's Process section. Prep time and cooking time were stated; I used the 15 min prep time as the duration for the prep step. Ingredient group names taken from the description. Produced component 'sautéed chicken' created to link the chicken-cook step to later reuse. All attention fields set to hands_on because no step uses explicit unattended cues."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: CHICKEN STIR FRY RECIPE | QUICK AND EASY CHICKEN STIR FRY | STIR FRY CHICKEN\n\nChannel: Spice Eats\n\nVideo description:\n\n30 Minute Chicken Stir Fry | Chicken Stir Fry Recipe | Stir Fry Chicken | Chicken Stir Fry | Chicken Stir Fry With Vegetables | Quick And Easy Chicken Stir Fry | Stir Fry Chicken Recipe | How To Make Chicken Stir Fry\n\nShop CELA Brand of Kitchen Products by Spice Eats - https://amzn.to/4rx93bX\n\nIngredients for Chicken Stir Fry:\n\nPrep Time - 15 mins\nCooking Time - 15 mins\n\n(Tsp-Teaspoon; Tbsp-Tablespoon)\n\n- Boneless Chicken - 1 lb or 450 gms (cut into bite sized pieces)\n\nSeasoning for the Chicken:\n- Salt- 1/2 tsp\n- White Pepper Powder- 1/2 tsp\n- Dark Soy Sauce- 1/2 tsp\n\nVegetables:\n- Broccoli florets- 2 US cup measure (100 gms)\n- Carrots, sliced- 1 US cup measure (90 gms)\n- Red Bell Pepper- 1 US cup measure (90 gms)\n- Yellow Bell Pepper- 1 US cup measure (90 gms)\n- Garlic, chopped- 2 tsp (around 4 cloves)\n- Ginger, chopped- 1.5 tsp\n\nStir Fry Sauces:\n- Chicken Stock- 1/4 cup (can use readymade low sodium chicken broth/stock too)\n- Dark Soy Sauce- 2.5 tsp\n- Red Chilli Sauce- 3 tsp\n- Honey- 1 tbsp\n- Corn slurry- 2 tsp corn flour/starch  (Mixed in 1 tbsp water)\n- Sesame Oil- 2 tsp\n\nOther Ingredients:\n- Oil- 2-3 tbsp\n- Salt- to season\n- Pepper Powder- 1/4 tsp\n\nPreparation:\n\nCut the boneless chicken into bite sized pieces.\nTake out the broccoli florets, cut the carrots into slices and the red & yellow peppers into cubes.\nAlso peel and chop the garlic and ginger.\n\nProcess:\n\n- Heat oil in a wok and add the chicken pieces. Give a stir for 30 secs and then add salt & white pepper powder to season the chicken. \n- Now stir fry on high heat for around 2-3 mins and then add 1/2 tsp Dark Soy Sauce. Give a mix and continue to stir fry on high heat for another 2-3 mins till the water has completely dried up and the chicken is fried and browned.\n- Remove and set aside on a plate.\n\n- In the same oil, add the chopped garlic & ginger. Give a stir for 15 secs and then add the sliced carrots and cubed red & yellow peppers. Mix and stir fry on high heat for 1 minute before adding the broccoli florets. Also add salt to season (a pinch) and 1/4 tsp pepper powder. Give a mix and continue to stir fry on high heat for 2 mins.\n- Now add the sautéed chicken pieces and give a mix on high heat for 1 minute.\n- Add the Dark Soy Sauce, Chicken broth, Red Chilli Sauce and honey. Give a mix and stir fry on high heat for around 2 mins till the sauce has nearly dried up.\n- Now add the corn slurry and the sesame oil, give a mix and continue to stir fry on high heat for 1 min till all the sauce has dried up and coats the chicken and vegetables.\n\n\n\n\n\n\n#chickenstirfry #stirfrychicken #30minchickenstirfry #chickenstirfryrecipe #stirfryrecipe #chickenrecipe #stirfrychickenrecipe #spiceeats #spiceeeatsrescipes #spiceeatschicken\n\nTranscript (auto-generated captions, es):\n\nah bueno [Música] [Música] [Música] ah [Música] a mí [Música] y [Música] ah ah [Música] i [Música] ah [Música] 2 [Música] [Música] [Música]",
+  "raw_title": "CHICKEN STIR FRY RECIPE | QUICK AND EASY CHICKEN STIR FRY | STIR FRY CHICKEN",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=5dybdeTylz0",
+    "imported_at": "2026-10-25T10:39:43.391227Z"
+  },
+  "graph_id": "g_3a_21",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

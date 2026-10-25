@@ -1,0 +1,455 @@
+{
+  "recipe": {
+    "title": "Aloo Paratha",
+    "channel": "HomeCookingShow",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Wheat flour",
+        "qty": "2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Ajwain",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Potatoes",
+        "qty": "4",
+        "unit": "nos",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Green chilies",
+        "qty": "2",
+        "unit": "nos",
+        "prep_note": "(chopped)",
+        "group": null
+      },
+      {
+        "name": "Garam masala",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Kashmiri Red Chili Powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Chaat Masala Powder",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Coriander leaves",
+        "qty": null,
+        "unit": null,
+        "prep_note": "(chopped)",
+        "group": null
+      },
+      {
+        "name": "Water",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Oil",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Mix wheat flour, ajwain, salt and water and knead it to get a dough.",
+        "label": "Make dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 8.0,
+        "duration_min": 6.0,
+        "duration_max": 12.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Wheat flour",
+          "Ajwain",
+          "Salt",
+          "Water"
+        ],
+        "produces_component": "dough",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Rest the dough while we make the filling.",
+        "label": "Rest dough",
+        "attention": "unattended",
+        "attention_cue": "Rest the dough while we make the filling",
+        "duration_typical_min": 15.0,
+        "duration_min": 10.0,
+        "duration_max": 30.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Boil the potatoes, peel them and mash them roughly.",
+        "label": "Prepare potatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 20.0,
+        "duration_min": 15.0,
+        "duration_max": 30.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Potatoes"
+        ],
+        "produces_component": "mashed potatoes",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add green chilies, coriander leaves, Kashmiri Red Chili Powder, garam masala powder, and chaat masala to the mashed potatoes and mix till everything is well combined.",
+        "label": "Make filling",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "mashed potatoes",
+          "Green chilies",
+          "Coriander leaves",
+          "Kashmiri Red Chili Powder",
+          "Garam masala",
+          "Chaat Masala Powder",
+          "Salt"
+        ],
+        "produces_component": "potato filling",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Divide the dough into equal sized dough balls.",
+        "label": "Portion dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dough"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Flatten a dough ball and place some potato filling in the centre, then fold the flattened dough with the filling into a parcel.",
+        "label": "Fill dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dough",
+          "potato filling"
+        ],
+        "produces_component": "filled dough ball",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Flatten the parcel again and roll it out to form a paratha.",
+        "label": "Roll paratha",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "filled dough ball"
+        ],
+        "produces_component": "rolled paratha",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Roll out all the dough balls in the same way.",
+        "label": "Roll remaining",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": 6.0,
+        "duration_max": 20.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "filled dough ball"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat a tawa and place the rolled out parathas onto the hot tawa.",
+        "label": "Heat tawa",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rolled paratha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Flip the paratha once it is cooked on one side.",
+        "label": "Flip paratha",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rolled paratha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "cooked on one side"
+      },
+      {
+        "origin": "source",
+        "text": "Add some oil on the edges and cook on both sides till they turn golden.",
+        "label": "Cook both sides",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Oil",
+          "rolled paratha"
+        ],
+        "produces_component": "cooked paratha",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "turn golden"
+      },
+      {
+        "origin": "source",
+        "text": "Serve the Aloo Paratha hot.",
+        "label": "Serve hot",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked paratha"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Serve the Aloo Paratha hot.",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and ingredients taken from the video description. 'Green chilies' and 'Coriander leaves' prep notes kept as written '(chopped)'. 'Potato filling' and intermediate produces_components are inferred from method sentences (allowed). Prep and cook time totals stated in description (45 mins each) were not redistributed step-by-step; per-step durations are estimates because the source gives no per-step times."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Aloo Paratha | Paratha Recipes | Potato Stuffed Paratha | Lunch Box Recipes | Dinner Recipes\n\nChannel: HomeCookingShow\n\nVideo description:\n\n📌 Perfect North Indian lunch ideas 🍛 👉 https://www.youtube.com/playlist?list=PLFhw-Rie62rTkmGeKxQJlE5j9Zev8AbUq\n📌 Quick & tasty dinner ideas 🍽️ 👉 https://www.youtube.com/playlist?list=PLFhw-Rie62rQg-5CF_EVldopnl7wyzC1Q\n📌 Easy & tasty stuffed veg parathas 👉https://www.youtube.com/playlist?list=PLFhw-Rie62rScddPIoGUb9gQ2W2Zdowp0\n📌 Easy & tasty potato dishes 👉 https://www.youtube.com/playlist?list=PLFhw-Rie62rSEXcnvN5E-CnK-HN0nboX4\n\nAloo Paratha | Paratha Recipes | Potato Stuffed Paratha | Lunch Box Recipes | Dinner Recipes\n\n\n\nAloo Paratha is a popular Indian flatbread made with a flavourful potato stuffing and cooked until soft and golden.\nThis homemade paratha recipe is perfect for lunch boxes, family lunches, or comforting dinners.\n\nIf you are looking for an easy aloo paratha, potato stuffed paratha, or a simple Indian paratha recipe,  or other paratha , this playlist  is  perfect for you, beginner‑friendly and easy to follow. https://www.youtube.com/watch?v=58VEgUs_U1o&list=PLFhw-Rie62rQX_JuBd-9t7Xm2YKynGvyH&pp=sAgC\n\n\n\n\n#alooparatha #paratha #paratharecipe\n\nPrep time: 45 mins \nCook time: 45 mins \nNumber of servings: 4-5 persons \n\nIngredients\n\nWheat flour - 2 cup\nAjwain - 1/2 tsp\nPotatoes - 4 nos\nGreen chilies - 2 nos (chopped)\nGaram masala - 1/2 tsp\nKashmiri Red Chili Powder - 1 tsp\nChaat Masala Powder - 1/2 tsp\nCoriander leaves (chopped)\nWater\nOil \nSalt \n\nMethod \n\nMix wheat flour, carom seeds, salt and water and knead it to get a dough\nRest the dough while we make the filling \nBoil the potatoes and peel them and mash them roughly \nAdd green chilies, coriander leaves, red chili powder, garam masala powder, and chaat masala \nMix till everything is well combined\nDivide the dough into equal sized dough balls\nFlatten the dough balls and place the filling in the centre\nFold the flattened dough with the filling into a parcel\nFlatten it again and roll it out\nRoll out all the dough balls in the  same way\nHeat a tawa, place the rolled out parathas onto the hot tawa\nFlip the paratha once it is cooked on one side\nAdd some oil on the edges and cook on both sides till they turn golden\nServe the Aloo Paratha hot.Aloo Paratha\n\nYou can buy our book and classes on http://www.21frames.in/shop\n\nHAPPY COOKING WITH HOMECOOKING\nENJOY OUR RECIPES\n\nWEBSITE: http://www.21frames.in/homecooking\nFACEBOOK - https://www.facebook.com/HomeCookingShow\nYOUTUBE: https://www.youtube.com/user/VentunoHomeCooking \nINSTAGRAM - https://www.instagram.com/homecookingshow\nA Ventuno Production: http://www.ventunotech.com",
+  "raw_title": "Aloo Paratha | Paratha Recipes | Potato Stuffed Paratha | Lunch Box Recipes | Dinner Recipes",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=jLmYDZ2zjSg",
+    "imported_at": "2026-10-25T10:36:31.288006Z"
+  },
+  "graph_id": "g_3a_16",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

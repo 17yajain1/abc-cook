@@ -1,0 +1,296 @@
+{
+  "recipe": {
+    "title": "French Toast",
+    "channel": "recipetineats.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "2 - 3 people",
+    "cuisine": "Western",
+    "stated_total_min": 12,
+    "ingredients": [
+      {
+        "name": "brioche or white sandwich bread",
+        "qty": "6",
+        "unit": "slices",
+        "prep_note": "slightly stale (Note 1)",
+        "group": null
+      },
+      {
+        "name": "butter",
+        "qty": "30 \t39 40g / 2 \t3 3 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "eggs",
+        "qty": "2",
+        "unit": "large",
+        "prep_note": "(~60g / 2 oz each)",
+        "group": null
+      },
+      {
+        "name": "milk",
+        "qty": "½ cup / 125 ml",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cinnamon powder",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "vanilla extract",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "strawberries",
+        "qty": "250g / 8 oz",
+        "unit": null,
+        "prep_note": "halved",
+        "group": null
+      },
+      {
+        "name": "white sugar",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Maple syrup, butter",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Whisk together Egg Mixture in a bowl. Vigorous whisk = avoid cinnamon floating on top.",
+        "label": "Make egg mixture",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "eggs",
+          "milk",
+          "cinnamon powder",
+          "vanilla extract"
+        ],
+        "produces_component": "egg mixture",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Melt 15g / 1 tbsp butter in a non stick skillet over medium heat.",
+        "label": "Melt butter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "butter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Dunk a piece of bread quickly into the egg mixture, coating both sides. Place in pan. Repeat with more slices to fill the pan, but don’t crowd it (do 2 or 3 at a time).",
+        "label": "Coat bread",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "brioche or white sandwich bread",
+          "egg mixture"
+        ],
+        "produces_component": "coated bread",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cook for 2 ½ - 3 minutes on each side until the surface is golden, then transfer to serving plates.",
+        "label": "Cook bread",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 6.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coated bread"
+        ],
+        "produces_component": "cooked french toast",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the surface is golden"
+      },
+      {
+        "origin": "source",
+        "text": "Add more butter into the pan and cook remaining bread.",
+        "label": "Cook remaining",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "butter",
+          "brioche or white sandwich bread"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve with butter and plenty of maple syrup, and Macerated Strawberries if using!",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3,
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked french toast",
+          "Maple syrup, butter"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Toss strawberries with sugar, set aside for 20 minutes+. The strawberries will soften and sweat, and create a bit of syrup.",
+        "label": "Macerate strawberries",
+        "attention": "unattended",
+        "attention_cue": "set aside for 20 minutes+",
+        "duration_typical_min": 20.0,
+        "duration_min": 20.0,
+        "duration_max": 30.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "optional",
+        "role_cue": "Macerated Strawberries (optional):",
+        "attach_to_step": 5,
+        "consumes_ingredients": [
+          "strawberries",
+          "white sugar"
+        ],
+        "produces_component": "macerated strawberries",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "The strawberries will soften and sweat, and create a bit of syrup."
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Ingredients and method taken from the linked RecipeTin Eats JSON-LD. I preserved ingredient names and prep notes as stated; the recipeYield contained both \"2\" and \"2 - 3 people\" so I placed the latter into yield_text and left servings null. The macerated strawberries are provided as an optional HowToSection in the source; I set that step as optional and attached it to the Serve step."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: French Toast\n\nChannel: recipetineats.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"French Toast\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Nagi | RecipeTin Eats\"\n  },\n  \"description\": \"Recipe video above.&nbsp;A recipe everyone should know! Made for using up leftover bread, but if you want the ultimate French Toast experience, use brioche bread (pictured in post). There’s no need to use sugar if you’re dousing with maple syrup – plus it burns easily. Best made with stale bread, otherwise, see Note 1.&nbsp;\",\n  \"datePublished\": \"2019-02-23T14:11:54+00:00\",\n  \"image\": [\n    \"https://www.recipetineats.com/tachyon/2014/06/French-Toast_3.jpg\",\n    \"https://www.recipetineats.com/tachyon/2014/06/French-Toast_3.jpg?resize=500%2C500\",\n    \"https://www.recipetineats.com/tachyon/2014/06/French-Toast_3.jpg?resize=500%2C375\",\n    \"https://www.recipetineats.com/tachyon/2014/06/French-Toast_3.jpg?resize=480%2C270\"\n  ],\n  \"recipeYield\": [\n    \"2\",\n    \"2 - 3 people\"\n  ],\n  \"prepTime\": \"PT2M\",\n  \"cookTime\": \"PT10M\",\n  \"totalTime\": \"PT12M\",\n  \"recipeIngredient\": [\n    \"6 slices brioche or white sandwich bread (, slightly stale (Note 1))\",\n    \"30 – 40g / 2 – 3 tbsp   butter\",\n    \"2  large eggs ((~60g / 2 oz each))\",\n    \"½ cup / 125 ml  milk\",\n    \"1/2 tsp cinnamon powder\",\n    \"1 tsp vanilla extract\",\n    \"250g / 8 oz  strawberries, halved\",\n    \"1 tbsp white sugar\",\n    \"Maple syrup, butter\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Whisk together Egg Mixture in a bowl. Vigorous whisk = avoid cinnamon floating on top.\",\n      \"name\": \"Whisk together Egg Mixture in a bowl. Vigorous whisk = avoid cinnamon floating on top.\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Melt 15g / 1 tbsp butter in a non stick skillet over medium heat.\",\n      \"name\": \"Melt 15g / 1 tbsp butter in a non stick skillet over medium heat.\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Dunk a piece of bread quickly into the egg mixture, coating both sides. Place in pan. Repeat with more slices to fill the pan, but don’t crowd it (do 2 or 3 at a time).\",\n      \"name\": \"Dunk a piece of bread quickly into the egg mixture, coating both sides. Place in pan. Repeat with more slices to fill the pan, but don’t crowd it (do 2 or 3 at a time).\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Cook for 2 ½ - 3 minutes on each side until the surface is golden, then transfer to serving plates.\",\n      \"name\": \"Cook for 2 ½ - 3 minutes on each side until the surface is golden, then transfer to serving plates.\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add more butter into the pan and cook remaining bread.\",\n      \"name\": \"Add more butter into the pan and cook remaining bread.\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Serve with butter and plenty of maple syrup, and Macerated Strawberries if using!\",\n      \"name\": \"Serve with butter and plenty of maple syrup, and Macerated Strawberries if using!\",\n      \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Macerated Strawberries (optional):\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Toss strawberries with sugar, set aside for 20 minutes+. The strawberries will soften and sweat, and create a bit of syrup.\",\n          \"name\": \"Toss strawberries with sugar, set aside for 20 minutes+. The strawberries will soften and sweat, and create a bit of syrup.\",\n          \"url\": \"https://www.recipetineats.com/french-toast/#wprm-recipe-26510-step-1-0\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.95\",\n    \"ratingCount\": \"72\",\n    \"reviewCount\": \"17\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This was great! Do you think the egg mixture would be good to keep for a day or so to make more?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Rachel\"\n      },\n      \"datePublished\": \"2026-09-08\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My 8 yr old son loved this! Cooked it himself following Nagi's recipe. He was blown away that he didn't need maple syrup because the macerated strawberries were so sticky and tasty. Thanks!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Mel E\"\n      },\n      \"datePublished\": \"2026-09-01\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Wow this hit the spot! This tastes delicious with homemade Wholemeal bread, and is a new weekend fav.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Danielle D\"\n      },\n      \"datePublished\": \"2026-07-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made this with brioche for Christmas breakfast serving with bacon and maple syrup, it was spot on perfect French toast, thanks Nagi.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Jenny\"\n      },\n      \"datePublished\": \"2025-12-30\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"So easy and delicious to have! Definitely recommend it! 👌\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Dianne\"\n      },\n      \"datePublished\": \"2025-12-20\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"So easy and delicious, thank you.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Patrick\"\n      },\n      \"datePublished\": \"2025-11-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My french toast has always been a bit of \\\"hit &amp; miss\\\" in the past. Used your ratios of egg &amp; milk, thick slices of sour dough, topped with bacon &amp; maple syrup. Absolutely yummo! And also, thanks to Googling how to cook bacon properly my bacon was soft &amp; juicy, not the usual dry &amp; overcooked that I usually end up with! Thanks Nagi! :)\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Julie\"\n      },\n      \"datePublished\": \"2025-11-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"4\"\n      },\n      \"reviewBody\": \"OK\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"me\"\n      },\n      \"datePublished\": \"2025-11-02\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made this recipe this morning and it was highly rated by the whole family! I used a 2 day old light sourdough loaf and it was perfect.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Emma\"\n      },\n      \"datePublished\": \"2025-08-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Hàng loạt clip sex độc quyền, video mới bị rò rỉ, hack camera tắm, quay lén gái xinh chỉ có tại hentai aov.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"sex ko che hàn quốc\"\n      },\n      \"datePublished\": \"2025-07-28\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I had forgotten how yum this recipe is - thanks Nagi!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nicole\"\n      },\n      \"datePublished\": \"2025-04-12\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"very yum yum. me likey french toast. me will make this again. SKIBIDI TOILET\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"sham naser\"\n      },\n      \"datePublished\": \"2025-04-09\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This made the best French toast I've ever had!! (I used Brioche) I think it the quick dunk makes all the difference, versus the usual soak.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sonya\"\n      },\n      \"datePublished\": \"2025-03-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My favorite toping is banana, maple syrup and bacon.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Scott\"\n      },\n      \"datePublished\": \"2024-11-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Australia My fav toping is banana, maple syrup and bacon.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Scott Cruddas\"\n      },\n      \"datePublished\": \"2024-11-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Slot Gopay 5000 merupakan situs slot deposit gopay dengan minimal deposit 5000 online 24 jam tanpa potongan gampang menang\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Slot Gopay 5000\"\n      },\n      \"datePublished\": \"2024-09-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"GINA4D is an official slot and lottery provider with the cheapest minimum deposit in Indonesia,only 10k\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"GINA4D\"\n      },\n      \"datePublished\": \"2024-09-05\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Breakfast\"\n  ],\n  \"recipeCuisine\": [\n    \"Western\"\n  ],\n  \"keywords\": \"French Toast\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"314 kcal\",\n    \"carbohydrateContent\": \"37 g\",\n    \"proteinContent\": \"7 g\",\n    \"fatContent\": \"14 g\",\n    \"saturatedFatContent\": \"8 g\",\n    \"cholesterolContent\": \"32 mg\",\n    \"sodiumContent\": \"475 mg\",\n    \"fiberContent\": \"2 g\",\n    \"sugarContent\": \"4 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.recipetineats.com/french-toast/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.recipetineats.com/french-toast/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.recipetineats.com/french-toast/\"\n}",
+  "raw_title": "French Toast",
+  "blog_name": "French Toast",
+  "source": {
+    "kind": "url",
+    "value": "https://www.recipetineats.com/french-toast/",
+    "imported_at": "2026-10-25T10:34:48.816107Z"
+  },
+  "graph_id": "g_3a_14",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

@@ -1,0 +1,629 @@
+{
+  "recipe": {
+    "title": "Hotel Sambar Recipe",
+    "channel": "Kabita's Kitchen",
+    "method_grounded": true,
+    "servings": 5,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": 30,
+    "ingredients": [
+      {
+        "name": "Toor Dal",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Drumstick",
+        "qty": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Pumpkin",
+        "qty": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Potato",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Bottle gourd",
+        "qty": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Onion",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Tomato",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Curry leaves",
+        "qty": "20",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Mustard seeds",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Asafoetida",
+        "qty": "1/4",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Turmeric powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Red chilli powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Sambar Masala",
+        "qty": "2",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Garlic",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Cooking oil",
+        "qty": "5",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Rinse the toor dal well under water (or soak briefly if you prefer).",
+        "label": "Rinse dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Toor Dal"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat 2–3 tablespoons oil in the pressure cooker.",
+        "label": "Heat oil",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Cooking oil"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add 1 tablespoon mustard (राई), 1/4 teaspoon asafoetida and a generous handful of curry leaves; let the curry leaf aroma come into the oil.",
+        "label": "Temper spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Mustard seeds",
+          "Asafoetida",
+          "Curry leaves"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the onions (small sambar onions or a finely chopped large onion) and sauté.",
+        "label": "Sauté onion",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Onion"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the vegetables (pumpkin, drumstick, potato, bottle gourd and any other veg you like) and sauté for 3 to 4 minutes.",
+        "label": "Cook vegetables",
+        "attention": "hands_on",
+        "attention_cue": "तीन से 4 मिनट तक भून लेना है",
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Pumpkin",
+          "Drumstick",
+          "Potato",
+          "Bottle gourd"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "तीन से 4 मिनट तक भून लेना है"
+      },
+      {
+        "origin": "source",
+        "text": "Add tomatoes, sprinkle salt and cook until the tomatoes soften (about 2 minutes).",
+        "label": "Cook tomatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Tomato",
+          "Salt"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "टमाटर को थोड़ा सा सॉफ्ट कर लेंगे मतलब दो मिनट के लिए पका लें"
+      },
+      {
+        "origin": "source",
+        "text": "Add turmeric, red chilli powder and sambar masala (mentioned amounts) and mix into the vegetables.",
+        "label": "Add spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Turmeric powder",
+          "Red chilli powder",
+          "Sambar Masala"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the rinsed/soaked toor dal to the masala-vegetable mixture and mix well; add water (she used 4 cups for 1/2 cup dal) and a little more salt if needed.",
+        "label": "Combine dal and water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Toor Dal",
+          "Salt"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Close the pressure cooker and cook on medium flame until four whistles come (मीडियम फ्लेम पे चार सिटी आने तक पका ले).",
+        "label": "Pressure cook",
+        "attention": "unattended",
+        "attention_cue": "मीडियम फ्लेम पे चार सिटी आने तक पका ले",
+        "duration_typical_min": 12.0,
+        "duration_min": 10.0,
+        "duration_max": 18.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": "cooked sambar base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Turn off the gas and let the pressure cooker cool down on its own until it is safe to open (प्रेशर कुकर खुद से ठंडा हो जाने देंगे).",
+        "label": "Release pressure",
+        "attention": "unattended",
+        "attention_cue": "प्रेशर कुकर खुद से ठंडा हो जाने देंगे",
+        "duration_typical_min": 10.0,
+        "duration_min": 8.0,
+        "duration_max": 20.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Open the cooker carefully; you can mash some of the vegetables slightly if you want a thinner, more uniform gravy (थोड़ा सा सब्जियों को आप मैश कर सकते हैं).",
+        "label": "Mash veg (optional)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "optional",
+        "role_cue": "थोड़ा सा सब्जियों को आप मैश कर सकते हैं",
+        "attach_to_step": 9,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "If the sambar is too thick, add normal or hot water to adjust the thickness.",
+        "label": "Adjust thickness",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9,
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add 1 teaspoon jaggery (or sugar) for sweetness and 3 tablespoons tamarind pulp/juice; mix well.",
+        "label": "Add jaggery & tamarind",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Garlic"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat a small tadka pan with 2 tablespoons oil; when hot add 2–3 dried red chillies and some fresh curry leaves and let them sizzle.",
+        "label": "Make tadka",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Cooking oil",
+          "Curry leaves"
+        ],
+        "produces_component": "tadka",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add one small teaspoon sambar masala to the tadka; if you want extra color you can add about half a teaspoon Kashmiri red chilli powder (यह इसमें ऑप्शनल है — बस कलर के लिए).",
+        "label": "Spice tadka",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "optional",
+        "role_cue": "यह इसमें ऑप्शनल है",
+        "attach_to_step": 13,
+        "consumes_ingredients": [
+          "Sambar Masala",
+          "Red chilli powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour the tadka over the sambar and let the tadka flavor infuse for about one minute with the gas off.",
+        "label": "Add tadka",
+        "attention": "unattended",
+        "attention_cue": "एक मिनट के लिए छोड़ दिया था गैस बंद रखा है",
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13,
+          12
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tadka"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve hot with steamed rice, idli, dosa or uttapam.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12,
+          14
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in the video's Hindi transcript (steps and exact phrases like 'तीन से 4 मिनट तक भून लेना है', 'मीडियम फ्लेम पे चार सिटी आने तक पका ले', and 'प्रेशर कुकर खुद से ठंडा हो जाने देंगे' are quoted).",
+      "Ingredients list taken verbatim from the video description.",
+      "I treated 'थोड़ा सा सब्जियों को आप मैश कर सकते हैं' as an optional step and linked it to the opening step for attachment.",
+      "Duration for pressure cooking was not given in minutes (the video says 'चार सिटी' = four whistles); I did not mark that as a stated minute duration and provided an estimated time window instead per instructions."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: प्रेशर कुकर में होटल जैसा सांभर आसान तरीके से | Sambar Recipe | Hotel Sambar Recipe | Kabitaskitchen\n\nChannel: Kabita's Kitchen\n\nVideo description:\n\n#kabitaskitchen #hotelsambarrecipe #sambarrecipe \n\nPreparation time - 30 mins\nServing - 5 to 6\n\nIngredients:\nToor Dal - 1/2 cup\nDrumstick - 1/4 cup\nPumpkin - 1/4 cup\nPotato -1/2 cup\nBottle gourd - 1/4 cup\nOnion -1/2 cup\nTomato -1/2 cup\nCurry leaves - 20\nMustard seeds - 1 tsp\nAsafoetida -1/4 tsp\nTurmeric powder - 1 tsp\nRed chilli powder -1 tsp\nSambar Masala - 2 tbsp\nGarlic - 1 tsp\nCooking oil - 5 tbsp\nSalt to taste\n\nप्रेशर कुकर में होटल जैसा सांभर आसान तरीके से, sambar recipe, how to make sambar, best sambar recipe, sambar in pressure cooker, easy sambar recipe, sambar recipe by kabitaskitchen, how to make quick sambar, hotel sambar recipe, tiffin sambar recipe, sambhar kaise banate hai, Sambar Recipe, Hotel Sambar Recipe,\n\nTranscript (auto-generated captions, hi):\n\nसर्दियों में जब सारी सब्जियां सस्ते ताजे और आसानी से मिलते हैं ना तो कुकर में सांभर जरूर बनाएं एक ही बर्तन गंदा होगा और सांभर आप इडली डसा के साथ तो खाते ही है प्लेन स्टीम राइस के साथ खाइए दिल खुश हो जाएगा सब्जी बनाने की जरूरत नहीं है दाल बनाने की जरूरत नहीं है बस प्रेशर कुकर में सब्जियों के साथ यह सांभर बनाए और राइस के साथ सर्व करें या फिर इडली डोसा और उत्तपम के साथ सर्व करें सांभर की बहुत ही इजी रेसिपी है और स्वाद आपको रेस्टोरेंट से भी ज्यादा पसंद आएगा तो चलिए आज की बहुत ही आसान रेसिपी शुरू करते हैं कुकर में सांभर बनाने के लिए मैंने यहां पर आधा कप तुअर यानी अरहर की दाल ली है सांभर में अरहर दाल का ही इस्तेमाल किया जाता है लेकिन अगर आपको अरहर दाल नहीं पसंद है तो आप अपने पसंद की मूंग दाल भी यूज कर सकते हैं लेकिन ट्रेडिशनल सांभर जो है वह तुअर की दाल का यानी अरहर की दाल का बनता है तो दाल को हम पानी से अच्छे से धो लेंगे आप चा तो इसे भिगो के भी रख सकते हैं 10 मिनट से ज्यादा दाल को नहीं भिगोए तो अब हम चलते हैं प्रेशर कुकर की तरफ तो प्रेशर कुकर में हम दो से तीन चम्मच तेल गरम करेंगे सांभर में तेल का इस्तेमाल कम होता है जैसे ही तेल गरम हो जाएगा हम इसमें डाल देंगे एक बड़ा चम्मच राई या सरसों 1 चौथा छोटी चम्मच हींग डाल देंगे और इसके बाद ढेर सारा इसमें करी पत्ता डालेंगे करी पत्ता से सांभर का टेस्ट बहुत अच्छा आता है तो आप इसमें जरूर डालें जैसे ही करी पत्ते का फ्लेवर तेल में आ जाएगा हम इसमें डाल देंगे प्याज तो यहां पे मैं सांभर वाले अनियन यानी सांभर वाले छोटे प्याज होते हैं ना ये मार्केट में मिलते हैं इसका इस्तेमाल कर रही हूं नहीं तो आप नॉर्मल प्याज भी इस्तेमाल कर सकते हैं एक बड़ा प्याज बारीक काट के डाल सकते हैं सब्जियों में मैंने यहां पे ये पंपकिन लिया है ड्रमस्टिक लिया है यहां पे आलू लिया है मैंने और इसके साथ लौकी लिया है तो सब्जियां ना सांभर में अपने पसंद की ऐड कर सकते हैं वैसे सांभर में सारी सब्जिया आप डाल सकते हैं बींस डाल सकते हैं गोभी डाल सकते हैं ऐसा कुछ भी रूल्स नहीं होता है पपाया भी डाल सकते हैं लेकिन जो आपको पसंद है ना व करेला वगैरह नहीं डाले वो सब नहीं जाता है जो सब्जियां वाइल्ड अच्छी लगती है वो सारी सब्जी आप इसमें ऐड कर सकते हैं लीफ वेजिटेबल्स यानी साग वगैरह नहीं जाता है तो यहां पे ये देखिए सब्जियों को हमें तीन से 4 मिनट तक भून लेना है जैसे ही सब्जियां थोड़ी पक जाएगी हम इसमें टमाटर डाल दंगे तो दो टमाटर डाल दिया मैंने और टमाटर को पकने के लिए नमक डाल दिया टमाटर को थोड़ा सा सॉफ्ट कर लेंगे मतलब दो मिनट के लिए पका लें जैसे ही सब्जियां थोड़ी सी भून जाएगी हम इसमें डाल देंगे मसाले तो मसालों में हल्दी लाल मिर्च और सांभर मसाला ही डालना है तो एक छोटी चम्मच हल्दी पाउडर एक बड़ा चम्मच लाल मिर्च पाउडर और दो चम्मच सांभर मसाला दो बड़े चम्मच सांभर मसाला हां किसी भी ब्रांड का या फिर होममेड होममेड की भी रेसिपी है तो यहां पे सबको अच्छे से मिला देंगे हम जैसे ही मसाला सब्जियों के साथ मिक्स हो जाएगा हम इसमें यह भिगोया हुआ दाल डाल देंगे अगर म मसाला भूते वक्त चिपक रहा है तो थोड़ा सा पानी आप उसमें ऐड कर सकते हैं तो यहां पे यह तुर की दाल डाल दी मैंने दाल को भी मसालों के साथ अच्छे से मिक्स कर दें और इसके बाद पानी डाल के सीटी लगा देंगे सांभर एक बहुत ही टेस्टी और हेल्दी डिश है मतलब इसमें हमने इतनी सारी सब्जियां डाली है ना तो और कुछ डालने की जरूरत ही नहीं है तो यहां पे मैंने आधा कप तुअर दाल के लिए चार कप पानी का इस्तेमाल किया है और नमक थोड़ा सा ऐड किया नमक मैंने पहले भी ऐड किया था जहां तक आपको याद होगा तो यहां पे सबको अच्छे से मिला देंगे और अभी ना ज्यादा पानी नहीं डाले नहीं तो पानी कुकर की सीटी से बाहर आने लगेगा पहले इसे अच्छे से पका ले और उसके बाद अगर लगे कि सांभर थिक है तो आप पानी डाल के इसकी थिकनेस कम कर सकते हैं मीडियम फ्लेम पे चार सिटी आने तक पका ले इसे अगर बच्चों के लिए बना रहे हैं तो ड्रमस्टिक इसमें नहीं डाले या फिर ड्रमस्टिक को अलग से फ्राई करके डाल क्योंकि ड्रमस्टिक प्रेशर कुकर में सॉफ्ट हो जाएगा तो उसके जो धागे हैं ना वो ऐसे खाते वक्त आएंगे तो बच्चों के लिए बना रहे हैं तो ड्रमस्टिक नहीं डाले या फिर अलग से फ्राई करके डालेंगे तो ड्रमस्टिक जो है वो अलग-अलग नहीं होंगे सॉफ्ट नहीं होंगे तो आप बच्चों को निकाल के अलग से दे सकते हैं तो यहां पे हमारा सांभर जो है वो बन गया है सीटी लग गई है गैस को बंद कर देते हैं और प्रेशर कुकर को खुद ही ठंडा हो जाने देते हैं जब प्रेशर कुकर खुद से ठंडा हो जाएगा तब हम इसे सावधानी से खोल लेंगे तो यहां पे थोड़ा सा इंतजार करें और यह देखिए तो यहां पे आप देख सकते हैं कि सारी सब्जियां जो है वो अच्छे से पक गई है तो थोड़ा सा ना सब्जियों को आप मैश कर सकते हैं क्योंकि सांभर में बहुत ज्यादा सब्जी दिखनी नहीं चाहिए ऐसे पतली ग्रेवी दिखनी चाहिए और इसके साथ कुछ-कुछ जैसे ड्रमस्टिक हो गया या फिर कद्दू हो गया या लौकी हो गया वो सब बड़े-बड़े टुकड़ों में दिखता है तो यहां पे आप चाहिए तो नॉर्मल पानी या गर्म पानी डाल के इसकी थिकनेस कम करें तो मैंने यहां पे गैस को ऑन रखा है तो एक कप मैंने गर्म पानी डाला इसमें हम डाल देंगे एक चम्मच गुड़ गुड़ मिठास के लिए यूज होती है गुड़ की जगह आप चीनी का भी इस्तेमाल कर सकते हैं सांभर जो होता है वो थोड़ा खट्टा मीठा तीखा बहुत सारा फ्लेवर वाला होता है तो इसमें थोड़ा सा चीनी या गुड़ जरूर डालें उसी से यह जो डिश है वो कंप्लीट होती है और अभी तो हमने इमली डाला ही नहीं है इमली इसमें मस्त है तो हम क्या करेंगे तीन बड़े चम्मच इमली का रस इसमें डाल देंगे तो या तो आप इमली को पानी में भिगो के रखें उसके पल्प निकाल ले और नहीं है तो इमली के पेस्ट में पानी मिला के उसे डिजॉल्ड्रिंग तो तड़का बनाने के लिए मैंने यहां पे एक तड़का पैन गरम किया है इसमें हम डाल देंगे दो चम्मच तेल तेल के गरम होते ही हम इसमें दो से तीन सूखे लाल मिर्च ही डाल देंगे और करी पत्ता फ्रेश करी पत्ता इस्तेमाल करें समर में उसका बहुत अच्छा टेस्ट आता है और जैसे ही करी पत्ता थोड़ा सा पक जाएगा गैस को बंद कर द और तेल का टेंपरेचर थोड़ा सा कम हो जाने दें इसके बाद हम इसमें एक छोटी चम्मच ये सांभर मसाला डाल देंगे ध्यान रहे तेल अगर बहुत ज्यादा गरम रहे तो मसाले जल जाएंगे आधी छोटी चम्मच आप इसमें कश्मीरी लाल मिर्च पाउडर डाल द यह इसमें ऑप्शनल है बस कलर के लिए मैं यूज कर रही हूं और इसके बाद इस तड़के को हम इस सांभर के ऊपर डाल देंगे तो यह हमारा सांभर जो है वो बनके तैयार हो गया तो यहां पे कुकर को बंद कर दे और तड़के का फ्लेवर इसमें आने दे तो मैंने यहां पे इसे एक मिनट के लिए छोड़ दिया था गैस बंद रखा है मैंने और इसके बाद हम वापस एक मिनट बाद खोल के और यह देखिए यह हमारा बहुत ही स्वादिष्ट सांभर जो है वो बन के तैयार है तो आपने देखा सांभर बनाना कितना आसान है और बच्चे ना बहुत बार सब्जियां नहीं खाते हैं तो आप दाल में ऐसे सब्जियों को पका के उन्हें दे सकते हैं उन्हें पता भी नहीं चलेगा और स्वाद भी बहुत अच्छा आता है बस बच्चों के लिए बना रहे हैं तो मिर्ची का इस्तेमाल कम करें और तड़के में मिर्ची नहीं डाले तो अब हम चलते हैं इसे सर्व करने के प्रोसेस में तो सांभर इडली डोसा के साथ तो परफेक्ट जाता ही है साथ ही साथ प्लेन स्टीम राइस के साथ भी बहुत अच्छा लगता है तो जब भी आपको आलस आया ना कि दाल सब्जी ये सब बनाने का मन नहीं है तो आप कुकर में फटाफट इस सांभर को बना सकते हैं बनाना भी आसान है और गरमागरम राइस के साथ तो खाके मजा ही आ जाता है तो यह हमारा बहुत ही टेस्टी सांभर बनके तैयार है आप इस सांभर की रेसिपी को एक बार जरूर बनाएं यह सांभर आपकी फैमिली को बहुत पसंद आएगा अगर आज की रेसिपी आपको ट्राई करने के बाद पसंद आए तो आप इस वीडियो को अपने फ्रेंड्स फैमिली के साथ शेयर करना बिल्कुल ना भूलें",
+  "raw_title": "प्रेशर कुकर में होटल जैसा सांभर आसान तरीके से | Sambar Recipe | Hotel Sambar Recipe | Kabitaskitchen",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=QF4CICYuEOw",
+    "imported_at": "2026-10-25T10:37:08.693458Z"
+  },
+  "graph_id": "g_3a_17",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "recipe": {
+    "title": "Pumpkin Pie Chia Pudding",
+    "channel": "feelgoodfoodie",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "chia seeds",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "plain pumpkin puree",
+        "qty": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "pumpkin pie spice",
+        "qty": "1/4",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "milk",
+        "qty": "1/4",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "maple syrup",
+        "qty": "1",
+        "unit": "tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Greek yogurt",
+        "qty": null,
+        "unit": null,
+        "prep_note": "for topping",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Place the chia seeds, pumpkin puree, pumpkin pie space, maple syrup and milk, into a jar and mix well. Let settle for 2–3 minutes, then mix well again until you see no clumping.",
+        "label": "Mix pudding",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.5,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chia seeds",
+          "plain pumpkin puree",
+          "pumpkin pie spice",
+          "maple syrup",
+          "milk"
+        ],
+        "produces_component": "pudding mixture",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until you see no clumping"
+      },
+      {
+        "origin": "source",
+        "text": "Cover the jar and store in the fridge overnight or for at least 2 hours.",
+        "label": "Chill pudding",
+        "attention": "unattended",
+        "attention_cue": "store in the fridge overnight or for at least 2 hours",
+        "duration_typical_min": 480.0,
+        "duration_min": 120.0,
+        "duration_max": 720.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "pudding mixture"
+        ],
+        "produces_component": "set pudding",
+        "station": "fridge",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "When you’re ready to eat it, top with yogurt and pumpkin pie spice, and enjoy cold!",
+        "label": "Top and serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Greek yogurt",
+          "pumpkin pie spice",
+          "set pudding"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "When you’re ready to eat it",
+        "max_lead_min": null,
+        "doneness_cue": "enjoy cold"
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Source instruction step 1 contains a typo: \"pumpkin pie space\" (ingredient list correctly says \"pumpkin pie spice\"). Method grounded from provided written instructions."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: 10 grams of fiber never tasted so good!! 🧡🎃 Try my pumpkin pie chia pudding this week and let me know what you think!\n\nINGREDIENTS\n2 tablespoons chia seeds\n¼ cup plain pumpkin puree\n¼ teaspoon pumpkin pie spice\n¼ cup milk\n1 tablespoon maple syrup\nGreek yogurt, for topping\nINSTRUCTIONS\n1. Place the chia seeds, pumpkin puree, pumpkin pie space, maple syrup and milk, into a jar and mix well. Let settle for 2–3 minutes, then mix well again until you see no clumping.\n2. Cover the jar and store in the fridge overnight or for at least 2 hours.\n3. When you’re ready to eat it, top with yogurt and pumpkin pie spice, and enjoy cold!\n\nChannel: feelgoodfoodie\n\nVideo description:\n\n10 grams of fiber never tasted so good!! 🧡🎃 Try my pumpkin pie chia pudding this week and let me know what you think!\n\nINGREDIENTS\n2 tablespoons chia seeds\n¼ cup plain pumpkin puree\n¼ teaspoon pumpkin pie spice\n¼ cup milk\n1 tablespoon maple syrup\nGreek yogurt, for topping\nINSTRUCTIONS\n1. Place the chia seeds, pumpkin puree, pumpkin pie space, maple syrup and milk, into a jar and mix well. Let settle for 2–3 minutes, then mix well again until you see no clumping.\n2. Cover the jar and store in the fridge overnight or for at least 2 hours.\n3. When you’re ready to eat it, top with yogurt and pumpkin pie spice, and enjoy cold!",
+  "raw_title": "10 grams of fiber never tasted so good!! 🧡🎃 Try my pumpkin pie chia pudding this week and let me know what you think!\n\nINGREDIENTS\n2 tablespoons chia seeds\n¼ cup plain pumpkin puree\n¼ teaspoon pumpkin pie spice\n¼ cup milk\n1 tablespoon maple syrup\nGreek yogurt, for topping\nINSTRUCTIONS\n1. Place the chia seeds, pumpkin puree, pumpkin pie space, maple syrup and milk, into a jar and mix well. Let settle for 2–3 minutes, then mix well again until you see no clumping.\n2. Cover the jar and store in the fridge overnight or for at least 2 hours.\n3. When you’re ready to eat it, top with yogurt and pumpkin pie spice, and enjoy cold!",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.instagram.com/reel/De0atqYxPOv/",
+    "imported_at": "2026-10-25T10:43:50.328827Z"
+  },
+  "graph_id": "g_3a_29",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

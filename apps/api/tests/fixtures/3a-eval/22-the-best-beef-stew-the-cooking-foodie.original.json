@@ -1,0 +1,503 @@
+{
+  "recipe": {
+    "title": "The Best Beef Stew Recipe",
+    "channel": "The Cooking Foodie",
+    "method_grounded": true,
+    "servings": 6,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "American",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Oil",
+        "qty": "1-2",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Stewing beef",
+        "qty": "1½ (700g)",
+        "unit": null,
+        "prep_note": "cut into chunks",
+        "group": null
+      },
+      {
+        "name": "Salt",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Pepper",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Onions",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "roughly chopped",
+        "group": null
+      },
+      {
+        "name": "Red bell pepper",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "diced",
+        "group": null
+      },
+      {
+        "name": "Tomatoes",
+        "qty": "3",
+        "unit": null,
+        "prep_note": "chopped",
+        "group": null
+      },
+      {
+        "name": "garlic cloves",
+        "qty": "3",
+        "unit": null,
+        "prep_note": "minced",
+        "group": null
+      },
+      {
+        "name": "Sweet paprika",
+        "qty": "1",
+        "unit": "tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Cumin",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Dried thyme",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Tomato paste",
+        "qty": "1",
+        "unit": "tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "red wine",
+        "qty": "1",
+        "unit": "cup (240ml)",
+        "prep_note": "(optinal)",
+        "group": null
+      },
+      {
+        "name": "Beef stock/chicken stock/water",
+        "qty": "4-5",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Bay leaves",
+        "qty": "2",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Celery stalk",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "chopped",
+        "group": null
+      },
+      {
+        "name": "Carrots",
+        "qty": "3",
+        "unit": null,
+        "prep_note": "cut into chunks",
+        "group": null
+      },
+      {
+        "name": "Potatoes",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "cut into chunks",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "In a large pot heat oil, add beef chunks, season with salt and pepper and brown them, about 6-7 minutes.",
+        "label": "Brown beef",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.5,
+        "duration_min": 6.0,
+        "duration_max": 7.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Oil",
+          "Stewing beef",
+          "Salt",
+          "Pepper"
+        ],
+        "produces_component": "browned beef",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "about 6-7 minutes"
+      },
+      {
+        "origin": "source",
+        "text": "Remove the beef from the pot and add chopped onions. Cook until golden.",
+        "label": "Cook onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Onions"
+        ],
+        "produces_component": "golden onions",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "golden"
+      },
+      {
+        "origin": "source",
+        "text": "Add bell pepper and cook for 3-4 minutes.",
+        "label": "Cook pepper",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.5,
+        "duration_min": 3.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Red bell pepper"
+        ],
+        "produces_component": "cooked pepper",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "3-4 minutes"
+      },
+      {
+        "origin": "source",
+        "text": "Add chopped tomatoes and minced garlic and cook for 3-4 minutes.",
+        "label": "Cook tomatoes & garlic",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.5,
+        "duration_min": 3.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Tomatoes",
+          "garlic cloves"
+        ],
+        "produces_component": "sauce base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "3-4 minutes"
+      },
+      {
+        "origin": "source",
+        "text": "Put the beef back into the pot, add tomato paste, season with the spices and mix well.",
+        "label": "Combine beef and spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Stewing beef",
+          "Tomato paste",
+          "Sweet paprika",
+          "Cumin",
+          "Dried thyme"
+        ],
+        "produces_component": "seasoned stew base",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour in red wine and deglaze (cook until reduced by half).",
+        "label": "Deglaze",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "red wine"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "reduced by half"
+      },
+      {
+        "origin": "source",
+        "text": "Add beef stock and bay leaves.",
+        "label": "Add stock",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Beef stock/chicken stock/water",
+          "Bay leaves"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cover the pot, reduce the heat to low and cook for 90 minutes.",
+        "label": "Simmer 90 minutes",
+        "attention": "unattended",
+        "attention_cue": "Cover the pot, reduce the heat to low and cook for 90 minutes.",
+        "duration_typical_min": 90.0,
+        "duration_min": 85.0,
+        "duration_max": 95.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": "cooked beef",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "cook for 90 minutes"
+      },
+      {
+        "origin": "source",
+        "text": "After 90 minutes add celery, carrots and potatoes and cook for another 20-30 minutes.",
+        "label": "Add vegetables",
+        "attention": "unattended",
+        "attention_cue": "cook for another 20-30 minutes.",
+        "duration_typical_min": 25.0,
+        "duration_min": 20.0,
+        "duration_max": 30.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Celery stalk",
+          "Carrots",
+          "Potatoes"
+        ],
+        "produces_component": "finished stew",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "20-30 minutes"
+      },
+      {
+        "origin": "source",
+        "text": "Serve!",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "If you prefer thinner stew, add more liquids. If you prefer thicker stew, add less liquids.",
+        "label": "Adjust thickness",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "optional",
+        "role_cue": "If you prefer thinner stew, add more liquids.",
+        "attach_to_step": 6,
+        "consumes_ingredients": [
+          "Beef stock/chicken stock/water"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Instead of wine you can use beef stock/chicken stock/water.",
+        "label": "Skip wine",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "optional",
+        "role_cue": "Instead of wine you can use beef stock/chicken stock/water.",
+        "attach_to_step": 5,
+        "consumes_ingredients": [
+          "Beef stock/chicken stock/water"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked recipe blog's structured instructions (recipeInstructions). Optional notes from the source were emitted as optional steps and attached to the relevant steps (attach_to_step set to the index of the step adding liquids/wine). Durations used where explicitly stated in the source (6-7 min, 3-4 min, 90 min, 20-30 min); deglaze step has no numeric duration in source so duration_stated=false for that step."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: The Best Beef Stew Recipe\n\nChannel: The Cooking Foodie\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"The Best Beef Stew Recipe\",\n  \"author\": {\n    \"@id\": \"https://thecookingfoodie.com/#/schema/person/859fe1eddebe1b361e92f8d4f08a8238\"\n  },\n  \"description\": \"\",\n  \"datePublished\": \"2023-10-17T00:00:00+00:00\",\n  \"image\": [\n    \"https://thecookingfoodie.com/wp-content/uploads/2024/08/241010_d1-jpg.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"The Best Beef Stew Recipe\",\n    \"description\": \"Learn how to make the best beef stew. Soft and tender meat, rich and delicious stew. The [perfect meal foe cold winter days. Beef stew with carrots and potatoes.\\n\\n\\n►Full written recipe:\\nhttps://www.thecookingfoodie.com/recipe/The-Best-Beef-Stew-Recipe\\n\\n► Equipment I used in this video: https://www.amazon.com/shop/thecookingfoodie\\n\\n\\n►FOLLOW ME:\\nInstagram: https://www.instagram.com/thecookingfoodie/ \\nFacebook: https://www.facebook.com/thecookingfoodie \\nWebsite: https://www.thecookingfoodie.com/\\n\\n\\nIngredients:\\n1-2 tablespoons Oil \\n1½ (700g) Stewing beef, cut into chunks\\nSalt to taste\\nPepper to taste \\n2 Onions, roughly chopped \\n1 Red bell pepper, diced \\n3 Tomatoes, chopped  \\n3 garlic cloves, minced \\n1 tablespoon Sweet paprika\\n1 teaspoon Cumin \\n1 teaspoon Dried thyme \\n1 tablespoon Tomato paste\\n1 cup (240ml) red wine (optinal) \\n4-5 cups Beef stock/chicken stock/water\\n2 Bay leaves\\n1 Celery stalk, chopped  \\n3 Carrots, cut into chunks \\n2 Potatoes, cut into chunks  \\n\\nDirections:\\n1. In a large pot heat oil, add beef chunks, season with salt and pepper and brown them, about 6-7 minutes. Remove the beef from the pot and add chopped onions. Cook and golden. Add bell pepper and cook for 3-4 minutes. Add chopped tomatoes, minced garlic and cook for 3-4 minutes. \\n2. Put the beef back into the pot, add tomato paste, season with the spices and mix well.\\n3. Pour in red wine and deglaze (cook until reduced by half). Add beef stock and bay leaves. \\n4. Cover the pot, reduce the heat to low and cook for 90 minutes.\\n5. After 90 minutes add celery, carrots and potatoes and cook for another 20-30 minutes.\\n6. Serve! \\n\\nNotes:\\n• If you prefer a thinner stew, add more liquids. If you prefer thicker stew, add less liquids. \\n• Instead of wine you can use beef stock/chicken stock/water.\",\n    \"uploadDate\": \"2023-10-21T12:00:15+00:00\",\n    \"duration\": \"PT4M37S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/LFJwsyyMHSs/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/LFJwsyyMHSs?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=LFJwsyyMHSs\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"6\",\n    \"6 yields\"\n  ],\n  \"prepTime\": \"PT150M\",\n  \"recipeIngredient\": [\n    \"1-2 tablespoons Oil\",\n    \"1½  700g Stewing beef, cut into chunks\",\n    \"Salt to taste\",\n    \"Pepper to taste\",\n    \"2  Onions (roughly chopped)\",\n    \"1  Red bell pepper (diced)\",\n    \"3  Tomatoes (chopped)\",\n    \"3  garlic cloves (minced)\",\n    \"1 tablespoon Sweet paprika\",\n    \"1 teaspoon Cumin\",\n    \"1 teaspoon Dried thyme\",\n    \"1 tablespoon Tomato paste\",\n    \"1 cup 240ml red wine (optinal)\",\n    \"4-5 cups Beef stock/chicken stock/water\",\n    \"2  Bay leaves\",\n    \"1  Celery stalk (chopped)\",\n    \"3  Carrots (cut into chunks)\",\n    \"2  Potatoes (cut into chunks)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"DIRECTIONS \\n\\n\\nIn a large pot heat oil, add beef chunks, season with salt and pepper and brown them, about 6-7 minutes. Remove the beef from the pot and add chopped onions. Cook and golden. Add bell pepper and cook for 3-4 minutes. Add chopped tomatoes, minced garlic and cook for 3-4 minutes.\\nPut the beef back into the pot, add tomato paste, season with the spices and mix well.\\nPour in red wine and deglaze (cook until reduced by half). Add beef stock and bay leaves.\\nCover the pot, reduce the heat to low and cook for 90 minutes.\\nAfter 90 minutes add celery, carrots and potatoes and cook for another 20-30 minutes.\\nServe!\\n\\n Notes:\\n\\nIf you prefer thinner stew, add more liquids. If you prefer thicker stew, add less liquids.\\nInstead of wine you can use beef stock/chicken stock/water.\",\n      \"name\": \"DIRECTIONS \\n\\n\\nIn a large pot heat oil, add beef chunks, season with salt and pepper and brown them, about 6-7 minutes. Remove the beef from the pot and add chopped onions. Cook and golden. Add bell pepper and cook for 3-4 minutes. Add chopped tomatoes, minced garlic and cook for 3-4 minutes.\\nPut the beef back into the pot, add tomato paste, season with the spices and mix well.\\nPour in red wine and deglaze (cook until reduced by half). Add beef stock and bay leaves.\\nCover the pot, reduce the heat to low and cook for 90 minutes.\\nAfter 90 minutes add celery, carrots and potatoes and cook for another 20-30 minutes.\\nServe!\\n\\n Notes:\\n\\nIf you prefer thinner stew, add more liquids. If you prefer thicker stew, add less liquids.\\nInstead of wine you can use beef stock/chicken stock/water.\",\n      \"url\": \"https://thecookingfoodie.com/recipe/the-best-beef-stew-recipe/#wprm-recipe-7042-step-0-0\"\n    }\n  ],\n  \"recipeCuisine\": [\n    \"American\"\n  ],\n  \"@id\": \"https://thecookingfoodie.com/recipe/the-best-beef-stew-recipe/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://thecookingfoodie.com/recipe/the-best-beef-stew-recipe/#article\"\n  },\n  \"mainEntityOfPage\": \"https://thecookingfoodie.com/recipe/the-best-beef-stew-recipe/\"\n}\n\nVideo description:\n\nLearn how to make the best beef stew. Soft and tender meat, rich and delicious stew. The [perfect meal foe cold winter days. Beef stew with carrots and potatoes.\n\n\n►Full written recipe:\nhttps://www.thecookingfoodie.com/recipe/The-Best-Beef-Stew-Recipe\n\n► Equipment I used in this video: https://www.amazon.com/shop/thecookingfoodie\n\n\n►FOLLOW ME:\nInstagram: https://www.instagram.com/thecookingfoodie/ \nFacebook: https://www.facebook.com/thecookingfoodie \nWebsite: https://www.thecookingfoodie.com/\n\n\nIngredients:\n1-2 tablespoons Oil \n1½ (700g) Stewing beef, cut into chunks\nSalt to taste\nPepper to taste \n2 Onions, roughly chopped \n1 Red bell pepper, diced \n3 Tomatoes, chopped  \n3 garlic cloves, minced \n1 tablespoon Sweet paprika\n1 teaspoon Cumin \n1 teaspoon Dried thyme \n1 tablespoon Tomato paste\n1 cup (240ml) red wine (optinal) \n4-5 cups Beef stock/chicken stock/water\n2 Bay leaves\n1 Celery stalk, chopped  \n3 Carrots, cut into chunks \n2 Potatoes, cut into chunks  \n\nDirections:\n1. In a large pot heat oil, add beef chunks, season with salt and pepper and brown them, about 6-7 minutes. Remove the beef from the pot and add chopped onions. Cook and golden. Add bell pepper and cook for 3-4 minutes. Add chopped tomatoes, minced garlic and cook for 3-4 minutes. \n2. Put the beef back into the pot, add tomato paste, season with the spices and mix well.\n3. Pour in red wine and deglaze (cook until reduced by half). Add beef stock and bay leaves. \n4. Cover the pot, reduce the heat to low and cook for 90 minutes.\n5. After 90 minutes add celery, carrots and potatoes and cook for another 20-30 minutes.\n6. Serve! \n\nNotes:\n• If you prefer a thinner stew, add more liquids. If you prefer thicker stew, add less liquids. \n• Instead of wine you can use beef stock/chicken stock/water.",
+  "raw_title": "The Best Beef Stew Recipe",
+  "blog_name": "The Best Beef Stew Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=LFJwsyyMHSs",
+    "imported_at": "2026-10-25T10:40:25.981861Z"
+  },
+  "graph_id": "g_3a_22",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "blog"
+  ]
+}

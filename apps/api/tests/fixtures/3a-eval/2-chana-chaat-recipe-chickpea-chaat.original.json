@@ -1,0 +1,454 @@
+{
+  "recipe": {
+    "title": "Chana Chaat Recipe (Chickpea Chaat)",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": 2,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "½ cup dried chickpeas ((or 1½ to 2 cups cooked or canned chickpeas))",
+        "qty": "½ cup",
+        "unit": null,
+        "prep_note": "(or 1½ to 2 cups cooked or canned chickpeas)",
+        "group": null
+      },
+      {
+        "name": "1 onion ((small, chopped finely))",
+        "qty": "1",
+        "unit": "",
+        "prep_note": "(small, chopped finely)",
+        "group": null
+      },
+      {
+        "name": "1 tomato ((small, deseeded & chopped finely))",
+        "qty": "1",
+        "unit": "",
+        "prep_note": "(small, deseeded & chopped finely)",
+        "group": null
+      },
+      {
+        "name": "¼ cup cucumber ((chopped, optional))",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": "(chopped, optional)",
+        "group": null
+      },
+      {
+        "name": "2 sprigs coriander leaves ((chopped finely))",
+        "qty": "2",
+        "unit": "sprigs",
+        "prep_note": "(chopped finely)",
+        "group": null
+      },
+      {
+        "name": "1 to 2 green chili (chopped)",
+        "qty": "1 to 2",
+        "unit": null,
+        "prep_note": "(chopped)",
+        "group": null
+      },
+      {
+        "name": "1 to 2 tablespoon tamarind chutney (or lemon juice (refer notes))",
+        "qty": "1 to 2",
+        "unit": "tablespoon",
+        "prep_note": "(tamarind chutney or lemon juice (refer notes))",
+        "group": null
+      },
+      {
+        "name": "½ teaspoon chaat masala ((adjust to taste))",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": "(adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "½ teaspoon roasted cumin powder ((optional))",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": "(optional)",
+        "group": null
+      },
+      {
+        "name": "¼ to ⅓ teaspoon salt ((adjust to taste))",
+        "qty": "¼ to ⅓",
+        "unit": "teaspoon",
+        "prep_note": "(adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "2 tablespoons sev (/ boondi/ farsan/ mixture or corn flakes)",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": "(/ boondi/ farsan/ mixture or corn flakes)",
+        "group": null
+      },
+      {
+        "name": "2 tablespoons curd (/ dahi)",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": "(/ dahi)",
+        "group": null
+      },
+      {
+        "name": "1 teaspoon green chutney",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 small potato (diced and boiled or air fried)",
+        "qty": "1",
+        "unit": "small",
+        "prep_note": "(diced and boiled or air fried)",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Rinse chickpeas well under running water at least thrice. Soak them in lot of water for at least 6 to 8 hrs or overnight.",
+        "label": "Soak chickpeas",
+        "attention": "unattended",
+        "attention_cue": "Soak them in lot of water for at least 6 to 8 hrs or overnight.",
+        "duration_typical_min": 420.0,
+        "duration_min": 360.0,
+        "duration_max": 480.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "½ cup dried chickpeas ((or 1½ to 2 cups cooked or canned chickpeas))"
+        ],
+        "produces_component": "soaked chickpeas",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Later drain the water and add them to the cooker.",
+        "label": "Drain chickpeas",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "soaked chickpeas"
+        ],
+        "produces_component": "drained chickpeas in cooker",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour water just enough to cover them or about 1 cup. Cover the pressure cooker.",
+        "label": "Add water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "drained chickpeas in cooker"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pressure cook for 3 to 4 whistles on a medium flame or in the instant pot for 16 minutes. You can even cook in a pot with enough water to cover them. Chana should be soft and cooked well but not mushy.",
+        "label": "Cook chickpeas",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 16.0,
+        "duration_min": 15.0,
+        "duration_max": 18.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "drained chickpeas in cooker"
+        ],
+        "produces_component": "cooked chickpeas",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Chana should be soft and cooked well but not mushy."
+      },
+      {
+        "origin": "source",
+        "text": "When the pressure drops, open the cooker and drain off the water. Add it soups, curries, rasam, sambar or make dough.",
+        "label": "Drain cooked chickpeas",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked chickpeas"
+        ],
+        "produces_component": "drained cooked chickpeas",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cool the chana completely. Add salt, chaat masala and cumin powder",
+        "label": "Season chickpeas",
+        "attention": "unattended",
+        "attention_cue": "Cool the chana completely.",
+        "duration_typical_min": 10.0,
+        "duration_min": 5.0,
+        "duration_max": 20.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "drained cooked chickpeas",
+          "¼ to ⅓ teaspoon salt ((adjust to taste))",
+          "½ teaspoon chaat masala ((adjust to taste))",
+          "½ teaspoon roasted cumin powder ((optional))"
+        ],
+        "produces_component": "seasoned chickpeas",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Cool the chana completely."
+      },
+      {
+        "origin": "source",
+        "text": "Add tamarind chutney if using. If you do not have tamarind chutney simply squeeze in some lemon juice or make your own following my notes below.",
+        "label": "Add chutney or lemon",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "seasoned chickpeas",
+          "1 to 2 tablespoon tamarind chutney (or lemon juice (refer notes))"
+        ],
+        "produces_component": "chutney-seasoned chickpeas",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add chopped onions, chilies, tomatoes and cucumber.",
+        "label": "Add vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chutney-seasoned chickpeas",
+          "1 onion ((small, chopped finely))",
+          "1 tomato ((small, deseeded & chopped finely))",
+          "¼ cup cucumber ((chopped, optional))",
+          "1 to 2 green chili (chopped)"
+        ],
+        "produces_component": "chickpea mixture with veggies",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Toss all of these and taste test. Add more spices or chaat masala if required. Optionally you may add green chutney, potatoes (boiled or fried) or even whisked thick curd.",
+        "label": "Toss and taste",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "chickpea mixture with veggies",
+          "1 teaspoon green chutney",
+          "1 small potato (diced and boiled or air fried)",
+          "2 tablespoons curd (/ dahi)"
+        ],
+        "produces_component": "finished chaat (pre-garnish)",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Transfer to serving bowls. Garnish with some sev or mixture or crushed cornflakes. Sprinkle coriander leaves.",
+        "label": "Garnish",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "finished chaat (pre-garnish)",
+          "2 tablespoons sev (/ boondi/ farsan/ mixture or corn flakes)",
+          "2 sprigs coriander leaves ((chopped finely))"
+        ],
+        "produces_component": "garnished chaat",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve chana chaat immediately.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "garnished chaat"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Serve chana chaat immediately.",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked blog's schema.org Recipe.instructions (HowToStep/HowToSection).",
+      "Ingredient names and prep notes copied verbatim from recipeIngredient entries; no ingredients were invented.",
+      "Durations: soak (6 to 8 hrs or overnight) and Instant Pot 16 minutes taken verbatim from source and marked duration_stated=true. Other step times are estimates because the source gives no explicit timing.",
+      "Produced component labels (e.g. \"soaked chickpeas\",\"cooked chickpeas\") were introduced to express step dependencies; they reflect the source steps' outputs and are named to match consumes_ingredients entries above."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Chana Chaat Recipe (Chickpea Chaat)\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Chana Chaat Recipe (Chickpea Chaat)\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"Chana chaat is a quick snack made with boiled chickpeas, onions, tomatoes, spices and herbs. This spicy, sweet and tangy tasting street food is delicious and protein packed.\",\n  \"datePublished\": \"2017-12-20T01:00:05+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/04/chana-chaat.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/04/chana-chaat-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/04/chana-chaat-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/04/chana-chaat-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Chana Chaat | Chickpea Chaat Recipe\",\n    \"description\": \"Chana chaat is a popular street snack made with boiled chickpeas, veggies, sweet sour chutney and spices.\\nFull recipe on my blog here:\",\n    \"uploadDate\": \"2022-04-04T13:44:11+00:00\",\n    \"duration\": \"PT59S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/1ovb2v-dtPs/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/1ovb2v-dtPs?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=1ovb2v-dtPs\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"2\"\n  ],\n  \"prepTime\": \"PT360M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT390M\",\n  \"recipeIngredient\": [\n    \"½ cup dried chickpeas ((or 1½ to 2 cups cooked or canned chickpeas))\",\n    \"1 onion ((small, chopped finely))\",\n    \"1 tomato ((small, deseeded &amp; chopped finely))\",\n    \"¼ cup cucumber ((chopped, optional))\",\n    \"2 sprigs coriander leaves ((chopped finely))\",\n    \"1 to 2 green chili (chopped)\",\n    \"1 to 2 tablespoon tamarind chutney (or lemon juice (refer notes))\",\n    \"½ teaspoon chaat masala ((adjust to taste))\",\n    \"½ teaspoon roasted cumin powder ((optional))\",\n    \"¼ to ⅓ teaspoon salt ((adjust to taste))\",\n    \"2 tablespoons sev (/ boondi/ farsan/ mixture or corn flakes)\",\n    \"2 tablespoons curd (/ dahi)\",\n    \"1 teaspoon green chutney\",\n    \"1 small potato (diced and boiled or air fried)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Rinse chickpeas well under running water at least thrice. Soak them in lot of water for at least 6 to 8 hrs or overnight.\",\n      \"name\": \"Rinse chickpeas well under running water at least thrice. Soak them in lot of water for at least 6 to 8 hrs or overnight.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Later drain the water and add them to the cooker.\",\n      \"name\": \"Later drain the water and add them to the cooker.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Pour water just enough to cover them or about 1 cup. Cover the pressure cooker.\",\n      \"name\": \"Pour water just enough to cover them or about 1 cup. Cover the pressure cooker.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Pressure cook for 3 to 4 whistles on a medium flame or in the instant pot for 16 minutes. You can even cook in a pot with enough water to cover them. Chana should be soft and cooked well but not mushy.\",\n      \"name\": \"Pressure cook for 3 to 4 whistles on a medium flame or in the instant pot for 16 minutes. You can even cook in a pot with enough water to cover them. Chana should be soft and cooked well but not mushy.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"When the pressure drops, open the cooker and drain off the water. Add it soups, curries, rasam, sambar or make dough.\",\n      \"name\": \"When the pressure drops, open the cooker and drain off the water. Add it soups, curries, rasam, sambar or make dough.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"How to make Chana Chaat\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cool the chana completely. Add salt, chaat masala and cumin powder\",\n          \"name\": \"Cool the chana completely. Add salt, chaat masala and cumin powder\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add tamarind chutney if using. If you do not have tamarind chutney simply squeeze in some lemon juice or make your own following my notes below.\",\n          \"name\": \"Add tamarind chutney if using. If you do not have tamarind chutney simply squeeze in some lemon juice or make your own following my notes below.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add chopped onions, chilies, tomatoes and cucumber.\",\n          \"name\": \"Add chopped onions, chilies, tomatoes and cucumber.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Toss all of these and taste test. Add more spices or chaat masala if required. Optionally you may add green chutney, potatoes (boiled or fried) or even whisked thick curd.\",\n          \"name\": \"Toss all of these and taste test. Add more spices or chaat masala if required. Optionally you may add green chutney, potatoes (boiled or fried) or even whisked thick curd.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Transfer to serving bowls. Garnish with some sev or mixture or crushed cornflakes. Sprinkle coriander leaves.\",\n          \"name\": \"Transfer to serving bowls. Garnish with some sev or mixture or crushed cornflakes. Sprinkle coriander leaves.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve chana chaat immediately.\",\n          \"name\": \"Serve chana chaat immediately.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#wprm-recipe-36870-step-1-5\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"5\",\n    \"ratingCount\": \"30\",\n    \"reviewCount\": \"4\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"So delicious and easy to put together. It was a big hit!\\r\\nThe quick recipe for the tamarind chutney was very helpful since I hadn’t made it before. I also made a big batch of chaat masala since I couldn’t find it in the local shops, so I’ll have that on hand for next time!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Eli\"\n      },\n      \"datePublished\": \"2026-08-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This chana chaat is amazing, so fast and delicious. I have been on a weight loss journey for sometime now. So I make this almost daily and love your idea of air fried potatoes. I can't eat potatoes so replace with sweet potatoes. Boil the chickpeas for a week and make the chutney too. I love how you give easy and healthy ideas like the cornflakes here. Thank you. Keep posting.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Vidya\"\n      },\n      \"datePublished\": \"2023-03-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Used canned chana &amp; whipped up coriander chutney in minutes. Chana chaat turned out very delicious.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Jenny\"\n      },\n      \"datePublished\": \"2023-03-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Just like all your other recipes, this was a huge hit! I only had desi chana on hand, so I used that instead of kabuli and it was still delicious!  I will be making this regularly. Thanks for sharing!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Andrew\"\n      },\n      \"datePublished\": \"2021-11-09\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Snack\"\n  ],\n  \"recipeCuisine\": [\n    \"Indian\"\n  ],\n  \"keywords\": \"Chana chaat, chickpea chaat\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"286 kcal\",\n    \"carbohydrateContent\": \"51 g\",\n    \"proteinContent\": \"14 g\",\n    \"fatContent\": \"5 g\",\n    \"sodiumContent\": \"533 mg\",\n    \"fiberContent\": \"15 g\",\n    \"sugarContent\": \"16 g\",\n    \"saturatedFatContent\": \"1 g\",\n    \"cholesterolContent\": \"1 mg\",\n    \"unsaturatedFatContent\": \"3 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/chana-chaat-recipe/\"\n}",
+  "raw_title": "Chana Chaat Recipe (Chickpea Chaat)",
+  "blog_name": "Chana Chaat Recipe (Chickpea Chaat)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/chana-chaat-recipe/",
+    "imported_at": "2026-10-25T10:28:46.049401Z"
+  },
+  "graph_id": "g_3a_2",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

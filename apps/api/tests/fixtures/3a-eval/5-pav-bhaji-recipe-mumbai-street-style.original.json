@@ -1,0 +1,439 @@
+{
+  "recipe": {
+    "title": "Pav Bhaji",
+    "channel": "hebbarskitchen.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": "4 Servings",
+    "cuisine": "indian street food",
+    "stated_total_min": 40,
+    "ingredients": [
+      {
+        "name": "1 tbsp + 1 tbsp butter",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "3 to  mato (finely chopped)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¼ cup peas / matar",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½  capsicum (finely chopped)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2  potato (boiled & mashed)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp salt",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp + ¼ tsp kashmiri red chilli powder / lal mirch powder",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¼ tsp turmeric / haldi",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp + ½ tsp pav bhaji masala",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp + 1 tsp kasuri methi / dry fenugreek leaves",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 tbsp + 1 tbsp coriander leaves (finely chop ped)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp ginger garlic paste",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1  onion (finely chopped)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½  lemon juice",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "3  drops red food colour (optional)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "water to adjust consistency",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "8  pav / bread roll",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "4 tsp butter",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ tsp kashmiri red chilli powder / lal mirch powder",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ tsp pav bhaji masala",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "4 tsp coriander leaves (finely chopped)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Firstly, in a large kadai heat 1 tbsp butter and add vegetables. cook and mash well.",
+        "label": "Cook vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.0,
+        "duration_min": 5.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "mash well"
+      },
+      {
+        "origin": "source",
+        "text": "Add 1 tsp chilli powder, ¼ tsp turmeric, 1 tsp pav bhaji masala, 1 tsp kasuri methi and 2 tbsp coriander leaves.",
+        "label": "Season bhaji",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "heat a tbsp of butter and add ¼ tsp chilli powder, ½ tsp pav bhaji masala, 1 tsp kasuri methi.",
+        "label": "Prepare tadka",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1 tbsp + 1 tbsp butter"
+        ],
+        "produces_component": "tadka",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "also add 1 tbsp coriander leaves, 1 tsp ginger garlic paste, 1 onion and ½ lemon juice. saute well.",
+        "label": "Saute aromatics",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1 tsp ginger garlic paste",
+          "1  onion (finely chopped)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "saute well"
+      },
+      {
+        "origin": "source",
+        "text": "now add 3 drops of red food colour and mix well.",
+        "label": "Add colour",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "3  drops red food colour (optional)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "mix well"
+      },
+      {
+        "origin": "source",
+        "text": "boil and mash for 5 minutes adjusting consistency.",
+        "label": "Boil and mash",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 4.0,
+        "duration_max": 6.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2  potato (boiled & mashed)",
+          "¼ cup peas / matar",
+          "3 to  mato (finely chopped)"
+        ],
+        "produces_component": "bhaji",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "adjusting consistency"
+      },
+      {
+        "origin": "source",
+        "text": "Finally, serve pav and bhaji as pav bhaji.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "8  pav / bread roll",
+          "4 tsp butter"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Ingredients preserved verbatim from the linked recipe JSON-LD; qty/unit/prep fields left null to avoid inventing parses.",
+      "Method taken from the linked recipeInstructions JSON-LD; step 6's '5 minutes' was treated as a stated duration."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": [
+          "½  capsicum (finely chopped)",
+          "1 tsp salt"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "1 tsp + ¼ tsp kashmiri red chilli powder / lal mirch powder",
+          "¼ tsp turmeric / haldi",
+          "1 tsp + ½ tsp pav bhaji masala",
+          "1 tsp + 1 tsp kasuri methi / dry fenugreek leaves",
+          "2 tbsp + 1 tbsp coriander leaves (finely chop ped)"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "1 tsp + ¼ tsp kashmiri red chilli powder / lal mirch powder",
+          "1 tsp + ½ tsp pav bhaji masala",
+          "1 tsp + 1 tsp kasuri methi / dry fenugreek leaves"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "2 tbsp + 1 tbsp coriander leaves (finely chop ped)",
+          "½  lemon juice"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "water to adjust consistency"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "½ tsp kashmiri red chilli powder / lal mirch powder",
+          "½ tsp pav bhaji masala",
+          "4 tsp coriander leaves (finely chopped)"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Pav Bhaji Recipe | Easy Mumbai Street Style Pav Bhaji Recipe\n\nChannel: hebbarskitchen.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Pav Bhaji Recipe | Easy Mumbai Street Style Pav Bhaji Recipe\",\n  \"author\": {\n    \"@id\": \"https://hebbarskitchen.com/#/schema/person/fdf1122d98e52197bd94fb5ac0366736\"\n  },\n  \"description\": \"Easy pav bhaji recipe | easy mumbai style pav bhaji recipe\",\n  \"datePublished\": \"2024-10-30T20:59:01+00:00\",\n  \"image\": [\n    \"https://hebbarskitchen.com/wp-content/uploads/mainPhotos/pav-bhaji-recipe-easy-mumbai-style-pav-bhaji-recipe-1.jpeg\"\n  ],\n  \"recipeYield\": [\n    \"4\",\n    \"4 Servings\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT40M\",\n  \"recipeIngredient\": [\n    \"1 tbsp + 1 tbsp butter\",\n    \"3 to  mato (finely chopped)\",\n    \"¼ cup peas / matar\",\n    \"½  capsicum (finely chopped)\",\n    \"2  potato (boiled &amp; mashed)\",\n    \"1 tsp salt\",\n    \"1 tsp + ¼ tsp kashmiri red chilli powder / lal mirch powder\",\n    \"¼ tsp turmeric / haldi\",\n    \"1 tsp + ½ tsp pav bhaji masala\",\n    \"1 tsp + 1 tsp kasuri methi / dry fenugreek leaves\",\n    \"2 tbsp + 1 tbsp coriander leaves (finely chop ped)\",\n    \"1 tsp ginger garlic paste\",\n    \"1  onion (finely chopped)\",\n    \"½  lemon juice\",\n    \"3  drops red food colour (optional)\",\n    \"water to adjust consistency\",\n    \"8  pav / bread roll\",\n    \"4 tsp butter\",\n    \"½ tsp kashmiri red chilli powder / lal mirch powder\",\n    \"½ tsp pav bhaji masala\",\n    \"4 tsp coriander leaves (finely chopped)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Firstly, in a large kadai heat 1 tbsp butter and add vegetables. cook and mash well.\",\n      \"name\": \"Firstly, in a large kadai heat 1 tbsp butter and add vegetables. cook and mash well.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add 1 tsp chilli powder, ¼ tsp turmeric, 1 tsp pav bhaji masala, 1 tsp kasuri methi and 2 tbsp coriander leaves.\",\n      \"name\": \"Add 1 tsp chilli powder, ¼ tsp turmeric, 1 tsp pav bhaji masala, 1 tsp kasuri methi and 2 tbsp coriander leaves.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"heat a tbsp of butter and add ¼ tsp chilli powder, ½ tsp pav bhaji masala, 1 tsp kasuri methi.\",\n      \"name\": \"heat a tbsp of butter and add ¼ tsp chilli powder, ½ tsp pav bhaji masala, 1 tsp kasuri methi.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"also add 1 tbsp coriander leaves, 1 tsp ginger garlic paste, 1 onion and ½ lemon juice. saute well.\",\n      \"name\": \"also add 1 tbsp coriander leaves, 1 tsp ginger garlic paste, 1 onion and ½ lemon juice. saute well.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"now add 3 drops of red food colour and mix well.\",\n      \"name\": \"now add 3 drops of red food colour and mix well.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"boil and mash for 5 minutes adjusting consistency.\",\n      \"name\": \"boil and mash for 5 minutes adjusting consistency.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Finally, serve pav and bhaji as pav bhaji.\",\n      \"name\": \"Finally, serve pav and bhaji as pav bhaji.\",\n      \"url\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#wprm-recipe-37294-step-0-6\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.99\",\n    \"ratingCount\": \"460\"\n  },\n  \"recipeCategory\": [\n    \"snacks\",\n    \"street food\"\n  ],\n  \"recipeCuisine\": [\n    \"indian street food\",\n    \"mumbai\"\n  ],\n  \"keywords\": \"mumbai style pav bhaji, pav bhaji, street style pav bhaji\",\n  \"@id\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/#article\"\n  },\n  \"mainEntityOfPage\": \"https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/\"\n}",
+  "raw_title": "Pav Bhaji Recipe | Easy Mumbai Street Style Pav Bhaji Recipe",
+  "blog_name": "Pav Bhaji Recipe | Easy Mumbai Street Style Pav Bhaji Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://hebbarskitchen.com/easy-mumbai-style-pav-bhaji-recipe/",
+    "imported_at": "2026-10-25T10:30:46.899154Z"
+  },
+  "graph_id": "g_3a_5",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

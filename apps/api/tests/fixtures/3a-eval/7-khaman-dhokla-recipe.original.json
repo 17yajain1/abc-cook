@@ -1,0 +1,731 @@
+{
+  "recipe": {
+    "title": "Khaman Dhokla",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "4 to 5",
+    "cuisine": "Indian",
+    "stated_total_min": 30,
+    "ingredients": [
+      {
+        "name": "water",
+        "qty": "1 + ¼ cup (300 ml)",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "natural citric acid",
+        "qty": "1 teaspoon (5 grams)",
+        "unit": null,
+        "prep_note": "(or 2 tablespoon lemon juice or use yogurt, read notes)",
+        "group": null
+      },
+      {
+        "name": "sugar",
+        "qty": "3 tablespoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "sea salt",
+        "qty": "1 to 1¼ teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil",
+        "qty": "2 tablespoons (30 ml)",
+        "unit": null,
+        "prep_note": "(peanut or coconut oil)",
+        "group": null
+      },
+      {
+        "name": "ginger",
+        "qty": "1 tablespoon",
+        "unit": null,
+        "prep_note": "(fine grated or ¾ tbsp paste)",
+        "group": null
+      },
+      {
+        "name": "green chilies",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "(deseed and mince or paste, omit for kids)",
+        "group": null
+      },
+      {
+        "name": "fine semolina",
+        "qty": "2 tablespoons (20 grams)",
+        "unit": null,
+        "prep_note": "(fine suji/ rava, to omit cut down 3 tbsps water)",
+        "group": null
+      },
+      {
+        "name": "besan",
+        "qty": "2 cups (220 grams)",
+        "unit": null,
+        "prep_note": "(gram flour)",
+        "group": null
+      },
+      {
+        "name": "turmeric",
+        "qty": "¼ teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Eno",
+        "qty": "1½ teaspoon (8 grams)",
+        "unit": null,
+        "prep_note": "(unflavored fruit salt or 1 teaspoon baking soda)",
+        "group": null
+      },
+      {
+        "name": "oil",
+        "qty": "1 tablespoon",
+        "unit": null,
+        "prep_note": "(15 ml)",
+        "group": null
+      },
+      {
+        "name": "mustard seeds",
+        "qty": "1 teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "slit green chilies",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "(adjust to preference)",
+        "group": null
+      },
+      {
+        "name": "curry leaves",
+        "qty": "12",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "white sesame seeds",
+        "qty": "1 teaspoon",
+        "unit": null,
+        "prep_note": "(optional)",
+        "group": null
+      },
+      {
+        "name": "hing",
+        "qty": "¼ teaspoon",
+        "unit": null,
+        "prep_note": "(asafoetida, optional)",
+        "group": null
+      },
+      {
+        "name": "sugar",
+        "qty": "1 tablespoon",
+        "unit": null,
+        "prep_note": "(adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "sea salt",
+        "qty": "½ teaspoon",
+        "unit": null,
+        "prep_note": "(adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "water",
+        "qty": "1 to 1½ cup",
+        "unit": null,
+        "prep_note": "(240 to 360 ml)",
+        "group": null
+      },
+      {
+        "name": "raw grated coconut",
+        "qty": "1 to 2 tablespoons",
+        "unit": null,
+        "prep_note": "(or desiccated)",
+        "group": null
+      },
+      {
+        "name": "coriander leaves",
+        "qty": "1 to 2 tablespoons",
+        "unit": null,
+        "prep_note": "(fine chopped)",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Grease a 7 to 8 inch round or square cake pan or a steel container. Line a parchment if using an aluminum or non-stick coated pan.",
+        "label": "Prepare pan",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "In a large mixing bowl, whisk together water, citric acid, sugar, salt, oil, ginger paste, chili paste and semolina, until the sugar dissolves.",
+        "label": "Mix wet ingredients",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water",
+          "natural citric acid",
+          "sugar",
+          "sea salt",
+          "oil",
+          "ginger",
+          "green chilies",
+          "fine semolina"
+        ],
+        "produces_component": "wet-mix",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the sugar dissolves"
+      },
+      {
+        "origin": "source",
+        "text": "Place a sieve and add the besan and turmeric. Sieve and mix well to a lump free smooth batter.",
+        "label": "Sieve besan",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "besan",
+          "turmeric"
+        ],
+        "produces_component": "batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "to a lump free smooth batter"
+      },
+      {
+        "origin": "source",
+        "text": "Whisk very well in one direction for 40 to 60 seconds. Cover and rest for 10 mins.",
+        "label": "Whisk and rest",
+        "attention": "unattended",
+        "attention_cue": "Cover and rest for 10 mins.",
+        "duration_typical_min": 10.0,
+        "duration_min": 10.0,
+        "duration_max": 10.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": "rested batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Whisk very well in one direction for 40 to 60 seconds"
+      },
+      {
+        "origin": "source",
+        "text": "Pour 3 cups water to a steamer and place a high-legged trivet or a rack. Bring it to a boil.",
+        "label": "Prepare steamer",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": "steamer ready",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Bring it to a boil"
+      },
+      {
+        "origin": "source",
+        "text": "When the water begins to boil, add eno and a tablespoon of water. Mix until well combined, thick and frothy, taking care not to overdo.",
+        "label": "Add Eno",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Eno"
+        ],
+        "produces_component": "leavened batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until well combined, thick and frothy"
+      },
+      {
+        "origin": "source",
+        "text": "Transfer to the greased pan and steam on a medium to medium high heat for 18 mins, until a tester comes out clean. (8 inch pan – 18 mins, 7 inch pan – 20 mins)",
+        "label": "Steam dhokla",
+        "attention": "unattended",
+        "attention_cue": "steam on a medium to medium high heat for 18 mins",
+        "duration_typical_min": 18.0,
+        "duration_min": 16.0,
+        "duration_max": 20.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rested batter",
+          "leavened batter"
+        ],
+        "produces_component": "steamed dhokla",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until a tester comes out clean"
+      },
+      {
+        "origin": "source",
+        "text": "Cool down completely on a wire rack.",
+        "label": "Cool completely",
+        "attention": "unattended",
+        "attention_cue": "Cool down completely",
+        "duration_typical_min": 12.0,
+        "duration_min": 8.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "steamed dhokla"
+        ],
+        "produces_component": "cooled dhokla",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Cool down completely"
+      },
+      {
+        "origin": "source",
+        "text": "Heat oil on a medium flame and add mustard seeds. When they begin to splutter, add curry leaves & green chilies.",
+        "label": "Start tempering",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil",
+          "mustard seeds",
+          "slit green chilies",
+          "curry leaves"
+        ],
+        "produces_component": "tempering base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "When they begin to splutter"
+      },
+      {
+        "origin": "source",
+        "text": "When the leaves turn crisp, add sesame seeds and fry for a minute. Add hing, sugar, salt as needed and pour water.",
+        "label": "Finish tempering",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "white sesame seeds",
+          "hing",
+          "sugar",
+          "sea salt",
+          "water"
+        ],
+        "produces_component": "tempered water",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "When the leaves turn crisp"
+      },
+      {
+        "origin": "source",
+        "text": "Bring to a rolling boil and mix until the sugar dissolves. Turn off and cool down to warm.",
+        "label": "Boil tempered water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tempered water"
+        ],
+        "produces_component": "warm tempered water",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the sugar dissolves"
+      },
+      {
+        "origin": "source",
+        "text": "When the khaman dhokla cools down, invert it on a tray and slice it to 16 squares. (If you did not use a parchment, run a knife around the sides to loosen it from the pan)",
+        "label": "Invert and slice",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooled dhokla"
+        ],
+        "produces_component": "sliced dhokla",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Spoon the floating spices on to the khaman and pour the water all over.",
+        "label": "Pour tempered water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10,
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "warm tempered water",
+          "sliced dhokla"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "(optionally reserve ¼ cup to pour while serving)",
+        "label": "Reserve tempered water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "optional",
+        "role_cue": "optionally reserve ¼ cup to pour while serving",
+        "attach_to_step": 12,
+        "consumes_ingredients": [
+          "warm tempered water"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Garnish with coconut and chopped coriander leaves, both optional.",
+        "label": "Garnish",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "optional",
+        "role_cue": "both optional",
+        "attach_to_step": 12,
+        "consumes_ingredients": [
+          "raw grated coconut",
+          "coriander leaves"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve khaman dhokla with coriander/ cilantro chutney and red chutney.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12,
+          13
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked recipe JSON-LD structured data. I split and marked optional phrases from the single 'spoon and pour' instruction into separate optional steps: reserving 1/4 cup of tempered water and the garnish, because the source text explicitly labels them optional (role_cue preserved).",
+      "stated_total_min set from the recipe totalTime (PT30M).",
+      "Durations: whisk (40–60 seconds) and rest (10 mins) and steaming (18 mins / 20 mins for 7-inch pan) taken as stated times; cooling time estimated because source gives no number."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "wet-mix"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "steamer ready"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Khaman Dhokla Recipe (Fluffy & Soft)\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Khaman Dhokla Recipe (Fluffy & Soft)\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"I&#39;ll help you make the BEST instant Dhokla at home under 30 mins. Gram flour, salt, a leavening agent and tempering spices come together to make this savory steamed cake. It&#39;s soft, fluffy and moist that you no more want to order or eat it out.\",\n  \"datePublished\": \"2020-11-09T11:06:07+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/11/khaman-dhokla-recipe.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/11/khaman-dhokla-recipe-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/11/khaman-dhokla-recipe-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/11/khaman-dhokla-recipe-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Khaman Dhokla\",\n    \"description\": \"Find the written recipe here on our website -\",\n    \"uploadDate\": \"2026-08-04T13:52:04+00:00\",\n    \"duration\": \"PT30S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/LvUJ5iDzT80/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/LvUJ5iDzT80?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=LvUJ5iDzT80\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"4\",\n    \"4 to 5\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT20M\",\n  \"totalTime\": \"PT30M\",\n  \"recipeIngredient\": [\n    \"1 + ¼ cup (300 ml) water\",\n    \"1 teaspoon (5 grams) natural citric acid ((or 2 tablespoon lemon juice or use yogurt, read notes))\",\n    \"3 tablespoon sugar\",\n    \"1 to 1¼ teaspoon sea salt\",\n    \"2 tablespoons (30 ml) oil ((peanut or coconut oil))\",\n    \"1 tablespoon ginger (fine grated or ¾ tbsp paste)\",\n    \"2 green chilies ((deseed and mince or paste, omit for kids))\",\n    \"2 tablespoons (20 grams) fine semolina ((fine suji/ rava, to omit cut down 3 tbsps water))\",\n    \"2 cups (220 grams) besan ( (gram flour))\",\n    \"¼ teaspoon turmeric\",\n    \"1½ teaspoon (8 grams) Eno ( (unflavored fruit salt or 1 teaspoon baking soda))\",\n    \"1 tablespoon oil ((15 ml))\",\n    \"1 teaspoon mustard seeds\",\n    \"2 slit green chilies ( (adjust to preference))\",\n    \"12 curry leaves\",\n    \"1 teaspoon white sesame seeds ( (optional))\",\n    \"¼ teaspoon hing ( (asafoetida, optional))\",\n    \"1 tablespoon sugar ((adjust to taste))\",\n    \"½ teaspoon sea salt ( (adjust to taste))\",\n    \"1 to 1½ cup water ((240 to 360 ml))\",\n    \"1 to 2 tablespoons raw grated coconut (or desiccated)\",\n    \"1 to 2 tablespoons coriander leaves ( fine chopped)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Grease a 7 to 8 inch round or square cake pan or a steel container. Line a parchment if using an aluminum or non-stick coated pan.\",\n      \"name\": \"Grease a 7 to 8 inch round or square cake pan or a steel container. Line a parchment if using an aluminum or non-stick coated pan.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"How to make Khaman Dhokla\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"In a large mixing bowl, whisk together water, citric acid, sugar, salt, oil, ginger paste, chili paste and semolina, until the sugar dissolves.\",\n          \"name\": \"In a large mixing bowl, whisk together water, citric acid, sugar, salt, oil, ginger paste, chili paste and semolina, until the sugar dissolves.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Place a sieve and add the besan and turmeric. Sieve and mix well to a lump free smooth batter.\",\n          \"name\": \"Place a sieve and add the besan and turmeric. Sieve and mix well to a lump free smooth batter.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Whisk very well in one direction for 40 to 60 seconds. Cover and rest for 10 mins.\",\n          \"name\": \"Whisk very well in one direction for 40 to 60 seconds. Cover and rest for 10 mins.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour 3 cups water to a steamer and place a high-legged trivet or a rack. Bring it to a boil.\",\n          \"name\": \"Pour 3 cups water to a steamer and place a high-legged trivet or a rack. Bring it to a boil.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"When the water begins to boil, add eno and a tablespoon of water. Mix until well combined, thick and frothy, taking care not to overdo.\",\n          \"name\": \"When the water begins to boil, add eno and a tablespoon of water. Mix until well combined, thick and frothy, taking care not to overdo.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Transfer to the greased pan and steam on a medium to medium high heat for 18 mins, until a tester comes out clean. (8 inch pan – 18 mins, 7 inch pan – 20 mins)\",\n          \"name\": \"Transfer to the greased pan and steam on a medium to medium high heat for 18 mins, until a tester comes out clean. (8 inch pan – 18 mins, 7 inch pan – 20 mins)\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cool down completely on a wire rack.\",\n          \"name\": \"Cool down completely on a wire rack.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-1-6\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Make the Tempering\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat oil on a medium flame and add mustard seeds. When they begin to splutter, add curry leaves & green chilies.\",\n          \"name\": \"Heat oil on a medium flame and add mustard seeds. When they begin to splutter, add curry leaves & green chilies.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"When the leaves turn crisp, add sesame seeds and fry for a minute. Add hing, sugar, salt as needed and pour water.\",\n          \"name\": \"When the leaves turn crisp, add sesame seeds and fry for a minute. Add hing, sugar, salt as needed and pour water.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Bring to a rolling boil and mix until the sugar dissolves. Turn off and cool down to warm.\",\n          \"name\": \"Bring to a rolling boil and mix until the sugar dissolves. Turn off and cool down to warm.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"When the khaman dhokla cools down, invert it on a tray and slice it to 16 squares. (If you did not use a parchment, run a knife around the sides to loosen it from the pan)\",\n          \"name\": \"When the khaman dhokla cools down, invert it on a tray and slice it to 16 squares. (If you did not use a parchment, run a knife around the sides to loosen it from the pan)\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Spoon the floating spices on to the khaman and pour the water all over, (optionally reserve ¼ cup to pour while serving). Garnish with coconut and chopped coriander leaves, both optional.\",\n          \"name\": \"Spoon the floating spices on to the khaman and pour the water all over, (optionally reserve ¼ cup to pour while serving). Garnish with coconut and chopped coriander leaves, both optional.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve khaman dhokla with coriander/ cilantro chutney and red chutney.\",\n          \"name\": \"Serve khaman dhokla with coriander/ cilantro chutney and red chutney.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#wprm-recipe-69856-step-2-5\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"5\",\n    \"ratingCount\": \"185\",\n    \"reviewCount\": \"7\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My first time making khaman dhokla and it tasted very good. I used lemon juice and baking soda because that's what I had. Next time will try with eno and citric acid to see if there is any difference. Thank you\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Darshana\"\n      },\n      \"datePublished\": \"2026-09-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made and it turned out delicious. I took it my work place to share with my friends. They loved it with the hari chutney. Anyone taking it to a potluck, carry the tempered water in a thermos and pour it while slightly hot. It instantly softened and made the dhokla perfect.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Tara\"\n      },\n      \"datePublished\": \"2026-08-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Beautiful dhokla recipe. Turned out as shown\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sameera\"\n      },\n      \"datePublished\": \"2026-08-09\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I always struggled to find the right pan for my dhokla. This recipe gave me the idea to use my masala dabba because I didn't have any steel containers. My dhokls turned out very spongy and tasted yummy. Since my bowl was big, not 5 inch I steamed only for 12 mins. My sis-n-law always adds fresh lemon juice in the tadka. I did the same and it was the best I ever made.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Divya\"\n      },\n      \"datePublished\": \"2026-06-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Love your recipes very much and this dhokla is our favorite. I follow the recipe to the T but make the tadka in ghee. Excellent flavor!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Farah\"\n      },\n      \"datePublished\": \"2026-06-22\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Should i cool the tempering water before pouring over the cut dhoklas ?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Katkar\"\n      },\n      \"datePublished\": \"2026-04-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"It turned out perfect. 👌👌\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Vandana Nair\"\n      },\n      \"datePublished\": \"2026-03-14\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Snack\"\n  ],\n  \"recipeCuisine\": [\n    \"Indian\"\n  ],\n  \"keywords\": \"dhokla, dhokla recipe, khaman dhokla\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"323 kcal\",\n    \"carbohydrateContent\": \"41 g\",\n    \"proteinContent\": \"11 g\",\n    \"fatContent\": \"12 g\",\n    \"saturatedFatContent\": \"1 g\",\n    \"transFatContent\": \"0.03 g\",\n    \"sodiumContent\": \"659 mg\",\n    \"fiberContent\": \"6 g\",\n    \"sugarContent\": \"16 g\",\n    \"unsaturatedFatContent\": \"10 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/khaman-dhokla/\"\n}",
+  "raw_title": "Khaman Dhokla Recipe (Fluffy & Soft)",
+  "blog_name": "Khaman Dhokla Recipe (Fluffy & Soft)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/khaman-dhokla/",
+    "imported_at": "2026-10-25T10:32:19.411133Z"
+  },
+  "graph_id": "g_3a_7",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

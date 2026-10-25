@@ -1,0 +1,396 @@
+{
+  "recipe": {
+    "title": "Upma Recipe (Rava Upma)",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "2 to 3 people",
+    "cuisine": "Andhra",
+    "stated_total_min": 20,
+    "ingredients": [
+      {
+        "name": "Rava ((Bombay rava/ sooji/semolina))",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil (or ghee)",
+        "qty": "2 to 2½ tablespoons",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "mustard seeds",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cumin seeds ((jeera, optional, adds aroma))",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "split urad dal ((skinned split black gram))",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "chana dal ((optional, adds nice aroma, Bengal gram))",
+        "qty": "1½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "peanuts ((optional))",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cashews ((you may leave out if using peanuts) )",
+        "qty": "8 to 12",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "curry leaves",
+        "qty": "1",
+        "unit": "sprig",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "asafoetida ((hing) (optional))",
+        "qty": "1",
+        "unit": "pinch",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "onion ((chopped or sliced thinly))",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": "chopped or sliced thinly",
+        "group": null
+      },
+      {
+        "name": "green chili",
+        "qty": "1 to 2",
+        "unit": null,
+        "prep_note": "slit",
+        "group": null
+      },
+      {
+        "name": "ginger",
+        "qty": "½ inch",
+        "unit": null,
+        "prep_note": "½ to ¾ teaspoon minced or grated (optional)",
+        "group": null
+      },
+      {
+        "name": "water",
+        "qty": "3",
+        "unit": "cups",
+        "prep_note": "(2¾ cups for a drier upma)",
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "½ to ¾",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "ghee ((optional))",
+        "qty": "2",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "lemon juice (optional) (to serve)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "mixed vegetables ((fine chopped carrots, beans and green peas))",
+        "qty": "½",
+        "unit": "cup",
+        "prep_note": "fine chopped",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Roast rava: On a medium heat, dry roast rava in a pan, stirring often until crunchy and aromatic. Do not brown it. Remove to a bowl and keep aside to cool down.",
+        "label": "Roast rava",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Rava ((Bombay rava/ sooji/semolina))"
+        ],
+        "produces_component": "roasted rava",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until crunchy and aromatic. Do not brown it."
+      },
+      {
+        "origin": "source",
+        "text": "Optional - Roast peanuts to garnish - Fry peanuts in 1 teaspoon oil until golden, aromatic and crunchy. Reserve aside to garnish. Soak dal - If you like your dal softer, you may soak them in ¼ cup hot water for 10 mins, drain & pat dry before using.",
+        "label": "Toast peanuts / soak dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 12.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "optional",
+        "role_cue": "Optional - Roast peanuts to garnish",
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "peanuts ((optional))",
+          "split urad dal ((skinned split black gram))",
+          "chana dal ((optional, adds nice aroma, Bengal gram))"
+        ],
+        "produces_component": "toasted peanuts",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until golden, aromatic and crunchy"
+      },
+      {
+        "origin": "source",
+        "text": "Temper the spices: Pour oil to the hot pan & add mustard seeds, cumin seeds, urad dal & chana dal. Fry until the dal turns light golden. Add cashews and fry until they turn golden & aromatic. Stir in hing, green chilies, ginger and curry leaves.",
+        "label": "Temper spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil (or ghee)",
+          "mustard seeds",
+          "cumin seeds ((jeera, optional, adds aroma))",
+          "split urad dal ((skinned split black gram))",
+          "chana dal ((optional, adds nice aroma, Bengal gram))",
+          "cashews ((you may leave out if using peanuts) )",
+          "asafoetida ((hing) (optional))",
+          "green chili",
+          "ginger",
+          "curry leaves"
+        ],
+        "produces_component": "tempered spices",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the dal turns light golden"
+      },
+      {
+        "origin": "source",
+        "text": "Saute for a minute & add chopped onions. Saute until transparent & add mix vegetables (optional) if using. Stir and cook covered until slightly tender.",
+        "label": "Cook vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onion ((chopped or sliced thinly))",
+          "mixed vegetables ((fine chopped carrots, beans and green peas))",
+          "tempered spices"
+        ],
+        "produces_component": "cooked vegetables",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until transparent; until slightly tender"
+      },
+      {
+        "origin": "source",
+        "text": "Boil water: Pour water and add salt.\u0000Mix and taste test the water. It has to be slightly salty. If required add more and bring the water to a rolling boil.",
+        "label": "Boil water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water",
+          "salt"
+        ],
+        "produces_component": "boiling water",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "bring the water to a rolling boil"
+      },
+      {
+        "origin": "source",
+        "text": "Make upma: Lower the heat. With one hand pour rava in a slow stream to the boiling water, while you incorporate it into the water with the other hand. (check video). Be quick at this stage. Stir everything once to check any lumps. Break up if any.",
+        "label": "Add rava",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3,
+          4,
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "roasted rava",
+          "boiling water"
+        ],
+        "produces_component": "rava in water",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "check any lumps"
+      },
+      {
+        "origin": "source",
+        "text": "Cover and cook on the lowest flame until the water is completely absorbed. This just takes 2 to 4 mins depending on the kind of pot or pan used. Add ghee and give a quick stir. Turn off and cover back to rest for 5 mins.",
+        "label": "Cook and rest",
+        "attention": "unattended",
+        "attention_cue": "Cover and cook on the lowest flame until the water is completely absorbed.",
+        "duration_typical_min": 7.0,
+        "duration_min": 2.0,
+        "duration_max": 9.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "ghee ((optional))"
+        ],
+        "produces_component": "cooked upma",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "water is completely absorbed"
+      },
+      {
+        "origin": "source",
+        "text": "Stir in the lemon juice and serve rava upma plain or with spiced peanut podi, chutney, pickle or curd. Garnish with roasted/fried peanuts.",
+        "label": "Finish and serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "lemon juice (optional) (to serve)",
+          "toasted peanuts",
+          "cooked upma"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "to serve",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked recipe JSON-LD (recipeInstructions). Ingredient names and prep notes preserved as listed in the source. I treated the optional peanut/dal soaking instruction as an optional step (role_cue: \"Optional - Roast peanuts to garnish\"). The cooking+rest instruction combined two numeric durations (2\u00104 mins cooking + 5 mins resting); duration_stated was set true because numbers are stated in the source and the step's duration_min/duration_max reflect the combined activity."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Upma Recipe (Rava Upma)\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Upma Recipe (Rava Upma)\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"Rava upma is a South Indian savory breakfast made with semolina aka suji, nuts, spices and curry leaves. It is usually eaten with podi, sugar, chutney or sambar. \",\n  \"datePublished\": \"2025-04-01T05:51:12+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/08/upma-recipe.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/08/upma-recipe-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/08/upma-recipe-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2021/08/upma-recipe-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Upma Recipe (Fluffy & Non-sticky)\",\n    \"description\": \"Upma is a basic South Indian breakfast made with semolina also known as rava. It is cooked with whole tempering spices, curry leaves and cashew nuts. Check out my blog for complete written recipe here:\",\n    \"uploadDate\": \"2023-03-25T15:07:20+00:00\",\n    \"duration\": \"PT2M20S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/PoQVgvibsxE/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/PoQVgvibsxE?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=PoQVgvibsxE\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"2\",\n    \"2 to 3 people\"\n  ],\n  \"prepTime\": \"PT5M\",\n  \"cookTime\": \"PT15M\",\n  \"totalTime\": \"PT20M\",\n  \"recipeIngredient\": [\n    \"1 cup Rava ((Bombay rava/ sooji/semolina))\",\n    \"2 to 2½ tablespoons oil (or ghee)\",\n    \"½ teaspoon mustard seeds\",\n    \"½ teaspoon cumin seeds ((jeera, optional, adds aroma))\",\n    \"1 teaspoon split urad dal ((skinned split black gram))\",\n    \"1½ teaspoon chana dal ((optional, adds nice aroma, Bengal gram))\",\n    \"2 tablespoons peanuts ((optional))\",\n    \"8 to 12 cashews ((you may leave out if using peanuts) )\",\n    \"1 sprig curry leaves\",\n    \"1 pinch asafoetida ((hing) (optional))\",\n    \"¼ cup onion ((chopped or sliced thinly))\",\n    \"1 to 2 green chili (slit)\",\n    \"½ inch ginger ((½ to ¾ teaspoon minced or grated)(optional))\",\n    \"3 cups water ((2¾ cups for a drier upma) )\",\n    \"½ to ¾ teaspoon salt\",\n    \"2 teaspoon ghee ((optional))\",\n    \"lemon juice (optional) (to serve)\",\n    \"½ cup mixed vegetables ((fine chopped carrots, beans and green peas))\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Roast rava: On a medium heat, dry roast rava in a pan, stirring often until crunchy and aromatic. Do not brown it. Remove to a bowl and keep aside to cool down.\",\n      \"name\": \"Roast rava: On a medium heat, dry roast rava in a pan, stirring often until crunchy and aromatic. Do not brown it. Remove to a bowl and keep aside to cool down.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Optional - Roast peanuts to garnish - Fry peanuts in 1 teaspoon oil until golden, aromatic and crunchy. Reserve aside to garnish. Soak dal - If you like your dal softer, you may soak them in ¼ cup hot water for 10 mins, drain &amp; pat dry before using.\",\n      \"name\": \"Optional - Roast peanuts to garnish - Fry peanuts in 1 teaspoon oil until golden, aromatic and crunchy. Reserve aside to garnish. Soak dal - If you like your dal softer, you may soak them in ¼ cup hot water for 10 mins, drain &amp; pat dry before using.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Temper the spices: Pour oil to the hot pan &amp; add mustard seeds, cumin seeds, urad dal &amp; chana dal. Fry until the dal turns light golden. Add cashews and fry until they turn golden &amp; aromatic. Stir in hing, green chilies, ginger and curry leaves.\",\n      \"name\": \"Temper the spices: Pour oil to the hot pan &amp; add mustard seeds, cumin seeds, urad dal &amp; chana dal. Fry until the dal turns light golden. Add cashews and fry until they turn golden &amp; aromatic. Stir in hing, green chilies, ginger and curry leaves.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Saute for a minute &amp; add chopped onions. Saute until transparent &amp; add mix vegetables (optional) if using. Stir and cook covered until slightly tender.\",\n      \"name\": \"Saute for a minute &amp; add chopped onions. Saute until transparent &amp; add mix vegetables (optional) if using. Stir and cook covered until slightly tender.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Boil water: Pour water and add salt. Mix and taste test the water. It has to be slightly salty. If required add more and bring the water to a rolling boil.\",\n      \"name\": \"Boil water: Pour water and add salt. Mix and taste test the water. It has to be slightly salty. If required add more and bring the water to a rolling boil.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Make upma: Lower the heat. With one hand pour rava in a slow stream to the boiling water, while you incorporate it into the water with the other hand. (check video). Be quick at this stage. Stir everything once to check any lumps. Break up if any.\",\n      \"name\": \"Make upma: Lower the heat. With one hand pour rava in a slow stream to the boiling water, while you incorporate it into the water with the other hand. (check video). Be quick at this stage. Stir everything once to check any lumps. Break up if any.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Cover and cook on the lowest flame until the water is completely absorbed. This just takes 2 to 4 mins depending on the kind of pot or pan used. Add ghee and give a quick stir. Turn off and cover back to rest for 5 mins.\",\n      \"name\": \"Cover and cook on the lowest flame until the water is completely absorbed. This just takes 2 to 4 mins depending on the kind of pot or pan used. Add ghee and give a quick stir. Turn off and cover back to rest for 5 mins.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-6\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Stir in the lemon juice and serve rava upma plain or with spiced peanut podi, chutney, pickle or curd. Garnish with roasted/fried peanuts.\",\n      \"name\": \"Stir in the lemon juice and serve rava upma plain or with spiced peanut podi, chutney, pickle or curd. Garnish with roasted/fried peanuts.\",\n      \"url\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#wprm-recipe-37748-step-0-7\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.99\",\n    \"ratingCount\": \"495\",\n    \"reviewCount\": \"11\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"All your recipes r awesome, veg n non veg too.  I tried upma today and it turned out very good.  My family relishes  all the dishes which I prepare using your recipes. Thanks\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Amelia\"\n      },\n      \"datePublished\": \"2026-08-13\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Writing this review after using the recipe more than 10 times and it has never failed me! The upma always turned out well when the recipe was followed!Thank you!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Yogesh Deshmukh\"\n      },\n      \"datePublished\": \"2026-07-29\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"4\"\n      },\n      \"reviewBody\": \"I tried and it was awesome\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Prerna\"\n      },\n      \"datePublished\": \"2026-06-01\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Swasthi thank you for delicious recipe.i made upma first time it came out very good 😃👍\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Neeta pagarani\"\n      },\n      \"datePublished\": \"2026-05-30\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I've made your upma a few times and really liked it. I'm hosting a Indian themed breakfast and will be making this. Do you have any suggestion with the side dishes? I'm basically looking to increase the nutrition profile of the meal. Any advice on more protein and fiber.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Naomi\"\n      },\n      \"datePublished\": \"2026-05-28\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"First time I made upma and my friends loved it.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Surya\"\n      },\n      \"datePublished\": \"2026-05-16\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made upma using your recipe and it turned out really well. Omitted the onions and used frozen veggies to save time. Thank you.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Balaji Gupta\"\n      },\n      \"datePublished\": \"2026-05-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Excellent breakfast item! Came out very well. Thank you Swasthi\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Colette Augustine\"\n      },\n      \"datePublished\": \"2026-04-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"So tasty! I was missing Southern Indian breakfast 😊\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Lana\"\n      },\n      \"datePublished\": \"2026-04-04\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This was my second time making your upma and I think it tastes the best as written. I use full 3 cups water to 1 cup rava which I found is the ideal ratio. But if I'm to use vegetables will I've to add more water?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Varun\"\n      },\n      \"datePublished\": \"2026-03-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This upma is basically on regular rotation for several months and that means a lot since our menu changes every few weeks. But this one stayed on top and can't believe I’ve never left a review. Thank you Swasthi\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Honey\"\n      },\n      \"datePublished\": \"2026-03-06\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Breakfast\"\n  ],\n  \"recipeCuisine\": [\n    \"Andhra\"\n  ],\n  \"keywords\": \"how to make upma, rava upma, upma, upma recipe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"362 kcal\",\n    \"carbohydrateContent\": \"47 g\",\n    \"proteinContent\": \"9 g\",\n    \"fatContent\": \"16 g\",\n    \"saturatedFatContent\": \"3 g\",\n    \"cholesterolContent\": \"9 mg\",\n    \"sodiumContent\": \"458 mg\",\n    \"fiberContent\": \"4 g\",\n    \"sugarContent\": \"1 g\",\n    \"transFatContent\": \"0.04 g\",\n    \"unsaturatedFatContent\": \"11 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/\"\n}",
+  "raw_title": "Upma Recipe (Rava Upma)",
+  "blog_name": "Upma Recipe (Rava Upma)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/",
+    "imported_at": "2026-10-25T10:28:08.150908Z"
+  },
+  "graph_id": "g_3a_1",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "recipe": {
+    "title": "Aglio e Olio (Spaghetti with garlic olive oil)",
+    "channel": "recipetineats.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "4 - 5 people",
+    "cuisine": "Italian",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "500g/ 1 lb  spaghetti ((I use No 5 spaghetti but any long strand pasta will work))",
+        "qty": "500g/ 1 lb",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 tsp cooking salt / kosher salt (, for cooking pasta (halve for table salt, +50% for flakes))",
+        "qty": "2 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1/2 cup extra virgin olive oil ((the better the oil, the tastier your pasta!))",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "6  large garlic cloves (, finely sliced)",
+        "qty": "6",
+        "unit": "large",
+        "prep_note": "finely sliced",
+        "group": null
+      },
+      {
+        "name": "1/2 tsp red chilli flakes ((red pepper flakes), optional - sub pinch of black pepper for not spicy)",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tsp cooking salt / kosher salt ((halve for table salt, +50% for flakes))",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1/3 cup finely chopped parsley ((Note 2))",
+        "qty": "1/3",
+        "unit": "cup",
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "1/2 cup reserved pasta cooking water (see Step 2)",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": "reserved pasta cooking water",
+        "group": null
+      },
+      {
+        "name": "Parmesan or parmigiano reggiano (, finely grated, for serving)",
+        "qty": null,
+        "unit": null,
+        "prep_note": "finely grated, for serving",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Bring 4 litres / quarts of water to the boil. Add the 2 teaspoons of salt and the pasta. Cook for the packet direction time, MINUS 1 minute.",
+        "label": "Cook pasta",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 9.0,
+        "duration_min": 7.0,
+        "duration_max": 12.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "500g/ 1 lb  spaghetti ((I use No 5 spaghetti but any long strand pasta will work))",
+          "2 tsp cooking salt / kosher salt (, for cooking pasta (halve for table salt, +50% for flakes))"
+        ],
+        "produces_component": "cooked pasta",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "MINUS 1 minute per packet directions"
+      },
+      {
+        "origin": "source",
+        "text": "Just before draining, scoop out 1 cup of the pasta cooking water. Then drain the pasta.",
+        "label": "Reserve pasta water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "500g/ 1 lb  spaghetti ((I use No 5 spaghetti but any long strand pasta will work))"
+        ],
+        "produces_component": "drained pasta",
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Just before draining, scoop out 1 cup of the pasta cooking water"
+      },
+      {
+        "origin": "source",
+        "text": "4 minutes before the pasta is ready, heat the oil in a large ~30cm/12\" deep pan over medium heat. Add the garlic and sauté gently for 2 - 3 minutes until it is a very light golden brown. Add the chilli flakes and stir for 20 - 30 seconds until the garlic is light golden; do not let the garlic become brown.",
+        "label": "Make garlic oil",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1/2 cup extra virgin olive oil ((the better the oil, the tastier your pasta!))",
+          "6  large garlic cloves (, finely sliced)",
+          "1/2 tsp red chilli flakes ((red pepper flakes), optional - sub pinch of black pepper for not spicy)"
+        ],
+        "produces_component": "garlic oil",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until it is a very light golden brown"
+      },
+      {
+        "origin": "source",
+        "text": "Add the drained pasta, 1/2 cup pasta cooking water (125 ml) and the 1 teaspoon salt. Toss over medium high heat until you no longer see water and oil pooled on the base of the pan, it has combined to form a sauce clinging to the pasta (~1 - 1 1/2 minutes). Add parsley, quickly toss through. If at any point the pasta gets sticky or gluggy, add another slosh of pasta water and toss to loosen.",
+        "label": "Toss pasta",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "drained pasta",
+          "1/2 cup reserved pasta cooking water (see Step 2)",
+          "1 tsp cooking salt / kosher salt ((halve for table salt, +50% for flakes))",
+          "1/3 cup finely chopped parsley ((Note 2))",
+          "garlic oil"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until you no longer see water and oil pooled on the base of the pan"
+      },
+      {
+        "origin": "source",
+        "text": "Serve immediately with a shower of parmesan.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Parmesan or parmigiano reggiano (, finely grated, for serving)"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Serve immediately with a shower of parmesan.",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and timings taken from the linked Recipe JSON-LD (FULL RECIPE section). The cook-pasta step uses the source wording \"Cook for the packet direction time, MINUS 1 minute\"; its duration is therefore treated as vague (duration_stated=false) and a modest estimate supplied. Garlic oil and toss steps include explicit numeric timing in the source; those steps are marked duration_stated=true and the cited ranges used.",
+      "Ingredients are listed verbatim from recipeIngredient; prep notes included only when present on the ingredient line."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Aglio e Olio (Spaghetti with garlic olive oil)\n\nChannel: recipetineats.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Aglio e Olio (Spaghetti with garlic olive oil)\",\n  \"author\": {\n    \"@id\": \"https://www.recipetineats.com/#/schema/person/1684e6a75e9f91ae2e33ca2de95b47e2\"\n  },\n  \"description\": \"Recipe video above. Aglio e Olio - Garlic Oil Spaghetti - is the classic Italian pantry pasta made with just 3 basic ingredients: pasta, garlic and olive oil. Don&#39;t skimp on the oil, use a good one and get the salt amount right, and you&#39;ll be blown away by how delicious something so simple can be!For quick ways to incorporate vegetables into this, see Note 1. And as for what to do with leftovers - make crispy spaghetti fritters! See Note 4.\",\n  \"datePublished\": \"2026-09-21T16:00:00+00:00\",\n  \"image\": [\n    \"https://www.recipetineats.com/tachyon/2026/09/Aglio-e-olio-garlic-oil-spaghetti-0.jpg\",\n    \"https://www.recipetineats.com/tachyon/2026/09/Aglio-e-olio-garlic-oil-spaghetti-0.jpg?resize=500%2C500\",\n    \"https://www.recipetineats.com/tachyon/2026/09/Aglio-e-olio-garlic-oil-spaghetti-0.jpg?resize=500%2C375\",\n    \"https://www.recipetineats.com/tachyon/2026/09/Aglio-e-olio-garlic-oil-spaghetti-0.jpg?resize=480%2C270\"\n  ],\n  \"recipeYield\": [\n    \"4\",\n    \"4 - 5 people\"\n  ],\n  \"prepTime\": \"PT6M\",\n  \"cookTime\": \"PT12M\",\n  \"totalTime\": \"PT18M\",\n  \"recipeIngredient\": [\n    \"500g/ 1 lb  spaghetti ((I use No 5 spaghetti but any long strand pasta will work))\",\n    \"2 tsp cooking salt / kosher salt (, for cooking pasta (halve for table salt, +50% for flakes))\",\n    \"1/2 cup extra virgin olive oil ((the better the oil, the tastier your pasta!))\",\n    \"6  large garlic cloves (, finely sliced)\",\n    \"1/2 tsp red chilli flakes ((red pepper flakes), optional - sub pinch of black pepper for not spicy)\",\n    \"1 tsp cooking salt / kosher salt ((halve for table salt, +50% for flakes))\",\n    \"1/3 cup finely chopped parsley ((Note 2))\",\n    \"1/2 cup reserved pasta cooking water (see Step 2)\",\n    \"Parmesan or parmigiano reggiano (, finely grated, for serving)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"ABBREVIATED RECIPE:\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cook pasta per packet minus 1 minute in salted water, reserve water, drain. Slowly sauté garlic in oil, add chilli flakes, then pasta, 1/2 cup pasta water and salt, toss, finish with parsley. Serve.\",\n          \"name\": \"Cook pasta per packet minus 1 minute in salted water, reserve water, drain. Slowly sauté garlic in oil, add chilli flakes, then pasta, 1/2 cup pasta water and salt, toss, finish with parsley. Serve.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-0-0\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"FULL RECIPE:\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cook pasta - Bring 4 litres / quarts of water to the boil. Add the 2 teaspoons of salt and the pasta. Cook for the packet direction time, MINUS 1 minute.\",\n          \"name\": \"Cook pasta - Bring 4 litres / quarts of water to the boil. Add the 2 teaspoons of salt and the pasta. Cook for the packet direction time, MINUS 1 minute.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Scoop then drain (IMPORTANT!) - Just before draining, scoop out 1 cup of the pasta cooking water. Then drain the pasta.\",\n          \"name\": \"Scoop then drain (IMPORTANT!) - Just before draining, scoop out 1 cup of the pasta cooking water. Then drain the pasta.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Garlic oil - 4 minutes before the pasta is ready, heat the oil in a large ~30cm/12&quot; deep pan over medium heat. (Note 3 if you don&#39;t have a pan this size). Add the garlic and sauté gently for 2 - 3 minutes until it is a very light golden brown - don&#39;t rush this step, it&#39;s key to infuse the oil with garlic flavour. Add the chilli flakes and stir for 20 - 30 seconds until the garlic is light golden, do not let the garlic become brown, it will be bitter.\",\n          \"name\": \"Garlic oil - 4 minutes before the pasta is ready, heat the oil in a large ~30cm/12&quot; deep pan over medium heat. (Note 3 if you don&#39;t have a pan this size). Add the garlic and sauté gently for 2 - 3 minutes until it is a very light golden brown - don&#39;t rush this step, it&#39;s key to infuse the oil with garlic flavour. Add the chilli flakes and stir for 20 - 30 seconds until the garlic is light golden, do not let the garlic become brown, it will be bitter.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Toss, toss, toss! Add the drained pasta, 1/2 cup pasta cooking water (125 ml) and the salt. Toss over medium high heat until you no longer see water and oil pooled on the base of the pan, it has combined to form a sauce clinging to the pasta (~1 - 1 1/2 minutes). Add parsley, quickly toss through. The pasta should be slippery and slick with sauce. If at any point the pasta gets sticky or gluggy, just add another slosh of pasta water and toss to loosen.\",\n          \"name\": \"Toss, toss, toss! Add the drained pasta, 1/2 cup pasta cooking water (125 ml) and the salt. Toss over medium high heat until you no longer see water and oil pooled on the base of the pan, it has combined to form a sauce clinging to the pasta (~1 - 1 1/2 minutes). Add parsley, quickly toss through. The pasta should be slippery and slick with sauce. If at any point the pasta gets sticky or gluggy, just add another slosh of pasta water and toss to loosen.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve immediately with a shower of parmesan.\",\n          \"name\": \"Serve immediately with a shower of parmesan.\",\n          \"url\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#wprm-recipe-201489-step-1-4\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"5\",\n    \"ratingCount\": \"16\",\n    \"reviewCount\": \"5\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Finally, the recipe i've been waiting for.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Shz Lim\"\n      },\n      \"datePublished\": \"2026-09-29\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Sometimes, simple and basic is just what you need.  This recipe hit the spot today.  True confession: I didn't use good olive oil.  I used the leftover oil from a jar of sun-dried tomatoes.  I think it worked well.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Doug Higgins\"\n      },\n      \"datePublished\": \"2026-09-27\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Nagi, I followed the recipe almost to a tee. The only small alteration were I used a little less salt &amp; replaced with fish sauce (which I do with every rice or pasta/noodle dish anyway) &amp; gluten free pasta (Cucina Matese). In one sitting, it has moved into #1 position for a quick simple meal or accompiament. Had ours with some nice rib fillet.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Mick Kruckow\"\n      },\n      \"datePublished\": \"2026-09-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"What a great idea! I just happen to have prawns in the freezer!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"SUSAN (SUE) Heddle\"\n      },\n      \"datePublished\": \"2026-09-24\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Simple and delicious -- my whole family loved it.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Jeff\"\n      },\n      \"datePublished\": \"2026-09-24\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Main\",\n    \"Pasta\"\n  ],\n  \"recipeCuisine\": [\n    \"Italian\"\n  ],\n  \"keywords\": \"aglio e olio, garlic olive oil spaghetti, garlic pasta, pantry pasta, traditional italian pasta\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"564 kcal\",\n    \"carbohydrateContent\": \"75 g\",\n    \"proteinContent\": \"13 g\",\n    \"fatContent\": \"23 g\",\n    \"saturatedFatContent\": \"3 g\",\n    \"sodiumContent\": \"477 mg\",\n    \"fiberContent\": \"3 g\",\n    \"sugarContent\": \"3 g\",\n    \"unsaturatedFatContent\": \"19 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/\"\n}",
+  "raw_title": "Aglio e Olio (Spaghetti with garlic olive oil)",
+  "blog_name": "Aglio e Olio (Spaghetti with garlic olive oil)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/",
+    "imported_at": "2026-10-25T10:32:42.955345Z"
+  },
+  "graph_id": "g_3a_8",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "recipe": {
+    "title": "Sweet potato omelette",
+    "channel": "feelgoodfoodie",
+    "method_grounded": true,
+    "servings": 2,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "small sweet potato",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "peeled",
+        "group": null
+      },
+      {
+        "name": "olive oil",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "large eggs",
+        "qty": "4",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "milk",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "black pepper",
+        "qty": "⅛",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "garlic powder",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "finely grated Parmesan cheese",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Using a vegetable peeler, peel the sweet potato lengthwise into thin ribbons.",
+        "label": "Peel sweet potato",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "small sweet potato"
+        ],
+        "produces_component": "sweet potato ribbons",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat the olive oil in a medium nonstick skillet over medium heat. Arrange the sweet potato ribbons in an even layer, overlapping them slightly to cover the bottom of the skillet. Cook for 2 to 3 minutes, or until they begin to soften and lightly brown.",
+        "label": "Cook ribbons",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "olive oil",
+          "sweet potato ribbons"
+        ],
+        "produces_component": "lightly browned ribbons",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until they begin to soften and lightly brown"
+      },
+      {
+        "origin": "source",
+        "text": "In a small bowl, whisk together the eggs, milk, salt, black pepper, and garlic powder.",
+        "label": "Whisk eggs",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "large eggs",
+          "milk",
+          "salt",
+          "black pepper",
+          "garlic powder"
+        ],
+        "produces_component": "egg mixture",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour the egg mixture evenly over the sweet potato ribbons. Reduce the heat to medium-low, cover, and cook for 4 to 5 minutes, or until the eggs are mostly set.",
+        "label": "Cook eggs",
+        "attention": "unattended",
+        "attention_cue": "cover, and cook for 4 to 5 minutes",
+        "duration_typical_min": 4.0,
+        "duration_min": 4.0,
+        "duration_max": 5.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "egg mixture",
+          "lightly browned ribbons"
+        ],
+        "produces_component": "mostly set omelette",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the eggs are mostly set"
+      },
+      {
+        "origin": "source",
+        "text": "Sprinkle the Parmesan cheese over the top. Cover again and cook for 1 to 2 minutes, or until the cheese melts and the eggs are completely set.",
+        "label": "Melt cheese",
+        "attention": "unattended",
+        "attention_cue": "Cover again and cook for 1 to 2 minutes",
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "finely grated Parmesan cheese",
+          "mostly set omelette"
+        ],
+        "produces_component": "fully set omelette",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the cheese melts and the eggs are completely set"
+      },
+      {
+        "origin": "source",
+        "text": "Slide the omelette onto a plate and serve warm.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "fully set omelette"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method taken from the provided instructions; steps and wording grounded to the source. Produced components named to link steps (e.g., \"sweet potato ribbons\", \"mostly set omelette\"). Attention cues quoted verbatim from the instruction lines for covered cooking steps."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: I love sweet potatoes and eggs in the morning, so when I saw @eatswithjamie’s viral sweet potato omelette, I had to try it, and I loved it so much! This recipe feeds 2 people, but you can easily cut it in half or double it for a family. 🍳\n\nINGREDIENTS\n1 small sweet potato, peeled\n1 teaspoon olive oil\n4 large eggs\n2 tablespoons milk\n¼ teaspoon salt\n⅛ teaspoon black pepper\n¼ teaspoon garlic powder\n¼ cup finely grated Parmesan cheese\nINSTRUCTIONS\n1. Using a vegetable peeler, peel the sweet potato lengthwise into thin ribbons.\n2. Heat the olive oil in a medium nonstick skillet over medium heat. Arrange the sweet potato ribbons in an even layer, overlapping them slightly to cover the bottom of the skillet. Cook for 2 to 3 minutes, or until they begin to soften and lightly brown.\n3. In a small bowl, whisk together the eggs, milk, salt, black pepper, and garlic powder.\n4. Pour the egg mixture evenly over the sweet potato ribbons. Reduce the heat to medium-low, cover, and cook for 4 to 5 minutes, or until the eggs are mostly set.\n5. Sprinkle the Parmesan cheese over the top. Cover again and cook for 1 to 2 minutes, or until the cheese melts and the eggs are completely set.\n6. Slide the omelette onto a plate and serve warm.\n\nChannel: feelgoodfoodie\n\nVideo description:\n\nI love sweet potatoes and eggs in the morning, so when I saw @eatswithjamie’s viral sweet potato omelette, I had to try it, and I loved it so much! This recipe feeds 2 people, but you can easily cut it in half or double it for a family. 🍳\n\nINGREDIENTS\n1 small sweet potato, peeled\n1 teaspoon olive oil\n4 large eggs\n2 tablespoons milk\n¼ teaspoon salt\n⅛ teaspoon black pepper\n¼ teaspoon garlic powder\n¼ cup finely grated Parmesan cheese\nINSTRUCTIONS\n1. Using a vegetable peeler, peel the sweet potato lengthwise into thin ribbons.\n2. Heat the olive oil in a medium nonstick skillet over medium heat. Arrange the sweet potato ribbons in an even layer, overlapping them slightly to cover the bottom of the skillet. Cook for 2 to 3 minutes, or until they begin to soften and lightly brown.\n3. In a small bowl, whisk together the eggs, milk, salt, black pepper, and garlic powder.\n4. Pour the egg mixture evenly over the sweet potato ribbons. Reduce the heat to medium-low, cover, and cook for 4 to 5 minutes, or until the eggs are mostly set.\n5. Sprinkle the Parmesan cheese over the top. Cover again and cook for 1 to 2 minutes, or until the cheese melts and the eggs are completely set.\n6. Slide the omelette onto a plate and serve warm.",
+  "raw_title": "I love sweet potatoes and eggs in the morning, so when I saw @eatswithjamie’s viral sweet potato omelette, I had to try it, and I loved it so much! This recipe feeds 2 people, but you can easily cut it in half or double it for a family. 🍳\n\nINGREDIENTS\n1 small sweet potato, peeled\n1 teaspoon olive oil\n4 large eggs\n2 tablespoons milk\n¼ teaspoon salt\n⅛ teaspoon black pepper\n¼ teaspoon garlic powder\n¼ cup finely grated Parmesan cheese\nINSTRUCTIONS\n1. Using a vegetable peeler, peel the sweet potato lengthwise into thin ribbons.\n2. Heat the olive oil in a medium nonstick skillet over medium heat. Arrange the sweet potato ribbons in an even layer, overlapping them slightly to cover the bottom of the skillet. Cook for 2 to 3 minutes, or until they begin to soften and lightly brown.\n3. In a small bowl, whisk together the eggs, milk, salt, black pepper, and garlic powder.\n4. Pour the egg mixture evenly over the sweet potato ribbons. Reduce the heat to medium-low, cover, and cook for 4 to 5 minutes, or until the eggs are mostly set.\n5. Sprinkle the Parmesan cheese over the top. Cover again and cook for 1 to 2 minutes, or until the cheese melts and the eggs are completely set.\n6. Slide the omelette onto a plate and serve warm.",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.instagram.com/reel/DeQWzAXMJa5/",
+    "imported_at": "2026-10-25T10:42:58.506816Z"
+  },
+  "graph_id": "g_3a_27",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

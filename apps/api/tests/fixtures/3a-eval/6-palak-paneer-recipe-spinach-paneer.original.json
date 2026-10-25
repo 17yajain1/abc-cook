@@ -1,0 +1,566 @@
+{
+  "recipe": {
+    "title": "Palak Paneer",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "2 to 3",
+    "cuisine": "North Indian",
+    "stated_total_min": 45,
+    "ingredients": [
+      {
+        "name": "paneer",
+        "qty": "150 grams",
+        "unit": "grams",
+        "prep_note": "(1¼ cups) (Indian cottage cheese)",
+        "group": null
+      },
+      {
+        "name": "palak (spinach)",
+        "qty": "3½ to 4 cups",
+        "unit": "cups",
+        "prep_note": "(100 to 120 grams)",
+        "group": null
+      },
+      {
+        "name": "oil",
+        "qty": "2 tablespoons",
+        "unit": "tablespoons",
+        "prep_note": "(or half oil & half butter)",
+        "group": null
+      },
+      {
+        "name": "green chilies",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "(deseeded) (less spicy kind)",
+        "group": null
+      },
+      {
+        "name": "onions",
+        "qty": "¾ cup",
+        "unit": "cup",
+        "prep_note": "(90 grams, 1 small) (fine chopped)",
+        "group": null
+      },
+      {
+        "name": "tomatoes",
+        "qty": "½ cup",
+        "unit": "cup",
+        "prep_note": "(1 small) (deseeded & chopped or pureed)",
+        "group": null
+      },
+      {
+        "name": "ginger garlic paste",
+        "qty": "¾ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(read notes for substitute)",
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "½ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(use as per your taste)",
+        "group": null
+      },
+      {
+        "name": "cashewnuts",
+        "qty": "8 to 10",
+        "unit": null,
+        "prep_note": "(read notes for substitutes)",
+        "group": null
+      },
+      {
+        "name": "garam masala",
+        "qty": "½ to ¾ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(adjust to taste)",
+        "group": null
+      },
+      {
+        "name": "kasuri methi",
+        "qty": "½ teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(dried fenugreek leaves) (skip if you don't have)",
+        "group": null
+      },
+      {
+        "name": "water (for blending)",
+        "qty": "¼ cup",
+        "unit": "cup",
+        "prep_note": "(to blend spinach)",
+        "group": null
+      },
+      {
+        "name": "water (to cook)",
+        "qty": "¾ cup",
+        "unit": "cup",
+        "prep_note": "(to cook the gravy)",
+        "group": null
+      },
+      {
+        "name": "cream",
+        "qty": "3 tablespoons",
+        "unit": "tablespoons",
+        "prep_note": "(optional)",
+        "group": null
+      },
+      {
+        "name": "cumin seeds",
+        "qty": "1/8 teaspoon",
+        "unit": "teaspoon",
+        "prep_note": "(jeera) (optional)",
+        "group": null
+      },
+      {
+        "name": "green cardamoms",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "(elaichi) (optional)",
+        "group": null
+      },
+      {
+        "name": "cinnamon",
+        "qty": "1 inch",
+        "unit": "inch",
+        "prep_note": "(dalchini) (optional)",
+        "group": null
+      },
+      {
+        "name": "cloves",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "(laung) (optional)",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Pluck young tender spinach leaves and discard stems (use baby spinach stems if using baby spinach).",
+        "label": "Prep spinach",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "palak (spinach)"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add spinach to a large pot of water, rinse well a few times and drain in a colander; allow water to drain completely.",
+        "label": "Rinse spinach",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "palak (spinach)"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "drain completely"
+      },
+      {
+        "origin": "source",
+        "text": "Heat half tablespoon oil in a pan; sauté green chilies, cashews and spinach for 3 to 4 mins until leaves wilt and raw smell is gone.",
+        "label": "Sauté spinach",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 3.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "green chilies",
+          "cashewnuts",
+          "palak (spinach)",
+          "oil"
+        ],
+        "produces_component": "sauteed spinach",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the leaves wilt off thoroughly & raw smell of spinach has gone away"
+      },
+      {
+        "origin": "source",
+        "text": "Cool the sautéed spinach completely, then blend it with 1/4 cup water to a smooth thick puree (you may add 1–2 tbsp more water to help blending).",
+        "label": "Blend spinach",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "sauteed spinach",
+          "water (for blending)"
+        ],
+        "produces_component": "spinach puree",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "puree should be smooth and thick"
+      },
+      {
+        "origin": "source",
+        "text": "Heat 1 tablespoon butter and half tablespoon oil in the same pan; once they melt add cinnamon, cardamoms, cloves and cumin seeds.",
+        "label": "Temper spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "butter",
+          "oil",
+          "cinnamon",
+          "green cardamoms",
+          "cloves",
+          "cumin seeds"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "when the spices begin to sizzle"
+      },
+      {
+        "origin": "source",
+        "text": "Add onions and fry till they turn transparent to golden.",
+        "label": "Fry onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onions"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till they turn transparent to golden"
+      },
+      {
+        "origin": "source",
+        "text": "Saute ginger garlic paste for 1 to 2 minutes until fragrant.",
+        "label": "Cook paste",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "ginger garlic paste"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until you begin to smell it nice"
+      },
+      {
+        "origin": "source",
+        "text": "Add tomatoes with salt and sauté until they break down and turn mushy.",
+        "label": "Cook tomatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tomatoes",
+          "salt"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until they break down and turn mushy"
+      },
+      {
+        "origin": "source",
+        "text": "Add garam masala and sauté until the masala smells good (this may take about 2 mins).",
+        "label": "Add garam masala",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "garam masala"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the masala smells good"
+      },
+      {
+        "origin": "source",
+        "text": "Pour 3/4 cup water and cook covered until onions are completely soft (there should be some water left in the pan).",
+        "label": "Simmer onions",
+        "attention": "unattended",
+        "attention_cue": "cook covered",
+        "duration_typical_min": 6.0,
+        "duration_min": 5.0,
+        "duration_max": 12.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water (to cook)"
+        ],
+        "produces_component": "cooked onion base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until onions are completely soft"
+      },
+      {
+        "origin": "source",
+        "text": "Lower the flame, add kasuri methi and the pureed spinach; mix and cook until it begins to bubble for about 2 to 3 mins. Add a few tbsp hot water if the curry is too thick.",
+        "label": "Add spinach",
+        "attention": "hands_on",
+        "attention_cue": "cook until it begins to bubble for about 2 to 3 mins",
+        "duration_typical_min": 2.5,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "kasuri methi",
+          "spinach puree",
+          "water (to cook)"
+        ],
+        "produces_component": "palak gravy",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until it begins to bubble"
+      },
+      {
+        "origin": "source",
+        "text": "Avoid overcooking; add paneer and mix well, then turn off heat and transfer to a serving bowl. Optionally garnish with cream.",
+        "label": "Finish dish",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "paneer",
+          "palak gravy",
+          "cream"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "avoid overcooking"
+      },
+      {
+        "origin": "source",
+        "text": "Serve palak paneer with naan, roti, Basmati rice or Jeera rice.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "palak gravy",
+          "paneer"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "[OR another option is to blanch the palak in 4 cups of hot water with ¼ tsp salt for 2 mins, then immerse in ice cold water and drain completely.]",
+        "label": "Blanch spinach (alt)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 2.0,
+        "duration_max": 2.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "alternative",
+        "role_cue": "[OR another option is to blanch the palak in 4 cups of hot water with ¼ tsp salt for 2 mins. Then immerse in ice cold water. Drain completely.]",
+        "attach_to_step": 2,
+        "consumes_ingredients": [
+          "palak (spinach)"
+        ],
+        "produces_component": "blanched spinach",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "for 2 mins"
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method taken from the linked recipe JSON-LD (HowToSection/HowToStep).",
+      "The blanching alternative was present inline in the source and emitted as an alternative step attached to the sauté step (attach_to_step = 2).",
+      "Ingredient fields preserved source parentheticals in prep_note; names taken from the recipeIngredient lines without inventing new ingredients."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Palak Paneer Recipe (Spinach Paneer)\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Palak Paneer Recipe (Spinach Paneer)\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"Palak paneer recipe - Indian cottage cheese simmered in onion tomato spinach gravy. This palak paneer is one of the best you can make at home. Tastes simply delicious, creamy and easy to make. Serve with roti, basmati rice or naan.\",\n  \"datePublished\": \"2013-03-15T07:03:00+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/06/palak-paneer-recipe.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/06/palak-paneer-recipe-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/06/palak-paneer-recipe-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2020/06/palak-paneer-recipe-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Palak Paneer Recipe (Spinach Paneer Recipe)\",\n    \"description\": \"Palak Paneer is a healthy and delicious Indian curry made with spinach, paneer and spices. It goes well with naan or roti.\\nFull written recipe here:\",\n    \"uploadDate\": \"2020-06-16T14:56:33+00:00\",\n    \"creator\": {\n      \"@type\": \"Organization\",\n      \"name\": \"Swasthi's Recipes\",\n      \"url\": \"https://www.youtube.com/channel/UCrXrGdqxJZ0QVjnL1hVci8A\"\n    },\n    \"duration\": \"PT3M18S\",\n    \"interactionStatistic\": [\n      {\n        \"@type\": \"InteractionCounter\",\n        \"interactionType\": {\n          \"@type\": \"WatchAction\"\n        },\n        \"userInteractionCount\": 38161\n      },\n      {\n        \"@type\": \"InteractionCounter\",\n        \"interactionType\": {\n          \"@type\": \"LikeAction\"\n        },\n        \"userInteractionCount\": 321\n      },\n      {\n        \"@type\": \"InteractionCounter\",\n        \"interactionType\": {\n          \"@type\": \"CommentAction\"\n        },\n        \"userInteractionCount\": 17\n      }\n    ],\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/c4o0YulTa6o/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/c4o0YulTa6o?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=c4o0YulTa6o\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"2\",\n    \"2 to 3\"\n  ],\n  \"prepTime\": \"PT15M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT45M\",\n  \"recipeIngredient\": [\n    \"150 grams (1¼ cups) paneer ( (Indian cottage cheese))\",\n    \"3½ to 4 cups (100 to 120 grams) palak ((spinach) )\",\n    \"2 tablespoons oil ((or half oil &amp; half butter))\",\n    \"2 green chilies ((deseeded) (less spicy kind))\",\n    \"¾ cup ( 90 grams, 1 small) onions ((fine chopped))\",\n    \"½ cup (1 small) tomatoes ((deseeded &amp; chopped or pureed))\",\n    \"¾ teaspoon ginger garlic paste ((read notes for substitute))\",\n    \"½ teaspoon salt ((use as per your taste))\",\n    \"8 to 10 cashewnuts ((read notes for substitutes))\",\n    \"½ to ¾ teaspoon garam masala ((adjust to taste))\",\n    \"½ teaspoon kasuri methi ((dried fenugreek leaves) (skip if you don&#039;t have))\",\n    \"¼ cup water (to blend spinach)\",\n    \"¾ cup water (to cook the gravy)\",\n    \"3 tablespoons cream ((optional))\",\n    \"⅛ teaspoon cumin seeds ((jeera) (optional))\",\n    \"2 green cardamoms ((elaichi) (optional))\",\n    \"1 inch cinnamon ((dalchini) (optional))\",\n    \"2 cloves ((laung) (optional))\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Preparation\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pluck only the young &amp; tender spinach leaves and discard the stems as they may leave a bitter taste. If using baby spinach you can use the stems as well.\",\n          \"name\": \"Pluck only the young &amp; tender spinach leaves and discard the stems as they may leave a bitter taste. If using baby spinach you can use the stems as well.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add them to a large pot of water. Rinse them well few times &amp; drain to a colander.\",\n          \"name\": \"Add them to a large pot of water. Rinse them well few times &amp; drain to a colander.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Allow the water to drain completely otherwise it will let out lot of moisture while cooking.\",\n          \"name\": \"Allow the water to drain completely otherwise it will let out lot of moisture while cooking.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-0-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat half tablespoon oil in a pan. Saute green chilies, cashews and spinach for 3 to 4 mins until the leaves wilt off thoroughly &amp; raw smell of spinach has gone away. [OR another option is to blanch the palak in 4 cups of hot water with ¼ tsp salt for 2 mins. Then immerse in ice cold water. Drain completely.]\",\n          \"name\": \"Heat half tablespoon oil in a pan. Saute green chilies, cashews and spinach for 3 to 4 mins until the leaves wilt off thoroughly &amp; raw smell of spinach has gone away. [OR another option is to blanch the palak in 4 cups of hot water with ¼ tsp salt for 2 mins. Then immerse in ice cold water. Drain completely.]\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-0-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cool this completely. Blend this along with water to a smooth puree. The puree should be smooth and thick. You may add 1 to 2 tbsps more water to help in blending.\",\n          \"name\": \"Cool this completely. Blend this along with water to a smooth puree. The puree should be smooth and thick. You may add 1 to 2 tbsps more water to help in blending.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-0-4\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"How to make Palak Paneer\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat 1 tablespoon butter and half tablespoon oil to the same pan, Once they melt, add cinnamon, cardamoms, cloves &amp; cumin seeds.\",\n          \"name\": \"Heat 1 tablespoon butter and half tablespoon oil to the same pan, Once they melt, add cinnamon, cardamoms, cloves &amp; cumin seeds.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"When the spices begin to sizzle, add onions and fry till they turn transparent to golden.\",\n          \"name\": \"When the spices begin to sizzle, add onions and fry till they turn transparent to golden.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Next saute ginger garlic paste for 1 to 2 minutes or until you begin to smell it nice.\",\n          \"name\": \"Next saute ginger garlic paste for 1 to 2 minutes or until you begin to smell it nice.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Then add tomatoes with salt. Saute until they break down and turn mushy.\",\n          \"name\": \"Then add tomatoes with salt. Saute until they break down and turn mushy.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add garam masala &amp; saute until the masala smells good. This may take 2 mins. (for a smoother curry refer notes)\",\n          \"name\": \"Add garam masala &amp; saute until the masala smells good. This may take 2 mins. (for a smoother curry refer notes)\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour water and cook covered until onions are completely soft. There should be some water left in the pan. (for consistency check video)\",\n          \"name\": \"Pour water and cook covered until onions are completely soft. There should be some water left in the pan. (for consistency check video)\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Lower the flame, add kasuri methi and pureed spinach. Mix well and cook until it begins to bubble for about 2 to 3 mins. If the curry is too thick you may add a few tbsps of hot water.\",\n          \"name\": \"Lower the flame, add kasuri methi and pureed spinach. Mix well and cook until it begins to bubble for about 2 to 3 mins. If the curry is too thick you may add a few tbsps of hot water.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Avoid overcooking. Add paneer &amp; mix well. Turn off and remove to a serving bowl. Optionally garnish with cream.\",\n          \"name\": \"Avoid overcooking. Add paneer &amp; mix well. Turn off and remove to a serving bowl. Optionally garnish with cream.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-7\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve palak paneer with naan, roti, Basmati rice or Jeera rice.\",\n          \"name\": \"Serve palak paneer with naan, roti, Basmati rice or Jeera rice.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#wprm-recipe-38742-step-1-8\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.99\",\n    \"ratingCount\": \"1537\",\n    \"reviewCount\": \"9\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"yummy but no tomatoes\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"yamish\"\n      },\n      \"datePublished\": \"2026-10-09\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This is my go to recipe.  Follow the instructions about how to keep the greens bright in color.  Delicious.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Ginger\"\n      },\n      \"datePublished\": \"2026-09-27\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Grateful i found your page! My partner and i have been ordering takeout of this recipe and even though it was my first shot at making it, it came out way more delicious and flavorful than when we ordered! Thank you so much for sharing!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Bella\"\n      },\n      \"datePublished\": \"2026-09-11\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Excellent recipe. Use it every time.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"S\"\n      },\n      \"datePublished\": \"2026-09-07\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"this was UNBELIEVABLE! Wow! Can't wait to make the chicken tikka and malai kofta. Chicken is already marinating! You're the best! Thank you for all the amazing recipes\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Krystyn Dishaw\"\n      },\n      \"datePublished\": \"2026-09-06\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I’ve made 3 of your recipes and have never been disappointed. Keep up the great work and thank you for sharing these with us!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Maddy\"\n      },\n      \"datePublished\": \"2026-08-02\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Always my goto recipe that lures the elderly people too. Just portion control for its high potassium and oxylate.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Poonam\"\n      },\n      \"datePublished\": \"2026-07-28\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Great recipe. Pretty simple if you’ve got all the spices on hand. I subbed about 2 tsp of tomato paste since I didn’t have any fresh - I left them out initially and the dish was definitely lacking depth but now it is divine!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Zoe\"\n      },\n      \"datePublished\": \"2026-07-21\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Wow! what a great way to cook with spinach and paneer. It tasted divine and the flavors are very good without overpowering. Next time will double the recipe\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Olivia\"\n      },\n      \"datePublished\": \"2026-07-21\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Side\"\n  ],\n  \"recipeCuisine\": [\n    \"North Indian\"\n  ],\n  \"keywords\": \"palak paneer, palak paneer recipe, spinach paneer\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"350 kcal\",\n    \"carbohydrateContent\": \"13 g\",\n    \"proteinContent\": \"10 g\",\n    \"fatContent\": \"30 g\",\n    \"saturatedFatContent\": \"12 g\",\n    \"cholesterolContent\": \"54 mg\",\n    \"sodiumContent\": \"739 mg\",\n    \"fiberContent\": \"4 g\",\n    \"sugarContent\": \"4 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/\"\n}",
+  "raw_title": "Palak Paneer Recipe (Spinach Paneer)",
+  "blog_name": "Palak Paneer Recipe (Spinach Paneer)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/",
+    "imported_at": "2026-10-25T10:31:30.826330Z"
+  },
+  "graph_id": "g_3a_6",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

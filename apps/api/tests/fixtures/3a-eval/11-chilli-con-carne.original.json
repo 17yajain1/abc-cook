@@ -1,0 +1,410 @@
+{
+  "recipe": {
+    "title": "Chilli Con Carne",
+    "channel": "recipetineats.com",
+    "method_grounded": true,
+    "servings": 5,
+    "servings_source": "stated",
+    "yield_text": "5 - 6 people",
+    "cuisine": "Tex-Mex",
+    "stated_total_min": 40,
+    "ingredients": [
+      {
+        "name": "olive oil",
+        "qty": "1",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "garlic",
+        "qty": "3",
+        "unit": "",
+        "prep_note": "minced",
+        "group": null
+      },
+      {
+        "name": "onion",
+        "qty": "1",
+        "unit": "",
+        "prep_note": "diced (brown, white, yellow)",
+        "group": null
+      },
+      {
+        "name": "red capsicum (bell pepper)",
+        "qty": "1",
+        "unit": "",
+        "prep_note": "diced",
+        "group": null
+      },
+      {
+        "name": "beef mince / ground beef",
+        "qty": "1 lb / 500g",
+        "unit": "",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "tomato paste",
+        "qty": "3",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "can crushed tomato",
+        "qty": "800g / 28 oz",
+        "unit": "",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "can red kidney beans",
+        "qty": "14 oz / 420g",
+        "unit": "",
+        "prep_note": "drained (or other beans)",
+        "group": null
+      },
+      {
+        "name": "beef bouillon cubes (stock cubes)",
+        "qty": "2",
+        "unit": "",
+        "prep_note": "crumbled (Note 1)",
+        "group": null
+      },
+      {
+        "name": "sugar",
+        "qty": "1 1/2",
+        "unit": "tsp",
+        "prep_note": "(any type)",
+        "group": null
+      },
+      {
+        "name": "water",
+        "qty": "1/2 - 1 1/2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cayenne pepper",
+        "qty": "1 - 2",
+        "unit": "tsp",
+        "prep_note": "(adjust to taste) (Note 2)",
+        "group": null
+      },
+      {
+        "name": "paprika powder",
+        "qty": "4",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cumin powder",
+        "qty": "5",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "garlic powder",
+        "qty": "2",
+        "unit": "tsp",
+        "prep_note": "(or onion powder)",
+        "group": null
+      },
+      {
+        "name": "onion powder",
+        "qty": "2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oregano",
+        "qty": "2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cooking salt / kosher salt",
+        "qty": "1 1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Rice, corn chips, tortillas",
+        "qty": null,
+        "unit": null,
+        "prep_note": "(Note 5 for more)",
+        "group": null
+      },
+      {
+        "name": "Sour cream, yoghurt, grated cheese, coriander./cilantro",
+        "qty": null,
+        "unit": null,
+        "prep_note": "(Note 6 for more)",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Heat oil in a large skillet over medium high heat. Add garlic and onion, cook for 1 minute, then add capsicum and cook for 2 minutes until onion is translucent.",
+        "label": "Start",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.5,
+        "duration_min": 2.5,
+        "duration_max": 3.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "olive oil",
+          "garlic",
+          "onion",
+          "red capsicum (bell pepper)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until onion is translucent"
+      },
+      {
+        "origin": "source",
+        "text": "Turn heat up to high and add beef. Cook, breaking it up as you go, until mostly browned.",
+        "label": "Brown beef",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.0,
+        "duration_min": 5.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "beef mince / ground beef"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until mostly browned"
+      },
+      {
+        "origin": "source",
+        "text": "Add Chili Spice Mix. Cook until beef is browned all over. (This step helps release extra flavour from the spices)",
+        "label": "Toast spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "paprika powder",
+          "cumin powder",
+          "garlic powder",
+          "onion powder",
+          "oregano",
+          "cayenne pepper"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until beef is browned all over"
+      },
+      {
+        "origin": "source",
+        "text": "Add remaining ingredients, with 1/2 cup of water for Quick Cook or 1 1/2 cups for Slow Cook. Bring to simmer, then adjust heat per step below:",
+        "label": "Combine ingredients",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tomato paste",
+          "can crushed tomato",
+          "can red kidney beans",
+          "beef bouillon cubes (stock cubes)",
+          "sugar",
+          "water",
+          "cooking salt / kosher salt"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Bring to simmer"
+      },
+      {
+        "origin": "source",
+        "text": "Quick Cook - 20 to 40 minutes, uncovered, on medium low heat so it's bubbling gently;",
+        "label": "Quick cook",
+        "attention": "periodic",
+        "attention_cue": "bubbling gently",
+        "duration_typical_min": 20.0,
+        "duration_min": 20.0,
+        "duration_max": 40.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "alternative",
+        "role_cue": "OR",
+        "attach_to_step": 3,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "bubbling gently"
+      },
+      {
+        "origin": "source",
+        "text": "Slow Cook - 1.5 hours to 2 hours, covered, on low heat so it's bubbling very gently.",
+        "label": "Slow cook",
+        "attention": "periodic",
+        "attention_cue": "covered, on low heat so it's bubbling very gently",
+        "duration_typical_min": 90.0,
+        "duration_min": 90.0,
+        "duration_max": 120.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "alternative",
+        "role_cue": "OR",
+        "attach_to_step": 3,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "bubbling very gently"
+      },
+      {
+        "origin": "source",
+        "text": "Adjust salt to taste just before serving.",
+        "label": "Season",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooking salt / kosher salt"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "just before serving",
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve over rice, or ladle into bowls and serve with corn chips or warm tortillas on the side with Toppings of choice. My usual: Either over rice or with corn chips, always with sour cream, cheese and coriander.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Rice, corn chips, tortillas",
+          "Sour cream, yoghurt, grated cheese, coriander./cilantro"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and ingredients taken from the linked RecipeTin Eats JSON-LD. Steps 5 and 6 (Quick Cook and Slow Cook) are alternatives to each other per the source text; role_cue set to \"OR\" and attached to the combine-ingredients step (step 3). Durations and attention classifications follow explicit numeric ranges or textual cues in the source; where the step text gave no exact total time an estimated duration range was provided and duration_stated=false."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Chilli Con Carne\n\nChannel: recipetineats.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Chilli Con Carne\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Nagi | RecipeTin Eats\"\n  },\n  \"description\": \"Recipe video above. Everybody&#39;s favourite Chili, nice and saucy! Made with a from-scratch Chili Powder rather than a store bought mix - it&#39;s so much more reliable and you just need pantry staples. Don&#39;t skip the beef bouillon cubes (stock cube) - it adds so much more flavour into the sauce than using just salt, or even liquid beef stock.Make a quick midweek version though when you&#39;ve got the time, it&#39;s well worth slow cooking. See notes for Serving and Topping options!\",\n  \"datePublished\": \"2018-08-31T18:30:00+00:00\",\n  \"image\": [\n    \"https://www.recipetineats.com/tachyon/2016/06/Chili-Con-Carne_8.jpg\",\n    \"https://www.recipetineats.com/tachyon/2016/06/Chili-Con-Carne_8.jpg?resize=500%2C500\",\n    \"https://www.recipetineats.com/tachyon/2016/06/Chili-Con-Carne_8.jpg?resize=500%2C375\",\n    \"https://www.recipetineats.com/tachyon/2016/06/Chili-Con-Carne_8.jpg?resize=480%2C270\"\n  ],\n  \"recipeYield\": [\n    \"5\",\n    \"5 - 6 people\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT40M\",\n  \"recipeIngredient\": [\n    \"1 tbsp olive oil\",\n    \"3  garlic cloves (, minced)\",\n    \"1  onion (, diced (brown, white, yellow))\",\n    \"1  red capsicum ((bell pepper), diced)\",\n    \"1 lb / 500g   beef mince / ground beef\",\n    \"3 tbsp tomato paste\",\n    \"800g / 28 oz  can crushed tomato\",\n    \"14 oz / 420g    can red kidney beans (, drained (or other beans))\",\n    \"2  beef bouillon cubes ((stock cubes), crumbled (Note 1))\",\n    \"1 1/2 tsp sugar ((any type))\",\n    \"1/2 - 1 1/2 cups water\",\n    \"1 - 2 tsp cayenne pepper  ((adjust to taste) (Note 2))\",\n    \"4 tsp paprika powder\",\n    \"5 tsp cumin powder\",\n    \"2 tsp garlic powder ((or onion powder))\",\n    \"2 tsp onion powder\",\n    \"2 tsp oregano\",\n    \"1 1/2 tsp cooking salt / kosher salt\",\n    \"Rice, corn chips, tortillas  ((Note 5 for more))\",\n    \"Sour cream, yoghurt, grated cheese, coriander./cilantro ((Note 6 for more))\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Heat oil in a large skillet over medium high heat. Add garlic and onion, cook for 1 minute, then add capsicum and cook for 2 minutes until onion is translucent.\",\n      \"name\": \"Heat oil in a large skillet over medium high heat. Add garlic and onion, cook for 1 minute, then add capsicum and cook for 2 minutes until onion is translucent.\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Turn heat up to high and add beef. Cook, breaking it up as you go, until mostly browned.\",\n      \"name\": \"Turn heat up to high and add beef. Cook, breaking it up as you go, until mostly browned.\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add Chili Spice Mix. Cook until beef is browned all over. (This step helps release extra flavour from the spices)\",\n      \"name\": \"Add Chili Spice Mix. Cook until beef is browned all over. (This step helps release extra flavour from the spices)\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add remaining ingredients, with 1/2 cup of water for Quick Cook or 1 1/2 cups for Slow Cook. Bring to simmer, then adjust heat per step below:\",\n      \"name\": \"Add remaining ingredients, with 1/2 cup of water for Quick Cook or 1 1/2 cups for Slow Cook. Bring to simmer, then adjust heat per step below:\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Quick Cook - 20 to 40 minutes, uncovered, on medium low heat so it's bubbling gently; OR\",\n      \"name\": \"Quick Cook - 20 to 40 minutes, uncovered, on medium low heat so it's bubbling gently; OR\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Slow Cook - 1.5 hours to 2 hours, covered, on low heat so it's bubbling very gently. (Note 3 Slow Cooker)\",\n      \"name\": \"Slow Cook - 1.5 hours to 2 hours, covered, on low heat so it's bubbling very gently. (Note 3 Slow Cooker)\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Adjust salt to taste just before serving.\",\n      \"name\": \"Adjust salt to taste just before serving.\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-6\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Serve over rice, or ladle into bowls and serve with corn chips or warm tortillas on the side with Toppings of choice (Note 6). See Note 7 for more serving options. My usual: Either over rice or with corn chips, always with sour cream, cheese and coriander.\",\n      \"name\": \"Serve over rice, or ladle into bowls and serve with corn chips or warm tortillas on the side with Toppings of choice (Note 6). See Note 7 for more serving options. My usual: Either over rice or with corn chips, always with sour cream, cheese and coriander.\",\n      \"url\": \"https://www.recipetineats.com/chilli-con-carne/#wprm-recipe-25272-step-0-7\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.9\",\n    \"ratingCount\": \"337\",\n    \"reviewCount\": \"12\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Phenomenal and delivers every time! Added some diced bacon into it tonight and added a great semi sweet bite alongside the chilli.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nicola Robyn Bryant\"\n      },\n      \"datePublished\": \"2026-09-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Made this few times already and love it! I always use lamb mince. Today, I made this with 700g of passata and 1 fresh tomato (had excess) and it was perfect. Also grated 1 carrot and half a zucchini for veg boost.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Josie\"\n      },\n      \"datePublished\": \"2026-08-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This recipe was a huge hit with my 16yo, quite palate sophisticated grandson - like \\\"wow this is really good\\\" - I have to agree. I followed it precisely.  And it goes such a long way. Definitely on rotation from now on.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Jan Selth\"\n      },\n      \"datePublished\": \"2026-08-13\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I have made hundreds of Chilli recipes and have to say with a slight tweak this was delicious!  I used 1/2 the amount of tomatoes and added 1 tsp cocoa powder. It was perfect!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Debra C Farrell\"\n      },\n      \"datePublished\": \"2026-07-27\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I make a big double batch of this every week, it’s a STAPLE in our house. Also it really does freeze so well, you literally cannot tell the difference after it’s been frozen. Favourite recipe for meal prepping\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Brittany\"\n      },\n      \"datePublished\": \"2026-06-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Beautiful Chilli Con Carne recipe Nagi! I hadn't made this dish for years as my husband hates beans in anything. Was hanging out for it myself though and thought \\\"bugger him\\\" I'm cooking this. We like spicy so I added a couple of home grown Jalepeno chilli's as well as the two teaspoons of cayenne. Served with home made guacamole, sour cream &amp; grated tasty cheese. My bean hating husband loved it. Fabulous recipe, thank you as always for never failing to impress 😍🥰😘\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Claire\"\n      },\n      \"datePublished\": \"2026-05-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"3\"\n      },\n      \"reviewBody\": \"Way too hot! I’m thinking that you should only add one teaspoon of the combined spice mix..certainly not all of it! I added one teaspoon of cayenne and the chili was way too hot..and I love spicy food.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Linda from Perth\"\n      },\n      \"datePublished\": \"2026-05-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"So good!  I served this with cornbread and to say it was a hit is an understatement.  We all ate too much!  Next time I will make a huge vat and freeze it for future meals.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Judith Connor\"\n      },\n      \"datePublished\": \"2026-04-30\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This is sooooo good, I batch cook this every few months and make five family meals - one for today and four for the freezer. I also make a vegan version for my eldest son (tinned green lentils and meat-free beef oxo) and freeze in individual portions. One clean up, one cook and there’s always a (very) decent dinner available even when I’m working late. I do the same with the bolognese recipe. Nagi, your recipes are foolproof, failsafe and flipping delicious.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Jen Pierce\"\n      },\n      \"datePublished\": \"2026-04-27\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"yum\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"erin\"\n      },\n      \"datePublished\": \"2026-04-19\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This is such a good chili dish, plenty of delicious sauce. I made a double batch, had it with rice day one and with corn chips day 2.. I think the flavours were even better day 2, so will be doing that again!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Liv Nixon\"\n      },\n      \"datePublished\": \"2026-04-18\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Absolutely beautiful!\\r\\nI do like my Chilli quite spicy so added chillies and hot sauce.\\r\\nAmazing 😋\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Gillian\"\n      },\n      \"datePublished\": \"2026-04-16\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Dinner\"\n  ],\n  \"recipeCuisine\": [\n    \"Tex-Mex\"\n  ],\n  \"keywords\": \"Chili, Chilli Con Carne\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"servingSize\": \"280 g\",\n    \"calories\": \"367 kcal\",\n    \"carbohydrateContent\": \"30.5 g\",\n    \"proteinContent\": \"39.6 g\",\n    \"fatContent\": \"10.1 g\",\n    \"saturatedFatContent\": \"2.9 g\",\n    \"cholesterolContent\": \"90 mg\",\n    \"sodiumContent\": \"443 mg\",\n    \"fiberContent\": \"7.3 g\",\n    \"sugarContent\": \"7.2 g\"\n  },\n  \"@id\": \"https://www.recipetineats.com/chilli-con-carne/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.recipetineats.com/chilli-con-carne/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.recipetineats.com/chilli-con-carne/\"\n}",
+  "raw_title": "Chilli Con Carne",
+  "blog_name": "Chilli Con Carne",
+  "source": {
+    "kind": "url",
+    "value": "https://www.recipetineats.com/chilli-con-carne/",
+    "imported_at": "2026-10-25T10:34:11.661475Z"
+  },
+  "graph_id": "g_3a_11",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

@@ -1,0 +1,862 @@
+{
+  "recipe": {
+    "title": "Rajma Recipe (Rajma Masala)",
+    "channel": "indianhealthyrecipes.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "North Indian",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "1 cup rajma ((200 grams dry kidney beans or 2 – 15 Oz canned beans (3 cups)))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 to 3 tablespoons ghee ((or oil))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 small bay leaf ((optional))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ teaspoon cumin seeds ((jeera, optional))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil & puree))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 green chilli (( chopped or slit, optional))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1½ teaspoon ginger garlic paste ((or 1 teaspoon each minced &amp; crushed))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1½ cups (2 large, 300 grams) tomatoes ((chopped &amp; pureed, or 1 cup canned tomato puree))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ to 1 teaspoon red chilli powder ((Kashmiri or byadgi))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1½ to 2 teaspoons coriander powder",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¾ to 1 teaspoon cumin powder",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¼ teaspoon turmeric",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ teaspoon salt ((½ teaspoon more to adjust))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ to 1 tablespoon kasuri methi ((dried fenugreek leaves))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Few Ginger juliennes ( (optional))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 tablespoons coriander leaves ((fine chopped))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 to 3 tablespoons heavy cream ((Optional))",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Add rajma to a large bowl and rinse them thrice. Soak them uncovered in 4 cups water for at least 6 hours to overnight. Discard the water and rinse them well.",
+        "label": "Soak rajma",
+        "attention": "unattended",
+        "attention_cue": "Soak them uncovered in 4 cups water for at least 6 hours to overnight.",
+        "duration_typical_min": 360.0,
+        "duration_min": 360.0,
+        "duration_max": 720.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1 cup rajma ((200 grams dry kidney beans or 2 – 15 Oz canned beans (3 cups)))"
+        ],
+        "produces_component": "soaked rajma",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Transfer them to a stovetop pressure cooker or instant pot.  Pour 1½ cups water and pressure cook until soft, for 4 to 5 whistles. Or in the instant pot for 12 to 16 mins, depending on the age of rajma.",
+        "label": "Cook rajma",
+        "attention": "unattended",
+        "attention_cue": "pressure cook until soft, for 4 to 5 whistles. Or in the instant pot for 12 to 16 mins",
+        "duration_typical_min": 14.0,
+        "duration_min": 12.0,
+        "duration_max": 18.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "soaked rajma"
+        ],
+        "produces_component": "cooked rajma with stock",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "soft enough yet hold there shape"
+      },
+      {
+        "origin": "source",
+        "text": "Once cooked they should be soft enough yet hold there shape. If you mash a rajma with your fingers it should get mashed easily.",
+        "label": "Check doneness",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked rajma with stock"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "soft enough yet hold there shape"
+      },
+      {
+        "origin": "source",
+        "text": "Heat ghee or oil in a pot. Add cumin seeds and bay leaf. When they begin to sizzle add the onions and green chili.",
+        "label": "Start tadka",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 to 3 tablespoons ghee ((or oil))",
+          "1 small bay leaf ((optional))",
+          "½ teaspoon cumin seeds ((jeera, optional))",
+          "1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil &amp; puree))",
+          "1 green chilli (( chopped or slit, optional))"
+        ],
+        "produces_component": "spiced oil with onions",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "When they begin to sizzle"
+      },
+      {
+        "origin": "source",
+        "text": "Saute on a medium heat until golden. Stir in the ginger garlic and saute for a minute, until aromatic.",
+        "label": "Sauté onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.0,
+        "duration_min": 4.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "spiced oil with onions",
+          "1½ teaspoon ginger garlic paste ((or 1 teaspoon each minced &amp; crushed))"
+        ],
+        "produces_component": "onion-ginger garlic base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until golden"
+      },
+      {
+        "origin": "source",
+        "text": "Pour the tomato puree & cook until the onion tomato mixture turns thick, for about 3 min.",
+        "label": "Cook tomatoes",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1½ cups (2 large, 300 grams) tomatoes ((chopped &amp; pureed, or 1 cup canned tomato puree))",
+          "onion-ginger garlic base"
+        ],
+        "produces_component": "thick tomato-onion masala",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "turns thick"
+      },
+      {
+        "origin": "source",
+        "text": "Stir in the spices – red chili powder, garam masala, coriander powder, cumin powder and turmeric. Saute for 2 to 3 minutes, until the masala begins to smell aromatic.",
+        "label": "Add spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.5,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "½ to 1 teaspoon red chilli powder ((Kashmiri or byadgi))",
+          "¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))",
+          "1½ to 2 teaspoons coriander powder",
+          "¾ to 1 teaspoon cumin powder",
+          "¼ teaspoon turmeric",
+          "thick tomato-onion masala"
+        ],
+        "produces_component": "spiced masala",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the masala begins to smell aromatic"
+      },
+      {
+        "origin": "source",
+        "text": "Add the rajma along with the stock (rajma cooked water). Pour more hot water as required (about ½ to 1 cup, only as required) to make a gravy. (If using canned beans, drain the liquid from the can and rinse them before adding).",
+        "label": "Combine rajma",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked rajma with stock",
+          "spiced masala"
+        ],
+        "produces_component": "rajma in gravy",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Mix well and simmer for 10 to 15 mins, until slightly thick. To make the gravy thick, if you want mash a tbsp of the rajma and add back.",
+        "label": "Simmer gravy",
+        "attention": "unattended",
+        "attention_cue": "simmer for 10 to 15 mins",
+        "duration_typical_min": 12.0,
+        "duration_min": 10.0,
+        "duration_max": 15.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rajma in gravy"
+        ],
+        "produces_component": "cooked rajma gravy",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until slightly thick"
+      },
+      {
+        "origin": "source",
+        "text": "Taste test and add more salt, ¼ teaspoon garam masala if required and crushed kasuri methi. Optionally you may stir in cream and garnish with coriander leaves and ginger juliennes. You can also make a dhaba style tadka garnish or a restaurant style creamy finish from the post.",
+        "label": "Finish & season",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked rajma gravy",
+          "¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))",
+          "½ to 1 tablespoon kasuri methi ((dried fenugreek leaves))",
+          "2 to 3 tablespoons heavy cream ((Optional))",
+          "2 tablespoons coriander leaves ((fine chopped))",
+          "Few Ginger juliennes ( (optional))"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Squeeze some lemon juice before serving. Serve rajma with chawal (rice).",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked rajma gravy"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "before serving",
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Press Saute button and pour ghee to the steel insert. When the ghee melts, add cumin seeds, bay leaf, chopped onions, green chili and salt.",
+        "label": "IP sauté start",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 to 3 tablespoons ghee ((or oil))",
+          "½ teaspoon cumin seeds ((jeera, optional))",
+          "1 small bay leaf ((optional))",
+          "1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil &amp; puree))",
+          "1 green chilli (( chopped or slit, optional))",
+          "½ teaspoon salt ((½ teaspoon more to adjust))"
+        ],
+        "produces_component": "IP onion base",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Saute for about 5 minutes stirring constantly to cook evenly until golden, about to caramelize but not burnt.",
+        "label": "Sauté onions (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 4.0,
+        "duration_max": 6.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 12,
+        "consumes_ingredients": [
+          "IP onion base"
+        ],
+        "produces_component": "caramelized onions (IP)",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until golden, about to caramelize but not burnt"
+      },
+      {
+        "origin": "source",
+        "text": "Add ginger garlic & saute for 30 seconds to 1 minute.",
+        "label": "Add ginger-garlic (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.75,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 13,
+        "consumes_ingredients": [
+          "caramelized onions (IP)",
+          "1½ teaspoon ginger garlic paste ((or 1 teaspoon each minced &amp; crushed))"
+        ],
+        "produces_component": "onion-ginger garlic base (IP)",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add all the spice powders – chili powder, garam masala, turmeric, coriander powder and cumin powder.",
+        "label": "Add spices (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          14
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 14,
+        "consumes_ingredients": [
+          "1½ to 2 teaspoons coriander powder",
+          "½ to 1 teaspoon red chilli powder ((Kashmiri or byadgi))",
+          "¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))",
+          "¼ teaspoon turmeric",
+          "¾ to 1 teaspoon cumin powder"
+        ],
+        "produces_component": "spiced base (IP)",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Press cancel. Add overnight soaked rajma and pour 2 cups water. Deglaze to release any bits of food stuck at the bottom.",
+        "label": "Add rajma (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          15
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 15,
+        "consumes_ingredients": [
+          "soaked rajma",
+          "spiced base (IP)"
+        ],
+        "produces_component": "rajma in IP",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Deglaze to release any bits"
+      },
+      {
+        "origin": "source",
+        "text": "Place a trivet and keep the bowl of tomato puree over that. Secure the IP with the lid and pressure cook for 18 mins (for softer beans, if you prefer al dente – 16 mins).",
+        "label": "Pressure cook (IP)",
+        "attention": "unattended",
+        "attention_cue": "pressure cook for 18 mins (for softer beans, if you prefer al dente – 16 mins)",
+        "duration_typical_min": 18.0,
+        "duration_min": 16.0,
+        "duration_max": 18.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          16
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 16,
+        "consumes_ingredients": [
+          "rajma in IP",
+          "1½ cups (2 large, 300 grams) tomatoes ((chopped &amp; pureed, or 1 cup canned tomato puree))"
+        ],
+        "produces_component": "pressure cooked rajma (IP)",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "super soft, yet hold shape"
+      },
+      {
+        "origin": "source",
+        "text": "When the pressure drops, open the IP. Rajma should super soft, yet hold shape. Pour the tomato puree and cook for 2 to 3 mins on saute mode. For a thicker consistency, mash some of the rajma. (If required pour about ½ to ¾ cup water to bring to a runny consistency.)",
+        "label": "Finish in IP",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          17
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 17,
+        "consumes_ingredients": [
+          "pressure cooked rajma (IP)",
+          "1½ cups (2 large, 300 grams) tomatoes ((chopped &amp; pureed, or 1 cup canned tomato puree))"
+        ],
+        "produces_component": "cooked rajma gravy (IP)",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "super soft, yet hold shape"
+      },
+      {
+        "origin": "source",
+        "text": "Taste test and add more salt, ¼ teaspoon garam masala, cream (optional) and crushed kasuri methi. Press cancel.",
+        "label": "Season (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          18
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 18,
+        "consumes_ingredients": [
+          "cooked rajma gravy (IP)",
+          "¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))",
+          "½ to 1 tablespoon kasuri methi ((dried fenugreek leaves))",
+          "2 to 3 tablespoons heavy cream ((Optional))"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Garnish with coriander leaves and ginger juliennes. Serve rajma with chawal. Drizzle some lemon juice.",
+        "label": "Garnish & serve (IP)",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          19
+        ],
+        "role": "alternative",
+        "role_cue": "Instant Pot Rajma Masala",
+        "attach_to_step": 19,
+        "consumes_ingredients": [
+          "cooked rajma gravy (IP)",
+          "2 tablespoons coriander leaves ((fine chopped))",
+          "Few Ginger juliennes ( (optional))"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "stated_unbounded",
+        "freshness_cue": "Drizzle some lemon juice",
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked recipe JSON-LD HowToSection/HowToStep structure; I preserved step text verbatim.",
+      "Ingredients lines were kept exactly as listed in the source; qty/unit/prep_note left null to avoid inventing splits.",
+      "I marked the Instant Pot section steps as role=\"alternative\" and quoted the section heading as the role_cue.",
+      "Where the source gave explicit minute/hour values I set duration_stated=true and converted hours/minutes to minutes; for time phrased as whistles or non-minute counts I estimated durations and set duration_stated=false."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil & puree))"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil & puree))"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Rajma Recipe (Rajma Masala)\n\nChannel: indianhealthyrecipes.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Rajma Recipe (Rajma Masala)\",\n  \"author\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/#/schema/person/2d7d264cdc5dc6602ee06a087cd3fcb0\"\n  },\n  \"description\": \"Punjabi Rajma Masala is a delicious curried dish of red kidney beans, spices, onions, tomatoes and herbs. Serve Rajma with Chawal (Rice) or with roti, paratha and naan. Make it in the stovetop pressure cooker, instant pot or in the regular pot. Instructions included for using fresh and canned beans.\",\n  \"datePublished\": \"2023-09-03T10:01:10+00:00\",\n  \"image\": [\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/05/rajma-recipe-rajma-masala.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/05/rajma-recipe-rajma-masala-500x500.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/05/rajma-recipe-rajma-masala-500x375.jpg\",\n    \"https://www.indianhealthyrecipes.com/wp-content/uploads/2022/05/rajma-recipe-rajma-masala-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Rajma Recipe (Recipe Masala)\",\n    \"description\": \"Rajma Masala is a Punjabi side dish made with kidney beans, onions, tomatoes and spices. Get the complete recipe from our blog:\",\n    \"uploadDate\": \"2023-09-11T13:29:34+00:00\",\n    \"duration\": \"PT1M2S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/nPopRNLPZMs/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/nPopRNLPZMs?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=nPopRNLPZMs\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"4\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT40M\",\n  \"totalTime\": \"PT520M\",\n  \"recipeIngredient\": [\n    \"1 cup rajma ((200 grams dry kidney beans or 2 – 15 Oz canned beans (3 cups)))\",\n    \"2 to 3 tablespoons ghee ((or oil))\",\n    \"1 small bay leaf ((optional))\",\n    \"½ teaspoon cumin seeds ((jeera, optional))\",\n    \"1 cup (120 grams) fine chopped onions ( (or ¾ cup grated or cube, boil &amp; puree))\",\n    \"1 green chilli (( chopped or slit, optional))\",\n    \"1½ teaspoon ginger garlic paste ((or 1 teaspoon each minced &amp; crushed))\",\n    \"1½ cups (2 large, 300 grams) tomatoes ((chopped &amp; pureed, or 1 cup canned tomato puree))\",\n    \"½ to 1 teaspoon red chilli powder ((Kashmiri or byadgi))\",\n    \"¾ teaspoon garam masala ( (¼ to ½ teaspoon for later))\",\n    \"1½ to 2 teaspoons coriander powder\",\n    \"¾ to 1 teaspoon cumin powder\",\n    \"¼ teaspoon turmeric\",\n    \"½ teaspoon salt ((½ teaspoon more to adjust))\",\n    \"½ to 1 tablespoon kasuri methi ((dried fenugreek leaves))\",\n    \"Few Ginger juliennes ( (optional))\",\n    \"2 tablespoons coriander leaves ((fine chopped))\",\n    \"2 to 3 tablespoons heavy cream ((Optional))\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Prepare Rajma (or use canned beans)\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add rajma to a large bowl and rinse them thrice. Soak them uncovered in 4 cups water for at least 6 hours to overnight. Discard the water and rinse them well.\",\n          \"name\": \"Add rajma to a large bowl and rinse them thrice. Soak them uncovered in 4 cups water for at least 6 hours to overnight. Discard the water and rinse them well.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Transfer them to a stovetop pressure cooker or instant pot.  Pour 1½ cups water and pressure cook until soft, for 4 to 5 whistles. Or in the instant pot for 12 to 16 mins, depending on the age of rajma.\",\n          \"name\": \"Transfer them to a stovetop pressure cooker or instant pot.  Pour 1½ cups water and pressure cook until soft, for 4 to 5 whistles. Or in the instant pot for 12 to 16 mins, depending on the age of rajma.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Once cooked they should be soft enough yet hold there shape. If you mash a rajma with your fingers it should get mashed easily.\",\n          \"name\": \"Once cooked they should be soft enough yet hold there shape. If you mash a rajma with your fingers it should get mashed easily.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-0-2\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"How to make Rajma Masala\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat ghee or oil in a pot. Add cumin seeds and bay leaf. When they begin to sizzle add the onions and green chili.\",\n          \"name\": \"Heat ghee or oil in a pot. Add cumin seeds and bay leaf. When they begin to sizzle add the onions and green chili.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Saute on a medium heat until golden. Stir in the ginger garlic and saute for a minute, until aromatic.\",\n          \"name\": \"Saute on a medium heat until golden. Stir in the ginger garlic and saute for a minute, until aromatic.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour the tomato puree & cook until the onion tomato mixture turns thick, for about 3 min.\",\n          \"name\": \"Pour the tomato puree & cook until the onion tomato mixture turns thick, for about 3 min.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Stir in the spices – red chili powder, garam masala, coriander powder, cumin powder and turmeric. Saute for 2 to 3 minutes, until the masala begins to smell aromatic.\",\n          \"name\": \"Stir in the spices – red chili powder, garam masala, coriander powder, cumin powder and turmeric. Saute for 2 to 3 minutes, until the masala begins to smell aromatic.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add the rajma along with the stock (rajma cooked water). Pour more hot water as required (about ½ to 1 cup, only as required) to make a gravy. (If using canned beans, drain the liquid from the can and rinse them before adding).\",\n          \"name\": \"Add the rajma along with the stock (rajma cooked water). Pour more hot water as required (about ½ to 1 cup, only as required) to make a gravy. (If using canned beans, drain the liquid from the can and rinse them before adding).\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Mix well and simmer for 10 to 15 mins, until slightly thick. To make the gravy thick, if you want mash a tbsp of the rajma and add back.\",\n          \"name\": \"Mix well and simmer for 10 to 15 mins, until slightly thick. To make the gravy thick, if you want mash a tbsp of the rajma and add back.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Taste test and add more salt, ¼ teaspoon garam masala if required and crushed kasuri methi. Optionally you may stir in cream and garnish with coriander leaves and ginger juliennes. You can also make a dhaba style tadka garnish or a restaurant style creamy finish from the post.\",\n          \"name\": \"Taste test and add more salt, ¼ teaspoon garam masala if required and crushed kasuri methi. Optionally you may stir in cream and garnish with coriander leaves and ginger juliennes. You can also make a dhaba style tadka garnish or a restaurant style creamy finish from the post.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Squeeze some lemon juice before serving. Serve rajma with chawal (rice).\",\n          \"name\": \"Squeeze some lemon juice before serving. Serve rajma with chawal (rice).\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-1-7\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Instant Pot Rajma Masala\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Press Saute button and pour ghee to the steel insert. When the ghee melts, add cumin seeds, bay leaf, chopped onions, green chili and salt.\",\n          \"name\": \"Press Saute button and pour ghee to the steel insert. When the ghee melts, add cumin seeds, bay leaf, chopped onions, green chili and salt.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Saute for about 5 minutes stirring constantly to cook evenly until golden, about to caramelize but not burnt.\",\n          \"name\": \"Saute for about 5 minutes stirring constantly to cook evenly until golden, about to caramelize but not burnt.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add ginger garlic & saute for 30 seconds to 1 minute.\",\n          \"name\": \"Add ginger garlic & saute for 30 seconds to 1 minute.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add all the spice powders – chili powder, garam masala, turmeric, coriander powder and cumin powder.\",\n          \"name\": \"Add all the spice powders – chili powder, garam masala, turmeric, coriander powder and cumin powder.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Press cancel. Add overnight soaked rajma and pour 2 cups water. Deglaze to release any bits of food stuck at the bottom.\",\n          \"name\": \"Press cancel. Add overnight soaked rajma and pour 2 cups water. Deglaze to release any bits of food stuck at the bottom.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Place a trivet and keep the bowl of tomato puree over that. Secure the IP with the lid and pressure cook for 18 mins (for softer beans, if you prefer al dente – 16 mins).\",\n          \"name\": \"Place a trivet and keep the bowl of tomato puree over that. Secure the IP with the lid and pressure cook for 18 mins (for softer beans, if you prefer al dente – 16 mins).\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"When the pressure drops, open the IP. Rajma should super soft, yet hold shape. Pour the tomato puree and cook for 2 to 3 mins on saute mode. For a thicker consistency, mash some of the rajma. (If required pour about ½ to ¾ cup water to bring to a runny consistency.)\",\n          \"name\": \"When the pressure drops, open the IP. Rajma should super soft, yet hold shape. Pour the tomato puree and cook for 2 to 3 mins on saute mode. For a thicker consistency, mash some of the rajma. (If required pour about ½ to ¾ cup water to bring to a runny consistency.)\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Taste test and add more salt, ¼ teaspoon garam masala, cream (optional) and crushed kasuri methi. Press cancel.\",\n          \"name\": \"Taste test and add more salt, ¼ teaspoon garam masala, cream (optional) and crushed kasuri methi. Press cancel.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-7\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Garnish with coriander leaves and ginger juliennes. Serve rajma with chawal. Drizzle some lemon juice.\",\n          \"name\": \"Garnish with coriander leaves and ginger juliennes. Serve rajma with chawal. Drizzle some lemon juice.\",\n          \"url\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#wprm-recipe-37844-step-2-8\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.99\",\n    \"ratingCount\": \"655\",\n    \"reviewCount\": \"10\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"This was astoundingly good!  A satisfying, healthy, and low-cost meal that's easy to make.  Thank you for the recipe!  Also, I would like to get a good tawa to work with if you could recommend a maker.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Ken\"\n      },\n      \"datePublished\": \"2026-10-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I'm a white American guy, very occasional cook of Indian dishes. I haven't made this yet but I'm moved to give you feedback. This page is absolutely awesome. Everything you write is concise and valuable and the step by step with photos is fantastic. Kudos to you for this valuable presentation!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Steve Schmandt of North Fork California\"\n      },\n      \"datePublished\": \"2026-10-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Best rajma masala! Works really well with canned beans and I love adding a splash of heavy cream for a creamy mouthfeel. Great with your keema and naan.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Beatrice\"\n      },\n      \"datePublished\": \"2026-10-05\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Amazing and delicious\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Kezia\"\n      },\n      \"datePublished\": \"2026-09-18\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Hello Swasthi,\\r\\nCan I make the rajma a week in advance for a party? By the way appreciate all your recipes and the accuracy of the measurements\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sunny\"\n      },\n      \"datePublished\": \"2026-09-02\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Turned out fabulous! Perfect spicing and love how easy it is to make. I also made your chana masala and my family loved that as well. Thank you Swasthi\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Radhika\"\n      },\n      \"datePublished\": \"2026-08-28\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Absolute best rajma! Love the creamy and special dhaba style garnish. I made this twice as written and it's delicious. I've been following your recipes for a longtime and they always work well. I make 2 dishes every week and I've tried a lot so far. You chole bhatura is my husband's favorite. Making it again this week\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sarah\"\n      },\n      \"datePublished\": \"2026-08-25\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Thanks for the great tips on cooking time for different varieties of rajma. I was always afraid of the dark red rajma which didnt cook well the first time i made which left me scarred! Now with your tips i will venture to try this again . Thanks\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Brinda\"\n      },\n      \"datePublished\": \"2026-08-18\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I just made this and it is so delicious! Very well balanced (in my opinion). I am not Indian but trying to learn how to cook Indian food. I can't wait to share it with my friends, I think they will really like it:)\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Dianna\"\n      },\n      \"datePublished\": \"2026-07-18\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Amazing recipes! I've been using your website since last year and this is one of my family favorites. I sub the green chilies with black pepper and follow the rest as written. Turns out delicious. Thank you\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Everly\"\n      },\n      \"datePublished\": \"2026-06-22\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Side\"\n  ],\n  \"recipeCuisine\": [\n    \"North Indian\"\n  ],\n  \"keywords\": \"Rajma, rajma chawal, rajma masala, rajma recipe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"269 kcal\",\n    \"carbohydrateContent\": \"38 g\",\n    \"proteinContent\": \"12 g\",\n    \"fatContent\": \"9 g\",\n    \"saturatedFatContent\": \"5 g\",\n    \"cholesterolContent\": \"19 mg\",\n    \"sodiumContent\": \"352 mg\",\n    \"fiberContent\": \"10 g\",\n    \"sugarContent\": \"6 g\",\n    \"unsaturatedFatContent\": \"3 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/\"\n}",
+  "raw_title": "Rajma Recipe (Rajma Masala)",
+  "blog_name": "Rajma Recipe (Rajma Masala)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala-recipe/",
+    "imported_at": "2026-10-25T10:30:12.547418Z"
+  },
+  "graph_id": "g_3a_4",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

@@ -1,0 +1,422 @@
+{
+  "recipe": {
+    "title": "Tandalachi Kheer",
+    "channel": "madhurasrecipe",
+    "method_grounded": true,
+    "servings": 10,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": "1/2 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Milk",
+        "qty": "2 liter",
+        "unit": "liter",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Cashew nuts",
+        "qty": "1/4 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Almonds",
+        "qty": "1/4 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Pistachios",
+        "qty": "1/4 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Saffron strands",
+        "qty": "7~8",
+        "unit": "strands",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Sugar",
+        "qty": "1/2 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Chironji",
+        "qty": "1/4 cup",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Fresh grated coconut",
+        "qty": "2~3 tbsp",
+        "unit": "tbsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Cardamom powder",
+        "qty": "1/2 tsp",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Wash 1/2 cup rice nicely with water 2 to 3 times and drain all the water completely.",
+        "label": "Wash rice",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Put the washed rice into a blender jar with a little water and grind it coarsely into a thick paste.",
+        "label": "Grind rice",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Rice"
+        ],
+        "produces_component": "coarse rice paste",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Take 2 liters of full cream milk in a big heavy vessel and put it on medium heat to boil.",
+        "label": "Heat milk",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": 5.0,
+        "duration_max": 20.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Milk"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Once the milk starts boiling, add the coarse rice paste into it and stir continuously so no lumps form.",
+        "label": "Add rice paste",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 1.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coarse rice paste",
+          "Milk"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add 1/4 cup chopped cashews, 1/4 cup chopped almonds, and 1/4 cup chopped pistachios into the milk.",
+        "label": "Add nuts",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Cashew nuts",
+          "Almonds",
+          "Pistachios"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cook the mixture on medium heat for about 15 minutes while stirring occasionally until the rice becomes soft.",
+        "label": "Cook until soft",
+        "attention": "periodic",
+        "attention_cue": "stirring occasionally",
+        "duration_typical_min": 13.0,
+        "duration_min": 13.0,
+        "duration_max": 17.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Rice",
+          "Milk",
+          "Cashew nuts",
+          "Almonds",
+          "Pistachios"
+        ],
+        "produces_component": "cooked kheer base",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the rice becomes soft"
+      },
+      {
+        "origin": "source",
+        "text": "Add 7~8 saffron strands into the pot and mix well.",
+        "label": "Add saffron",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Saffron strands"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add 1/2 cup sugar, 1/4 cup chironji, and 2~3 tbsp fresh grated coconut into the pot.",
+        "label": "Add sugar & extras",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Sugar",
+          "Chironji",
+          "Fresh grated coconut"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Mix all ingredients nicely and cook on medium heat for another 10 to 15 minutes until the kheer turns rich and thick.",
+        "label": "Thicken kheer",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 12.0,
+        "duration_min": 10.0,
+        "duration_max": 15.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Sugar",
+          "Chironji",
+          "Fresh grated coconut",
+          "Saffron strands",
+          "Milk",
+          "Rice"
+        ],
+        "produces_component": "thick kheer",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the kheer turns rich and thick"
+      },
+      {
+        "origin": "source",
+        "text": "Add 1/2 tsp cardamom powder, mix well, and turn off the heat.",
+        "label": "Finish kheer",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Cardamom powder"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve warm or chill it in the refrigerator before serving.",
+        "label": "Serve or chill",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 120.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Steps and ingredient names taken exactly from the provided title/description.",
+      "Servings inferred from the title phrase \"१० जणांसाठी\" (for 10 people) and recorded as stated.",
+      "The final instruction offers serving options (serve warm or chill); it was left as a single required step rather than splitting into optional steps because the source lists both without an explicit conditional phrase like \"if desired\".",
+      "Produced components named where later steps consume them (coarse rice paste, cooked kheer base, thick kheer) to reflect dependencies."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: पारंपरिक तांदळाची खीर | १० जणांसाठी रबडीसारखी दाटसर तांदुळाची खीर | Tandalachi Kheer Recipe\n\nIngredients\n• 1/2 cup Rice\n• 2 liter Milk\n• 1/4 cup Cashew nuts\n• 1/4 cup Almonds\n• 1/4 cup Pistachios\n• 7~8 Saffron strands\n• 1/2 cup Sugar\n• 1/4 cup Chironji\n• 2~3 tbsp Fresh grated coconut\n• 1/2 tsp Cardamom powder\n\nMethod\n1. Wash 1/2 cup rice nicely with water 2 to 3 times and drain all the water completely.\n2. Put the washed rice into a blender jar with a little water and grind it coarsely into a thick paste.\n3. Take 2 liters of full cream milk in a big heavy vessel and put it on medium heat to boil.\n4. Once the milk starts boiling, add the coarse rice paste into it and stir continuously so no lumps form.\n5. Add 1/4 cup chopped cashews, 1/4 cup chopped almonds, and 1/4 cup chopped pistachios into the milk.\n6. Cook the mixture on medium heat for about 15 minutes while stirring occasionally until the rice becomes soft.\n7. Add 7~8 saffron strands into the pot and mix well.\n8. Add 1/2 cup sugar, 1/4 cup chironji, and 2~3 tbsp fresh grated coconut into the pot.\n9. Mix all ingredients nicely and cook on medium heat for another 10 to 15 minutes until the kheer turns rich and thick.\n10. Add 1/2 tsp cardamom powder, mix well, and turn off the heat.\n11. Serve warm or chill it in the refrigerator before serving.\n\nChannel: madhurasrecipe\n\nVideo description:\n\nपारंपरिक तांदळाची खीर | १० जणांसाठी रबडीसारखी दाटसर तांदुळाची खीर | Tandalachi Kheer Recipe\n\nIngredients\n• 1/2 cup Rice\n• 2 liter Milk\n• 1/4 cup Cashew nuts\n• 1/4 cup Almonds\n• 1/4 cup Pistachios\n• 7~8 Saffron strands\n• 1/2 cup Sugar\n• 1/4 cup Chironji\n• 2~3 tbsp Fresh grated coconut\n• 1/2 tsp Cardamom powder\n\nMethod\n1. Wash 1/2 cup rice nicely with water 2 to 3 times and drain all the water completely.\n2. Put the washed rice into a blender jar with a little water and grind it coarsely into a thick paste.\n3. Take 2 liters of full cream milk in a big heavy vessel and put it on medium heat to boil.\n4. Once the milk starts boiling, add the coarse rice paste into it and stir continuously so no lumps form.\n5. Add 1/4 cup chopped cashews, 1/4 cup chopped almonds, and 1/4 cup chopped pistachios into the milk.\n6. Cook the mixture on medium heat for about 15 minutes while stirring occasionally until the rice becomes soft.\n7. Add 7~8 saffron strands into the pot and mix well.\n8. Add 1/2 cup sugar, 1/4 cup chironji, and 2~3 tbsp fresh grated coconut into the pot.\n9. Mix all ingredients nicely and cook on medium heat for another 10 to 15 minutes until the kheer turns rich and thick.\n10. Add 1/2 tsp cardamom powder, mix well, and turn off the heat.\n11. Serve warm or chill it in the refrigerator before serving.",
+  "raw_title": "पारंपरिक तांदळाची खीर | १० जणांसाठी रबडीसारखी दाटसर तांदुळाची खीर | Tandalachi Kheer Recipe\n\nIngredients\n• 1/2 cup Rice\n• 2 liter Milk\n• 1/4 cup Cashew nuts\n• 1/4 cup Almonds\n• 1/4 cup Pistachios\n• 7~8 Saffron strands\n• 1/2 cup Sugar\n• 1/4 cup Chironji\n• 2~3 tbsp Fresh grated coconut\n• 1/2 tsp Cardamom powder\n\nMethod\n1. Wash 1/2 cup rice nicely with water 2 to 3 times and drain all the water completely.\n2. Put the washed rice into a blender jar with a little water and grind it coarsely into a thick paste.\n3. Take 2 liters of full cream milk in a big heavy vessel and put it on medium heat to boil.\n4. Once the milk starts boiling, add the coarse rice paste into it and stir continuously so no lumps form.\n5. Add 1/4 cup chopped cashews, 1/4 cup chopped almonds, and 1/4 cup chopped pistachios into the milk.\n6. Cook the mixture on medium heat for about 15 minutes while stirring occasionally until the rice becomes soft.\n7. Add 7~8 saffron strands into the pot and mix well.\n8. Add 1/2 cup sugar, 1/4 cup chironji, and 2~3 tbsp fresh grated coconut into the pot.\n9. Mix all ingredients nicely and cook on medium heat for another 10 to 15 minutes until the kheer turns rich and thick.\n10. Add 1/2 tsp cardamom powder, mix well, and turn off the heat.\n11. Serve warm or chill it in the refrigerator before serving.",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.instagram.com/reel/DeJudAPMcwI/",
+    "imported_at": "2026-10-25T10:42:39.704753Z"
+  },
+  "graph_id": "g_3a_26",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

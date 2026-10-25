@@ -1,0 +1,276 @@
+{
+  "recipe": {
+    "title": "Best Greek Salad Recipe",
+    "channel": "downshiftology.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "Greek",
+    "stated_total_min": 5,
+    "ingredients": [
+      {
+        "name": "1  large cucumber (diced)",
+        "qty": "1",
+        "unit": "large",
+        "prep_note": "diced",
+        "group": null
+      },
+      {
+        "name": "1 pint grape tomatoes (halved)",
+        "qty": "1",
+        "unit": "pint",
+        "prep_note": "halved",
+        "group": null
+      },
+      {
+        "name": "1  green bell pepper (diced)",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "diced",
+        "group": null
+      },
+      {
+        "name": "½  red onion (thinly sliced)",
+        "qty": "½",
+        "unit": null,
+        "prep_note": "thinly sliced",
+        "group": null
+      },
+      {
+        "name": "½ cup Kalamata olives (halved)",
+        "qty": "½",
+        "unit": "cup",
+        "prep_note": "halved",
+        "group": null
+      },
+      {
+        "name": "4 ounces feta cheese (crumbled)",
+        "qty": "4",
+        "unit": "ounces",
+        "prep_note": "crumbled",
+        "group": null
+      },
+      {
+        "name": "salt and pepper (to taste)",
+        "qty": "to taste",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "⅓ cup red wine vinegar",
+        "qty": "⅓",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1  lemon (juiced)",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "juiced",
+        "group": null
+      },
+      {
+        "name": "1 teaspoon Dijon mustard",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2  garlic cloves (minced)",
+        "qty": "2",
+        "unit": "cloves",
+        "prep_note": "minced",
+        "group": null
+      },
+      {
+        "name": "½ teaspoon dried oregano",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¼ teaspoon salt",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "¼ teaspoon black pepper",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ cup olive oil",
+        "qty": "½",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Add the cucumber, tomatoes, bell pepper, onion, olives, and feta cheese to a large mixing bowl.",
+        "label": "Assemble salad",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "1  large cucumber (diced)",
+          "1 pint grape tomatoes (halved)",
+          "1  green bell pepper (diced)",
+          "½  red onion (thinly sliced)",
+          "½ cup Kalamata olives (halved)",
+          "4 ounces feta cheese (crumbled)",
+          "salt and pepper (to taste)"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "In a separate small mixing bowl, add the vinegar, lemon juice, mustard, garlic, oregano, salt, and pepper. Slowly add the olive oil and whisk vigorously while pouring until the dressing is emulsified.",
+        "label": "Make dressing",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "⅓ cup red wine vinegar",
+          "1  lemon (juiced)",
+          "1 teaspoon Dijon mustard",
+          "2  garlic cloves (minced)",
+          "½ teaspoon dried oregano",
+          "¼ teaspoon salt",
+          "¼ teaspoon black pepper",
+          "½ cup olive oil"
+        ],
+        "produces_component": "dressing",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the dressing is emulsified"
+      },
+      {
+        "origin": "source",
+        "text": "Drizzle the dressing on the salad and gently stir to combine. Season with additional salt and pepper, if desired.",
+        "label": "Toss salad",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dressing",
+          "1  large cucumber (diced)",
+          "1 pint grape tomatoes (halved)",
+          "1  green bell pepper (diced)",
+          "½  red onion (thinly sliced)",
+          "½ cup Kalamata olives (halved)",
+          "4 ounces feta cheese (crumbled)",
+          "salt and pepper (to taste)"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [
+      {
+        "label": "Intro",
+        "start_sec": 0,
+        "end_sec": 29
+      },
+      {
+        "label": "Slice and dice the vegetables",
+        "start_sec": 30,
+        "end_sec": 216
+      },
+      {
+        "label": "Add the feta cheese",
+        "start_sec": 217,
+        "end_sec": 243
+      },
+      {
+        "label": "Make the Greek salad dressing",
+        "start_sec": 244,
+        "end_sec": 324
+      },
+      {
+        "label": "Cook and meal prep herb baked chicken",
+        "start_sec": 325,
+        "end_sec": 418
+      },
+      {
+        "label": "Add beans for a vegetarian protein option",
+        "start_sec": 419,
+        "end_sec": 469
+      },
+      {
+        "label": "Taste test",
+        "start_sec": 470,
+        "end_sec": 496
+      }
+    ],
+    "notes": [
+      "Method and ingredients taken from the linked recipe JSON-LD (Downshiftology 'Best Greek Salad Recipe'). Steps are the three HowToStep entries from the schema.org data. I created a produced component named \"dressing\" for the dressing step so the final toss step can consume it. Duration values are not stated in the source (totalTime is 5 minutes) so individual step durations are left unspecified."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Best Greek Salad Recipe\n\nChannel: downshiftology.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Best Greek Salad Recipe\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Lisa Bryan\"\n  },\n  \"description\": \"This Greek salad is fresh, easy, and made with the best homemade Greek salad dressing! Watch the video below to see how it all comes together.\",\n  \"datePublished\": \"2023-05-10T08:00:00+00:00\",\n  \"image\": [\n    \"https://i2.wp.com/www.downshiftology.com/wp-content/uploads/2018/08/Greek-Salad-main.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"EASY GREEK SALAD RECIPE | plus meal prep ideas & tips!\",\n    \"description\": \"This traditional Greek salad recipe (horiatiki salata) is super easy and healthy. Made from only 6 ingredients, it's one of the best healthy salad recipes!\\n\\nGreek salad highlights the beauty of the Mediterranean diet, where a few simple, fresh ingredients in their most natural form turn into a dazzling salad. Pair it with my homemade Greek salad dressing and you’re good to go! \\n\\nWhat I love most about this Greek salad recipe is that it’s veggie-packed and contains no leafy greens. That means all of the ingredients can be prepped ahead of time (as I showed in my summer meal prep), then tossed together when you’re ready to serve. So needless to say, it’s the perfect summer salad recipe that’s always on repeat. Plus, I give a few ideas in the video on how to add protein for a heartier meal!\\n\\n🖨 Printable Greek Salad Recipe:\\n\\nSign up for weekly emails (never miss a recipe!):\\n\\nJoin the private Facebook group of fellow Downshifters around the world:\\n\\n► ORDER MY COOKBOOK!!!\\nGet 100+ make-ahead and quick-assembly recipes in my NEW Healthy Meal Prep cookbook:\\n\\n► ALWAYS IN MY KITCHEN:\\nCounter Stools:\\nVitamix Blender:\\nSpiralizer:\\nTea Kettle:\\nUtensil Holder:\\nFlour Jars:\\nSalt Cellar:\\nKnife Set:\\nWhite Chef's Knife:\\nCutting Board:\\nMagnetic Measuring Spoons:\\nMagnetic Measuring Cups:\\nFood Scraper:\\n\\nFor everything else I use in my videos, check out the SHOP page on my website:\\n\\n► TIMESTAMPS:\\n00:00 Intro\\n00:30 Slice and dice the vegetables\\n03:37 Add the feta cheese\\n04:04 Make the Greek salad dressing and stir together\\n05:25 Cook and meal prep herb baked chicken to add to the salad\\n06:59 Add beans for a vegetarian protein option\\n07:50 Taste test\\n\\n► WHAT I'M WEARING\\nTop (similar):\\nJeans:\\nLinen Apron:\\n\\nThe music I use: - Great music for YouTubers!\\n\\nDisclaimer: product links may include affiliate links.\\n#greeksalad #saladrecipe #mediterranean\",\n    \"uploadDate\": \"2023-05-10T15:32:01+00:00\",\n    \"duration\": \"PT8M16S\",\n    \"thumbnailUrl\": \"https://i.ytimg.com/vi/dDhOpHcAJGo/hqdefault.jpg\",\n    \"embedUrl\": \"https://www.youtube.com/embed/dDhOpHcAJGo?feature=oembed\",\n    \"contentUrl\": \"https://www.youtube.com/watch?v=dDhOpHcAJGo\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"4\",\n    \"4 servings\"\n  ],\n  \"prepTime\": \"PT5M\",\n  \"totalTime\": \"PT5M\",\n  \"recipeIngredient\": [\n    \"1  large cucumber (diced)\",\n    \"1 pint grape tomatoes (halved)\",\n    \"1  green bell pepper (diced)\",\n    \"½  red onion (thinly sliced)\",\n    \"½ cup Kalamata olives (halved)\",\n    \"4 ounces feta cheese (crumbled)\",\n    \"salt and pepper (to taste)\",\n    \"⅓ cup red wine vinegar\",\n    \"1  lemon (juiced)\",\n    \"1 teaspoon Dijon mustard\",\n    \"2  garlic cloves (minced)\",\n    \"½ teaspoon dried oregano\",\n    \"¼ teaspoon salt\",\n    \"¼ teaspoon black pepper\",\n    \"½ cup olive oil\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add the cucumber, tomatoes, bell pepper, onion, olives, and feta cheese to a large mixing bowl.\",\n      \"name\": \"Add\",\n      \"url\": \"https://downshiftology.com/recipes/greek-salad/#wprm-recipe-33273-step-0-0\",\n      \"image\": \"https://downshiftology.com/wp-content/uploads/2018/08/How-To-Make-Greek-Salad-3.jpg\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"In a separate small mixing bowl, add the vinegar, lemon juice, mustard, garlic, oregano, salt, and pepper. Slowly add the olive oil and whisk vigorously while pouring until the dressing is emulsified.\",\n      \"name\": \"Whisk dressing\",\n      \"url\": \"https://downshiftology.com/recipes/greek-salad/#wprm-recipe-33273-step-0-1\",\n      \"image\": \"https://i2.wp.com/www.downshiftology.com/wp-content/uploads/2018/08/How-To-Make-Greek-Salad-1.jpg\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Drizzle the dressing on the salad and gently stir to combine. Season with additional salt and pepper, if desired.\",\n      \"name\": \"Drizzle and toss\",\n      \"url\": \"https://downshiftology.com/recipes/greek-salad/#wprm-recipe-33273-step-0-2\",\n      \"image\": \"https://downshiftology.com/wp-content/uploads/2018/08/How-To-Make-Greek-Salad-2.jpg\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.97\",\n    \"ratingCount\": \"109\",\n    \"reviewCount\": \"8\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Made this the other night to accompany our lamb loin chops. Both were delicious and will definitely make this again. The dressing is especially yummy.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nancy\"\n      },\n      \"datePublished\": \"2026-10-12\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Yummy salad. I added a can of drained and rinsed garbanzo beans and some fresh dill.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Susan S\"\n      },\n      \"datePublished\": \"2026-09-22\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Danielle, I did find Lisa's recipe for this Greek dressing elsewhere on her site.  It is using the same ingredient measurements, but says it serves 8!   So... even though the Greek Salad serves 4, the dressing is enough for double batch.  I'm planning on making a 4x batch of salad to serve 16 tomorrow, but will only double the dressing recipe as shown here. I'm very thankful for your mention, as I don't want an excess of dressing left in the bowl.🙂\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sandra Smith\"\n      },\n      \"datePublished\": \"2026-08-07\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Made this salad for my husband and I and we both loved it!  We had it with the Greek Lemon chicken and it was the perfect complement to the main dish!  The salad was refreshing and perfect for a summer dinner!!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sylvia\"\n      },\n      \"datePublished\": \"2026-07-19\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made this salad exactly from your recipe and it was amazing and my husband also agreed – loved the dressing and I will be making this many times again. It is a great dish to share and I can see it disappearing every time. Keep up the great work.🤗\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"barbara\"\n      },\n      \"datePublished\": \"2026-06-22\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Oh god , wonderful flavours ! I loved it! I’ve had some Zaatar and Sumac spices in the sauce.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"PAULINE\"\n      },\n      \"datePublished\": \"2026-06-10\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I made a massive batch of this for a celebration of life and it was a huge hit! Although the recipe (for 3x the batch) made waaaay too much dressing (there was a little pool of dressing in both batches I made and there was about 2-3 cups of dressing leftover; which felt like a bit of a waste of ingredients, considering the cost of groceries these days) If you decide to make 3x the amount, only make 2x the amount of dressing - unless you want leftover dressing for the fridge. \\r\\n\\r\\nVery tasty though! Will definitely make again\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Danielle\"\n      },\n      \"datePublished\": \"2026-06-07\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Fantastic salad and dressing! We make this all the time now. Thank you!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Sue\"\n      },\n      \"datePublished\": \"2026-06-03\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Salad\"\n  ],\n  \"recipeCuisine\": [\n    \"Greek\"\n  ],\n  \"keywords\": \"greek salad, greek salad recipe, greek salad recipe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"396 kcal\",\n    \"carbohydrateContent\": \"14 g\",\n    \"proteinContent\": \"7 g\",\n    \"fatContent\": \"36 g\",\n    \"saturatedFatContent\": \"8 g\",\n    \"cholesterolContent\": \"25 mg\",\n    \"sodiumContent\": \"757 mg\",\n    \"fiberContent\": \"4 g\",\n    \"sugarContent\": \"6 g\",\n    \"unsaturatedFatContent\": \"26 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://downshiftology.com/recipes/greek-salad/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://downshiftology.com/recipes/greek-salad/\"\n  },\n  \"mainEntityOfPage\": \"https://downshiftology.com/recipes/greek-salad/\"\n}",
+  "raw_title": "Best Greek Salad Recipe",
+  "blog_name": "Best Greek Salad Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://downshiftology.com/recipes/greek-salad/",
+    "imported_at": "2026-10-25T10:33:04.551045Z"
+  },
+  "graph_id": "g_3a_9",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

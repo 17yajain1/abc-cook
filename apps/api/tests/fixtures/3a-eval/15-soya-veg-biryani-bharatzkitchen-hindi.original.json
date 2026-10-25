@@ -1,0 +1,930 @@
+{
+  "recipe": {
+    "title": "Soya Veg Biryani",
+    "channel": "bharatzkitchen HINDI",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "Soya",
+        "qty": "1",
+        "unit": "Cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Carrot",
+        "qty": "1",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Onion",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "for Birsta",
+        "group": null
+      },
+      {
+        "name": "Beans",
+        "qty": "25",
+        "unit": "Gms",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Potatoes",
+        "qty": "2",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Capsicum",
+        "qty": "1/2",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Green Chillies",
+        "qty": "5",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": "50",
+        "unit": "Gms",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": "100",
+        "unit": "Gms",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Curd",
+        "qty": "1/3",
+        "unit": "Cup",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "qty": "1",
+        "unit": "Tbsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Haldi  Powder",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": "spicy",
+        "group": "For marination"
+      },
+      {
+        "name": "Biryani Masala",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Achar Masala",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Salt",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For marination"
+      },
+      {
+        "name": "Basmati Rice",
+        "qty": "2",
+        "unit": "Cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Mint and Coriander Leaves",
+        "qty": "as Needed",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Warm Milk + KESAR",
+        "qty": "1/2 Cup",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Water",
+        "qty": "1",
+        "unit": "Liter",
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Salt",
+        "qty": "1",
+        "unit": "Tbsp",
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Tej Patta",
+        "qty": "1",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Choti Elachi",
+        "qty": "3",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Black Peppercorns",
+        "qty": "4 - 5",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Cloves",
+        "qty": "2 - 3",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Lemon",
+        "qty": "1/2",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Mint and Coriander Leaves",
+        "qty": "(as Needed)",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Biryani Masala",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Green Chillies",
+        "qty": "2",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "Oil",
+        "qty": "as Needed",
+        "unit": null,
+        "prep_note": null,
+        "group": "For boiling rice"
+      },
+      {
+        "name": "OIL AS NEEDED",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Jeera",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Choti Elachi",
+        "qty": "4",
+        "unit": null,
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Cloves",
+        "qty": "4 - 5",
+        "unit": null,
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Black Peppercorns",
+        "qty": "6",
+        "unit": null,
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Dal Chini",
+        "qty": "1",
+        "unit": null,
+        "prep_note": null,
+        "group": "For final dum"
+      },
+      {
+        "name": "Desi Ghee",
+        "qty": "1",
+        "unit": "Tbsp",
+        "prep_note": null,
+        "group": "Final Tadka"
+      },
+      {
+        "name": "Biryani Masala",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "Final Tadka"
+      },
+      {
+        "name": "Kewra Water",
+        "qty": "1",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": "Final Tadka"
+      },
+      {
+        "name": "Red Food Color",
+        "qty": "If Needed",
+        "unit": null,
+        "prep_note": null,
+        "group": "Final Tadka"
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Soak the soya in boiling water for 10 minutes then squeeze out all water.",
+        "label": "Soak soya",
+        "attention": "unattended",
+        "attention_cue": "10 मिनट रखना",
+        "duration_typical_min": 9.0,
+        "duration_min": 9.0,
+        "duration_max": 15.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Soya"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Peel and cut carrot, beans, potatoes into large chunks; slice onions for birista; slit green chillies; roughly chop mint and coriander.",
+        "label": "Prep vegetables",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 8.0,
+        "duration_min": 5.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Carrot",
+          "Beans",
+          "Potatoes",
+          "Onion",
+          "Green Chillies",
+          "Mint Leaves",
+          "Coriander Leaves"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Mix curd, ginger-garlic paste, haldi, red chilli powder, biryani masala, kasuri methi, achar masala and 1 tsp salt; add chopped vegetables and squeezed soya, toss to coat for marination.",
+        "label": "Marinate mix",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Curd",
+          "Ginger Garlic Paste",
+          "Haldi  Powder",
+          "Red Chilli Powder",
+          "Biryani Masala",
+          "Kasuri Methi",
+          "Achar Masala",
+          "Salt",
+          "Soya",
+          "Carrot",
+          "Beans",
+          "Potatoes",
+          "Green Chillies",
+          "Mint Leaves",
+          "Coriander Leaves"
+        ],
+        "produces_component": "marinated veg-soya",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Optionally soak saffron in warm milk to release color and aroma.",
+        "label": "Soak saffron",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 2.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "optional",
+        "role_cue": "यह वाला स्टेप ऑप्शनल है",
+        "attach_to_step": 2,
+        "consumes_ingredients": [
+          "Warm Milk + KESAR"
+        ],
+        "produces_component": "kesar milk",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Rinse basmati rice well and soak for 30 minutes before boiling.",
+        "label": "Soak rice",
+        "attention": "unattended",
+        "attention_cue": "आधे घंटे तक जरूर भिगाना है",
+        "duration_typical_min": 30.0,
+        "duration_min": 30.0,
+        "duration_max": 30.0,
+        "duration_stated": true,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Basmati Rice"
+        ],
+        "produces_component": "soaked rice",
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Bring 1 liter water to a boil with 1 tbsp salt, tej patta, 3 choti elachi, 4-5 black peppercorns, 2-3 cloves, 1/2 lemon, mint, coriander, 1/2 tsp biryani masala, oil and remaining green chillies; let spices release flavor in the boiling water.",
+        "label": "Flavored boil",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Water",
+          "Salt",
+          "Tej Patta",
+          "Choti Elachi",
+          "Black Peppercorns",
+          "Cloves",
+          "Lemon",
+          "Mint and Coriander Leaves",
+          "Biryani Masala",
+          "Green Chillies",
+          "Oil"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "When water is at a roiling boil, add drained rice and stir only once; let rice boil on high flame for 5 minutes (don't disturb).",
+        "label": "Parboil rice",
+        "attention": "unattended",
+        "attention_cue": "छेड़ना मत दोस्तों बिल्कुल भी 5 मिनट तक बॉईल होने देना",
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 7.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "soaked rice",
+          "Water"
+        ],
+        "produces_component": "parboiled rice",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "90% पक जाएं"
+      },
+      {
+        "origin": "source",
+        "text": "Drain rice, rinse once with cold water and let it dry a little.",
+        "label": "Drain rice",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "parboiled rice"
+        ],
+        "produces_component": "drained rice",
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat oil, fry sliced onions on medium until brown to make birista, remove as soon as color develops.",
+        "label": "Make birista",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": 8.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Onion",
+          "Oil"
+        ],
+        "produces_component": "birista",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "color आने लग जाए"
+      },
+      {
+        "origin": "source",
+        "text": "In same pan reduce oil, add jeera, elachi, cloves, peppercorns, dal chini and the marinated veg-soya; cover and cook on medium for 5 minutes.",
+        "label": "Cook veg-soya",
+        "attention": "hands_on",
+        "attention_cue": "ढक्कन लगा देना और ढक्कन लगाकर 5 मिनट पकाना",
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 7.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2,
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Jeera",
+          "Choti Elachi",
+          "Cloves",
+          "Black Peppercorns",
+          "Dal Chini",
+          "marinated veg-soya"
+        ],
+        "produces_component": "cooked veg-soya",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "sara पानी रिड्यूस नहीं हो जाता"
+      },
+      {
+        "origin": "source",
+        "text": "Continue cooking until released water reduces and potatoes are cooked through.",
+        "label": "Reduce moisture",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": 5.0,
+        "duration_max": 20.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked veg-soya"
+        ],
+        "produces_component": "dry veg-soya mix",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "sारा पानी रिड्यूस नहीं हो जाता"
+      },
+      {
+        "origin": "source",
+        "text": "Layer a portion of the cooked veg-soya, spread some drained rice over it, sprinkle kesar milk, coriander and mint, a spoon of biryani masala and some birista; pour reserved rice water over the layer.",
+        "label": "First layering",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 4.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10,
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dry veg-soya mix",
+          "drained rice",
+          "kesar milk",
+          "Coriander Leaves",
+          "Mint Leaves",
+          "birista"
+        ],
+        "produces_component": "layered pot",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add remaining rice evenly, top with remaining birista, coriander, mint; drizzle 1 tbsp hot ghee mixed with 1 tsp biryani masala and 1 tsp kewra water; seal pot tightly with foil or dough.",
+        "label": "Top and seal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "drained rice",
+          "birista",
+          "Coriander Leaves",
+          "Mint Leaves",
+          "Desi Ghee",
+          "Biryani Masala",
+          "Kewra Water"
+        ],
+        "produces_component": "sealed pot",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Place sealed pot on a tawa, put a heavy weight on lid and cook on very low flame for 10 minutes (first dum).",
+        "label": "First dum",
+        "attention": "unattended",
+        "attention_cue": "लो फ्लेम पर 10 मिनट तक आप इसे पकने देना",
+        "duration_typical_min": 10.0,
+        "duration_min": 9.0,
+        "duration_max": 12.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "sealed pot"
+        ],
+        "produces_component": "dummed pot",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "After 10 minutes put the pot on a hot tawa with weight again and cook on very low flame for another 10 minutes (second dum).",
+        "label": "Second dum",
+        "attention": "unattended",
+        "attention_cue": "फिर अगेन घड़ी से देखकर 10 मिनट इसे पकने देना एकदम लो फ्लेम पे",
+        "duration_typical_min": 10.0,
+        "duration_min": 9.0,
+        "duration_max": 12.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dummed pot"
+        ],
+        "produces_component": "cooked biryani",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Let the pot rest undisturbed for 5 minutes before opening lid.",
+        "label": "Rest",
+        "attention": "unattended",
+        "attention_cue": "5 मिनट रेस्ट करना",
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 5.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          14
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked biryani"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Optional: add red food color for market-style look and check bottom for any water or burnt smell before serving.",
+        "label": "Finish and check",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          15
+        ],
+        "role": "optional",
+        "role_cue": "अगर आपको बिल्कुल बाजार जैसा बनाना है तो आप चाहो तो आप यह रेड फूड कलर डाल सकते हो",
+        "attach_to_step": 15,
+        "consumes_ingredients": [
+          "Red Food Color"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method grounded in transcript (spoken instructions) and description ingredient lists. I kept ingredient names and quantities exactly as in the video description. I marked the saffron-in-milk and red food color steps as optional using the speaker's exact cue phrases. Attention cues and durations use verbatim phrases from the transcript where present (e.g. \"10 मिनट रखना\", \"छेड़ना मत ... 5 मिनट तक बॉईल होने देना\", \"लो फ्लेम पर 10 मिनट तक आप इसे पकने देना\", \"5 मिनट रेस्ट करना\")."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "Capsicum"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "OIL AS NEEDED"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: वेज बिरयानी बनाने का ये तरीका देख के कहेंगे की पहले क्यों नहीं पता था | Soya Veg Biryani\n\nChannel: bharatzkitchen HINDI\n\nVideo description:\n\n#biryani #veg #soya #nutri \n\nSOYA BIRYANI \n\nINGREDIENTS TO MAKE THE RECIPE:\n\n1 Cup Soya \n1 Carrot \n2 Onion (for Birsta)\n25 Gms Beans \n2 Potatoes \n1/2 Capsicum \n5 Green Chillies \n50 Gms Mint Leaves \n100 Gms Coriander Leaves \n\nFOR MARINATION \n\n1/3 Cup Curd \n1 Tbsp Ginger Garlic Paste \n1/2 tsp Haldi  Powder \n1 tsp Red Chilli Powder \n1 tsp Biryani Masala \n1 tsp Kasuri Methi \n1 tsp Achar Masala \n1 tsp Salt \n2 Cups Basmati Rice \nMint and Coriander Leaves (as Needed)\n\n\n1/2 Cup Warm Milk + KESAR\n\n\n\n\nFOR BOILING RICE \n1 Liter Water \n1 Tbsp Salt \n1 Tej Patta\n3 Choti Elachi \n4 - 5 Black Peppercorns \n2 - 3 Cloves \n1/2 Lemon \nMint and Coriander Leaves (as Needed)\n1/2 tsp Biryani Masala \n2 Green Chillies \nOil \n\nFOR FINAL DUM \n\nOIL AS NEEDED\n1 tsp Jeera \n4 Choti Elachi \n4 - 5 Cloves \n6 Black Peppercorns \n1 Dal Chini\n\nFINAL TADKA \n\n1 Tbsp Desi Ghee \n1 tsp Biryani Masala \n1 tsp Kewra Water \nRed Food Color (If Needed)\n\nTranscript (auto-generated captions, hi):\n\nअब जो लोग कहते हैं ना दोस्तों कि वेज बिरयानी कुछ नहीं होती तो उनको एक बार यह बिरयानी खिला कर दिखाना। यह है दोस्तों न्यूट्री बिरयानी। पहले तो आप चावल का दाना देखो एक-एक दाना एकदम लंबा खिला-खिला खुशबूदार। और तो और अगर मैं आपको न्यूट्री दिखाऊं ना इतनी जूसी है कि आपको यकीन नहीं होगा यह कैसे हुआ। तो हेलो दोस्तों, मैं हूं भरत। वेलकम टू माय कुकिंग ब्लॉग। तो फिर देर किस बात की? चलो फिर शुरू करते हैं। अब दोस्तों सबसे पहले ना मैं आपको यह बताता हूं कि मैं अपनी न्यूट्री को ट्रीट कैसे करता हूं। आप अलग-अलग तरीके से न्यूट्री को ट्रीट कर सकते हो। कई लोग बॉईल करते हैं। कई लोग सिर्फ पानी में रखते हैं। मैं दोस्तों एकदम उबलते हुए गर्म पानी में रखता हूं। ऐसे रखने से न्यूट्री अपना स्ट्रक्चर भी मेंटेन करेगी लेकिन अंदर से सॉफ्ट भी होगी। आप सिर्फ 10 मिनट रखना। 10 से 15 मिनट में पूरी फूल जाती है और उसके बाद इसका सारा पानी निचोड़ देना। अब बिरयानी बनाने के लिए मैंने देखो यह चीजें ली हैं। बींस ली है थोड़ी सी और उनको बड़ा-बड़ा काट दिया है। आलू लिए हैं दो और इनको भी बड़े-बड़े चंक्स में रखा है। प्याज को आप स्लाइसेस में करना क्योंकि इसका हम बिरस्ता बनाएंगे। आधी शिमला मिर्च मैंने ली है। ये ऑप्शनल है। बिल्कुल स्किप भी कर सकते हो चाहो। हरी मिर्चें ली है थोड़ी सी। उनमें सिर्फ एक स्लिट लगाया है। और लास्ट है एक गाजर। इसको भी मैंने बड़ा-बड़ा ही काटा है। बिरयानी बनाने के लिए आपको धनिया पुदीना तो चाहिए होगा। ज्यादा धनिया, थोड़ा पुदीना, यानी कि 100 ग्र. धनिया, 50 ग्र. पुदीना। इसको बस अच्छे से स्लाइसेस में काट के रख लें। दैट्स इट दोस्तों, ऑलमोस्ट सारी तैयारी हो गई। सबसे इंपॉर्टेंट चीज जो है ना दोस्तों, बिरयानी बनाने के लिए वो है चावल। अब मैं जो चावल यूज़ कर रहा हूं इस रेसिपी में वो बहुत ही बढ़िया लॉन्ग रेन बनते हैं हमेशा, लेकिन थोड़े डेलिकेट हैं। मैं आपको नीचे डिस्क्रिप्शन बार में ब्रांड जरूर बता दूंगा। लेकिन अगर सही से बिरयानी बनानी है तो इस बात का ध्यान रखना है कि चावलों को अच्छे से धोकर आधे घंटे तक जरूर भिगाना है। भगाने से ही उनकी लेंथ बहुत अच्छी आएगी और स्ट्रक्चर अच्छा पकड़ेंगे। सारी चीजों को आपने मैरिनेशन में रखना है ताकि न्यूट्री के अंदर तक फ्लेवर आए। अब देखो जब न्यूट्री से आप पानी निकाल दोगे ना तो ये अंदर से सॉफ्ट होगी लेकिन अपना स्ट्रक्चर पकड़ा होगा इसने। अगर आप यही बॉईल करके डालते हो तो बाहर से इसका स्ट्रक्चर भी थोड़ा वीक हो जाता है। तो आप सारी वेजिटेबल्स को डाल देना। तीन हरी मिर्चों को मैंने अभी डाला है। इसमें आपने भर के अदरक लहसुन का पेस्ट डालना है। 1/3 कप मैंने यहां पर दही डाली है। आधा चम्मच हल्दी पाउडर, एक चम्मच स्पाइसी वाला लाल मिर्च पाउडर और एक चम्मच बिरयानी मसाला। आखिर में एक चम्मच नमक के साथ-साथ एक चम्मच कसूरी मेथी का डालना। अगर आप बिरयानी को थोड़ा चटपटा बनाना चाहते हो तो बिल्कुल आप बाजार वालों की तरह एक चम्मच अचार का भी डाल सकते हो। और बस अब धनिया पुदीना डालकर इन सारी चीजों को आप अच्छे से मिला देना। ऐसे मैरिनेट करने से या इसको अगर आप थोड़ी देर रखोगे तो लॉजिक सिर्फ यह है कि जो न्यूट्री है ना वो दही से सारा पानी पीने लग जाती है। नमक डालने की वजह से पानी भी निकलेगा जो सारा पानी न्यूट्री पिएगी। और जब इसको पकाओगे ना अपने आप ही इसमें अब्सॉर्प्शन की एबिलिटी बढ़ जाएगी। अब यह वाला स्टेप ऑप्शनल है लेकिन अगर आप बिल्कुल बिरयानी में वो खुशबूएं चाहते हो, वो फ्लेवर भी चाहते हो और कलर भी चाहते हो तो थोड़े से गर्म दूध में आप यहां पर केसर को भगा देना। अब सबसे इंपॉर्टेंट चीज बिरयानी की कि वो चावलों में फ्लेवर भी कैसे लाएं और लेंथ भी कैसे लें। तो सबसे पहले एक पॉट में पानी गर्म होने के लिए रखना। 1 लीटर पानी है और वह भी हाई फ्लेम पर रखा हुआ है। पानी में जब बॉईल आना शुरू होगा तो एक टेबलस्पून आपने नमक डालना है। उससे ज्यादा भी हो सकता है लेकिन वैसे एक टेबलस्पून काफी होगा। साथ-साथ एक तेजपत्ता आप डालना। तीन इलायची के दाने, चार से पांच काली मिर्च, दो-तीन लौंग, थोड़ा सा नींबू भी डाला है ताकि चावल के दाने एकदम खिले-खिले बने। और बस धनिया, पुदीना डालकर हल्का सा बिरयानी मसाला डाल दिया है। जिससे कि चावल भी अब्सॉर्ब करें। खिले-खिले चावल बनाने थे इसलिए थोड़ा सा आप तेल भी डालना और जो बाकी बची हुई हरी मिर्चें हैं वह इन्हीं चावलों में डालना। इस पूरे मसाले को जो हमने डाला है इसको आप पहले बॉईल होने देना, उबलने देना ताकि सारे मसाले अपना फ्लेवर रिलीज करें। पानी का कलर चेंज होना बहुत जरूरी है। और अब एक बारी इस पानी को टेस्ट करके देखना पहले। फिर आपको समझ में आएगा यह सारे स्टेप्स मैंने क्यों करे हैं दोस्तों। जब पानी एकदम रोिंग बॉईल पे होगा। जैसे एकदम उबलता हुआ पानी होता है ना, उसी स्टेज पर आप यहां पर चावलों को डालना। सारा पानी ड्रेन करके मैंने डाला है और चावलों को सिर्फ और सिर्फ दोस्तों एक बार हिलाना है। उससे ज्यादा मत हिलाना। इनको पहले बॉईल होने देना लगातार 5 मिनट तक। छेड़ना मत दोस्तों बिल्कुल भी 5 मिनट तक बॉईल होने देना। बिरयानी के चावलों को बॉईल होने में 7 मिनट के आसपास लगते हैं। मैंने आपको एग्जैक्ट टाइम दिया है। कोई भी चावल हो रेंज यही रहती है उसकी। और चावलों को बॉईल सिर्फ आपने हाई फ्लेम पर करना है। अगर मैं आपको इसकी साइन बताऊं तो आप देखो हाई फ्लेम पर पकाने से बाहर का स्ट्रक्चर पकेगा चावल का और अंदर का हल्का सा कच्चा रहेगा। यही एक्चुअल में आपको चाहिए। अगर बाय चांस आपको लगता है कि पानी ऊपर बह जाएगा तो आप मीडियम फ्लेम कर देना। लेकिन चाहिए आपको यही। मेरे कहने पे थोड़ा सा पानी आप निकाल लेना जिसको हम बिरयानी में एंड में दम देने के लिए यूज़ करेंगे। चावलों का भी फ्लेवर है इसमें। तो मैं हमेशा एक कटोरी निकाल लेता हूं। अब 5 मिनट के बाद जब चावल एकदम खिले-खिले हो जाएंगे, आप उन पे नजर रखना। अब चेक करना आप चावल आपके 100% पके हुए नहीं होने चाहिए दोस्तों। थोड़े कच्चे रहने चाहिए। अगर यह 100% पक गए या उससे ज्यादा पक गए तो बिरयानी को दम देते वक्त ये खिचड़ी बन जाएंगे। ध्यान रखना दोस्तों जब यह स्टेज आ जाए कि चावल आपके 90% पक जाएं। मतलब हल्की उसमें बाइट रहे। तो आप चावलों से सारा पानी ड्रेन कर देना। इसको ठंडे पानी से एक बारी धो देना और इसको थोड़ा सूखने देना। यह स्टेप करने से दोस्तों आपकी बिरयानी बहुत खिली-खिली बनेगी। यह एक्चुअल में कोई स्टेप होता नहीं है बनाते वक्त। लेकिन आप बिरयानी बार-बार तो बनाते नहीं हो। तो आपसे कोई मिस्टेक ना हो इसलिए मैंने आपसे जानबूझ के ये स्टेप करवाया है। अब बहुत सिंपल रेसिपी है दोस्तों। बहुत इजी है। आप थोड़ा सा तेल डालना यहां पर। अभी थोड़ा ज्यादा तेल मैंने डाला है क्योंकि आपको सबसे पहले प्याज का बिरस्ता बनाना है। मीडियम फ्लेम पे आप प्याज को ब्राउन करना अच्छे से। और जैसे ही उनमें कलर आने लग जाए यह देखो इस स्टेज पर आ जाए तो इनको फटाफट से निकाल लेना। थोड़े से प्याज अगर आपकी लगन में रह जाए या भगोने में रह जाए तो कोई दिक्कत की बात नहीं है। प्याज पड़े पड़े और ब्राउन हो जाते हैं। अब इससे थोड़ा सा तेल कम कर देना। इतने तेल से थोड़ी बनानी है हमने बिरयानी। एक लेडल काफी होगा। उसी में ही आप यहां पर गरम-गरम तेल में जीरा डालना। इलायची, लौंग, काली मिर्च साथ-साथ एक दालचीनी और सारा जो हमने सोया भिगा कर रखा था ना वो डाल देना। मुझे यहां पर बिरस्ता थोड़ा सा कम लग रहा था तो मैंने और डाल दिया है। इन सारी चीजों को दोस्तों आपको पकाना है मीडियम फ्लेम पर ताकि आपकी कुकिंग जल्दी हो जाए। आप यहां पर ढक्कन लगा देना और ढक्कन लगाकर 5 मिनट पकाना। 5 मिनट बाद जब आप देखोगे दोस्तों तो आपको दिखेगा कि काफी पानी रिलीज हो चुका होगा। सोया ने भी पानी छोड़ा, दही ने भी छोड़ा, सब्जियों ने भी छोड़ा। तो आपने अब तब तक पकाना है जब तक कि सारा पानी रिड्यूस नहीं हो जाता। उस स्टेज तक पकाना है ताकि हमारा आलू बिल्कुल भी कच्चा ना रहे। अब आपने लेयरिंग करनी है। तो आप थोड़े से चावल डालना यहां पर अच्छे से फैला देना और इसी वाली लेयर में फर्स्ट लेयर में ही केसर वाला दूध डालना। धनिया के पत्ते, पुदीना के पत्ते थोड़े से स्प्रिंकल कर देना। वो जो हमने चावल का पानी निकाला था ना एक कटोरी उसे यहां पर डाल देना। और बिरस्ता डाल के थोड़ा सा बिरयानी मसाला डाल के इस लेयर को सेट कर देना। अब सेकंड लेयर के लिए सारे चावलों को पलट देना। इनको इवनली स्प्रेड आउट कर देना क्योंकि स्टीम इनके अंदर से आएगी। इसी में ही बाकी बचा हुआ बिरस्ता डाल देना। धनिया के पत्ते, पुदीना के पत्ते यह सब तो आपने डालना ही है लेकिन यह स्टेप जरूर करना है। एक टेबलस्पून घी लेना और गरम-गरम घी में ही एक चम्मच बिरयानी मसाला मिलेगा। इस मसाले को दोस्तों आप डालना। आप देखना खुशबू भी बेटर आएगी और चावल के दाने भी खिले-खिले आएंगे। उन पे मसाला चिपक जाएगा। एक चम्मच आपने केवड़ा वाटर डालना है और अब इसको फटाफट से आप सील कर देना। मैं फॉइल से कर रहा हूं और मैंने काफी रेस्टोरों में देखा है कि फॉइल ही यूज होती है। उससे कन्वीनियंस हो जाती है। आप चाहो तो आप आटे से सील कर सकते हो लेकिन उससे आपको मेहनत लगेगी। फॉइल से आप अच्छे से कवर करना, प्लेट रखना और इसके ऊपर एक भारी वेट रख देना और एकदम लो फ्लेम पर 10 मिनट तक आप इसे पकने देना। ध्यान रहे दोस्तों लो फ्लेम होनी चाहिए। 10 मिनट में इसमें स्टीम भी डेवलप होनी शुरू हो जाएगी। 10 मिनट बाद बस फटाफट से आप यहां पर नीचे एक तवा रख देना। लोहे का तवा होगा तो और बढ़िया होगा। इसी के ऊपर अपना बिरयानी का पॉट रखना। वेट रखना और अगेन घड़ी से देखकर 10 मिनट इसे पकने देना एकदम लो फ्लेम पे। इतनी देर में दोस्तों सोया भी पक जाता है। आलू भी एकदम पक जाते हैं, चावल भी स्टीम हो जाते हैं। और 10 मिनट बाद जब आप तवा हटाओगे तो एकदम से ढक्कन मत खोलना नहीं। 5 मिनट रेस्ट करना। फिर ढक्कन खोलना दोस्तों। एकदम अमेजिंग वाली खुशबू आएगी आपको मेरी गारंटी है। और अगर आपको बिल्कुल बाजार जैसा बनाना है तो आप चाहो तो आप यह रेड फूड कलर डाल सकते हो। मैंने एक्चुअल में दोस्तों सिर्फ वीडियो के लिए डाला है। रियल लाइफ में मैं भी नहीं डालता अपने घर में। बट हां लुक तो बिल्कुल बाजार वाली तभी आती है। अब बिरयानी चेक कैसे करेगी हमारी बिरयानी कंप्लीट हुई या नहीं हुई? तो बस आप एकदम कोने में एक करछी लगा कर देखना। नीचे पानी नहीं होना चाहिए। अपनी नाक की खुशबुओं को थोड़ा स्ट्रांग करना और सूंघ कर देखना। कोई जलने की स्मेल तो नहीं आ रही। बट जो दाने खिले-खिले आते हैं ना दोस्तों और वो जो न्यूट्री के अंदर तक टेस्ट आता है, फ्लेवर आता है वो ही इस रेसिपी की यूएसपी है। आपसे कोई गलती नहीं होगी बनाते वक्त। बनाकर देखना इस वीकेंड और मुझे कमेंट सेक्शन में जरूर बताना कैसा बना।",
+  "raw_title": "वेज बिरयानी बनाने का ये तरीका देख के कहेंगे की पहले क्यों नहीं पता था | Soya Veg Biryani",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://youtu.be/Cc6qx4HBw9c",
+    "imported_at": "2026-10-25T10:35:51.520279Z"
+  },
+  "graph_id": "g_3a_15",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "transcript"
+  ]
+}

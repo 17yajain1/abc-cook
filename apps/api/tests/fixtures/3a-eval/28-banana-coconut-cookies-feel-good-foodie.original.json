@@ -1,0 +1,276 @@
+{
+  "recipe": {
+    "title": "2-ingredient banana coconut cookies",
+    "channel": "feelgoodfoodie",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "Makes 12-13 cookies.",
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "ripe bananas",
+        "qty": "2",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "unsweetened shredded coconut",
+        "qty": "2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "chocolate chips",
+        "qty": "½",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Preheat the oven to 350°F.",
+        "label": "Preheat oven",
+        "attention": "unattended",
+        "attention_cue": "Preheat the oven to 350°F",
+        "duration_typical_min": 5.0,
+        "duration_min": 5.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Line a baking sheet with parchment paper.",
+        "label": "Line baking sheet",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "In a large bowl, mash the bananas. Add the shredded coconut and use a fork to mix with the bananas until well combined.",
+        "label": "Mix dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 5.0,
+        "duration_min": 3.0,
+        "duration_max": 8.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "ripe bananas",
+          "unsweetened shredded coconut"
+        ],
+        "produces_component": "cookie dough",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Using a medium 1.5 tablespoon spring-loaded cookie scoop, scoop a rounded ball of cookie dough and place it on the prepared baking sheets, leaving about 2 inches of space between each.",
+        "label": "Scoop dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.0,
+        "duration_min": 4.0,
+        "duration_max": 10.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cookie dough"
+        ],
+        "produces_component": "cookie portions",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Meanwhile, place the chocolate chips in a small bowl and microwave in 20-second bursts, stirring each time, until smooth and runny.",
+        "label": "Melt chocolate",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "optional",
+        "role_cue": "optional chocolate drizzle",
+        "attach_to_step": 5,
+        "consumes_ingredients": [
+          "chocolate chips"
+        ],
+        "produces_component": "melted chocolate",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until smooth and runny"
+      },
+      {
+        "origin": "source",
+        "text": "Bake for 12-15 minutes or until the cookies look set and the coconut is golden.",
+        "label": "Bake cookies",
+        "attention": "unattended",
+        "attention_cue": "Bake for 12-15 minutes",
+        "duration_typical_min": 13.5,
+        "duration_min": 12.0,
+        "duration_max": 15.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cookie portions"
+        ],
+        "produces_component": "baked cookies",
+        "station": "oven",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the cookies look set and the coconut is golden"
+      },
+      {
+        "origin": "source",
+        "text": "Drizzle with melted chocolate.",
+        "label": "Drizzle chocolate",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5,
+          4
+        ],
+        "role": "optional",
+        "role_cue": "optional chocolate drizzle",
+        "attach_to_step": 5,
+        "consumes_ingredients": [
+          "melted chocolate",
+          "baked cookies"
+        ],
+        "produces_component": "drizzled cookies",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Refrigerate for 30 minutes.",
+        "label": "Chill cookies",
+        "attention": "unattended",
+        "attention_cue": "refrigerate for 30 minutes",
+        "duration_typical_min": 30.0,
+        "duration_min": 30.0,
+        "duration_max": 30.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "optional",
+        "role_cue": "optional chocolate drizzle",
+        "attach_to_step": 6,
+        "consumes_ingredients": [
+          "drizzled cookies"
+        ],
+        "produces_component": "chilled cookies",
+        "station": "fridge",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Title contained the phrase \"optional chocolate drizzle\" which was used as the role_cue for the chocolate-melting, drizzling and chilling steps. Yield text taken verbatim from instructions: \"Makes 12-13 cookies.\""
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: 2-ingredient banana coconut cookies with an optional chocolate drizzle that’s so good! 🍪\nINGREDIENTS\n2 ripe bananas\n2 cups unsweetened shredded coconut\n½ cup chocolate chips\nINSTRUCTIONS\n1. Preheat the oven to 350°F and line a baking sheet with parchment paper. \n2. In a large bowl, mash the bananas. Add the shredded coconut and use a fork to mix with the bananas until well combined.\n3. Using a medium 1.5 tablespoon spring-loaded cookie scoop, scoop a rounded ball of cookie dough and place it on the prepared baking sheets, leaving about 2 inches of space between each. Makes 12-13 cookies.\n4. Meanwhile, place the chocolate chips in a small bowl and microwave in 20-second bursts, stirring each time, until smooth and runny.\n5. Bake for 12-15 minutes or until the cookies look set and the coconut is golden. Drizzle with melted chocolate and refrigerate for 30 minutes.\n\nChannel: feelgoodfoodie\n\nVideo description:\n\n2-ingredient banana coconut cookies with an optional chocolate drizzle that’s so good! 🍪\nINGREDIENTS\n2 ripe bananas\n2 cups unsweetened shredded coconut\n½ cup chocolate chips\nINSTRUCTIONS\n1. Preheat the oven to 350°F and line a baking sheet with parchment paper. \n2. In a large bowl, mash the bananas. Add the shredded coconut and use a fork to mix with the bananas until well combined.\n3. Using a medium 1.5 tablespoon spring-loaded cookie scoop, scoop a rounded ball of cookie dough and place it on the prepared baking sheets, leaving about 2 inches of space between each. Makes 12-13 cookies.\n4. Meanwhile, place the chocolate chips in a small bowl and microwave in 20-second bursts, stirring each time, until smooth and runny.\n5. Bake for 12-15 minutes or until the cookies look set and the coconut is golden. Drizzle with melted chocolate and refrigerate for 30 minutes.",
+  "raw_title": "2-ingredient banana coconut cookies with an optional chocolate drizzle that’s so good! 🍪\nINGREDIENTS\n2 ripe bananas\n2 cups unsweetened shredded coconut\n½ cup chocolate chips\nINSTRUCTIONS\n1. Preheat the oven to 350°F and line a baking sheet with parchment paper. \n2. In a large bowl, mash the bananas. Add the shredded coconut and use a fork to mix with the bananas until well combined.\n3. Using a medium 1.5 tablespoon spring-loaded cookie scoop, scoop a rounded ball of cookie dough and place it on the prepared baking sheets, leaving about 2 inches of space between each. Makes 12-13 cookies.\n4. Meanwhile, place the chocolate chips in a small bowl and microwave in 20-second bursts, stirring each time, until smooth and runny.\n5. Bake for 12-15 minutes or until the cookies look set and the coconut is golden. Drizzle with melted chocolate and refrigerate for 30 minutes.",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.instagram.com/reel/DTwZpo5DNVr/",
+    "imported_at": "2026-10-25T10:43:28.798034Z"
+  },
+  "graph_id": "g_3a_28",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

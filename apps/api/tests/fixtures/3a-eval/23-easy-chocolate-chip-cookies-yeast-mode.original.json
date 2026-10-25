@@ -1,0 +1,261 @@
+{
+  "recipe": {
+    "title": "CHOCOLATE CHIP COOKIE",
+    "channel": "Yeast Mode",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "18 pieces (approx. 40-45 grams each when baked)",
+    "cuisine": null,
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "unsalted butter",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": "softened",
+        "group": null
+      },
+      {
+        "name": "brown sugar",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "white sugar",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "whole egg",
+        "qty": "1",
+        "unit": "whole",
+        "prep_note": "large",
+        "group": null
+      },
+      {
+        "name": "all purpose flour",
+        "qty": "1 & 1/4",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cornstarch",
+        "qty": "1 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "baking soda",
+        "qty": "1/2",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "1/4",
+        "unit": "tsp",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "chocolate chips",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Ensure the unsalted butter is softened.",
+        "label": "Soften butter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "unsalted butter"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cornstarch helps the cookie to have its soft & chewy interior. You may skip this if preferred.",
+        "label": "Cornstarch note",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "optional",
+        "role_cue": "You may skip this if preferred.",
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cornstarch"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Skip the salt if using salted butter.",
+        "label": "Salt note",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "optional",
+        "role_cue": "Skip the salt if using salted butter.",
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "salt"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Chilling the dough helps the cookie to hold its shape when baked.",
+        "label": "Chill dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "optional",
+        "role_cue": "Chilling the dough helps the cookie to hold its shape when baked.",
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Bake in a preheated oven @ 170 C or 350 F for 14-16 mins. I used conventional oven with bottom heat only.",
+        "label": "Bake cookies",
+        "attention": "unattended",
+        "attention_cue": "Bake in a preheated oven @ 170 C or 350 F for 14-16 mins.",
+        "duration_typical_min": 15.0,
+        "duration_min": 14.0,
+        "duration_max": 16.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "oven",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method text in the source is minimal: only the bake temperature/time and the ingredient notes are provided. I did not invent mixing or shaping steps. I inferred a prep step from the ingredient prep note that butter is softened. The optional steps mirror the source's conditional notes (cornstarch and salt, and chilling). Yield text taken from description verbatim."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": [
+          "brown sugar",
+          "white sugar",
+          "whole egg",
+          "all purpose flour",
+          "baking soda"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "chocolate chips"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Easy CHOCOLATE CHIP COOKIE Recipe | Crisp Outside, Soft & Chewy Inside\n\nChannel: Yeast Mode\n\nVideo description:\n\nCHOCOLATE CHIP COOKIE\n✔️Ingredients\n1/2 cup unsalted butter(softened)  [115 grams]\n1/2 cup brown sugar [100 grams]\n1/2 cup white sugar [100 grams]\n1 whole egg (large) [60 grams]\n1 & 1/4 cups all purpose flour [168 grams]\n1 tbsp cornstarch [8 grams]\n1/2 tsp baking soda [0.7 gram]\n1/4 tsp salt [1.5 gram] \n1 cup chocolate chips [150 grams]\n\n📝\n1. Cornstarch helps the cookie to have its soft & chewy interior. You may skip this if preferred.\n2. Skip the salt if using salted butter.\n3. Butter is softened.\n4. Chilling the dough helps the cookie to hold its shape when baked.\n5. The recipe yields 18 pieces. (approx. 40-45 grams each when baked)\n\nBake in a preheated oven @ 170 C or 350 F for 14-16 mins.\n⁉️Baking temp. & time may vary on the type of oven. Alter accordingly. \nI used conventional oven with bottom heat only. \n\n\nLooking for more recipes? Follow me here👇\n\n☑️Facebook\nwww.facebook.com/yeastmodeph\n\n☑️Youtube\nwww.youtube.com/yeastmode\n\n☑️TikTok\nwww.tiktok.com/@yeastmode.ph",
+  "raw_title": "Easy CHOCOLATE CHIP COOKIE Recipe | Crisp Outside, Soft & Chewy Inside",
+  "blog_name": null,
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=Y36OS7TgY8s",
+    "imported_at": "2026-10-25T10:40:55.178502Z"
+  },
+  "graph_id": "g_3a_23",
+  "acquisition_warnings": [],
+  "sources": [
+    "description"
+  ]
+}

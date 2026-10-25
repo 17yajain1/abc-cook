@@ -1,0 +1,433 @@
+{
+  "recipe": {
+    "title": "Banana Pancake",
+    "channel": "HomeCookingShow",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": 15,
+    "ingredients": [
+      {
+        "name": "banana",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "roughly cut into pieces",
+        "group": null
+      },
+      {
+        "name": "egg",
+        "qty": "1",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "jaggery",
+        "qty": "150",
+        "unit": "g",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "wheat flour",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "milk",
+        "qty": "1/2",
+        "unit": "cup",
+        "prep_note": "boiled and cooled",
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "1",
+        "unit": "pinch",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "baking soda",
+        "qty": "1",
+        "unit": "pinch",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "Butter",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Peel and roughly cut the bananas into pieces",
+        "label": "Prep bananas",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "banana"
+        ],
+        "produces_component": "chopped bananas",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Make sure the boiled milk is cooled before using",
+        "label": "Cool milk",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "milk"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add bananas, egg, and jaggery into a mixer jar and blend until smooth",
+        "label": "Blend base",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "banana",
+          "egg",
+          "jaggery"
+        ],
+        "produces_component": "banana-jaggery mixture",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "smooth"
+      },
+      {
+        "origin": "source",
+        "text": "Add wheat flour and milk to the mixture and blend again to form a smooth batter",
+        "label": "Make batter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "wheat flour",
+          "milk"
+        ],
+        "produces_component": "raw batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "smooth"
+      },
+      {
+        "origin": "source",
+        "text": "Pour the batter into a bowl for mixing",
+        "label": "Transfer batter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "raw batter"
+        ],
+        "produces_component": "batter in bowl",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add salt and baking soda, and mix well",
+        "label": "Add dry ingredients",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "salt",
+          "baking soda",
+          "batter in bowl"
+        ],
+        "produces_component": "seasoned batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add a little milk if needed to get a pouring consistency batter",
+        "label": "Adjust consistency",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "milk",
+          "seasoned batter"
+        ],
+        "produces_component": "pancake batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "pouring consistency"
+      },
+      {
+        "origin": "source",
+        "text": "Heat a tawa and add a little butter",
+        "label": "Heat pan",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "Butter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour a ladle of batter and let it spread naturally without spreading",
+        "label": "Pour batter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.5,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6,
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "pancake batter"
+        ],
+        "produces_component": "poured pancake",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Maintain the flame on medium. Close the pan and cook for a few minutes until one side is done",
+        "label": "Cook covered",
+        "attention": "unattended",
+        "attention_cue": "Close the pan and cook for a few minutes",
+        "duration_typical_min": 3.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "poured pancake"
+        ],
+        "produces_component": "half-cooked pancake",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until one side is done"
+      },
+      {
+        "origin": "source",
+        "text": "Flip and cook the other side until golden",
+        "label": "Flip pancake",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "half-cooked pancake"
+        ],
+        "produces_component": "cooked pancake",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until golden"
+      },
+      {
+        "origin": "source",
+        "text": "Once the pancake is cooked on both sides, remove from the pan and serve hot with chopped bananas or your topping of choice",
+        "label": "Serve hot",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10,
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked pancake",
+          "chopped bananas"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Primary method and steps taken from the linked recipe blog JSON-LD recipeInstructions; transcript used to confirm wording for cooking cues (e.g. \"Close the pan and cook for a few minutes\", \"until one side is done\"). Ingredient names and quantities taken from recipeIngredient. Durations are estimates where the source used vague phrasing (\"a few minutes\"); duration_stated=false for those steps."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Soft & Fluffy Banana Pancakes | No Maida No Sugar | Instant Breakfast in 15 Min | Egg Recipes\n\nChannel: HomeCookingShow\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Recipe\",\n  \"name\": \"Banana Pancake\",\n  \"url\": \"https://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/\",\n  \"image\": [\n    \"https://homecookingshow.in/wp-content/uploads/2026/05/Banana-Pancake-500x500.webp\",\n    \"https://homecookingshow.in/wp-content/uploads/2026/05/Banana-Pancake-500x375.webp\",\n    \"https://homecookingshow.in/wp-content/uploads/2026/05/Banana-Pancake-480x270.webp\"\n  ],\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Hema Subramanian\"\n  },\n  \"datePublished\": \"2026-05-18\",\n  \"description\": \"These banana pancakes are soft, fluffy, and naturally sweet, making them perfect for a quick homemade breakfast. Made with ripe bananas, jaggery, and wheat flour, they come together in minutes and cook up beautifully in a pan. No complicated steps, just simple comfort food that tastes amazing. Serve them hot with fresh bananas or a little butter, and you’ve got a breakfast everyone will love.\",\n  \"prepTime\": \"PT0H5M\",\n  \"cookTime\": \"PT0H10M\",\n  \"totalTime\": \"PT0H15M\",\n  \"recipeYield\": \"4\",\n  \"recipeCategory\": [\n    \"Breakfast\",\n    \"Snacks\"\n  ],\n  \"recipeCuisine\": [\n    \"Indian\"\n  ],\n  \"cookingMethod\": [\n    \"Pan-Fried\",\n    \"Sauteing\"\n  ],\n  \"keywords\": \"Banana Pancake, Pancakes Recipe, Breakfast\",\n  \"recipeIngredient\": [\n    \"2  banana\",\n    \"1  egg\",\n    \"150 g jaggery\",\n    \"1 cup wheat flour\",\n    \"1/2 cup milk\",\n    \"1 pinch salt\",\n    \"1 pinch baking soda\",\n    \"  Butter\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Chop bananas\",\n      \"text\": \"Peel and roughly cut the bananas into pieces\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Cool milk\",\n      \"text\": \"Make sure the boiled milk is cooled before using\",\n      \"image\": \"https://homecookingshow.in/wp-content/uploads/2026/05/bowl-of-cooled-milk-and-other-ingredients-ready-for-batter-150x84.webp\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Blend base mixture\",\n      \"text\": \"Add bananas, egg, and jaggery into a mixer jar and blend until smooth\",\n      \"image\": \"https://homecookingshow.in/wp-content/uploads/2026/05/blending-banana-and-jaggery-mixture-150x84.webp\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Add flour and milk\",\n      \"text\": \"Add wheat flour and milk to the mixture and blend again to form a smooth batter\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Transfer batter\",\n      \"text\": \"Pour the batter into a bowl for mixing\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Add dry ingredients\",\n      \"text\": \"Add salt and baking soda, and mix well\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Adjust consistency\",\n      \"text\": \"Add a little milk if needed to get a pouring consistency batter\",\n      \"image\": \"https://homecookingshow.in/wp-content/uploads/2026/05/smooth-flowing-pancake-batter-150x84.webp\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Heat pan\",\n      \"text\": \"Heat a tawa and add a little butter\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Pour batter\",\n      \"text\": \"Pour a ladle of batter and let it spread naturally without spreading\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Cook covered\",\n      \"text\": \"Cover and cook for a few minutes until one side is done\",\n      \"image\": \"\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Flip pancake\",\n      \"text\": \"Flip and cook the other side until golden\",\n      \"image\": \"https://homecookingshow.in/wp-content/uploads/2026/05/flipping-pancake-on-pan-150x84.webp\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"name\": \"Serve hot\",\n      \"text\": \"Serve hot with chopped bananas or your topping of choice\",\n      \"image\": \"https://homecookingshow.in/wp-content/uploads/2026/05/stack-of-banana-pancakes-ready-to-eat-150x84.webp\"\n    }\n  ],\n  \"aggregateRating\": null,\n  \"review\": null,\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"220 calories\",\n    \"carbohydrateContent\": \"38 grams\",\n    \"cholesterolContent\": \"35 milligrams\",\n    \"fatContent\": \"5 grams\",\n    \"fiberContent\": \"3 grams\",\n    \"proteinContent\": \"6 grams\",\n    \"saturatedFatContent\": \"2 grams\",\n    \"servingSize\": \"\",\n    \"sodiumContent\": \"90 milligrams\",\n    \"sugarContent\": \"14 grams\",\n    \"transFatContent\": \"\"\n  },\n  \"video\": {\n    \"@id\": \"https://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/#videoobject\"\n  },\n  \"@id\": \"https://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/#webpage\"\n  },\n  \"mainEntityOfPage\": {\n    \"@type\": \"WebPage\",\n    \"@id\": \"https://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/#webpage\"\n  }\n}\n\nVideo description:\n\n📌 Indian Breakfast Recipes 👉https://www.youtube.com/playlist?list=PLFhw-Rie62rSV1HtkRPwuzIu10KAyw-EQ\n\nBanana Pancakes Recipe | Soft & Fluffy Pancakes | Easy Breakfast in 10 Minutes | @HomeCookingShow \n\n#bananapancakes #pancakerecipe #breakfastrecipes #quickbreakfast #instantrecipe #10minrecipe #homecookingshow #hemasubramanian \n\nBanana Pancakes Recipe | Soft & Fluffy | Quick Breakfast in 10 Minutes\n\n📌 Full Recipe & Step-by-Step Guide: 👉\nhttps://homecookingshow.in/recipe/banana-pancakes-soft-fluffy-10-min-breakfast/\n\nLooking for a quick and delicious breakfast? Try these soft and fluffy banana pancakes that are ready in just 10 minutes!  Perfect for busy mornings, kids, and anyone who loves easy homemade recipes.\n\nMade with simple ingredients, these pancakes are naturally sweet from bananas and turn out super soft and tasty every time. Whether you enjoy them plain, with honey, or maple syrup, this is a must-try breakfast recipe!\n\nPerfect for:\n• Quick breakfast ideas\n• Kids lunch box recipes\n• Healthy homemade snacks\n• Beginner-friendly cooking\n\nBanana Pancake\nIngredients\n\nBanana - 2 Nos\nEgg - 1 No.\nJaggery - 150 Gms\nWheat Flour -1 Cup\nBoiled Milk - 1/2 Cup\nA Pinch Of Salt\nA Pinch Of Cooking Soda\nButter\n\nIf you want to start cooking without confusion, this is for you \nBuy now: https://shop.homecookingshow.in/products/beginner-s-guide-to-indian-cooking-ebook\n\nYou can buy our book on https://shop.homecookingshow.in/\n\nHere is the link to Amazon HomeCooking Store where I have curated products that I use and are similar to what I use for your reference and purchase\n\nhttps://www.amazon.in/shop/homecookingshow\n\nHAPPY COOKING WITH HOMECOOKING\nENJOY OUR RECIPES\n\nWEBSITE: https://homecookingshow.in/\nFACEBOOK -https://www.facebook.com/homecookingshow/\nYOUTUBE: https://www.youtube.com/HomeCookingShow\nINSTAGRAM - https://www.instagram.com/homecookingshow/\n\nA Ventuno Production : https://www.ventunotech.com\n\nTranscript (auto-generated captions, en):\n\n[music] >> Hello everyone. Welcome to Home Cooking with Nima Subramanian. Today, I'm going to show you guys a wonderful snack recipe. We're going to make [music] this delicious and spongy banana pancakes. So, let's get started and check it out. For this recipe, I've taken two large ripe bananas. Just roughly cut them into pieces. To the mixer jar, next I'm adding one whole egg. For sweetness, I'm adding 150 g of jaggery. This is roughly about 1 cup. So, first we're going to blend all these ingredients together. So, you can see it's blended to a lovely creamy texture. Next, I'm going to add 1 cup of wheat flour, that is atta. This is a 250 ml cup measurement. So, along with this, I'm going to add 1/2 cup of boiled and cooled milk. Now, the batter for the pancakes is ready. Just transfer this to a bowl. Now, to the batter, I'm going to add just a pinch of salt [music] and a pinch of cooking soda or baking soda. Just mix that in. If you feel the batter is too thick, you can just dilute it by adding a little milk to get the nice [music] pouring consistency. Who is that one person who loves pancakes among your family or your friends? Let me know in the comment section. Heat the tawa. Just add a little butter. Once the butter melts, add a ladle of the batter and let the batter spread by itself. Maintain the flame on medium. Close the pan and cook for a few minutes. Once you see the holes on the pancake and it's cooked on one side, you can gently flip it to the other side. Wow, just look at that beautiful rich golden brown color. Once the pancake is cooked on both sides, remove from the pan and you can serve them nice and hot. Make all the pancakes in the same manner and you can enjoy them as is. This quick and easy-to-make instant banana pancakes makes for a wonderful evening snack. When kids are at home, they always crave for some nice snacks [music] and this is something that you can make for them. >> [music] >> Wow, just look at the pancake. It's so soft and spongy. It's cooked beautifully. These are super easy and super delicious. Well, these are truly soft and spongy and when made fresh, it's just so incredible. It's time to taste. Mhm. Wow. The flavor of banana and of course the jaggery with that sweetness, it's so soft and spongy. It's very, very tasty. You can enjoy it anytime during [music] the day for breakfast or for an evening snack. Kids will love this. Well, just eating this brings back a lot of memories. Uh and with just simple ingredients like bananas, jaggery, and eggs, you can whip up something really incredible. [music] So, do give it a try. Enjoy and share it with your family and friends. Check out the product tags below if you'd like to shop the items I use in this video. [music] For the detailed recipe, go to our homecookingshow.in website. The second edition of the Home Cooking Book is now available on amazon as well as on shop.homecookingshow.in.",
+  "raw_title": "Soft & Fluffy Banana Pancakes | No Maida No Sugar | Instant Breakfast in 15 Min | Egg Recipes",
+  "blog_name": "Banana Pancake",
+  "source": {
+    "kind": "url",
+    "value": "https://www.youtube.com/watch?v=tTWWSBRq-QY",
+    "imported_at": "2026-10-25T10:41:31.661250Z"
+  },
+  "graph_id": "g_3a_24",
+  "acquisition_warnings": [],
+  "sources": [
+    "description",
+    "blog",
+    "transcript"
+  ]
+}
