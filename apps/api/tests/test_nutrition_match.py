@@ -13,6 +13,7 @@ import pytest
 from nutrition_helpers import food, line, table
 
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
+from abc_cook.nutrition.foods import FoodTable
 from abc_cook.nutrition.match import (
     FoodKey,
     InMemoryFoodMapStore,
@@ -117,7 +118,9 @@ def _resolve(
 @pytest.mark.parametrize(
     ("raw", "name", "state"),
     [
-        ("rajma ((200 grams dry kidney beans or 2 canned beans (3 cups)))", "rajma", None),
+        # canned is read from the raw name, parentheticals included (b3-plan 2B); the old v1
+        # expectation here was state None
+        ("rajma ((200 grams dry kidney beans or 2 canned beans (3 cups)))", "rajma", "canned"),
         ("Onion (finely chopped)", "onion", None),
         ("finely chopped parsley", "parsley", None),
         ("boiled potatoes", "boiled potatoes", "boiled"),
@@ -340,3 +343,159 @@ def test_json_file_store_round_trips(tmp_path: Path) -> None:
     assert row["food_id"] == "fdc:6"
     assert reloaded.get_grams("abc") == 12.5
     assert json.loads(path.read_text(encoding="utf-8"))["foods"]
+
+
+# --- v2: canned state (b3-plan 2B) -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "name", "state"),
+    [
+        ("14 oz / 420g can red kidney beans", "canned red kidney beans", "canned"),
+        ("1 can of chickpeas", "canned chickpeas", "canned"),
+        ("large can tomatoes", "canned tomatoes", "canned"),
+        ("2 cans coconut milk", "canned coconut milk", "canned"),
+        ("tomatoes (can)", "tomatoes canned", "canned"),
+        ("tinned sweetcorn", "tinned sweetcorn", "canned"),
+        ("2 tomatoes (you can use canned or fresh)", "tomatoes", "canned"),
+        ("1 cup oil (can use ghee)", "oil", None),
+        ("fresh spinach (you can use frozen)", "spinach", None),
+        ("cane sugar", "cane sugar", None),
+    ],
+)
+def test_can_is_canned_only_as_a_container(raw: str, name: str, state: str | None) -> None:
+    cleaned = clean_name(raw)
+    assert (cleaned.name, cleaned.state) == (name, state)
+
+
+@pytest.mark.parametrize(
+    ("raw", "before", "name", "state"),
+    [
+        # the real field layout: the amount is in qty_text, the container word starts the name
+        ("can red kidney beans", "14 oz / 420g", "canned red kidney beans", "canned"),
+        ("can crushed tomato", "800g / 28 oz", "canned crushed tomato", "canned"),
+        ("can chickpeas", "1", "canned chickpeas", "canned"),
+        ("chickpeas", "1 can", "chickpeas", "canned"),
+        ("can coconut milk", "large", "canned coconut milk", "canned"),
+        # no amount or size next to a leading "can": not a container
+        ("can red kidney beans", "", "can red kidney beans", None),
+        ("can use ghee", "1", "can use ghee", None),
+        ("canola oil", "1 tbsp", "canola oil", None),
+        ("cayenne pepper", "1 - 2 tsp", "cayenne pepper", None),
+    ],
+)
+def test_clean_name_reads_the_amount_beside_the_name(
+    raw: str, before: str, name: str, state: str | None
+) -> None:
+    cleaned = clean_name(raw, before=before)
+    assert (cleaned.name, cleaned.state) == (name, state)
+
+
+def test_resolve_recipe_keys_a_can_line_as_canned() -> None:
+    store = InMemoryFoodMapStore()
+    adapter = FakeAdapter(lambda e: ("fdc:6", None))
+    lines = [line("can red kidney beans", "14 oz / 420g")]
+    _resolve(lines, adapter, store)
+    assert store.get_food(FoodKey("canned red kidney beans", "canned", "test-1")) is not None
+    assert store.get_food(FoodKey("can red kidney beans", None, "test-1")) is None
+
+
+# --- v2: null gram answers are cached ----------------------------------------------------------
+
+
+def test_a_null_gram_answer_is_cached_so_the_second_run_makes_no_call() -> None:
+    adapter = FakeAdapter(lambda e: (None, None))
+    store = InMemoryFoodMapStore()
+    lines = [line("onion", "2", "sprigs")]
+    first, stats = _resolve(lines, adapter, store)
+    assert len(adapter.calls) == 1
+    assert first[0].food_id == "fdc:9"
+    assert first[0].llm_grams is None
+    assert stats.grams_requested == 1
+    again = FakeAdapter(lambda e: (None, 99.0))
+    second, stats2 = _resolve(lines, again, store)
+    assert again.calls == []
+    assert second[0].llm_grams is None
+    assert stats2.llm_calls == 0
+
+
+def test_a_failed_call_does_not_cache_a_null_gram_answer() -> None:
+    store = InMemoryFoodMapStore()
+    lines = [line("onion", "2", "sprigs")]
+    _resolve(lines, FakeAdapter(None), store)
+    assert store.grams == {}
+    retry = FakeAdapter(lambda e: (None, 6.0))
+    second, _ = _resolve(lines, retry, store)
+    assert len(retry.calls) == 1
+    assert second[0].llm_grams == 6.0
+
+
+def test_json_store_round_trips_a_null_gram_answer(tmp_path: Path) -> None:
+    path = tmp_path / "food_map.json"
+    store = JsonFileFoodMapStore(path)
+    assert not store.has_grams("k")
+    store.put_grams("k", None, model="gpt-5-mini", now=NOW)
+    reloaded = JsonFileFoodMapStore(path)
+    assert reloaded.has_grams("k")
+    assert reloaded.get_grams("k") is None
+
+
+# --- v2: curation beats the cache (b3-plan, matcher order) -------------------------------------
+
+CURATED = FoodTable.from_document(
+    {
+        "foods_version": "test-1",
+        "no_food": ["kasuri methi", "dried fenugreek leaves"],
+        "foods": [
+            food("20", "Spices, fenugreek seed", group="Spices and Herbs"),
+            food("21", "Ginger root, raw", aliases=["ginger garlic paste"]),
+        ],
+    }
+)
+
+
+def _resolve_curated(lines: list[Any], store: InMemoryFoodMapStore) -> tuple[list[Any], Any]:
+    return resolve_recipe(
+        lines,
+        table=CURATED,
+        store=store,
+        adapter=FakeAdapter(lambda e: ("fdc:20", None)),
+        guard=SpendGuard(),
+        now=lambda: NOW,
+    )
+
+
+def test_no_food_is_unmatched_without_a_call_and_beats_a_cached_pick() -> None:
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("kasuri methi", None, "test-1"), "fdc:20", model="m", now=NOW)
+    adapter = FakeAdapter(lambda e: ("fdc:20", None))
+    resolutions, stats = resolve_recipe(
+        [line("kasuri methi", "1", "tsp"), line("dried fenugreek leaves", "1", "tsp")],
+        table=CURATED,
+        store=store,
+        adapter=adapter,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+    )
+    assert adapter.calls == []
+    assert [r.food_id for r in resolutions] == [None, None]
+    assert [r.miss for r in resolutions] == ["no_food_by_curation", "no_food_by_curation"]
+    assert stats.misses == {"no_food_by_curation": 2}
+    assert deterministic_match("kasuri methi", CURATED) == (None, "no_food")
+
+
+def test_an_alias_beats_a_cached_null() -> None:
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("ginger garlic paste", None, "test-1"), None, model="m", now=NOW)
+    resolutions, stats = _resolve_curated([line("ginger garlic paste", "1", "tbsp")], store)
+    assert resolutions[0].food_id == "fdc:21"
+    assert resolutions[0].food_source == "alias"
+    assert stats.cache_hits == 0
+
+
+def test_a_cached_pick_still_serves_a_name_with_no_deterministic_result() -> None:
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("kidney beans", None, "test-1"), "fdc:6", model="m", now=NOW)
+    resolutions, stats = _resolve([line("kidney beans", "1", "cup")], FakeAdapter(None), store)
+    assert resolutions[0].food_id == "fdc:6"
+    assert stats.cache_hits == 1

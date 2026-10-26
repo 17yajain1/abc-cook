@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from abc_cook.devtools.build_foods import _portion_unit, _veg_flag
+from abc_cook.devtools.build_foods import _portion_unit, _veg_flag, apply_veg_overrides
 from abc_cook.nutrition.foods import load_foods
 
 
@@ -75,3 +75,45 @@ def test_indian_names_resolve_to_a_reviewable_alias() -> None:
     # a regional item with no honest USDA row stays unmatched
     for alias in ("garam masala", "curry leaves", "hing", "jaggery"):
         assert alias not in table.by_alias, alias
+
+
+def test_ginger_garlic_paste_is_an_alias_to_ginger() -> None:
+    table = load_foods()
+    for alias in ("ginger garlic paste", "garlic ginger paste", "ginger and garlic paste"):
+        assert table.foods[table.by_alias[alias]].name == "Ginger root, raw", alias
+
+
+def test_kasuri_methi_is_no_food_not_fenugreek_seed() -> None:
+    table = load_foods()
+    assert {"kasuri methi", "dried fenugreek leaves"} <= table.no_food
+    assert "kasuri methi" not in table.by_alias
+
+
+def test_veg_overrides_are_applied_to_plain_pantry_staples() -> None:
+    table = load_foods()
+    for food_id in ("fdc:174158", "fdc:746784", "fdc:169640", "fdc:175040", "fdc:167532"):
+        assert table.foods[food_id].veg == "veg", food_id
+    # chocolate, wine and the sauces are not overridden
+    for food_id in ("fdc:167976", "fdc:169070", "fdc:174529"):
+        assert table.foods[food_id].veg == "unknown", food_id
+
+
+def test_a_veg_override_only_flips_unknown_to_veg() -> None:
+    foods = {
+        "fdc:1": {"name": "Water", "veg": "unknown"},
+        "fdc:2": {"name": "Bacon", "veg": "non_veg"},
+        "fdc:3": {"name": "Egg", "veg": "egg"},
+        "fdc:4": {"name": "Onion", "veg": "veg"},
+    }
+    apply_veg_overrides(foods, [{"fdc_id": 1, "veg": "veg"}, {"fdc_id": 4, "veg": "veg"}])
+    assert foods["fdc:1"]["veg"] == "veg"
+    assert foods["fdc:4"]["veg"] == "veg"
+    for bad in (2, 3):
+        with pytest.raises(SystemExit, match="not overridable"):
+            apply_veg_overrides(foods, [{"fdc_id": bad, "veg": "veg"}])
+    with pytest.raises(SystemExit, match="not in the food list"):
+        apply_veg_overrides(foods, [{"fdc_id": 99, "veg": "veg"}])
+
+
+def test_foods_version_is_b3() -> None:
+    assert load_foods().foods_version.endswith("/b3-1")

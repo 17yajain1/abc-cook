@@ -53,6 +53,8 @@ class FoodTable:
     foods: dict[str, Food]
     by_name: dict[str, str]
     by_alias: dict[str, str]
+    no_food: frozenset[str] = frozenset()
+    """Names with no honest USDA row (curation): they stay unmatched without an LLM call."""
 
     @classmethod
     def from_document(cls, document: dict[str, Any]) -> FoodTable:
@@ -84,7 +86,8 @@ class FoodTable:
             by_name.setdefault(food.name.casefold(), food.id)
             for alias in aliases:
                 by_alias.setdefault(alias, food.id)
-        return cls(document["foods_version"], foods, by_name, by_alias)
+        no_food = frozenset(n.casefold() for n in document.get("no_food", []))
+        return cls(document["foods_version"], foods, by_name, by_alias, no_food)
 
     def get(self, food_id: str) -> Food | None:
         """The food with this id, or None."""

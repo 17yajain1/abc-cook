@@ -26,6 +26,17 @@ LineFlag = Literal[
     "range_midpoint",
     "to_taste",
     "unparseable_amount",
+    "absorbed_estimate",
+    "fry_method_uncertain",
+    "deep_fry_fallback",
+]
+FatMethod = Literal["deep_fry", "shallow_or_plain"]
+FatRule = Literal[
+    "stated",
+    "default_half_tbsp",
+    "default_1tsp_beside_stated",
+    "deep_fry_10pct",
+    "deep_fry_fallback",
 ]
 
 
@@ -85,6 +96,15 @@ class IngredientNutrition(BaseModel):
     flags: list[LineFlag] = Field(default_factory=list)
     hint_reading: HintReading | None = None
     portion: PortionRef | None = None
+    fat_method: FatMethod | None = Field(
+        default=None, description="For an oil, ghee or butter line: how the fat is used."
+    )
+    fat_rule: FatRule | None = Field(
+        default=None, description="For a fat line: which amount rule produced `grams`."
+    )
+    fried_grams: float | None = Field(
+        default=None, description="For a deep-fry line: the raw weight of the food being fried."
+    )
 
 
 class RecipeNutrition(BaseModel):
@@ -98,8 +118,25 @@ class RecipeNutrition(BaseModel):
         "`estimated`.",
     )
     per_serving: NutrientAmounts
-    total: NutrientAmounts
+    total: NutrientAmounts = Field(
+        description="Whole recipe (all servings), not per serving: `per_serving` times "
+        "`servings_basis`."
+    )
     confidence: Confidence
+    confidence_proposed: Confidence = Field(
+        description="Shadow label under the B2 report's proposed thresholds. `confidence` stays "
+        "the official one until the owner decides."
+    )
+    optional_extras_kcal_per_serving: float | None = Field(
+        default=None,
+        description="Kcal per serving of the lines left out as optional, computed like counted "
+        "lines. None when there are no optional lines or none can be computed.",
+    )
+    optional_extras_unmatched: list[str] = Field(
+        default_factory=list,
+        description="Optional lines that could not be computed. Non-empty means the extras sum "
+        "is partial.",
+    )
     drivers: list[Driver] = Field(default_factory=list)
     rows: list[IngredientNutrition] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)

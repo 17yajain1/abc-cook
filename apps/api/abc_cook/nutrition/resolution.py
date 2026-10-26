@@ -13,6 +13,7 @@ MissReason = Literal[
     "llm_failed",  # the call failed or returned nothing usable
     "spend_guard",  # the call was refused to stay under the ₹ cap
     "cached_none",  # an earlier run already found no food for this name
+    "no_food_by_curation",  # curation says USDA has no honest row for this name (no LLM call)
 ]
 
 

@@ -2,12 +2,15 @@
 
 Pure: the same ingredients, servings and resolutions give the same result, and `computed_at` is
 passed in rather than read from a clock. Confidence labels follow §6, rules in order, first match
-wins; the thresholds are placeholders until B2 calibrates them.
+wins; the thresholds are placeholders until the owner decides. A second, shadow label
+(`confidence_proposed`) follows the B2 report's proposed thresholds. Fat lines get their amount
+from how the fat is used (`fat.py`), not from one flat default (b3-plan 2A).
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
@@ -15,6 +18,15 @@ from typing import Literal
 from abc_cook.extract.graph import SERVINGS_DEFAULTED_WARNING
 from abc_cook.nutrition import NUTRITION_VERSION
 from abc_cook.nutrition.diet import derive_diet
+from abc_cook.nutrition.fat import (
+    FatLinks,
+    classify_fat,
+    fat_line_text,
+    fried_ingredient_ids,
+    has_fry_line_cue,
+    link_nodes,
+    step_text,
+)
 from abc_cook.nutrition.foods import Food, FoodTable, load_foods
 from abc_cook.nutrition.grams import (
     ML_PER_UNIT,
@@ -24,9 +36,12 @@ from abc_cook.nutrition.grams import (
 )
 from abc_cook.nutrition.resolution import LineResolution
 from abc_cook.schema.ingredient import Ingredient
+from abc_cook.schema.node import Node
 from abc_cook.schema.nutrition import (
     Confidence,
     Driver,
+    FatMethod,
+    FatRule,
     FoodRef,
     GramsBasis,
     IngredientNutrition,
@@ -35,7 +50,15 @@ from abc_cook.schema.nutrition import (
     RecipeNutrition,
 )
 
-DEFAULT_FAT_TBSP_PER_SERVING = 1.0
+DEFAULT_FAT_TBSP_PER_SERVING = 0.5
+"""A shallow or plain fat line with no amount: half a tablespoon per serving."""
+BESIDE_STATED_FAT_TSP_PER_SERVING = 1.0
+"""The same, when another counted fat line in the recipe has its own amount."""
+DEEP_FRY_ABSORBED_SHARE = 0.10
+"""A deep-fry line is the oil the food absorbs: 10% of the raw weight of the fried food."""
+DEEP_FRY_FALLBACK_TBSP_PER_SERVING = 1.0
+UNCERTAIN_DEEP_MAX_TBSP = 3.0
+"""A deep-fry cue found only in a linked step, beside a stated amount this small, is flagged."""
 SOURCE_LABEL = "USDA FoodData Central (SR Legacy + Foundation)"
 
 # Placeholder thresholds (part-a-plan §6), calibrated by the B2 report, not by this code.
@@ -44,6 +67,10 @@ UNMATCHED_LINES_ROUGH_SHARE = 0.20
 STATED_TABLE_KCAL_CALCULATED_SHARE = 0.90
 TOP_LINES_CHECKED = 5
 DRIVER_COUNT = 3
+
+# The B2 report's proposals, computed as a shadow label (b3-plan 2E).
+PROPOSED_ESTIMATED_KCAL_ROUGH_SHARE = 0.35
+PROPOSED_UNMATCHED_GRAMS_ROUGH_SHARE = 0.20
 
 _TO_TASTE_RE = re.compile(r"\bto taste\b|\bas needed\b|\bas required\b", re.IGNORECASE)
 _OPTIONAL_RE = re.compile(r"\boptional\b", re.IGNORECASE)
@@ -79,7 +106,19 @@ class _Row:
     result: GramsResult | None = None
     excluded: Literal["optional", "to_taste"] | None = None
     kcal: float = 0.0
+    """Counted kcal: 0 on an excluded row."""
+    potential_kcal: float | None = None
+    """What the line would add if counted: None when no food or no grams."""
     impact: str | None = None
+    had_amount: bool = False
+    """The line gave grams before any fat default or deep-fry estimate."""
+    fat_method: FatMethod | None = None
+    fat_rule: FatRule | None = None
+    fried_grams: float | None = None
+
+    def add_flag(self, flag: LineFlag) -> None:
+        if flag not in self.flags:
+            self.flags.append(flag)
 
 
 def servings_basis_source(servings_stated: bool, warnings: list[str]) -> str:
@@ -148,20 +187,18 @@ def is_salt_or_pepper_to_taste(ing: Ingredient) -> bool:
     return has_salt or has_pepper
 
 
-def _default_fat_grams(food: Food, servings: int) -> float:
+def _spoon_grams(food: Food, unit: str) -> float:
+    """Grams in one `tbsp` or `tsp` of this food: its own FDC portion, else ml times density."""
     for portion in food.portions:
-        if portion.unit == "tbsp":
-            return portion.grams * DEFAULT_FAT_TBSP_PER_SERVING * servings
-    return ML_PER_UNIT["tbsp"] * density(food) * DEFAULT_FAT_TBSP_PER_SERVING * servings
+        if portion.unit == unit:
+            return portion.grams
+    return ML_PER_UNIT[unit] * density(food)
 
 
-def _resolve_row(
-    index: int, ing: Ingredient, resolution: LineResolution, table: FoodTable, servings: int
-) -> _Row:
+def _resolve_row(index: int, ing: Ingredient, resolution: LineResolution, table: FoodTable) -> _Row:
     food = table.get(resolution.food_id) if resolution.food_id else None
     row = _Row(index, ing, food)
-    text = line_text(ing)
-    row.impact = impact_class(food, text)
+    row.impact = impact_class(food, line_text(ing))
     result = line_grams(ing, food)
     row.result = result
     row.flags = list(result.flags)
@@ -175,17 +212,102 @@ def _resolve_row(
     grams, basis = result.grams, result.basis
     if grams is None and result.needs_llm and resolution.llm_grams is not None:
         grams, basis = resolution.llm_grams, "estimated"
-    if grams is None and food is not None and is_fat(food) and not result.needs_llm:
-        grams = _default_fat_grams(food, servings)
-        basis = "estimated"
-        row.flags.append("default_fat")
-        if _FRYING_RE.search(f"{ing.name} {ing.prep_note or ''} {ing.qty_text or ''}"):
-            row.flags.append("frying")
     row.grams = grams
     row.basis = "unmatched" if food is None else basis
-    if food is not None and grams is not None and row.excluded is None:
-        row.kcal = grams * food.kcal / 100.0
+    row.had_amount = grams is not None
     return row
+
+
+# --- fat lines (b3-plan 2A) -------------------------------------------------------------------
+
+
+def _apply_fat_rules(rows: list[_Row], servings: int, nodes: Sequence[Node] | None) -> None:
+    """Classify every fat line and set its grams: stated, a default, or the deep-fry estimate."""
+    fat_rows = [r for r in rows if is_fat(r.food)]
+    if not fat_rows:
+        return
+    fat_ids = {r.ing.id for r in fat_rows}
+    by_ing = {r.ing.id: r for r in rows}
+    links: dict[int, FatLinks] = {}
+
+    for r in fat_rows:
+        links[r.index] = link_nodes(r.ing.id, fat_ids, nodes) if nodes else FatLinks((), ())
+        line = fat_line_text(r.ing)
+        cls = classify_fat(line, [step_text(n) for n in links[r.index].linked])
+        r.fat_method = cls.method
+        if cls.uncertain:
+            r.add_flag("fry_method_uncertain")
+        if cls.method == "deep_fry":
+            food = r.food
+            small_stated = (
+                cls.deep_cue_from_steps_only
+                and r.had_amount
+                and food is not None
+                and r.grams is not None
+                and r.grams <= UNCERTAIN_DEEP_MAX_TBSP * _spoon_grams(food, "tbsp")
+            )
+            if small_stated:
+                r.add_flag("fry_method_uncertain")
+
+    for r in fat_rows:
+        if r.fat_method != "deep_fry":
+            continue
+        food = r.food
+        assert food is not None
+        r.add_flag("frying")
+        r.basis = "estimated"
+        fried_ids = fried_ingredient_ids(links[r.index].fry_nodes, nodes or (), fat_ids)
+        mass = sum(
+            (by_ing[i].grams or 0.0)
+            for i in fried_ids
+            if i in by_ing and by_ing[i].excluded is None
+        )
+        if mass > 0:
+            r.grams = DEEP_FRY_ABSORBED_SHARE * mass
+            r.fried_grams = mass
+            r.fat_rule = "deep_fry_10pct"
+            r.add_flag("absorbed_estimate")
+        else:
+            r.grams = _spoon_grams(food, "tbsp") * DEEP_FRY_FALLBACK_TBSP_PER_SERVING * servings
+            r.fat_rule = "deep_fry_fallback"
+            r.add_flag("deep_fry_fallback")
+
+    for r in fat_rows:
+        if r.fat_method != "shallow_or_plain":
+            continue
+        food = r.food
+        assert food is not None
+        line = fat_line_text(r.ing)
+        if has_fry_line_cue(line) or _FRYING_RE.search(line):
+            r.add_flag("frying")
+        if r.had_amount:
+            r.fat_rule = "stated"
+            continue
+        if r.result is not None and r.result.needs_llm:
+            continue  # a count the resolver cannot convert: left missing, as before
+        beside_stated = any(
+            o is not r
+            and o.fat_method == "shallow_or_plain"
+            and o.had_amount
+            and o.excluded is None
+            for o in fat_rows
+        )
+        if beside_stated:
+            r.grams = _spoon_grams(food, "tsp") * BESIDE_STATED_FAT_TSP_PER_SERVING * servings
+            r.fat_rule = "default_1tsp_beside_stated"
+            r.add_flag("fat_default_beside_stated_fat")
+        else:
+            r.grams = _spoon_grams(food, "tbsp") * DEFAULT_FAT_TBSP_PER_SERVING * servings
+            r.fat_rule = "default_half_tbsp"
+        r.basis = "estimated"
+        r.add_flag("default_fat")
+
+
+def _finalize_kcal(rows: list[_Row]) -> None:
+    for r in rows:
+        if r.food is not None and r.grams is not None:
+            r.potential_kcal = r.grams * r.food.kcal / 100.0
+        r.kcal = (r.potential_kcal or 0.0) if r.excluded is None else 0.0
 
 
 def _nutrients(food: Food, grams: float) -> NutrientAmounts:
@@ -199,24 +321,11 @@ def _nutrients(food: Food, grams: float) -> NutrientAmounts:
     )
 
 
-def _label(rows: list[_Row], assumed: bool) -> Confidence:
-    counted = [r for r in rows if r.excluded is None]
-    total_kcal = sum(r.kcal for r in counted)
-    estimated_kcal = sum(r.kcal for r in counted if r.basis == "estimated")
+# --- labels -----------------------------------------------------------------------------------
+
+
+def _calculated_or_estimated(counted: list[_Row], total_kcal: float, assumed: bool) -> Confidence:
     solid_kcal = sum(r.kcal for r in counted if r.basis in ("stated", "table"))
-    unmatched = [r for r in counted if r.food is None]
-    big_missing = any(
-        r.basis == "missing" and r.impact in ("meat", "sugar", "nuts", "cream") for r in counted
-    )
-    big_unmatched = any(r.impact is not None for r in unmatched)
-    rough = (
-        big_missing
-        or big_unmatched
-        or (total_kcal > 0 and estimated_kcal / total_kcal > ESTIMATED_KCAL_ROUGH_SHARE)
-        or (counted and len(unmatched) / len(counted) > UNMATCHED_LINES_ROUGH_SHARE)
-    )
-    if rough:
-        return "rough"
     top = sorted(counted, key=lambda r: r.kcal, reverse=True)[:TOP_LINES_CHECKED]
     calculated = (
         total_kcal > 0
@@ -229,6 +338,54 @@ def _label(rows: list[_Row], assumed: bool) -> Confidence:
     return "estimated"
 
 
+def _high_impact_problem(counted: list[_Row]) -> bool:
+    big_missing = any(
+        r.basis == "missing" and r.impact in ("meat", "sugar", "nuts", "cream") for r in counted
+    )
+    big_unmatched = any(r.impact is not None for r in counted if r.food is None)
+    return big_missing or big_unmatched
+
+
+def _label(rows: list[_Row], assumed: bool) -> Confidence:
+    """The official label: part-a-plan §6 rules, in order, first match wins."""
+    counted = [r for r in rows if r.excluded is None]
+    total_kcal = sum(r.kcal for r in counted)
+    estimated_kcal = sum(r.kcal for r in counted if r.basis == "estimated")
+    unmatched = [r for r in counted if r.food is None]
+    rough = (
+        _high_impact_problem(counted)
+        or (total_kcal > 0 and estimated_kcal / total_kcal > ESTIMATED_KCAL_ROUGH_SHARE)
+        or (counted and len(unmatched) / len(counted) > UNMATCHED_LINES_ROUGH_SHARE)
+    )
+    if rough:
+        return "rough"
+    return _calculated_or_estimated(counted, total_kcal, assumed)
+
+
+def _label_proposed(rows: list[_Row], assumed: bool) -> Confidence:
+    """The shadow label under the B2 report's proposals (b3-plan 2E).
+
+    A range midpoint no longer counts as estimated for the kcal-share rule, whose limit is 35%;
+    the unmatched rule is measured in grams, not lines. The "calculated" rule and the
+    assumed-servings cap are unchanged.
+    """
+    counted = [r for r in rows if r.excluded is None]
+    total_kcal = sum(r.kcal for r in counted)
+    estimated_kcal = sum(
+        r.kcal for r in counted if r.basis == "estimated" and "range_midpoint" not in r.flags
+    )
+    all_grams = sum(r.grams or 0.0 for r in counted)
+    unmatched_grams = sum(r.grams or 0.0 for r in counted if r.food is None)
+    rough = (
+        _high_impact_problem(counted)
+        or (total_kcal > 0 and estimated_kcal / total_kcal > PROPOSED_ESTIMATED_KCAL_ROUGH_SHARE)
+        or (all_grams > 0 and unmatched_grams / all_grams > PROPOSED_UNMATCHED_GRAMS_ROUGH_SHARE)
+    )
+    if rough:
+        return "rough"
+    return _calculated_or_estimated(counted, total_kcal, assumed)
+
+
 def compute_nutrition(
     ingredients: list[Ingredient],
     servings: int,
@@ -238,6 +395,7 @@ def compute_nutrition(
     *,
     computed_at: datetime,
     table: FoodTable | None = None,
+    nodes: Sequence[Node] | None = None,
 ) -> RecipeNutrition:
     """Per-serving nutrition for `ingredients`, one `LineResolution` per line.
 
@@ -249,22 +407,21 @@ def compute_nutrition(
         resolutions: What the matcher decided, in the same order as `ingredients`.
         computed_at: Stamped on the result (passed in so the function stays pure).
         table: The food table; defaults to the bundled one.
+        nodes: `CookingGraph.nodes`. Without them a fat line is classified from its own text only,
+            and a deep-fry line falls back to a flat amount (nothing says what is being fried).
 
     Returns:
-        The per-serving numbers, a confidence label, the top drivers and every line's working.
+        The per-serving numbers, a confidence label (official and shadow), the top drivers and
+        every line's working.
     """
     table = table or load_foods()
     servings = max(1, servings)
     rows = [
-        _resolve_row(i, ing, res, table, servings)
+        _resolve_row(i, ing, res, table)
         for i, (ing, res) in enumerate(zip(ingredients, resolutions, strict=True))
     ]
-    stated_fat = any(
-        is_fat(r.food) and r.basis in ("stated", "table") and r.excluded is None for r in rows
-    )
-    for r in rows:
-        if "default_fat" in r.flags and stated_fat:
-            r.flags.append("fat_default_beside_stated_fat")
+    _apply_fat_rules(rows, servings, nodes)
+    _finalize_kcal(rows)
 
     total = NutrientAmounts()
     out: list[IngredientNutrition] = []
@@ -296,6 +453,9 @@ def compute_nutrition(
                 flags=r.flags,
                 hint_reading=result.hint_reading if result else None,
                 portion=result.portion if result else None,
+                fat_method=r.fat_method,
+                fat_rule=r.fat_rule,
+                fried_grams=r.fried_grams,
             )
         )
 
@@ -317,6 +477,11 @@ def compute_nutrition(
         )
         for r in top[:DRIVER_COUNT]
     ]
+    optional_rows = [r for r in rows if r.excluded == "optional"]
+    computable = [r for r in optional_rows if r.potential_kcal is not None]
+    extras_kcal = (
+        sum(r.potential_kcal or 0.0 for r in computable) / servings if computable else None
+    )
     return RecipeNutrition(
         nutrition_version=NUTRITION_VERSION,
         computed_at=computed_at,
@@ -325,6 +490,11 @@ def compute_nutrition(
         per_serving=per,
         total=total,
         confidence=_label(rows, assumed),
+        confidence_proposed=_label_proposed(rows, assumed),
+        optional_extras_kcal_per_serving=extras_kcal,
+        optional_extras_unmatched=[
+            line_text(r.ing) for r in optional_rows if r.potential_kcal is None
+        ],
         drivers=drivers,
         rows=out,
         sources=[SOURCE_LABEL] if any(r.food for r in rows) else [],

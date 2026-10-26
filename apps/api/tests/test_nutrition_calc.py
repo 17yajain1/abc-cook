@@ -85,15 +85,19 @@ def test_per_serving_is_total_over_servings() -> None:
     assert result.sources
 
 
-def test_missing_oil_defaults_to_one_tbsp_per_serving_and_is_estimated() -> None:
+def test_missing_oil_defaults_to_half_a_tbsp_per_serving_and_is_estimated() -> None:
+    # v1 took a flat 1 tbsp per serving; v2 (NUTRITION_VERSION 2) takes half a tbsp, and a
+    # "for frying" line with no method cue at all is also flagged uncertain.
     result = _run([line("oil for frying")], ["2"], servings=4)
     row = result.rows[0]
-    assert row.grams == pytest.approx(4 * 14.0)
+    assert row.grams == pytest.approx(4 * 0.5 * 14.0)
     assert row.grams_basis == "estimated"
     assert "default_fat" in row.flags
     assert "frying" in row.flags
+    assert "fry_method_uncertain" in row.flags
     assert "fat_default_beside_stated_fat" not in row.flags
-    assert result.per_serving.kcal == pytest.approx(14.0 * 8.84)
+    assert (row.fat_method, row.fat_rule) == ("shallow_or_plain", "default_half_tbsp")
+    assert result.per_serving.kcal == pytest.approx(0.5 * 14.0 * 8.84)
 
 
 def test_default_fat_beside_a_stated_fat_is_flagged() -> None:
@@ -102,6 +106,9 @@ def test_default_fat_beside_a_stated_fat_is_flagged() -> None:
     assert "default_fat" in oil.flags
     assert "fat_default_beside_stated_fat" in oil.flags
     assert "default_fat" not in result.rows[0].flags
+    assert oil.fat_rule == "default_1tsp_beside_stated"
+    assert oil.grams == pytest.approx(5.0 * (14.0 / 15.0) * 4)  # 1 tsp per serving, 4 servings
+    assert result.rows[0].fat_rule == "stated"
 
 
 def test_other_missing_amounts_are_zero_grams_and_missing() -> None:
@@ -264,3 +271,115 @@ def test_diet_is_derived_and_records_the_foods_version() -> None:
     result = _run([line("rice", "100", "g"), line("chicken", "100", "g")], ["1", "4"])
     assert result.diet == "non_veg"
     assert result.diet_foods_version == "test-1"
+
+
+# --- v2: optional extras, whole-recipe totals, shadow label --------------------------------------
+
+
+def test_optional_extras_are_reported_per_serving_and_not_counted() -> None:
+    lines = [line("rice", "100", "g"), line("cashews (optional)", "40", "g")]
+    result = _run(lines, ["1", "9"], servings=2)
+    assert result.total.kcal == pytest.approx(360)  # unchanged: the optional line is out
+    assert result.rows[1].est_kcal == 0
+    assert result.optional_extras_kcal_per_serving == pytest.approx(40 * 5.53 / 2)
+    assert result.optional_extras_unmatched == []
+
+
+def test_optional_extras_use_the_same_defaults_as_counted_lines() -> None:
+    lines = [line("rice", "100", "g"), line("ghee (optional)")]
+    result = _run(lines, ["1", "3"], servings=2)
+    # butter, no amount: half a tbsp per serving (14.2 g/tbsp), 717 kcal/100 g
+    assert result.optional_extras_kcal_per_serving == pytest.approx(0.5 * 14.2 * 2 * 7.17 / 2)
+    assert result.rows[1].fat_rule == "default_half_tbsp"
+    assert result.total.kcal == pytest.approx(360)
+
+
+def test_optional_extras_are_none_without_optional_lines_or_when_none_compute() -> None:
+    assert _run([line("rice", "100", "g")], ["1"]).optional_extras_kcal_per_serving is None
+    only_unmatched = _run(
+        [line("rice", "100", "g"), line("mystery (optional)", "1", "tsp")], ["1", None]
+    )
+    assert only_unmatched.optional_extras_kcal_per_serving is None
+    assert only_unmatched.optional_extras_unmatched == ["1 tsp mystery (optional)"]
+
+
+def test_a_partial_extras_sum_lists_what_it_left_out() -> None:
+    lines = [
+        line("rice", "100", "g"),
+        line("cashews (optional)", "40", "g"),
+        line("mystery (optional)", "1", "tsp"),
+    ]
+    result = _run(lines, ["1", "9", None])
+    assert result.optional_extras_kcal_per_serving == pytest.approx(40 * 5.53 / 4)  # 4 servings
+    assert result.optional_extras_unmatched == ["1 tsp mystery (optional)"]
+
+
+def test_total_is_the_whole_recipe_and_per_serving_times_servings_basis() -> None:
+    result = _run([line("rice", "300", "g"), line("onion", "2", "medium")], ["1", "7"], servings=3)
+    for name in ("kcal", "protein_g", "carbs_g", "fat_g", "fibre_g"):
+        assert getattr(result.total, name) == pytest.approx(
+            getattr(result.per_serving, name) * result.servings_basis
+        )
+    assert result.total.kcal == pytest.approx(300 * 3.6 + 220 * 0.4)
+
+
+def test_the_shadow_label_is_computed_beside_the_official_one() -> None:
+    result = _run([line("rice", "300", "g"), line("onion", "2", "medium")], ["1", "7"])
+    assert result.confidence == "calculated"
+    assert result.confidence_proposed == "calculated"
+
+
+def test_a_range_midpoint_does_not_make_a_recipe_rough_under_the_shadow_label() -> None:
+    # rice 100 g = 360 kcal; cashews "1-2 tbsp" is a range midpoint (estimated): well over 25%
+    # of the calories but not a defaulted amount
+    lines = [line("rice", "100", "g"), line("cashews", "20-30", "g")]
+    result = _run(lines, ["1", "9"])
+    cashew_share = (25 * 5.53) / (360 + 25 * 5.53)
+    assert cashew_share > 0.25
+    assert result.confidence == "rough"
+    assert result.confidence_proposed != "rough"
+
+
+def test_the_shadow_estimated_limit_is_35_percent_and_a_default_still_counts() -> None:
+    # a defaulted oil amount is not a range midpoint, so it still counts as estimated
+    rough = _run([line("rice", "100", "g"), line("oil")], ["1", "2"], servings=4)
+    assert rough.confidence == "rough"
+    assert rough.confidence_proposed == "rough"  # 247 of 607 kcal = 41% > 35%
+    ok = _run([line("rice", "150", "g"), line("oil")], ["1", "2"], servings=4)
+    # 247 of 787 kcal = 31%: over the official 25%, under the proposed 35%
+    assert ok.confidence == "rough"
+    assert ok.confidence_proposed == "estimated"
+
+
+def test_the_shadow_unmatched_rule_is_by_grams_not_lines() -> None:
+    # 1 of 4 lines unmatched (25% of lines) but 1 tsp is 5 g of 305 g
+    lines = [
+        line("rice", "300", "g"),
+        line("a", "1", "tsp"),
+        line("b", "1", "tsp"),
+        line("c", "1", "tsp"),
+    ]
+    result = _run(lines, ["1", "7", "7", None])
+    assert result.confidence == "rough"
+    assert result.confidence_proposed != "rough"
+    # a big unmatched line is rough under both
+    big = _run([line("rice", "100", "g"), line("c", "400", "g")], ["1", None])
+    assert big.confidence_proposed == "rough"
+
+
+def test_count_only_unmatched_lines_have_no_grams_and_do_not_move_the_shadow_share() -> None:
+    lines = [line("rice", "300", "g"), line("onion", "2", "medium"), line("garam masala", "2")]
+    result = _run(lines, ["1", "7", None])
+    assert result.rows[2].grams is None
+    assert result.confidence_proposed != "rough"
+
+
+def test_the_shadow_label_keeps_the_assumed_servings_cap() -> None:
+    lines = [line("rice", "300", "g"), line("onion", "2", "medium")]
+    assert _run(lines, ["1", "7"], stated=False).confidence_proposed == "estimated"
+
+
+def test_the_shadow_label_keeps_the_high_impact_rules() -> None:
+    assert (
+        _run([line("rice", "300", "g"), line("chicken")], ["1", "4"]).confidence_proposed == "rough"
+    )

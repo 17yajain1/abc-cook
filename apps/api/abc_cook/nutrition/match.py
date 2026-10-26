@@ -1,9 +1,10 @@
 """Match ingredient lines to USDA foods (b2-plan Step 3, part-a-plan §5).
 
-Order: (1) the food-map cache; (2) a deterministic exact or alias match; (3) one batched
-gpt-5-mini call per recipe for what is left, choosing only from a shortlist of about 25 foods
-per line (token overlap plus alias-table neighbours). An id outside the line's shortlist is
-rejected and the line stays unmatched. The same call may also return a gram estimate for a
+Order: (1) the curated deterministic step (a `no_food` name, then an exact or alias match); (2)
+the food-map cache, only when (1) found nothing; (3) one batched gpt-5-mini call per recipe for
+what is left, choosing only from a shortlist of about 25 foods per line (token overlap plus
+alias-table neighbours). An id outside the line's shortlist is rejected and the line stays
+unmatched. The same call may also return a gram estimate for a
 matched line the gram resolver could not convert.
 
 This is the only module in the package that does I/O: the optional JSON file store and the LLM
@@ -72,15 +73,41 @@ class CleanName:
     state: str | None
 
 
-def clean_name(raw: str) -> CleanName:
+_UNIT_WORD = r"(?:g|gm|gms|grams?|kg|ml|l|oz|ounces?|lbs?|pounds?|litres?|liters?)"
+_CANNED_WORD_RE = re.compile(r"\b(?:canned|tinned|tin)\b")
+# "can" is a container only after a number or size word, in "can of", or as "(can)".
+_CAN_CONTAINER_RE = re.compile(
+    rf"\d\s*{_UNIT_WORD}?\s*cans?\b(?!\s+(?:use|be|also|substitute|replace|omit|skip|add|swap)\b)"
+    r"|\b(?:small|medium|large|big|standard|regular)\s+can\b"
+    r"|\bcans?\s+of\b"
+    r"|\(\s*can\s*\)"
+)
+_LEADING_CAN_RE = re.compile(r"^\s*cans?\b")
+
+
+def clean_name(raw: str, *, before: str = "") -> CleanName:
     """Normalise an ingredient name for matching.
 
     Strips parentheticals, a leading amount, and prep words. Keeps the state words (cooked,
     boiled, soaked, canned, roasted, fried, dry, raw) in the name and reports the first one as
-    `state`, read from the main text only: a parenthetical like "(or canned beans)" is an
-    alternative, not the state of this line.
+    `state`, read from the main text. The canned state is the exception: it is read from the raw
+    name before parentheticals go, because "(you can use canned or fresh)" still tells the cook
+    the line may be canned. `canned`, `tinned` and `tin` count anywhere; `can` counts only as a
+    container ("1 can", "14 oz can", "large can", "can of", "(can)"), and then stands in the
+    cleaned name as `canned`.
+
+    Args:
+        raw: The ingredient name.
+        before: The line's amount and unit (`qty_text` + `unit`). The graph keeps them in their
+            own fields, so "14 oz / 420g" + "can red kidney beans" only reads as a can when the
+            amount is seen next to the name. It is context only; it never enters the name.
     """
     text = raw.lower().replace("&amp;", "&")
+    context = f"{before} {text}".lower()
+    canned = bool(_CANNED_WORD_RE.search(context) or _CAN_CONTAINER_RE.search(context))
+    if _CAN_CONTAINER_RE.search(context) and not _CAN_CONTAINER_RE.search(text):
+        text = _LEADING_CAN_RE.sub(" canned ", text)  # the amount sat in `before`
+    text = _CAN_CONTAINER_RE.sub(" canned ", text)
     previous = None
     while previous != text:
         previous = text
@@ -90,6 +117,8 @@ def clean_name(raw: str) -> CleanName:
     words = [w for w in re.findall(r"[a-z]+|/", text) if w not in _PREP_WORDS]
     cleaned = " ".join(words).replace(" / ", " / ").strip(" /")
     state = next((w for w in re.findall(r"[a-z]+", cleaned) if w in STATE_WORDS), None)
+    if canned:
+        state = "canned"
     return CleanName(re.sub(r"\s+", " ", cleaned), state)
 
 
@@ -104,9 +133,16 @@ def candidates(cleaned: str) -> list[str]:
     return list(seen)
 
 
-def deterministic_match(cleaned: str, table: FoodTable) -> tuple[str, str] | None:
-    """(food_id, "alias" | "exact") for the first candidate the table knows, or None."""
-    for name in candidates(cleaned):
+def deterministic_match(cleaned: str, table: FoodTable) -> tuple[str | None, str] | None:
+    """(food_id, "alias" | "exact") for the first candidate the table knows, or None.
+
+    A name the curation lists as having no honest food returns (None, "no_food") before any
+    alias or exact match is tried, so it stays unmatched and costs no LLM call.
+    """
+    names = candidates(cleaned)
+    if any(name in table.no_food for name in names):
+        return None, "no_food"
+    for name in names:
         if name in table.by_alias:
             return table.by_alias[name], "alias"
         if name in table.by_name:
@@ -199,12 +235,16 @@ class FoodMapStore(Protocol):
         """Store an LLM mapping (None `food_id` = no food fits) unless a reviewed row exists."""
         ...
 
-    def get_grams(self, key: str) -> float | None:
-        """A stored LLM gram estimate for a whole line, or None."""
+    def has_grams(self, key: str) -> bool:
+        """Whether the model has already answered for this line, with a number or with null."""
         ...
 
-    def put_grams(self, key: str, grams: float, *, model: str, now: datetime) -> None:
-        """Store an LLM gram estimate for a whole line."""
+    def get_grams(self, key: str) -> float | None:
+        """A stored LLM gram estimate for a whole line, or None (also for a stored null)."""
+        ...
+
+    def put_grams(self, key: str, grams: float | None, *, model: str, now: datetime) -> None:
+        """Store an LLM gram answer for a whole line; None records that the model said null."""
         ...
 
 
@@ -233,13 +273,19 @@ class InMemoryFoodMapStore:
             "reviewed": False,
         }
 
-    def get_grams(self, key: str) -> float | None:
-        """A stored LLM gram estimate, or None."""
-        row = self.grams.get(key)
-        return float(row["grams"]) if row else None
+    def has_grams(self, key: str) -> bool:
+        """Whether an answer (a number or null) is stored for this line."""
+        return key in self.grams
 
-    def put_grams(self, key: str, grams: float, *, model: str, now: datetime) -> None:
-        """Store an LLM gram estimate."""
+    def get_grams(self, key: str) -> float | None:
+        """A stored LLM gram estimate, or None (no row, or a stored null)."""
+        row = self.grams.get(key)
+        if not row or row["grams"] is None:
+            return None
+        return float(row["grams"])
+
+    def put_grams(self, key: str, grams: float | None, *, model: str, now: datetime) -> None:
+        """Store an LLM gram answer; None records a null so the line is not asked again."""
         self.grams[key] = {
             "grams": grams,
             "model": model,
@@ -276,8 +322,8 @@ class JsonFileFoodMapStore(InMemoryFoodMapStore):
         super().put_food(key, food_id, model=model, now=now)
         self._save()
 
-    def put_grams(self, key: str, grams: float, *, model: str, now: datetime) -> None:
-        """Store an LLM gram estimate, then persist."""
+    def put_grams(self, key: str, grams: float | None, *, model: str, now: datetime) -> None:
+        """Store an LLM gram answer, then persist."""
         super().put_grams(key, grams, model=model, now=now)
         self._save()
 
@@ -407,11 +453,25 @@ def resolve_recipe(
     sources: list[str | None] = [None] * n
     misses: list[MissReason | None] = [None] * n
     llm_grams: list[float | None] = [None] * n
-    cleaned = [clean_name(ing.name) for ing in ingredients]
+    cleaned = [
+        clean_name(ing.name, before=f"{ing.qty_text or ''} {ing.unit or ''}") for ing in ingredients
+    ]
     keys = [FoodKey(c.name, c.state, table.foods_version) for c in cleaned]
 
     pending_food: dict[int, list[Food]] = {}
     for i, (c, key) in enumerate(zip(cleaned, keys, strict=True)):
+        # Curation first (no_food, then alias/exact): it beats any cached LLM pick or cached null.
+        found = deterministic_match(c.name, table)
+        if found is not None:
+            if found[0] is None:
+                misses[i] = "no_food_by_curation"
+                continue
+            food_ids[i], sources[i] = found[0], found[1]
+            if found[1] == "alias":
+                stats.alias_hits += 1
+            else:
+                stats.exact_hits += 1
+            continue
         row = store.get_food(key)
         if row is not None and row.get("food_id") and table.get(row["food_id"]):
             food_ids[i], sources[i] = row["food_id"], "cache"
@@ -419,14 +479,6 @@ def resolve_recipe(
             continue
         if row is not None and row.get("food_id") is None:
             misses[i] = "cached_none"
-            continue
-        found = deterministic_match(c.name, table)
-        if found is not None:
-            food_ids[i], sources[i] = found
-            if found[1] == "alias":
-                stats.alias_hits += 1
-            else:
-                stats.exact_hits += 1
             continue
         short = index.shortlist(c.name, c.state)
         if short:
@@ -446,9 +498,8 @@ def resolve_recipe(
             continue
         if not line_grams(ing, food).needs_llm:
             continue
-        stored = store.get_grams(grams_key(ing))
-        if stored is not None:
-            llm_grams[i] = stored
+        if store.has_grams(grams_key(ing)):
+            llm_grams[i] = store.get_grams(grams_key(ing))  # a stored null stays None: not asked
         else:
             pending_grams.add(i)
 
@@ -548,9 +599,14 @@ def _ask_llm(
         # Keep the estimate only if the line still cannot be converted with its final food: a
         # food the model just chose may convert deterministically (then the estimate is unused).
         food = _food_of(table, food_ids[i])
-        if answer is None or answer.grams is None or answer.grams <= 0 or food is None:
+        if answer is None or food is None:
+            continue  # a failed call or no food: nothing is cached, so a later run asks again
+        if not line_grams(ingredients[i], food).needs_llm:
             continue
-        if line_grams(ingredients[i], food).needs_llm:
+        if answer.grams is None:
+            # The model answered null: remember it, so a re-run makes no call for this line.
+            store.put_grams(grams_key(ingredients[i]), None, model=model, now=stamp)
+        elif answer.grams > 0:
             stats.grams_received += 1
             llm_grams[i] = answer.grams
             store.put_grams(grams_key(ingredients[i]), answer.grams, model=model, now=stamp)

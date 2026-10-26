@@ -132,7 +132,9 @@
     {"alias": "turmeric powder", "fdc_id": 172231, "source": "b2-proposed", "reviewed": false},
     {"alias": "haldi powder", "fdc_id": 172231, "source": "b2-proposed", "reviewed": false},
     {"alias": "ajwain", "fdc_id": 170918, "source": "b2-proposed", "reviewed": false},
-    {"alias": "kasuri methi", "fdc_id": 171324, "source": "b2-proposed", "reviewed": false},
+    {"alias": "ginger garlic paste", "fdc_id": 169231, "source": "b2-proposed", "reviewed": false},
+    {"alias": "garlic ginger paste", "fdc_id": 169231, "source": "b2-proposed", "reviewed": false},
+    {"alias": "ginger and garlic paste", "fdc_id": 169231, "source": "b2-proposed", "reviewed": false},
     {"alias": "fenugreek seeds", "fdc_id": 171324, "source": "b2-proposed", "reviewed": false},
     {"alias": "methi seeds", "fdc_id": 171324, "source": "b2-proposed", "reviewed": false},
     {"alias": "pav", "fdc_id": 172796, "source": "b2-proposed", "reviewed": false},
@@ -387,5 +389,20 @@
     {"alias": "beef stock", "fdc_id": 172923, "source": "b2-proposed", "reviewed": false},
     {"alias": "vegetable broth", "fdc_id": 171583, "source": "b2-proposed", "reviewed": false},
     {"alias": "beef bouillon cubes", "fdc_id": 171561, "source": "b2-proposed", "reviewed": false}
+  ],
+  "no_food": ["kasuri methi", "dried fenugreek leaves"],
+  "veg_overrides": [
+    {"fdc_id": 174158, "veg": "veg", "note": "plain water"},
+    {"fdc_id": 746784, "veg": "veg", "note": "sugar, granulated"},
+    {"fdc_id": 168833, "veg": "veg", "note": "sugar, brown"},
+    {"fdc_id": 169656, "veg": "veg", "note": "sugar, powdered"},
+    {"fdc_id": 169640, "veg": "veg", "note": "honey (vegetarian, not vegan)"},
+    {"fdc_id": 169661, "veg": "veg", "note": "maple syrup"},
+    {"fdc_id": 175040, "veg": "veg", "note": "baking soda"},
+    {"fdc_id": 167532, "veg": "veg", "note": "plain bread, white wheat"},
+    {"fdc_id": 172686, "veg": "veg", "note": "plain bread, wheat"},
+    {"fdc_id": 172796, "veg": "veg", "note": "plain roll (pav), hamburger or hotdog"},
+    {"fdc_id": 175030, "veg": "veg", "note": "plain roll, dinner, wheat"},
+    {"fdc_id": 172794, "veg": "veg", "note": "plain roll, dinner, whole-wheat"}
   ]
 }

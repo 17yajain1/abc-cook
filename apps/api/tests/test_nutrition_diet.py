@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from nutrition_helpers import food, table
 
 from abc_cook.nutrition.diet import derive_diet
@@ -49,3 +50,60 @@ def test_a_food_with_no_veg_flag_gives_none() -> None:
 
 def test_no_rows_gives_none() -> None:
     assert derive_diet([], TABLE) is None
+
+
+def _unmatched(text: str, index: int = 1) -> IngredientNutrition:
+    row = _row(None, index)
+    return row.model_copy(update={"line_text": text})
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "10 curry leaves",
+        "1 tsp Garam Masala",
+        "1 tbsp pav bhaji masala",
+        "2 tbsp ginger garlic paste",
+        "a pinch of hing",
+        "1/4 tsp asafoetida",
+        "1 tbsp jaggery",
+        "2 tbsp tamarind chutney",
+        "2 tbsp imli chutney",
+        "1 tsp chironji",
+        "1 sachet Eno",
+        "1/2 tsp fruit salt",
+        "a pinch citric acid",
+        "2 drops food colour",
+        "1 tsp kasuri methi",
+        "1/4 cup sev",
+        "2 tbsp green chutney",
+        "1 tsp italian seasoning",
+        "1 tsp garam masala (for the chicken)",  # the parenthetical is ignored
+    ],
+)
+def test_a_veg_safe_unmatched_line_does_not_force_none(text: str) -> None:
+    assert derive_diet([_row("fdc:1"), _unmatched(text)], TABLE) == "veg"
+
+
+def test_veg_safe_unmatched_lines_do_not_hide_a_non_veg_or_egg_food() -> None:
+    assert derive_diet([_row("fdc:3"), _unmatched("1 tsp garam masala", 1)], TABLE) == "non_veg"
+    assert derive_diet([_row("fdc:2"), _unmatched("10 curry leaves", 1)], TABLE) == "egg"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "1 tbsp chicken masala paste",  # not on the list, and names a meat
+        "1 tsp garam masala chicken seasoning",  # on the list, but names a meat
+        "1 tbsp egg sev",  # on the list, but names an egg
+        "1 tbsp oyster sauce",  # unknown unmatched
+        "1 tsp mystery powder",
+        "1 sevai",  # whole words only: "sev" is not "sevai"
+    ],
+)
+def test_any_other_unmatched_line_still_gives_none(text: str) -> None:
+    assert derive_diet([_row("fdc:1"), _unmatched(text)], TABLE) is None
+
+
+def test_only_veg_safe_lines_are_not_enough_to_call_a_diet() -> None:
+    assert derive_diet([_unmatched("10 curry leaves", 0)], TABLE) is None

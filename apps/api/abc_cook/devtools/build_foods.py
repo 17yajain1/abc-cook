@@ -41,7 +41,7 @@ SOURCES = {
         "Foundation (2026-04-30)",
     ),
 }
-FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b2-1"
+FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b3-1"
 _CSV_FILES = (
     "food.csv",
     "food_category.csv",
@@ -329,13 +329,40 @@ def build(curation: dict[str, Any]) -> dict[str, Any]:
         )
     if missing:
         raise SystemExit("aliases pointing at foods not in the list:\n  " + "\n  ".join(missing))
+    apply_veg_overrides(foods, curation.get("veg_overrides", []))
 
     return {
         "foods_version": FOODS_VERSION,
         "source": "USDA FoodData Central SR Legacy (April 2018) + Foundation (2026-04-30)",
         "licence": "CC0 1.0, public domain; credit USDA FDC",
+        "no_food": [n.casefold() for n in curation.get("no_food", [])],
         "foods": sorted(foods.values(), key=lambda f: f["id"]),
     }
+
+
+def apply_veg_overrides(foods: dict[str, dict[str, Any]], overrides: list[dict[str, Any]]) -> None:
+    """Flip listed `unknown` foods to `veg` (plain pantry staples), in place.
+
+    An override only ever turns `unknown` into `veg`; a listed food that is `non_veg` or `egg`,
+    or one that is not in the table at all, stops the build.
+    """
+    problems = []
+    for row in overrides:
+        food = foods.get(f"fdc:{row['fdc_id']}")
+        if row["veg"] != "veg":
+            problems.append(
+                f"fdc:{row['fdc_id']}: an override can only set veg, got {row['veg']!r}"
+            )
+        elif food is None:
+            problems.append(f"fdc:{row['fdc_id']}: not in the food list")
+        elif food["veg"] in ("non_veg", "egg"):
+            problems.append(
+                f"fdc:{row['fdc_id']} {food['name']!r} is {food['veg']}: not overridable"
+            )
+        elif food["veg"] == "unknown":
+            food["veg"] = "veg"
+    if problems:
+        raise SystemExit("veg_overrides:\n  " + "\n  ".join(problems))
 
 
 def main() -> None:

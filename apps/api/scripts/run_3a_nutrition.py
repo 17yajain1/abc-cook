@@ -1,9 +1,10 @@
-"""3a B2: run the nutrition calculator over the 27 eval fixtures (the blind run).
+"""3a B2/B3: run the nutrition calculator over the eval fixtures.
 
-For each `tests/fixtures/3a-eval/*.original.json`: `reprocess()` (no LLM) -> `resolve_recipe`
-(cache, alias, then at most ONE gpt-5-mini call for what is left) -> `compute_nutrition`.
-Writes `notes/3a-nutrition/b2-results.json` (the full `RecipeNutrition` per recipe plus ₹, latency
-and counts) and `b2-lines.md` (every line: food, grams, basis, kcal, portion, hint, flags).
+For each `tests/fixtures/3a-eval/*.original.json` (or just `--ids`): `reprocess()` (no LLM) ->
+`resolve_recipe` (curated alias/no_food, cache, then at most ONE gpt-5-mini call for what is left)
+-> `compute_nutrition` with the graph's nodes. Writes `notes/3a-nutrition/<results-name>` (the
+full `RecipeNutrition` per recipe plus ₹, latency and counts; default `b2-results.json`) and
+`<lines-name>` (every line: food, grams, basis, kcal, portion, hint, flags, fat working).
 
 Resumable: matches are cached in `apps/api/data/food_map.json` (gitignored), so a re-run makes
 no calls. The mapping spend is capped (default ₹40); a refused call stops the run.
@@ -61,8 +62,8 @@ def _cell(value: Any) -> str:
     return "" if value is None else str(value).replace("|", "\\|").replace("\n", " ")
 
 
-def _lines_md(recipes: list[dict[str, Any]]) -> str:
-    out = ["# 3a B2: per-line working (blind run)", ""]
+def _lines_md(recipes: list[dict[str, Any]], title: str) -> str:
+    out = [f"# {title}", ""]
     for rec in recipes:
         nutrition = rec["nutrition"]
         out += [
@@ -74,10 +75,12 @@ def _lines_md(recipes: list[dict[str, Any]]) -> str:
             f"{nutrition['per_serving']['carbs_g']:.1f} g carbs, "
             f"{nutrition['per_serving']['fat_g']:.1f} g fat, "
             f"{nutrition['per_serving']['fibre_g']:.1f} g fibre",
-            f"- Confidence: {nutrition['confidence']}; diet: {nutrition['diet']}",
+            f"- Confidence: {nutrition['confidence']} (shadow {nutrition['confidence_proposed']}); "
+            f"diet: {nutrition['diet']}",
             "",
-            "| # | line | food | grams | basis | kcal | portion | hint | flags | miss |",
-            "|---|---|---|---|---|---|---|---|---|---|",
+            "| # | line | food | grams | basis | kcal | portion | hint | flags | miss "
+            "| fat_method | fat_rule | fried_g |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
         ]
         for row, miss in zip(nutrition["rows"], rec["misses"], strict=True):
             grams = "" if row["grams"] is None else f"{row['grams']:.1f}"
@@ -100,6 +103,9 @@ def _lines_md(recipes: list[dict[str, Any]]) -> str:
                 row["hint_reading"],
                 flags,
                 miss,
+                row["fat_method"],
+                row["fat_rule"],
+                None if row["fried_grams"] is None else f"{row['fried_grams']:.0f}",
             ]
             out.append("| " + " | ".join(_cell(c) for c in cells) + " |")
         out.append("")
@@ -114,6 +120,8 @@ def main() -> int:
     parser.add_argument("--cap-inr", type=float, default=SPEND_CAP_INR)
     parser.add_argument("--no-llm", action="store_true", help="never call the model (dry run)")
     parser.add_argument("--out-dir", type=Path, default=NOTES_DIR)
+    parser.add_argument("--results-name", default="b2-results.json")
+    parser.add_argument("--lines-name", default="b2-lines.md")
     parser.add_argument("--food-map", type=Path, default=FOOD_MAP_PATH)
     args = parser.parse_args()
     if args.env_file:
@@ -152,6 +160,7 @@ def main() -> int:
             resolutions,
             computed_at=datetime.now(UTC),
             table=table,
+            nodes=graph.nodes,
         )
         compute_ms = (time.perf_counter() - started) * 1000
         recipes.append(
@@ -207,10 +216,11 @@ def main() -> int:
         "recipes": recipes,
     }
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    (args.out_dir / "b2-results.json").write_text(
+    (args.out_dir / args.results_name).write_text(
         json.dumps(document, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
     )
-    (args.out_dir / "b2-lines.md").write_text(_lines_md(recipes), encoding="utf-8")
+    title = f"3a: per-line working (nutrition v{NUTRITION_VERSION}, {args.results_name})"
+    (args.out_dir / args.lines_name).write_text(_lines_md(recipes, title), encoding="utf-8")
     print(f"wrote {len(recipes)} recipes; mapping spend ₹{guard.spent_inr:.2f}")
     return 2 if stopped else 0
 
