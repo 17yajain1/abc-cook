@@ -1,0 +1,57 @@
+{
+  "recipe": {
+    "title": "Bhindi Masala",
+    "channel": "nishamadhulika.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": null,
+    "ingredients": [],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Prepare the ingredients",
+        "label": "Prepare",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": null,
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Linked blog's recipeIngredient field says \"Available in post please open the link\" so no ingredient lines were provided to extract. The blog's recipeInstructions contains only the single line \"Prepare the ingredients\", which is why steps contains one short prep step and no detailed cooking steps."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Bhindi Masala Recipe\n\nChannel: nishamadhulika.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Recipe\",\n  \"name\": \"Bhindi Masala Recipe\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"NishaMadhulika\"\n  },\n  \"totalTime\": \"\",\n  \"datePublished\": \"7/11/2011 3:55:00 PM\",\n  \"description\": \"You can cook Bhindi (Lady Finger) in many ways. Adults or Children everyone likes to eat this vegetable. Bhindi Masala is one of the best recipes made with Lady Finger. Would you like to cook Masala Bhindi  at home and eat it ?\",\n  \"image\": \"https://nishamadhulika.com/files/bhindi_masala_929679217.jpg\",\n  \"keywords\": \"Vegetable Fry Recipe\",\n  \"recipeCuisine\": \"Indian\",\n  \"recipeCategory\": \"Vegetarian\",\n  \"recipeIngredient\": \"Available in post please open the link\",\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"5.00\",\n    \"reviewCount\": \"1\",\n    \"bestRating\": \"5\",\n    \"worstRating\": \"1\"\n  },\n  \"recipeYield\": \"\",\n  \"recipeInstructions\": \"Prepare the ingredients\"\n}",
+  "raw_title": "Bhindi Masala Recipe",
+  "blog_name": "Bhindi Masala Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://nishamadhulika.com/en/32-bhindi_masala_recipe.html",
+    "imported_at": "2026-10-26T10:13:43.254733Z"
+  },
+  "graph_id": "g_3a_34",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

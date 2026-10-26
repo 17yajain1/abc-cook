@@ -79,16 +79,22 @@ def _is_instagram(url: str) -> bool:
     return _host(url).endswith("instagram.com")
 
 
-def _read_log() -> list[dict[str, Any]]:
-    if LOG_PATH.exists():
-        rows: list[dict[str, Any]] = json.loads(LOG_PATH.read_text(encoding="utf-8"))
+def _read_log(log_path: Path) -> list[dict[str, Any]]:
+    if log_path.exists():
+        rows: list[dict[str, Any]] = json.loads(log_path.read_text(encoding="utf-8"))
         return rows
     return []
 
 
-def _write_log(rows: list[dict[str, Any]]) -> None:
-    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LOG_PATH.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+def _write_log(rows: list[dict[str, Any]], log_path: Path) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _list_rows(list_path: Path) -> list[dict[str, str]]:
+    """Rows of a list CSV. `test-30.csv` has `in_test_30`; a list without that column is all in."""
+    rows = list(csv.DictReader(list_path.open(encoding="utf-8")))
+    return [r for r in rows if r.get("in_test_30", "yes").strip().lower() == "yes"]
 
 
 def _fixture_path(row_id: int, title: str) -> Path:
@@ -206,7 +212,7 @@ def _import_row(
     log: dict[str, Any] = {
         "id": row_id,
         "url": url,
-        "title": row["title"],
+        "title": row.get("title") or None,
         "source_type": row.get("source_type"),
         "at": datetime.now(UTC).isoformat(),
     }
@@ -233,6 +239,8 @@ def _import_row(
         return log, None
 
     log["wall_s"] = round(time.monotonic() - t0, 1)
+    if not log["title"] and result.graph is not None:
+        log["title"] = result.graph.title  # a list without a title column
     log["status"] = result.status
     log["failure"] = result.failure
     log["warnings"] = result.warnings
@@ -261,17 +269,16 @@ def _import_row(
 # --- capture -------------------------------------------------------------------------
 
 
-def capture(only_ids: set[int] | None, budget: float) -> None:
+def capture(only_ids: set[int] | None, budget: float, list_path: Path, log_path: Path) -> None:
     """Import every unfinished row of the list, stopping at the ₹ guard."""
     from abc_cook.extract.adapters.routing import build_default_adapter
 
-    rows = list(csv.DictReader(CSV_PATH.open(encoding="utf-8")))
-    rows = [r for r in rows if r["in_test_30"].strip().lower() == "yes"]
+    rows = _list_rows(list_path)
     if only_ids:
         rows = [r for r in rows if int(r["id"]) in only_ids]
 
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
-    log = _read_log()
+    log = _read_log(log_path)
     terminal = {r["id"] for r in log if r.get("status") not in (None, "stopped")}
     spent = sum(r["cost_inr"] or 0.0 for r in log)
     adapter = build_default_adapter()
@@ -287,9 +294,9 @@ def capture(only_ids: set[int] | None, budget: float) -> None:
             break
         entry, original = _import_row(row, adapter)
         log.append(entry)
-        _write_log(log)  # after every row, so a crash loses nothing
+        _write_log(log, log_path)  # after every row, so a crash loses nothing
         if original is not None:
-            path = _fixture_path(row_id, row["title"])
+            path = _fixture_path(row_id, entry["title"] or f"recipe-{row_id}")
             path.write_text(
                 json.dumps(original.model_dump(mode="json"), indent=2, ensure_ascii=False),
                 encoding="utf-8",
@@ -305,30 +312,26 @@ def capture(only_ids: set[int] | None, budget: float) -> None:
             break
         spent += cost
 
-    _end_of_run_thumbnail_probe(log)
+    _end_of_run_thumbnail_probe(log, log_path)
     print(f"total spent: ₹{spent:.2f}", file=sys.stderr)
 
 
-def _end_of_run_thumbnail_probe(log: list[dict[str, Any]]) -> None:
+def _end_of_run_thumbnail_probe(log: list[dict[str, Any]], log_path: Path) -> None:
     for entry in log:
         yt = entry.get("attribution_ytdlp") or {}
         thumb = yt.get("thumbnail")
         if thumb and _is_instagram(entry["url"]):
             yt["thumbnail_status_end"] = _probe(thumb)
             yt["thumbnail_end_at"] = datetime.now(UTC).isoformat()
-    _write_log(log)
+    _write_log(log, log_path)
 
 
 # --- Step 4: ingredient list, offline ------------------------------------------------
 
 
-def render_ingredients() -> None:
-    """Write test-30-ingredients.md from the fixtures through `reprocess` (no spend)."""
-    csv_rows = {
-        int(r["id"]): r
-        for r in csv.DictReader(CSV_PATH.open(encoding="utf-8"))
-        if r["in_test_30"].strip().lower() == "yes"
-    }
+def render_ingredients(list_path: Path, out_path: Path) -> None:
+    """Write the ingredient list for the ids of `list_path` from the fixtures (no spend)."""
+    csv_rows = {int(r["id"]): r for r in _list_rows(list_path)}
     lines = [
         "# 3a eval list: ingredients as the calculator will receive them",
         "",
@@ -340,6 +343,8 @@ def render_ingredients() -> None:
     fixtures = sorted(FIXTURE_DIR.glob("*.original.json"), key=lambda p: int(p.name.split("-")[0]))
     for path in fixtures:
         row_id = int(path.name.split("-")[0])
+        if row_id not in csv_rows:
+            continue
         original = ImportOriginal.model_validate_json(path.read_text(encoding="utf-8"))
         out = reprocess(original)
         result = out.result
@@ -368,8 +373,8 @@ def render_ingredients() -> None:
                 cells = [group, ing.qty_text, ing.unit, ing.name, ing.prep_note, ing.unit_canonical]
                 lines.append("| " + " | ".join(_cell(c) for c in cells) + " |")
         lines.append("")
-    INGREDIENTS_MD.write_text("\n".join(lines), encoding="utf-8")
-    print(f"wrote {INGREDIENTS_MD}", file=sys.stderr)
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"wrote {out_path}", file=sys.stderr)
 
 
 def _cell(value: object) -> str:
@@ -386,14 +391,17 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--ids", type=int, nargs="*", help="only these ids")
     parser.add_argument("--budget", type=float, default=BUDGET_INR)
     parser.add_argument("--render-only", action="store_true")
+    parser.add_argument("--list", type=Path, default=CSV_PATH, help="list CSV (id,url,...)")
+    parser.add_argument("--log", type=Path, default=LOG_PATH, help="capture log JSON")
+    parser.add_argument("--ingredients-md", type=Path, default=INGREDIENTS_MD)
     args = parser.parse_args(argv)
     if args.render_only:
-        render_ingredients()
+        render_ingredients(args.list, args.ingredients_md)
         return
     if args.env_file is None:
         parser.error("--env-file is required for a live capture")
     load_dotenv(args.env_file, override=True)
-    capture(set(args.ids) if args.ids else None, args.budget)
+    capture(set(args.ids) if args.ids else None, args.budget, args.list, args.log)
 
 
 if __name__ == "__main__":

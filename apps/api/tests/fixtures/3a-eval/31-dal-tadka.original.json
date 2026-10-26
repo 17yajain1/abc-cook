@@ -1,0 +1,912 @@
+{
+  "recipe": {
+    "title": "Dal Tadka (Restaurant Style)",
+    "channel": "vegrecipesofindia.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "North Indian",
+    "stated_total_min": 30,
+    "ingredients": [
+      {
+        "name": "tuvar dal",
+        "qty": "1 cup or (200 grams)",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "green chilies (or serrano peppers - chopped or slit lengthwise)",
+        "qty": "1 to 2",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "onions",
+        "qty": "½  cup",
+        "unit": null,
+        "prep_note": "- chopped",
+        "group": null
+      },
+      {
+        "name": "tomatoes",
+        "qty": "1 cup",
+        "unit": null,
+        "prep_note": "- finely chopped",
+        "group": null
+      },
+      {
+        "name": "ginger",
+        "qty": "1 teaspoon",
+        "unit": null,
+        "prep_note": "- finely chopped",
+        "group": null
+      },
+      {
+        "name": "turmeric powder",
+        "qty": "½  teaspoon",
+        "unit": null,
+        "prep_note": "((ground turmeric))",
+        "group": null
+      },
+      {
+        "name": "garam masala",
+        "qty": "½   teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "asafoetida ((hing), optional)",
+        "qty": "1 pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "water",
+        "qty": "2.5 cups",
+        "unit": null,
+        "prep_note": "- for pressure cooking",
+        "group": null
+      },
+      {
+        "name": "light cream (or low fat cream, optional)",
+        "qty": "1 tablespoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "coriander leaves (- chopped, (cilantro))",
+        "qty": "2 tablespoons",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "salt  (as required)",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil (or ghee (clarified butter))",
+        "qty": "3 tablespoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cumin seeds",
+        "qty": "1 teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "garlic cloves (- finely chopped, small to medium-sized)",
+        "qty": "5 to 6",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "dry red chilies (- broken and seeds removed)",
+        "qty": "2 to 3",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "asafoetida ((hing), optional)",
+        "qty": "1 generous pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "kasuri methi (- crushed, (dry fenugreek leaves), optional)",
+        "qty": "1 teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "kashmiri chilli powder (or cayenne pepper or paprika)",
+        "qty": "½ teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "coriander leaves (- chopped (cilantro))",
+        "qty": "1 to 2 tablespoons",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "natural charcoal",
+        "qty": "1 small piece",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil (or ghee (clarified butter))",
+        "qty": "¼ teaspoon",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Thoroughly rinse tuvar dal (tur dal) in water. Add them to a 3-litre stovetop pressure cooker. (You can also cook the lentils in a pot; if cooking in a pot soak for an hour or two and use about 3 to 3.5 cups water.)",
+        "label": "Prepare lentils",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tuvar dal",
+          "water"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the chopped onions, finely chopped tomatoes, chopped green chillies and finely chopped ginger to the pressure cooker with the dal.",
+        "label": "Add aromatics",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onions",
+          "tomatoes",
+          "green chilies (or serrano peppers - chopped or slit lengthwise)",
+          "ginger"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour 2.5 cups of water into the pressure cooker.",
+        "label": "Add water",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add turmeric powder and asafoetida (hing). Mix well.",
+        "label": "Season dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1,
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "turmeric powder",
+          "asafoetida ((hing), optional)"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pressure cook the lentils on medium to medium-high heat for about 7 to 8 whistles (about 8 to 10 minutes), or until the lentils become soft and creamy.",
+        "label": "Pressure cook",
+        "attention": "unattended",
+        "attention_cue": "Let the pressure drop naturally in the cooker and then only open the lid.",
+        "duration_typical_min": 9.0,
+        "duration_min": 8.0,
+        "duration_max": 10.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tuvar dal"
+        ],
+        "produces_component": "cooked dal",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the lentils become soft and creamy"
+      },
+      {
+        "origin": "source",
+        "text": "Let the pressure drop naturally in the cooker and then only open the lid. Check the lentils to see if they have cooked thoroughly and softened.",
+        "label": "Release pressure",
+        "attention": "unattended",
+        "attention_cue": "Let the pressure drop naturally in the cooker and then only open the lid.",
+        "duration_typical_min": 10.0,
+        "duration_min": 5.0,
+        "duration_max": 15.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked dal"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "check the lentils to see if they have cooked thoroughly and softened"
+      },
+      {
+        "origin": "source",
+        "text": "Mash the cooked lentils with a wired whisk or with a spoon and set aside.",
+        "label": "Mash dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked dal"
+        ],
+        "produces_component": "mashed dal",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "If the consistency looks thick, add about ½ to 1 cup water to get a medium consistency. Mix again and on a low to medium-low heat simmer dal for 3 to 4 minutes.",
+        "label": "Adjust consistency",
+        "attention": "periodic",
+        "attention_cue": "simmer dal for 3 to 4 minutes",
+        "duration_typical_min": 3.0,
+        "duration_min": 3.0,
+        "duration_max": 4.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water",
+          "mashed dal"
+        ],
+        "produces_component": "simmered dal",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Once the desired consistency is reached, add the light cream or low-fat cream (optional), garam masala powder, chopped coriander leaves (cilantro) and salt to taste. Turn off the heat.",
+        "label": "Finish dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "light cream (or low fat cream, optional)",
+          "garam masala",
+          "coriander leaves (- chopped, (cilantro))",
+          "salt  (as required)",
+          "simmered dal"
+        ],
+        "produces_component": "prepared dal",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "To get the smoky flavor using the dhungar method (optional): using tongs, place a small piece of natural charcoal on a grill pan and burn until red hot. (This is optional — you can proceed directly to tempering.)",
+        "label": "Heat charcoal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "optional",
+        "role_cue": "optional",
+        "attach_to_step": 8,
+        "consumes_ingredients": [
+          "natural charcoal"
+        ],
+        "produces_component": "red hot charcoal",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Place the red hot charcoal in a small steel bowl (or use a halved hollow onion instead of the bowl).",
+        "label": "Set charcoal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "optional",
+        "role_cue": "optional",
+        "attach_to_step": 8,
+        "consumes_ingredients": [
+          "red hot charcoal"
+        ],
+        "produces_component": "charcoal bowl",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour about ¼ teaspoon of oil or ghee on the charcoal. You will see fumes emanating as soon as you pour oil or ghee on the hot charcoal.",
+        "label": "Pour oil on charcoal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9,
+          10
+        ],
+        "role": "optional",
+        "role_cue": "optional",
+        "attach_to_step": 8,
+        "consumes_ingredients": [
+          "oil (or ghee (clarified butter))"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Place this bowl on the dal, cover the cooker or pot with a lid and let the dal get infused. Only smoke for 1 to 2 minutes. Remove the bowl carefully with tongs and cover the cooker; set aside.",
+        "label": "Smoke dal",
+        "attention": "unattended",
+        "attention_cue": "Only smoke for 1 to 2 minutes",
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11,
+          8,
+          7
+        ],
+        "role": "optional",
+        "role_cue": "optional",
+        "attach_to_step": 8,
+        "consumes_ingredients": [
+          "charcoal bowl",
+          "prepared dal"
+        ],
+        "produces_component": "smoked dal",
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "let the dal get infused"
+      },
+      {
+        "origin": "source",
+        "text": "Heat oil or ghee in a small pan over low or medium-low heat for the tempering (tadka).",
+        "label": "Heat oil",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil (or ghee (clarified butter))"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add the cumin seeds and crackle them until fried but not burnt.",
+        "label": "Crackle cumin",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cumin seeds"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "fried and not be raw"
+      },
+      {
+        "origin": "source",
+        "text": "Add the dry red chilies, asafoetida, and finely chopped garlic. Let the garlic brown lightly and the red chilies change color. Do not burn the garlic.",
+        "label": "Fry garlic",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          14
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dry red chilies (- broken and seeds removed)",
+          "asafoetida ((hing), optional)",
+          "garlic cloves (- finely chopped, small to medium-sized)"
+        ],
+        "produces_component": "tempering",
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "Let the garlic brown lightly and the red chilies change color"
+      },
+      {
+        "origin": "source",
+        "text": "Add the crushed kasuri methi and kashmiri red chili powder (or cayenne). Mix well and turn off the stove.",
+        "label": "Finish tempering",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          15
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "kasuri methi (- crushed, (dry fenugreek leaves), optional)",
+          "kashmiri chilli powder (or cayenne pepper or paprika)",
+          "tempering"
+        ],
+        "produces_component": "tadka",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Pour entire tempering mixture along with the oil or ghee into the prepared dal.",
+        "label": "Add tadka",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12,
+          16,
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "tadka",
+          "prepared dal"
+        ],
+        "produces_component": "dal tadka",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "You can either mix the dal with tempering, or serve the dal tadka with the tempering on top of it.",
+        "label": "Serve options",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          17
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dal tadka"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Garnish with coriander leaves.",
+        "label": "Garnish",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.25,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          18
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coriander leaves (- chopped, (cilantro))"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve Dal Tadka hot with steamed basmati rice or jeera rice, or enjoy with roti or paratha.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.0,
+        "duration_min": 0.0,
+        "duration_max": 0.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          19,
+          18
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dal tadka"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from linked recipe structured data (vegrecipesofindia.com). I preserved optional/alternative cues exactly as given (dhungar method marked optional). Attention/duration cues quoted from source where present (pressure cooking, simmer, smoke). Ingredient names reproduced verbatim from the recipeIngredient list."
+    ]
+  },
+  "repair": {
+    "steps": [
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": [
+          "coriander leaves (- chopped (cilantro))"
+        ],
+        "produces_component": null,
+        "depends_on_previous": null
+      },
+      {
+        "consumes_ingredients": null,
+        "produces_component": null,
+        "depends_on_previous": null
+      }
+    ]
+  },
+  "source_text": "Title: Dal Tadka (Restaurant Style)\n\nChannel: vegrecipesofindia.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Dal Tadka (Restaurant Style)\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Dassana Amit\"\n  },\n  \"description\": \"This restaurant-style Dal Tadka recipe is a smooth and creamy lentil dish made with pigeon pea lentils (tur dal), onions, tomatoes and herbs, finished with a tempering of spices like cumin, garlic, dried red chillies, asafoetida and red chilli powder. The dhungar method gives the dal a subtle smoky flavor. It is best served with steamed basmati rice or enjoyed with roti or paratha.\",\n  \"datePublished\": \"2025-03-17T12:50:33+00:00\",\n  \"image\": [\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2025/03/dal-tadka-3.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2025/03/dal-tadka-3-500x500.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2025/03/dal-tadka-3-500x375.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2025/03/dal-tadka-3-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Dal Tadka\",\n    \"description\": \"Dal Tadka is a popular Indian lentil dish made with arhar dal or tuvar dal (husked &amp; split pigeon pea lentils) or masoor dal (husked &amp; split red lentils). This recipe is of restaurant style dal tadka with has smokey flavors and aroma.\",\n    \"thumbnailUrl\": \"https://content.jwplatform.com/thumbs/os763iYF-720.jpg\",\n    \"contentUrl\": \"https://content.jwplatform.com/videos/os763iYF.mp4\",\n    \"uploadDate\": \"2020-09-08T00:00:00+00:00\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"4\"\n  ],\n  \"prepTime\": \"PT20M\",\n  \"cookTime\": \"PT10M\",\n  \"totalTime\": \"PT30M\",\n  \"recipeIngredient\": [\n    \"1 cup or (200 grams)  tuvar dal\",\n    \"1 to 2  green chilies (or serrano peppers - chopped or slit lengthwise)\",\n    \"½  cup onions  (- chopped)\",\n    \"1 cup tomatoes  (- finely chopped)\",\n    \"1 teaspoon ginger (- finely chopped)\",\n    \"½  teaspoon turmeric powder ((ground turmeric))\",\n    \"½   teaspoon garam masala\",\n    \"1 pinch asafoetida ((hing), optional)\",\n    \"2.5 cups water (- for pressure cooking)\",\n    \"1 tablespoon light cream (or low fat cream, optional)\",\n    \"2 tablespoons coriander leaves (- chopped, (cilantro))\",\n    \"salt  (as required)\",\n    \"3 tablespoon oil (or 3 tablespoon ghee (clarified butter))\",\n    \"1 teaspoon cumin seeds\",\n    \"5 to 6  garlic cloves (- finely chopped, small to medium-sized)\",\n    \"2 to 3  dry red chilies (- broken and seeds removed)\",\n    \"1 generous pinch of asafoetida ((hing), optional)\",\n    \"1 teaspoon kasuri methi (- crushed, (dry fenugreek leaves), optional)\",\n    \"½ teaspoon kashmiri chilli powder (or cayenne pepper or paprika)\",\n    \"1 to 2 tablespoons coriander leaves (- chopped (cilantro))\",\n    \"1 small piece of natural charcoal\",\n    \"¼ teaspoon oil (or ghee (clarified butter))\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Cook lentils\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Thoroughly rinse tuvar dal (tur dal) in water. Add them to a 3-litre stovetop pressure cooker.You can also cook the lentils in a pot. Soak the lentils for an hour or two before you cook them in a pot adding water as needed.If cooking in a pot, you could add about 3 to 3.5 cups of water.\",\n          \"name\": \"Thoroughly rinse tuvar dal (tur dal) in water. Add them to a 3-litre stovetop pressure cooker.You can also cook the lentils in a pot. Soak the lentils for an hour or two before you cook them in a pot adding water as needed.If cooking in a pot, you could add about 3 to 3.5 cups of water.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add the chopped onions, finely chopped tomatoes, chopped green chillies and finely chopped ginger.\",\n          \"name\": \"Add the chopped onions, finely chopped tomatoes, chopped green chillies and finely chopped ginger.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour 2.5 cups of water into the pressure cooker.\",\n          \"name\": \"Pour 2.5 cups of water into the pressure cooker.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add turmeric powder and asafoetida (hing). Mix well.\",\n          \"name\": \"Add turmeric powder and asafoetida (hing). Mix well.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pressure cook the lentils on medium to medium-high heat for about 7 to 8 whistles (about 8 to 10 minutes), or until the lentils become soft and creamy.\",\n          \"name\": \"Pressure cook the lentils on medium to medium-high heat for about 7 to 8 whistles (about 8 to 10 minutes), or until the lentils become soft and creamy.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Let the pressure drop naturally in the cooker and then only open the lid. Check the lentils to see if they have cooked thoroughly and softened.\",\n          \"name\": \"Let the pressure drop naturally in the cooker and then only open the lid. Check the lentils to see if they have cooked thoroughly and softened.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Mash the cooked lentils with a wired whisk or with a spoon and set aside.\",\n          \"name\": \"Mash the cooked lentils with a wired whisk or with a spoon and set aside.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"If the consistency looks thick, add about ½ to 1 cup water (depending on the thickness) to get a medium consistency. Mix again and on a low to medium-low heat simmer dal for 3 to 4 minutes.\",\n          \"name\": \"If the consistency looks thick, add about ½ to 1 cup water (depending on the thickness) to get a medium consistency. Mix again and on a low to medium-low heat simmer dal for 3 to 4 minutes.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-7\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Once the desired consistency is reached, add the light cream or low-fat cream (optional), garam masala powder, chopped coriander leaves (cilantro) and salt to taste. Turn off the the heat.\",\n          \"name\": \"Once the desired consistency is reached, add the light cream or low-fat cream (optional), garam masala powder, chopped coriander leaves (cilantro) and salt to taste. Turn off the the heat.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-8\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Mix well so that everything combines to an even consistency. Taste and adjust salt before adding tadka.\",\n          \"name\": \"Mix well so that everything combines to an even consistency. Taste and adjust salt before adding tadka.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-0-9\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Smoke lentils using dhungar method (optional)\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"To get the smoky flavor of burnt charcoal like you would in a restaurant, you&#039;ll want to follow the dhungar method. Using tongs, place a small piece of charcoal on a grill pan like shown in the photo below. Burn the charcoal until it becomes red hot. Please be sure to use natural charcoal for this method, avoiding anything that has a flame accelerant added. Note that this is an optional step - you can proceed directly to the tempering method.\",\n          \"name\": \"To get the smoky flavor of burnt charcoal like you would in a restaurant, you&#039;ll want to follow the dhungar method. Using tongs, place a small piece of charcoal on a grill pan like shown in the photo below. Burn the charcoal until it becomes red hot. Please be sure to use natural charcoal for this method, avoiding anything that has a flame accelerant added. Note that this is an optional step - you can proceed directly to the tempering method.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Place the red hot charcoal in a small steel bowl. You can also use a halved hollow onion instead of the bowl.\",\n          \"name\": \"Place the red hot charcoal in a small steel bowl. You can also use a halved hollow onion instead of the bowl.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour about ¼ teaspoon of oil or ghee on the charcoal. You will see fumes emanating as soon as you pour oil or ghee on the hot charcoal.\",\n          \"name\": \"Pour about ¼ teaspoon of oil or ghee on the charcoal. You will see fumes emanating as soon as you pour oil or ghee on the hot charcoal.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Place this bowl on the dal.\",\n          \"name\": \"Place this bowl on the dal.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cover the cooker or pot with a lid and let the dal get infused. Only smoke for 1 to 2 minutes. Do not keep for a long time, or you&#039;ll risk making the dal taste bitter. Remove the bowl carefully with the help of tongs and cover the cooker with a lid. Set aside.\",\n          \"name\": \"Cover the cooker or pot with a lid and let the dal get infused. Only smoke for 1 to 2 minutes. Do not keep for a long time, or you&#039;ll risk making the dal taste bitter. Remove the bowl carefully with the help of tongs and cover the cooker with a lid. Set aside.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-1-4\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Make the tempering (tadka or chaunk)\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Next, heat oil or ghee (clarified butter) in a small pan over low or medium-low heat.\",\n          \"name\": \"Next, heat oil or ghee (clarified butter) in a small pan over low or medium-low heat.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-2-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"First, add the cumin seeds and crackle them. The cumin should get fried and not be raw, but be careful not burn them.\",\n          \"name\": \"First, add the cumin seeds and crackle them. The cumin should get fried and not be raw, but be careful not burn them.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-2-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Next add the dry red chilies, asafoetida, and finely chopped garlic. Let the garlic brown lightly and the red chilies change color. Do not burn the garlic.\",\n          \"name\": \"Next add the dry red chilies, asafoetida, and finely chopped garlic. Let the garlic brown lightly and the red chilies change color. Do not burn the garlic.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-2-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Lastly, add the crushed kasuri methi (dried fenugreek leaves) and kashmiri red chili powder or cayenne pepper. Mix well and turn off the stove.\",\n          \"name\": \"Lastly, add the crushed kasuri methi (dried fenugreek leaves) and kashmiri red chili powder or cayenne pepper. Mix well and turn off the stove.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-2-3\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Make Dal Tadka\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Pour entire tempering mixture along with the oil or ghee into the prepared dal.\",\n          \"name\": \"Pour entire tempering mixture along with the oil or ghee into the prepared dal.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-3-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"You can either mix the dal with tempering, or serve the dal tadka with the tempering on top of it.\",\n          \"name\": \"You can either mix the dal with tempering, or serve the dal tadka with the tempering on top of it.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-3-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Garnish with coriander leaves.\",\n          \"name\": \"Garnish with coriander leaves.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-3-2\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Serving Suggestions\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve Dal Tadka hot with steamed basmati rice or jeera rice (cumin rice).\",\n          \"name\": \"Serve Dal Tadka hot with steamed basmati rice or jeera rice (cumin rice).\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-4-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"You can also enjoy the dal with roti or paratha.\",\n          \"name\": \"You can also enjoy the dal with roti or paratha.\",\n          \"url\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#wprm-recipe-139406-step-4-1\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.95\",\n    \"ratingCount\": \"178\",\n    \"reviewCount\": \"10\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I sometimes add some fresh mint as well as a garnish to this recipe. It really tastes amazing!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Purnima\"\n      },\n      \"datePublished\": \"2025-06-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Super delicious. My entire family loved the dal.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Gerard\"\n      },\n      \"datePublished\": \"2025-03-26\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I came across this recipe, while looking to recreate the taste of the dal tadka we had years ago at Himachal Pradesh. This is better than  that. Absolutely in love with the taste. Thanks for sharing.\\n~ Nimitha\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nimitha\"\n      },\n      \"datePublished\": \"2025-03-13\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I loved this Dal Tadka recipe.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Mukesh\"\n      },\n      \"datePublished\": \"2023-04-12\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"I love your recipes, they are so delicious even my young daughter loves it and her schools friends as well as she takes leftovers to school ??\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"R F\"\n      },\n      \"datePublished\": \"2023-03-30\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"super yummy.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"ama\"\n      },\n      \"datePublished\": \"2023-02-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Made this last night, the 4 servings were wolfed down by my partner and I, it tasted better than my favorite restaurant. So glad I found your recipe online.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"CJ\"\n      },\n      \"datePublished\": \"2022-12-13\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"delicious and easy!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"molly\"\n      },\n      \"datePublished\": \"2022-11-12\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Very delicious ?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Nasser Mohamed\"\n      },\n      \"datePublished\": \"2020-08-14\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"My favorite Dal recipe. I really like the addition of tomatoes. Have never tried it with charcoal. Thanks for posting it.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Brian Ross\"\n      },\n      \"datePublished\": \"2020-08-14\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Main Course\"\n  ],\n  \"recipeCuisine\": [\n    \"North Indian\"\n  ],\n  \"suitableForDiet\": [\n    \"https://schema.org/VeganDiet\",\n    \"https://schema.org/VegetarianDiet\"\n  ],\n  \"keywords\": \"Dal Tadka, dal tadka recipe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"213 kcal\",\n    \"carbohydrateContent\": \"16 g\",\n    \"proteinContent\": \"4 g\",\n    \"fatContent\": \"15 g\",\n    \"saturatedFatContent\": \"4 g\",\n    \"cholesterolContent\": \"15 mg\",\n    \"sodiumContent\": \"60 mg\",\n    \"fiberContent\": \"4 g\",\n    \"sugarContent\": \"2 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#recipe\",\n  \"mainEntityOfPage\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#webpage\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/#richSnippet\"\n  }\n}",
+  "raw_title": "Dal Tadka (Restaurant Style)",
+  "blog_name": "Dal Tadka (Restaurant Style)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.vegrecipesofindia.com/restaurant-style-dal-tadka/",
+    "imported_at": "2026-10-26T10:12:08.455019Z"
+  },
+  "graph_id": "g_3a_31",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

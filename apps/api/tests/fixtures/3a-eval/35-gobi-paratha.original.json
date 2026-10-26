@@ -1,0 +1,615 @@
+{
+  "recipe": {
+    "title": "Gobi Paratha (Cauliflower Paratha)",
+    "channel": "whiskaffair.com",
+    "method_grounded": true,
+    "servings": 4,
+    "servings_source": "stated",
+    "yield_text": null,
+    "cuisine": "Indian",
+    "stated_total_min": 60,
+    "ingredients": [
+      {
+        "name": "2 cups whole wheat flour",
+        "qty": "2",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "½ teaspoon salt",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "1 tablespoon oil",
+        "qty": "1",
+        "unit": "tablespoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "2 cups grated cauliflower",
+        "qty": "2",
+        "unit": "cups",
+        "prep_note": "grated",
+        "group": null
+      },
+      {
+        "name": "1 cup grated boiled potato (potatoes must be boiled and refrigerated a day in advance)",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": "grated; potatoes must be boiled and refrigerated a day in advance",
+        "group": null
+      },
+      {
+        "name": "2 teaspoons finely chopped green chilies",
+        "qty": "2",
+        "unit": "teaspoons",
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "2 tablespoons chopped cilantro (fresh coriander leaves)",
+        "qty": "2",
+        "unit": "tablespoons",
+        "prep_note": "chopped",
+        "group": null
+      },
+      {
+        "name": "2 teaspoons grated fresh ginger",
+        "qty": "2",
+        "unit": "teaspoons",
+        "prep_note": "grated",
+        "group": null
+      },
+      {
+        "name": "1 teaspoon salt (or to taste)",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": "or to taste",
+        "group": null
+      },
+      {
+        "name": "½ teaspoon garam masala powder",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil or ghee for frying",
+        "qty": null,
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Mix flour, salt, and oil in a large mixing bowl. You can also use a parat (Indian utensil) to knead the dough.",
+        "label": "Make dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 cups whole wheat flour",
+          "½ teaspoon salt",
+          "1 tablespoon oil"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Gradually add water (approx 3/4 cup) and knead to make a soft dough. The exact amount of water will depend on the quality of the flour. Do not add much water in one go; otherwise, the dough can become sticky.",
+        "label": "Knead dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 cups whole wheat flour",
+          "1 tablespoon oil"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Knead the dough for 2-3 minutes until it is smooth.",
+        "label": "Knead 2–3 min",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.5,
+        "duration_min": 2.0,
+        "duration_max": 3.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 cups whole wheat flour"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until it is smooth"
+      },
+      {
+        "origin": "source",
+        "text": "Note – You can knead the dough with a stand mixer fitted with a dough attachment.",
+        "label": "Stand mixer note",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "optional",
+        "role_cue": "Note \u0002013 You can knead the dough with a stand mixer fitted with a dough attachment.",
+        "attach_to_step": 2,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cover the dough with a kitchen cloth and keep aside on the counter for 20 minutes.",
+        "label": "Rest dough",
+        "attention": "unattended",
+        "attention_cue": "keep aside on the counter for 20 minutes.",
+        "duration_typical_min": 19.0,
+        "duration_min": 20.0,
+        "duration_max": 21.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Add cauliflower, boiled potatoes, green chilies, cilantro, ginger, salt, and garam masala powder to a medium-sized mixing bowl and mix nicely.",
+        "label": "Make stuffing",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 cups grated cauliflower",
+          "1 cup grated boiled potato (potatoes must be boiled and refrigerated a day in advance)",
+          "2 teaspoons finely chopped green chilies",
+          "2 tablespoons chopped cilantro (fresh coriander leaves)",
+          "2 teaspoons grated fresh ginger",
+          "1 teaspoon salt (or to taste)",
+          "½ teaspoon garam masala powder"
+        ],
+        "produces_component": "filling",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Do not add the salt if you are not making the paratha immediately. Once mixed with salt, cauliflower releases water, making the filling moist and difficult to stuff.",
+        "label": "Salt caution",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "optional",
+        "role_cue": "Do not add the salt if you are not making the\u0000 paratha immediately.",
+        "attach_to_step": 5,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Divide the dough into 8 equal portions. Make smooth balls from the pieces and press them gently.",
+        "label": "Divide dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "2 cups whole wheat flour"
+        ],
+        "produces_component": "dough balls",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Take one dough ball and dust it with some dry flour. Keep the remaining dough balls covered with a kitchen cloth to prevent them from drying.",
+        "label": "Prepare ball",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dough balls"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Roll it using a rolling pin into a 5-inch disc.",
+        "label": "Roll disc",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "dough balls"
+        ],
+        "produces_component": "rolled disc",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Keep 2 tbsp filling in the center of the disc and bring the ends together. Shape the stuffed dough to make a smooth ball.",
+        "label": "Stuff dough",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9,
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "filling",
+          "rolled disc"
+        ],
+        "produces_component": "stuffed dough ball",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Dust again with dry flour and gently roll to make a 6-inch disc. Apply light and even pressure while rolling; otherwise, the paratha can break. Go from one side to another while rolling and keep dusting with dry flour if gobi paratha sticks to the rolling pin or surface. Roll the edges slightly thinner than the center.",
+        "label": "Roll paratha",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "stuffed dough ball"
+        ],
+        "produces_component": "rolled paratha",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Tip – If the paratha tears from someplace, sprinkle some dry flour and tap lightly.",
+        "label": "Tear tip",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "optional",
+        "role_cue": "Tip \u0002013 If the paratha tears from someplace, sprinkle some dry flour and tap lightly.",
+        "attach_to_step": 11,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Heat a griddle (tawa) over medium heat. When hot, transfer the paratha to the griddle.",
+        "label": "Heat griddle",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rolled paratha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cook till brown spots appear on the lower side (1-2 minutes).",
+        "label": "Cook first side",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rolled paratha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "brown spots appear on the lower side"
+      },
+      {
+        "origin": "source",
+        "text": "Flip the paratha and cook until brown spots appear on the other side (1-2 minutes). Flip again.",
+        "label": "Cook second side",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 2.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          14
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "rolled paratha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "brown spots appear on the other side"
+      },
+      {
+        "origin": "source",
+        "text": "Apply 1 tsp ghee or oil on each side and cook the gobi paratha till golden brown. Keep pressing while cooking with the back of a ladle to make it crispy from the outside.",
+        "label": "Fry with ghee",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          15
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil or ghee for frying",
+          "rolled paratha"
+        ],
+        "produces_component": "cooked paratha",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till golden brown"
+      },
+      {
+        "origin": "source",
+        "text": "Make all the parathas in the same manner. Serve hot with white butter and achar.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          16
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "cooked paratha"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and steps taken from the linked recipe blog's structured JSON-LD. Ingredient lines and wording are preserved from the source. Optional/Tip notes are marked optional and attached to the related steps where indicated by the source text."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Gobi Paratha Recipe (Cauliflower Paratha)\n\nChannel: whiskaffair.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Gobi Paratha Recipe (Cauliflower Paratha)\",\n  \"author\": {\n    \"@id\": \"https://www.whiskaffair.com/#/schema/person/758a56496687a0b21b406146a315b245\"\n  },\n  \"description\": \"Gobi Paratha (Cauliflower Paratha) is an Indian flatbread stuffed with a spicy cauliflower filling. These stuffed parathas make for a delicious breakfast, lunch, or dinner. Serve them along with pickle and raita for a hearty meal.\",\n  \"datePublished\": \"2025-09-05T15:16:42+00:00\",\n  \"image\": [\n    \"https://www.whiskaffair.com/wp-content/uploads/2020/06/Gobi-Paratha-2-3.jpg\",\n    \"https://www.whiskaffair.com/wp-content/uploads/2020/06/Gobi-Paratha-2-3-500x500.jpg\",\n    \"https://www.whiskaffair.com/wp-content/uploads/2020/06/Gobi-Paratha-2-3-500x375.jpg\",\n    \"https://www.whiskaffair.com/wp-content/uploads/2020/06/Gobi-Paratha-2-3-480x270.jpg\"\n  ],\n  \"video\": {\n    \"name\": \"Gobi Paratha Video Recipe\",\n    \"description\": \"Gobi Paratha is an Indian flatbread stuffed with spicy cauliflower stuffing. Make it using my easy recipe.\",\n    \"thumbnailUrl\": \"https://content.jwplatform.com/thumbs/4UU72tIm-720.jpg\",\n    \"contentUrl\": \"https://content.jwplatform.com/videos/4UU72tIm.mp4\",\n    \"uploadDate\": \"2025-04-22T18:04:18+00:00\",\n    \"@type\": \"VideoObject\"\n  },\n  \"recipeYield\": [\n    \"4\",\n    \"4 people\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT60M\",\n  \"recipeIngredient\": [\n    \"2 cups whole wheat flour\",\n    \"½ teaspoon salt\",\n    \"1 tablespoon oil\",\n    \"2 cups grated cauliflower\",\n    \"1 cup grated boiled potato (potatoes must be boiled and refrigerated a day in advance)\",\n    \"2 teaspoons finely chopped green chilies\",\n    \"2 tablespoons chopped cilantro (fresh coriander leaves)\",\n    \"2 teaspoons grated fresh ginger\",\n    \"1 teaspoon salt (or to taste)\",\n    \"½ teaspoon garam masala powder\",\n    \"oil or ghee for frying\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Make The Dough\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Mix flour, salt, and oil in a large mixing bowl. You can also use a parat (Indian utensil) to knead the dough.\",\n          \"name\": \"Mix flour, salt, and oil in a large mixing bowl. You can also use a parat (Indian utensil) to knead the dough.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Gradually add water (approx 3/4 cup) and knead to make a soft dough. The exact amount of water will depend on the quality of the flour. Do not add much water in one go; otherwise, the dough can become sticky.\",\n          \"name\": \"Gradually add water (approx 3/4 cup) and knead to make a soft dough. The exact amount of water will depend on the quality of the flour. Do not add much water in one go; otherwise, the dough can become sticky.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Knead the dough for 2-3 minutes until it is smooth.\",\n          \"name\": \"Knead the dough for 2-3 minutes until it is smooth.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-0-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Note – You can knead the dough with a stand mixer fitted with a dough attachment.\",\n          \"name\": \"Note – You can knead the dough with a stand mixer fitted with a dough attachment.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-0-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cover the dough with a kitchen cloth and keep aside on the counter for 20 minutes.\",\n          \"name\": \"Cover the dough with a kitchen cloth and keep aside on the counter for 20 minutes.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-0-4\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Make The Stuffing\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add cauliflower, boiled potatoes, green chilies, cilantro, ginger, salt, and garam masala powder to a medium-sized mixing bowl and mix nicely.\",\n          \"name\": \"Add cauliflower, boiled potatoes, green chilies, cilantro, ginger, salt, and garam masala powder to a medium-sized mixing bowl and mix nicely.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Do not add the salt if you are not making the paratha immediately. Once mixed with salt, cauliflower releases water, making the filling moist and difficult to stuff.\",\n          \"name\": \"Do not add the salt if you are not making the paratha immediately. Once mixed with salt, cauliflower releases water, making the filling moist and difficult to stuff.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-1-1\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Roll The Paratha\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Divide the dough into 8 equal portions. Make smooth balls from the pieces and press them gently.\",\n          \"name\": \"Divide the dough into 8 equal portions. Make smooth balls from the pieces and press them gently.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Take one dough ball and dust it with some dry flour. Keep the remaining dough balls covered with a kitchen cloth to prevent them from drying.\",\n          \"name\": \"Take one dough ball and dust it with some dry flour. Keep the remaining dough balls covered with a kitchen cloth to prevent them from drying.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Roll it using a rolling pin into a 5-inch disc.\",\n          \"name\": \"Roll it using a rolling pin into a 5-inch disc.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Keep 2 tbsp filling in the center of the disc and bring the ends together. Shape the stuffed dough to make a smooth ball.\",\n          \"name\": \"Keep 2 tbsp filling in the center of the disc and bring the ends together. Shape the stuffed dough to make a smooth ball.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Dust again with dry flour and gently roll to make a 6-inch disc. Apply light and even pressure while rolling; otherwise, the paratha can break. Go from one side to another while rolling and keep dusting with dry flour if gobi paratha sticks to the rolling pin or surface. Roll the edges slightly thinner than the center.\",\n          \"name\": \"Dust again with dry flour and gently roll to make a 6-inch disc. Apply light and even pressure while rolling; otherwise, the paratha can break. Go from one side to another while rolling and keep dusting with dry flour if gobi paratha sticks to the rolling pin or surface. Roll the edges slightly thinner than the center.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Tip – If the paratha tears from someplace, sprinkle some dry flour and tap lightly.\",\n          \"name\": \"Tip – If the paratha tears from someplace, sprinkle some dry flour and tap lightly.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-2-5\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Cook The Paratha\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat a griddle (tawa) over medium heat. When hot, transfer the paratha to the griddle.\",\n          \"name\": \"Heat a griddle (tawa) over medium heat. When hot, transfer the paratha to the griddle.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-3-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cook till brown spots appear on the lower side (1-2 minutes).\",\n          \"name\": \"Cook till brown spots appear on the lower side (1-2 minutes).\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-3-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Flip the paratha and cook until brown spots appear on the other side (1-2 minutes). Flip again.\",\n          \"name\": \"Flip the paratha and cook until brown spots appear on the other side (1-2 minutes). Flip again.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-3-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Apply 1 tsp ghee or oil on each side and cook the gobi paratha till golden brown. Keep pressing while cooking with the back of a ladle to make it crispy from the outside.\",\n          \"name\": \"Apply 1 tsp ghee or oil on each side and cook the gobi paratha till golden brown. Keep pressing while cooking with the back of a ladle to make it crispy from the outside.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-3-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Make all the parathas in the same manner. Serve hot with white butter and achar.\",\n          \"name\": \"Make all the parathas in the same manner. Serve hot with white butter and achar.\",\n          \"url\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#wprm-recipe-32578-step-3-4\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.86\",\n    \"ratingCount\": \"7\",\n    \"reviewCount\": \"1\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"OMG, this is yummy. I am going to make this today.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Button Curry\"\n      },\n      \"datePublished\": \"2020-04-04\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Bread\",\n    \"Breakfast\"\n  ],\n  \"recipeCuisine\": [\n    \"Indian\"\n  ],\n  \"suitableForDiet\": [\n    \"https://schema.org/VegetarianDiet\"\n  ],\n  \"keywords\": \"cauliflower paratha, Gobhi ka Paratha, gobi paratha\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"250 kcal\",\n    \"carbohydrateContent\": \"46 g\",\n    \"proteinContent\": \"9 g\",\n    \"fatContent\": \"5 g\",\n    \"saturatedFatContent\": \"1 g\",\n    \"sodiumContent\": \"324 mg\",\n    \"fiberContent\": \"8 g\",\n    \"sugarContent\": \"1 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/#article\"\n  },\n  \"mainEntityOfPage\": \"https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/\"\n}",
+  "raw_title": "Gobi Paratha Recipe (Cauliflower Paratha)",
+  "blog_name": "Gobi Paratha Recipe (Cauliflower Paratha)",
+  "source": {
+    "kind": "url",
+    "value": "https://www.whiskaffair.com/gobhi-ka-paratha-cauliflower-flatbread/",
+    "imported_at": "2026-10-26T10:14:39.376071Z"
+  },
+  "graph_id": "g_3a_35",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}
