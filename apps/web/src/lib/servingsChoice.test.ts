@@ -21,12 +21,13 @@ import {
   scalability,
   servingsBounds,
   servingsControlKind,
+  servingsLine,
   servingsStated,
   SERVINGS_DEFAULTED_WARNING,
   stepChoice,
   type ServingsChoice,
 } from './servings'
-import { servingsCopy } from './servingsCopy'
+import { savedServingsLine, servingsCopy } from './servingsCopy'
 import { quantityTrailing } from './quantity'
 import { scaleQuantity } from './scaleQuantity'
 
@@ -249,5 +250,35 @@ describe('servingsCopy (the copy table)', () => {
   })
   it('the gated line', () => {
     expect(servingsCopy(null).gated).toBe("Amounts in this recipe can't be scaled yet.")
+  })
+})
+
+describe('savedServingsLine (CP5.1 U5: the Cookbook row)', () => {
+  const withYield = { servings: 4, servings_stated: true, yield_text: 'Makes 12 pieces' }
+
+  it('servings mode away from the original: the chosen count, without the original yield', () => {
+    expect(savedServingsLine(withYield, null, S(6, 4))).toBe('6 servings')
+    expect(savedServingsLine(withYield, null, S(1, 4))).toBe('1 serving')
+  })
+
+  it('batch mode away from x1: "Amounts ×N"', () => {
+    const batch = { servings: 4, servings_stated: false, yield_text: null }
+    expect(savedServingsLine(batch, null, B(2))).toBe('Amounts ×2')
+    expect(savedServingsLine(batch, null, B(1.5))).toBe('Amounts ×1½')
+  })
+
+  it('no choice, a choice at the original, or batch x1: the usual line', () => {
+    const usual = servingsLine(withYield, null)
+    expect(savedServingsLine(withYield, null, null)).toBe(usual)
+    expect(savedServingsLine(withYield, null, undefined)).toBe(usual)
+    expect(savedServingsLine(withYield, null, S(4, 4))).toBe(usual)
+    const batch = { servings: 4, servings_stated: false, yield_text: 'Makes 1 loaf' }
+    expect(savedServingsLine(batch, null, B(1))).toBe(servingsLine(batch, null))
+  })
+
+  it('a stale choice (made for a different version, or the other mode) falls back', () => {
+    const usual = servingsLine(withYield, null)
+    expect(savedServingsLine(withYield, null, S(6, 8))).toBe(usual)
+    expect(savedServingsLine(withYield, null, B(2))).toBe(usual)
   })
 })

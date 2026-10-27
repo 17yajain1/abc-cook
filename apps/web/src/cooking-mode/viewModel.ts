@@ -9,7 +9,7 @@ import { cueShownWith } from '@/lib/doneness'
 import { formatMinutes } from '@/lib/duration'
 import { choiceFactor, type ServingsChoice } from '@/lib/servings'
 import { servingsCopy } from '@/lib/servingsCopy'
-import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE, stepAmountHint, stepNeedsAmountNote, textHasTimePhrase } from '@/lib/stepNote'
+import { STEP_AMOUNT_NOTE, stepAmountHint, stepTimeNote, stepNeedsAmountNote, textHasTimePhrase } from '@/lib/stepNote'
 import { canonicalSourceKey, thumbnailUrlFor } from '@/library/sourceKey'
 
 import { endedAgo, handsOffLine, sentence, sinceText, timeLeft, timerLength } from './copy'
@@ -26,7 +26,7 @@ import {
   type Tick,
   type UpNextView,
 } from './stepPage'
-import { strips, timerSheet, type StripView } from './timers'
+import { leftMs, strips, timerSheet, type StripView } from './timers'
 import { shouldHoldWakeLock } from './wakeLock'
 
 /**
@@ -316,7 +316,7 @@ function undoLabel(model: CookingModel, t: NonNullable<CookingSession['lastTrans
 
 /** PR 2 CP4: the done screen's picture: the recipe's YouTube thumbnail, else `null`. */
 export function recipeThumbnail(source: SourceRef): string | null {
-  return thumbnailUrlFor(canonicalSourceKey(source))
+  return thumbnailUrlFor(canonicalSourceKey(source), 'large')
 }
 
 /** PR 2 CP4: the done screen's one line, from session state only. The time is measured
@@ -470,7 +470,7 @@ function buildStepPage(
   })
   v.servingsNote = factor !== 1 && stepNeedsAmountNote(n.label, n.instruction) ? copy.stepNote : null
   v.addedNote = n.addedLabel
-  v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? STEP_TIME_NOTE : null
+  v.stepTimeNote = options.editedSteps?.has(cur) && textHasTimePhrase(n.instruction) ? stepTimeNote(n.durationTypical, n.occupiesCook) : null
   const imported = options.importedSteps?.get(cur)
   v.stepAmountNote =
     options.editedSteps?.has(cur) && imported != null && stepAmountHint(imported, n.instruction, n.consumes) ? STEP_AMOUNT_NOTE : null
@@ -557,6 +557,7 @@ export interface ConflictAction {
 export interface ConflictTimer {
   stepName: string | null
   endsAt: number
+  startedAt: number
 }
 
 export interface ConflictViewModel {
@@ -603,7 +604,7 @@ function conflictHeading(conflict: SessionConflict): string {
 function timerSentence(timer: ConflictTimer | null, now: number): string | null {
   if (timer == null) return null
   if (timer.endsAt > now) {
-    const left = timeLeft(timer.endsAt - now).text
+    const left = timeLeft(leftMs(timer, now)).text
     // Keeps the step name's own casing: "Tomato base has 6 min left on its timer."
     return timer.stepName != null ? `${timer.stepName} has ${left} on its timer.` : `A timer has ${left}.`
   }
@@ -617,11 +618,11 @@ export function conflictTimer(
   stepName: (nodeId: string) => string | null,
 ): ConflictTimer | null {
   if (session == null) return null
-  let best: { id: string; endsAt: number } | null = null
+  let best: { id: string; endsAt: number; startedAt: number } | null = null
   for (const [id, s] of Object.entries(session.nodes)) {
-    if (s.state === 'running' && (best == null || s.endsAt < best.endsAt)) best = { id, endsAt: s.endsAt }
+    if (s.state === 'running' && (best == null || s.endsAt < best.endsAt)) best = { id, endsAt: s.endsAt, startedAt: s.startedAt }
   }
-  return best != null ? { stepName: stepName(best.id), endsAt: best.endsAt } : null
+  return best != null ? { stepName: stepName(best.id), endsAt: best.endsAt, startedAt: best.startedAt } : null
 }
 
 /**

@@ -119,10 +119,17 @@ describe('canonicalSourceKey — non-URL sources', () => {
 })
 
 describe('thumbnailUrlFor', () => {
-  it('derives a hqdefault thumbnail for a youtube key', () => {
+  it('derives an mqdefault (16:9, no bars) thumbnail for a youtube key by default', () => {
     expect(thumbnailUrlFor('youtube:nF8krMx7OxA')).toBe(
+      'https://i.ytimg.com/vi/nF8krMx7OxA/mqdefault.jpg',
+    )
+  })
+
+  it('"large" is hqdefault, for the 16:9 object-cover boxes', () => {
+    expect(thumbnailUrlFor('youtube:nF8krMx7OxA', 'large')).toBe(
       'https://i.ytimg.com/vi/nF8krMx7OxA/hqdefault.jpg',
     )
+    expect(thumbnailUrlFor('url:example.com/page', 'large')).toBeNull()
   })
 
   it('returns null for anything else', () => {

@@ -140,9 +140,12 @@ export function canonicalSourceKey(source: SourceRef): string {
 }
 
 /** A thumbnail image for a saved entry, derived from its key — never stored (M2.12
- * design decision 3). `null` when no thumbnail can be derived. */
-export function thumbnailUrlFor(sourceKey: string): string | null {
+ * design decision 3). `null` when no thumbnail can be derived. `small` (default) is
+ * `mqdefault`, a true 16:9 with no bars, for rows and tiles. `large` is `hqdefault`
+ * (480 px wide, 4:3 with letterbox bars): callers show it in a 16:9 `object-cover` box,
+ * whose crop removes exactly the bars. */
+export function thumbnailUrlFor(sourceKey: string, size: 'small' | 'large' = 'small'): string | null {
   if (!sourceKey.startsWith('youtube:')) return null
   const id = sourceKey.slice('youtube:'.length)
-  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+  return `https://i.ytimg.com/vi/${id}/${size === 'large' ? 'hqdefault' : 'mqdefault'}.jpg`
 }

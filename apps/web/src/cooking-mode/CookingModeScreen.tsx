@@ -146,6 +146,9 @@ export function CookingModeScreen({
 
   const runEngine = (fn: () => void) => {
     fn()
+    // The tick can be up to 1 s old; a timer just stamped from a fresh clock would read longer than planned.
+    // oxlint-disable-next-line react/purity -- runs from an event handler, never during render
+    setNow(Date.now())
     setTimerFor(null)
     setStepsOpen(false)
   }

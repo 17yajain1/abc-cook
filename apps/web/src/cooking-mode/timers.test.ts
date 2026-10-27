@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
 import { readyClock } from './copy'
-import { pageOrder } from './stepPage'
-import { MAX_RAILS, runningTimers, SHEET_TOP_PX, sheetTop, strips, timerSheet } from './timers'
+import { pageOrder, stepList } from './stepPage'
+import { leftMs, MAX_RAILS, runningTimers, SHEET_TOP_PX, sheetTop, strips, timerSheet } from './timers'
 import homemadeDonuts from '@/__fixtures__/homemade-donuts.plan-response.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import { ADD_TIME_MS } from '@/cooking/constants'
@@ -262,5 +262,34 @@ describe('timerSheet', () => {
     const kOrder = pageOrder(kModel, stepNumbers(derivePlan(KADAI).stages))
     const se = must(engine.startNode(must(engine.start(null, kModel, 'server:kadai', T0)), kModel, 'cook_tomato_base', T0))
     expect(timerSheet(kModel, se, T0 + 2 * MIN, 'cook_tomato_base', kOrder, null)).toMatchObject({ big: '10', unit: 'min left' })
+  })
+})
+
+describe('a stale `now` never shows a timer longer than it was set for (CP5.1 E1)', () => {
+  // The screen's `now` is a 1 s tick; a timer started from a fresh clock can end more than its
+  // length after it. proof_donuts is 25 min, so the unclamped reading would be "26 min left".
+  const stale = T0 - 900
+  const proofing = () => start(fresh(), 'proof_donuts', T0)
+
+  it('the rail, the sheet and All steps all say the planned time', () => {
+    const se = proofing()
+    expect(runningTimers(model, se, stale, order)[0].left).toBe('25 min left')
+    const sheet = timerSheet(model, se, stale, 'proof_donuts', order, null)!
+    expect([sheet.big, sheet.unit]).toEqual(['25', 'min left'])
+    expect(sheet.fraction).toBe(0)
+    const row = stepList(model, se, stale, order, 'grease_pan').find((r) => r.nodeId === 'proof_donuts')
+    expect(row?.right).toBe('25 min left')
+  })
+
+  it('an extended timer is clamped to its planned length plus the extension', () => {
+    const se = must(engine.extend(proofing(), model, 'proof_donuts', T0, ADD_TIME_MS))
+    expect(runningTimers(model, se, stale, order)[0].left).toBe('30 min left')
+  })
+
+  it('leftMs: a normal clock is untouched; a late clock is clamped', () => {
+    const s = { startedAt: T0, endsAt: T0 + 3 * MIN }
+    expect(leftMs(s, T0 + MIN)).toBe(2 * MIN)
+    expect(leftMs(s, T0 - 900)).toBe(3 * MIN)
+    expect(leftMs(s, T0 + 4 * MIN)).toBe(-MIN)
   })
 })

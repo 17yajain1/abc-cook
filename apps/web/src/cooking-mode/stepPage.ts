@@ -5,6 +5,7 @@ import { attentionTag } from '@/lib/attention'
 import { formatMinutes, roundMin } from '@/lib/duration'
 
 import { timeLeft } from './copy'
+import { leftMs } from './timers'
 
 /**
  * PR 2 CP2: the pieces of the step page that aren't the step itself: the progress ticks,
@@ -78,7 +79,7 @@ export function stepList(
     const s = session.nodes[nodeId]
     let right: string | null = null
     if (state === 'viewed') right = 'You are here'
-    else if (s.state === 'running') right = timeLeft(s.endsAt - now).text
+    else if (s.state === 'running') right = timeLeft(leftMs(s, now)).text
     else if (state === 'todo' && !info.occupiesCook && roundMin(info.durationTypical) >= 1) {
       right = formatMinutes(info.durationTypical)
     }
@@ -147,7 +148,7 @@ export function meanwhileRows(
   return windowTasks(model, hostId).map((nodeId) => {
     const s = session.nodes[nodeId]
     const state: MeanwhileRow['state'] = s.state === 'done' ? 'done' : s.state === 'running' ? 'running' : 'todo'
-    const right = s.state === 'done' ? 'Done' : s.state === 'running' ? timeLeft(s.endsAt - now).text : null
+    const right = s.state === 'done' ? 'Done' : s.state === 'running' ? timeLeft(leftMs(s, now)).text : null
     return { nodeId, n: order.indexOf(nodeId) + 1, name: model.nodes[nodeId].label, state, right, action: { kind: 'view', nodeId } }
   })
 }

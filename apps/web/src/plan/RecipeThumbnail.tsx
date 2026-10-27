@@ -12,7 +12,7 @@ const YT_PLACEHOLDER_WIDTH = 120
  * `onLoaded` marks the import timer when a real picture has painted. Not a link and no play glyph: real thumbnails carry none, and it would imply tap-to-play.
  */
 export function RecipeThumbnail({ sourceKey, onLoaded }: { sourceKey: string | null; onLoaded?: () => void }) {
-  const url = sourceKey ? thumbnailUrlFor(sourceKey) : null
+  const url = sourceKey ? thumbnailUrlFor(sourceKey, 'large') : null
   const [hidden, setHidden] = useState(false)
   if (!url || hidden) return null
   return (

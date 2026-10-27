@@ -4,7 +4,7 @@ import {
   STEP_AMOUNT_HINT,
   STEP_AMOUNT_NOTE,
   stepAmountHint,
-  STEP_TIME_NOTE,
+  stepTimeNote,
   stepAmountsChanged,
   stepNeedsAmountNote,
   TIME_PHRASE_SOURCE,
@@ -155,7 +155,8 @@ describe('stepAmountsChanged (B20)', () => {
 
 describe('the shared copy', () => {
   it('has the approved wording', () => {
-    expect(STEP_TIME_NOTE).toBe('Timers stay as planned. Changing times comes later.')
+    expect(stepTimeNote(30, false)).toBe("The timer uses the recipe's 30 min.")
+    expect(stepTimeNote(5, true)).toBe("The plan uses the recipe's 5 min.")
     expect(STEP_AMOUNT_HINT).toBe("Ingredient amounts don't change with the step. Edit the ingredient if you like.")
   })
 })
@@ -177,5 +178,22 @@ describe('stepAmountHint (B20, B26): one helper for the page and cooking mode', 
 
   it('has the cooking-mode wording, without the edit clause', () => {
     expect(STEP_AMOUNT_NOTE).toBe("Ingredient amounts don't change with the step.")
+  })
+})
+
+describe('stepTimeNote (CP5.1 U2)', () => {
+  it('a hands-off step names its timer, a hands-on step names the plan', () => {
+    expect(stepTimeNote(30, false)).toBe("The timer uses the recipe's 30 min.")
+    expect(stepTimeNote(5, true)).toBe("The plan uses the recipe's 5 min.")
+  })
+
+  it('the length is the one the timer names: rounded, hours spelled the same way', () => {
+    expect(stepTimeNote(89.6, false)).toBe("The timer uses the recipe's 1 hr 30 min.")
+    expect(stepTimeNote(120, false)).toBe("The timer uses the recipe's 2 hr.")
+  })
+
+  it('nothing under a minute, or with no length', () => {
+    expect(stepTimeNote(0, false)).toBeNull()
+    expect(stepTimeNote(0.4, true)).toBeNull()
   })
 })

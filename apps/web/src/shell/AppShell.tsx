@@ -66,7 +66,8 @@ export function AppShell({
   // The shell owns the import job so the Copy sheet can start one. Submissions come from
   // click handlers only — a mount effect would double-fire under StrictMode.
   const session = useSyncExternalStore(sessionStore.subscribe, sessionStore.getState)
-  const continueInfo = selectContinue(session, Date.now(), library.get)
+  const nowMs = Date.now()
+  const continueInfo = selectContinue(session, nowMs, library.get)
   const job = useImportJob(importHandlers, {
     findSaved: (key) => library.findBySource(key),
     // A pasted link the person already saved opens that entry; nothing is fetched or spent.
@@ -81,6 +82,8 @@ export function AppShell({
   const feed = useFeed(feedEnabled(), library, onOpenFeedRecipe)
 
   const openSheet = () => {
+    // A failed attempt's message does not outlive the sheet.
+    job.clearError()
     setSheetOpen(true)
     void clipboard.checkOnOpen()
   }
@@ -112,6 +115,8 @@ export function AppShell({
       {tab === 'cookbook' && (
         <LibraryScreen
           savedRecipes={library.list()}
+          session={session}
+          now={nowMs}
           onOpenSaved={onOpenSaved}
           onPick={onPick}
           onImport={onImport}

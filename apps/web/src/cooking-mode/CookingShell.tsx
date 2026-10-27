@@ -498,12 +498,13 @@ function MeanwhileBlock({
   )
 }
 
-/** The done screen's picture: full width, 300px, cover. A failed load hides it, so there is
+/** The done screen's picture: full width, 16:9 and at most 30% of the screen's height, cover.
+ * (`hqdefault`'s letterbox bars fall outside the 16:9 crop.) A failed load hides it, so there is
  * never a broken image or a gap (as `ContinueStrip` does). */
 function Thumbnail({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false)
   if (failed) return null
-  return <img src={src} alt={alt} onError={() => setFailed(true)} className="block h-[300px] w-full object-cover" />
+  return <img src={src} alt={alt} onError={() => setFailed(true)} className="block aspect-video max-h-[30vh] w-full object-cover" />
 }
 
 /** Undo, over the foot of the scroll area on the cream ground, never inside the footer. One

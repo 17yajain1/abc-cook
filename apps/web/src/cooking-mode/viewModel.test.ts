@@ -741,7 +741,7 @@ describe('conflict (engine/store layer)', () => {
 
 describe('buildConflictView (V2Conflict, PR 2 CP4)', () => {
   const T0 = 1_700_000_000_000
-  const opts = (timer: { stepName: string | null; endsAt: number } | null = null) => ({ recipeTitle: 'Kurkuri Bhindi', timer, now: T0 })
+  const opts = (timer: { stepName: string | null; endsAt: number; startedAt: number } | null = null) => ({ recipeTitle: 'Kurkuri Bhindi', timer, now: T0 })
   const view = (conflict: SessionConflict, canGoTo: (planKey: string) => boolean = () => true, timer: Parameters<typeof opts>[0] = null) =>
     buildConflictView(conflict, canGoTo, opts(timer))
   const KADAI: SessionConflict = { planKey: 'library:kadai-id', title: 'Kadai Paneer', state: 'active' }
@@ -756,13 +756,16 @@ describe('buildConflictView (V2Conflict, PR 2 CP4)', () => {
   })
 
   it('the line names the soonest timer, with the step name\'s own casing, then "Pick one cook to carry on with."', () => {
-    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 + 6 * MIN }).line).toBe(
+    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 + 6 * MIN, startedAt: T0 }).line).toBe(
       'Tomato base has 6 min left on its timer. Pick one cook to carry on with.',
     )
-    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 - 4 * MIN }).line).toBe(
+    expect(view(KADAI, () => true, { stepName: 'Tomato base', endsAt: T0 - 4 * MIN, startedAt: T0 - 10 * MIN }).line).toBe(
       "Tomato base's timer ended 4 min ago. Pick one cook to carry on with.",
     )
-    expect(view(KADAI, () => true, { stepName: null, endsAt: T0 + 6 * MIN }).line).toBe('A timer has 6 min left. Pick one cook to carry on with.')
+    expect(view(KADAI, () => true, { stepName: null, endsAt: T0 + 6 * MIN, startedAt: T0 }).line).toBe('A timer has 6 min left. Pick one cook to carry on with.')
+    // E1: a stale tick never reads longer than the timer was set for.
+    const stale = buildConflictView(KADAI, () => true, { recipeTitle: 'Kurkuri Bhindi', timer: { stepName: null, endsAt: T0 + 6 * MIN, startedAt: T0 }, now: T0 - 900 })
+    expect(stale.line).toBe('A timer has 6 min left. Pick one cook to carry on with.')
     expect(view(KADAI).line).toBe('Pick one cook to carry on with.')
   })
 
@@ -810,8 +813,8 @@ describe('conflictTimer (PR 2 CP4)', () => {
     let se = must(engine.start(null, model, 'library:b', T0))
     se = must(engine.startNode(se, model, 'soak_rice', T0)) // ends +20
     se = must(engine.startNode(se, model, 'boil_spiced_water', T0)) // ends +6
-    expect(conflictTimer(se, (id) => model.nodes[id].label)).toEqual({ stepName: 'Boil spiced water', endsAt: T0 + 6 * MIN })
-    expect(conflictTimer(se, () => null)).toEqual({ stepName: null, endsAt: T0 + 6 * MIN })
+    expect(conflictTimer(se, (id) => model.nodes[id].label)).toEqual({ stepName: 'Boil spiced water', endsAt: T0 + 6 * MIN, startedAt: T0 })
+    expect(conflictTimer(se, () => null)).toEqual({ stepName: null, endsAt: T0 + 6 * MIN, startedAt: T0 })
   })
 
   it('no timer running, or no session: none', () => {

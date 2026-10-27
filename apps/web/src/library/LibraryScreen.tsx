@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react'
 
 import type { RecipeSummary, SavedRecipe } from '@abc-cook/schema'
 
-import { ApiError, fetchRecipes } from '@/api/client'
+import type { CookingSession } from '@/cooking/types'
+import type { ServingsChoice } from '@/lib/servings'
+import { ApiError, fetchRecipes, UNREACHABLE_MESSAGE } from '@/api/client'
 import { servingsLine } from '@/lib/servings'
+import { savedServingsLine } from '@/lib/servingsCopy'
 
+import { rowServingsChoice } from './rowServings'
 import { thumbnailUrlFor } from './sourceKey'
 
 /**
@@ -14,6 +18,8 @@ import { thumbnailUrlFor } from './sourceKey'
  */
 export function LibraryScreen({
   savedRecipes,
+  session = null,
+  now = 0,
   onOpenSaved,
   onPick,
   onImport,
@@ -21,6 +27,9 @@ export function LibraryScreen({
   bottomInset = false,
 }: {
   savedRecipes: SavedRecipe[]
+  /** The stored cooking session and the clock, so a row shows the batch a cook in progress is using. */
+  session?: CookingSession | null
+  now?: number
   onOpenSaved: (id: string) => void
   onPick: (recipeId: string) => void
   onImport: () => void
@@ -58,7 +67,7 @@ export function LibraryScreen({
         ) : (
           <ul className="mt-2 border-t border-rule">
             {savedRecipes.map((recipe) => (
-              <SavedRow key={recipe.id} recipe={recipe} onOpen={() => onOpenSaved(recipe.id)} />
+              <SavedRow key={recipe.id} recipe={recipe} choice={rowServingsChoice(session, recipe.id, now, recipe.servings_choice)} onOpen={() => onOpenSaved(recipe.id)} />
             ))}
           </ul>
         )}
@@ -120,10 +129,10 @@ function SampleRow({ recipe, onPick }: { recipe: RecipeSummary; onPick: () => vo
   )
 }
 
-function SavedRow({ recipe, onOpen }: { recipe: SavedRecipe; onOpen: () => void }) {
+function SavedRow({ recipe, choice, onOpen }: { recipe: SavedRecipe; choice: ServingsChoice | null | undefined; onOpen: () => void }) {
   const thumbnail = thumbnailUrlFor(recipe.source_key)
   const { title } = recipe.payload.graph
-  const servings = servingsLine(recipe.payload.graph, recipe.import_meta)
+  const servings = savedServingsLine(recipe.payload.graph, recipe.import_meta, choice)
 
   return (
     <li>
@@ -163,7 +172,10 @@ function SavedRow({ recipe, onOpen }: { recipe: SavedRecipe; onOpen: () => void 
 
 function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 0) return err.message
+    if (err.status === 0) {
+      console.warn('[library]', err.message)
+      return UNREACHABLE_MESSAGE
+    }
     return `The server had a problem (${err.status}).`
   }
   return 'Something went wrong loading recipes.'

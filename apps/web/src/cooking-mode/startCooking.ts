@@ -1,5 +1,6 @@
+import { foreignLifecycle } from '@/cooking/select'
 import type { DispatchResult, SessionStore } from '@/cooking/store'
-import type { CookingModel } from '@/cooking/types'
+import type { CookingModel, CookingSession } from '@/cooking/types'
 import type { ServingsChoice } from '@/lib/servings'
 
 /**
@@ -11,6 +12,27 @@ import type { ServingsChoice } from '@/lib/servings'
  * live session) and `conflict` are left completely untouched — `CookingModeScreen` renders
  * the resume/conflict flow itself once mounted.
  */
+/**
+ * The Plan page's primary button: "Continue cooking" when this plan already has a live session
+ * (`active` or `stale`, the rule Home's Continue strip uses), else "Start cooking". A finished
+ * session, one with no `totalMin` snapshot (`unknown`) and another plan's session are not
+ * continuing anything here. The tap is the same either way: `startIfNone` resumes.
+ */
+export function cookCtaLabel(session: CookingSession | null, planKey: string, now: number): string {
+  return isContinuing(session, planKey, now) ? 'Continue cooking' : 'Start cooking'
+}
+
+/** The line under that button while a cook is under way; `null` otherwise (the page keeps its own line). */
+export function cookCtaSubline(session: CookingSession | null, planKey: string, now: number): string | null {
+  return isContinuing(session, planKey, now) ? 'Pick up where you left off.' : null
+}
+
+function isContinuing(session: CookingSession | null, planKey: string, now: number): boolean {
+  if (session == null || session.planKey !== planKey) return false
+  const state = foreignLifecycle(session, now)
+  return state === 'active' || state === 'stale'
+}
+
 export function startIfNone(
   store: SessionStore,
   model: CookingModel,

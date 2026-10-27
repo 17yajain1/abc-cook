@@ -1,4 +1,6 @@
-import { choiceFactor, type ServingsChoice } from './servings'
+import type { ImportMeta } from '@abc-cook/schema'
+
+import { choiceFactor, reconcileChoice, servingsLine, type ServingsChoice } from './servings'
 
 /**
  * Every string the servings feature shows, in one place (the R4 copy table). Servings mode
@@ -36,6 +38,22 @@ export interface ServingsCopy {
   gated: string
   /** The times note on its own, or null below factor 2. */
   timesNote: string | null
+}
+
+/**
+ * CP5.1 U5: the servings line on a Cookbook row. A saved servings choice replaces the recipe's own line,
+ * since that line (and its yield text) describes the batch as written: "6 servings", or "Amounts ×2" for a
+ * recipe that states no servings. A choice at factor 1, a stale one (made for another version of the
+ * recipe) or none falls back to the usual `servingsLine`.
+ */
+export function savedServingsLine(
+  source: Parameters<typeof servingsLine>[0],
+  importMeta: ImportMeta | null | undefined,
+  choice: unknown,
+): string | null {
+  const live = reconcileChoice(choice, source, importMeta)
+  if (live == null || choiceFactor(live) === 1) return servingsLine(source, importMeta)
+  return live.mode === 'servings' ? servings(live.chosen) : servingsCopy(live).headerMeta
 }
 
 export function servingsCopy(choice: ServingsChoice | null): ServingsCopy {

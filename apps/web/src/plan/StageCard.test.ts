@@ -129,6 +129,7 @@ function task(overrides: Partial<RenderTask>): RenderTask {
     durationTypical: 0,
     donenessCue: null,
     attention: 'hands_on',
+    occupiesCook: true,
     durationProvenance: null,
     homeStageIndex: 0,
     tip: null,

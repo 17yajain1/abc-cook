@@ -9,7 +9,7 @@ import { current } from '@/cooking/select'
 import { createSessionStore, type StorageLike } from '@/cooking/store'
 import { applyEdits, stepAnchor, type RecipeEdit } from '@/library/recipeEdits'
 import type { ServingsChoice } from '@/lib/servings'
-import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE } from '@/lib/stepNote'
+import { STEP_AMOUNT_NOTE, stepTimeNote } from '@/lib/stepNote'
 
 import { ingredientsById } from './quantity'
 import { buildCookingView, type CookingView } from './viewModel'
@@ -17,6 +17,15 @@ import { buildCookingView, type CookingView } from './viewModel'
 const KADHI = kadhiFixture as RecipePlanResponse
 const PIZZA = pizzaFixture as RecipePlanResponse
 const T0 = 1_700_000_000_000
+
+/** The note a screen should carry: the recipe's own length for the step on screen (CP5.1 U2). */
+function expectedTimeNote(v: CookingView): string | null {
+  for (const raw of [KADHI, PIZZA]) {
+    const n = v.nodeId == null ? undefined : deriveCookingModel(raw).nodes[v.nodeId]
+    if (n != null) return stepTimeNote(n.durationTypical, n.occupiesCook)
+  }
+  return null
+}
 const AT = '2026-10-20T08:00:00.000Z'
 
 type MutNode = { id: string; instruction: string }
@@ -60,13 +69,13 @@ const COOK_ID = nodesOf(KADHI)[COOK].id
 describe('B3 (ii): the cooking-mode time note', () => {
   it('shows on an edited step whose text has a time phrase', () => {
     const v = taskView(KADHI, [stepEdit('s1', KADHI, COOK, 'Stir till it boils, then lower the heat and cook for 40 minutes.')], COOK_ID)
-    expect(v.stepTimeNote).toBe('Timers stay as planned. Changing times comes later.')
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toMatch(/^The (timer|plan) uses the recipe's \d/)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
   })
 
   it('shows for a time written in words too (B10)', () => {
     const v = taskView(KADHI, [stepEdit('s1', KADHI, COOK, 'Stir till it boils, then cook for forty minutes.')], COOK_ID)
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
   })
 
   it('does not show on an edited step with no time phrase', () => {
@@ -106,7 +115,7 @@ describe('B21: the R4 amount note and the time note on one screen', () => {
     const text = 'Measure 4 cups flour in a large bowl, then rest it for 10 minutes.'
     const v = taskView(PIZZA, [stepEdit('s1', PIZZA, at, text)], nodesOf(PIZZA)[at].id, { mode: 'servings', chosen: 16, original: 8 })
     expect(v.servingsNote).not.toBeNull()
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
     expect(v.servingsNote).not.toBe(v.stepTimeNote)
   })
 })
@@ -174,7 +183,7 @@ describe('B26: the amount line in cooking mode', () => {
     const edited = text.replace('3 1/3 cups', '4 cups') + ' Rest it for 10 minutes.'
     const v = taskView(PIZZA, [stepEdit('s1', PIZZA, at, edited)], id, { mode: 'servings', chosen: 16, original: 8 })
     expect(v.servingsNote).not.toBeNull()
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
     expect(v.stepAmountNote).toBe(STEP_AMOUNT_NOTE)
   })
 })

@@ -1,4 +1,4 @@
-import { STEP_AMOUNT_HINT, STEP_TIME_NOTE, textHasTimePhrase } from '@/lib/stepNote'
+import { STEP_AMOUNT_HINT, stepTimeNote, textHasTimePhrase } from '@/lib/stepNote'
 import { isServingWaitNode } from '@/library/recipeEdits'
 
 import type { RenderTask } from './derive'
@@ -17,6 +17,7 @@ import { useStepEdit } from './stepEditContext'
 export function StepInstruction({ task, factor }: { task: RenderTask; factor: number }) {
   const api = useStepEdit()
   const editable = api != null && !isServingWaitNode(task.nodeId)
+  const timeNote = stepTimeNote(task.durationTypical, task.occupiesCook)
 
   if (editable && api.step?.target.nodeId === task.nodeId) {
     return (
@@ -25,6 +26,7 @@ export function StepInstruction({ task, factor }: { task: RenderTask; factor: nu
         onChange={api.change}
         factorLine={api.factorLine}
         importedText={api.importedSteps.get(task.nodeId) ?? null}
+        timeNote={timeNote}
         onRestore={api.importedSteps.has(task.nodeId) ? () => api.restore(task.nodeId) : null}
         writeError={api.writeError}
         onSave={api.save}
@@ -45,8 +47,8 @@ export function StepInstruction({ task, factor }: { task: RenderTask; factor: nu
           {edited && <EditedTag onClick={() => api.open(task.nodeId)} />}
         </span>
       )}
-      {edited && textHasTimePhrase(task.instruction) && (
-        <span className="mt-0.5 block text-[13px] leading-[1.4] text-home-ink-2">{STEP_TIME_NOTE}</span>
+      {edited && timeNote && textHasTimePhrase(task.instruction) && (
+        <span className="mt-0.5 block text-[13px] leading-[1.4] text-home-ink-2">{timeNote}</span>
       )}
       {hint && <span className="mt-0.5 block text-[13px] leading-[1.4] text-home-ink-2">{STEP_AMOUNT_HINT}</span>}
     </>

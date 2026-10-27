@@ -9,7 +9,7 @@ import { createSessionStore } from './cooking/store'
 import { canResolveConflictTarget, resolveConflictTarget } from './cooking-mode/conflictResolve'
 import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
-import { startIfNone } from './cooking-mode/startCooking'
+import { cookCtaLabel, cookCtaSubline, startIfNone } from './cooking-mode/startCooking'
 import { useTimerEndSignals } from './cooking-mode/timerEndSignals'
 import { ImportScreen } from './import/ImportScreen'
 import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff'
@@ -556,6 +556,8 @@ function PlanRoute({
       plan={view.plan}
       onBack={onBack}
       onStartCooking={onStartCooking}
+      startLabel={cookCtaLabel(session, planKey(view.origin), now)}
+      startSubline={cookCtaSubline(session, planKey(view.origin), now)}
       save={saveControlFor(view.origin, view.saveState, onSave)}
       importMeta={view.importMeta}
       staleness={view.staleness}

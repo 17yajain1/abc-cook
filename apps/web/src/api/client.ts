@@ -32,6 +32,10 @@ export class ApiError extends Error {
   }
 }
 
+/** What the cook is told when the API doesn't answer. The address and the "is it running?" detail stay in
+ * the `ApiError` message, for the console. */
+export const UNREACHABLE_MESSAGE = "We couldn't reach ABC Cook. Check your connection and try again."
+
 async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   let response: Response
   try {

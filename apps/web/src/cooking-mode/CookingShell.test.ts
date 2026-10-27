@@ -433,7 +433,7 @@ describe('CookingShell — PR 2 CP4 non-step screens', () => {
   it('done (V2Done): the picture full width, 300px, cover; 40/800 at 88% width; the line; Back + Finished cooking', () => {
     const se = must(engine.markDone(fresh(), dModel, 'glaze_donuts', T0 + 82 * MIN))
     const html = render(dView(se, T0 + 82 * MIN + 20_000, { thumbnail: 'https://i.ytimg.com/vi/x/hqdefault.jpg' }))
-    expect(html).toMatch(/<div class="flex h-full flex-col bg-home-ground"><div class="flex-shrink-0 pt-\[var\(--safe-top\)\]"><img src="https:\/\/i\.ytimg\.com\/vi\/x\/hqdefault\.jpg" alt="Homemade Glazed Donuts, from the recipe&#x27;s video" class="block h-\[300px\] w-full object-cover"\/>/)
+    expect(html).toMatch(/<div class="flex h-full flex-col bg-home-ground"><div class="flex-shrink-0 pt-\[var\(--safe-top\)\]"><img src="https:\/\/i\.ytimg\.com\/vi\/x\/hqdefault\.jpg" alt="Homemade Glazed Donuts, from the recipe&#x27;s video" class="block aspect-video max-h-\[30vh\] w-full object-cover"\/>/)
     expect(html).toMatch(/<h1 class="text-\[40px\] font-extrabold[^"]*" style="font-stretch:88%">Homemade Glazed Donuts is done\.<\/h1><p class="text-\[17px\] text-home-ink-2">Done in 1 hr 22 min\.<\/p>/)
     expect(footer(html)).toMatch(/>Back<\/button><button[^>]*>Finished cooking<\/button>/)
     expect(html).not.toContain('Leave')

@@ -82,6 +82,21 @@ export interface TimerSheetView {
   done: SheetButton
 }
 
+/**
+ * Milliseconds left on a running timer, never more than its own length (planned time plus any
+ * extension: `endsAt - startedAt`, the engine's invariant). `now` is the screen's 1 s tick, so
+ * right after a start it can sit behind the clock that stamped `endsAt`; unclamped, a 3-min
+ * timer would read 3 min 0.9 s and `timeLeft`'s ceiling would say 4.
+ */
+export function leftMs(s: { endsAt: number; startedAt: number }, now: number): number {
+  return Math.min(s.endsAt - now, s.endsAt - s.startedAt)
+}
+
+function leftOf(session: CookingSession, id: string, now: number): number {
+  const s = session.nodes[id]
+  return s.state === 'running' ? leftMs(s, now) : Number.POSITIVE_INFINITY
+}
+
 function endsAt(session: CookingSession, id: string): number {
   const s = session.nodes[id]
   return s.state === 'running' ? s.endsAt : Number.POSITIVE_INFINITY
@@ -96,7 +111,7 @@ export function runningTimers(model: CookingModel, session: CookingSession, now:
       nodeId: id,
       name: model.nodes[id].label,
       stepRef: `Step ${order.indexOf(id) + 1}`,
-      left: timeLeft(endsAt(session, id) - now).text,
+      left: timeLeft(leftOf(session, id, now)).text,
     }))
 }
 
@@ -163,7 +178,7 @@ export function timerSheet(
 ): TimerSheetView | null {
   const s = session.nodes[nodeId]
   if (s.state !== 'running') return null
-  const left = timeLeft(s.endsAt - now)
+  const left = timeLeft(leftMs(s, now))
   const up = s.endsAt <= now
   const stepRef = `Step ${order.indexOf(nodeId) + 1}`
   const span = s.endsAt - s.startedAt
@@ -176,7 +191,7 @@ export function timerSheet(
     unit: left.unit,
     readyAt: up ? null : `Ready around ${readyClock(now, s.endsAt, locale)}`,
     ended: up,
-    fraction: span > 0 ? Math.min(1, Math.max(0, (now - s.startedAt) / span)) : 1,
+    fraction: span > 0 ? Math.min(1, Math.max(0, (span - leftMs(s, now)) / span)) : 1,
     add: { label: 'Add 5 min', action: { kind: 'extend', nodeId, ms: ADD_TIME_MS } },
     stop: { label: 'Stop timer', action: { kind: 'stopNode', nodeId } },
     done: { label: "It's done", action: { kind: 'markDone', nodeId } },
