@@ -4,6 +4,7 @@ import { servingsCopy } from '@/lib/servingsCopy'
 import type { RenderIngredientGroup } from './derive'
 import { EditableIngredientList, type IngredientsEdit } from './EditableIngredientList'
 import { IngredientList } from './IngredientList'
+import { SectionEditButton } from './SectionEditButton'
 import { panelIngredientGroups } from './ingredientGroups'
 
 /** R4: the servings control's state for this recipe. `choice` is the factor the amounts are
@@ -23,11 +24,14 @@ export function IngredientsPanel({
   groups,
   servings,
   edit,
+  onSectionEdit,
 }: {
   groups: RenderIngredientGroup[]
   servings?: PanelServings
   /** R6a: the saved recipe's edit session. Absent when the recipe has no saved entry to edit. */
   edit?: IngredientsEdit
+  /** CP5.1 U1: the heading's Edit. Absent when the header's Edit pill is (nothing saved to edit, or already editing). */
+  onSectionEdit?: () => void
 }) {
   const choice = servings?.kind === 'gated' ? null : (servings?.choice ?? null)
   const factor = choiceFactor(choice)
@@ -41,9 +45,12 @@ export function IngredientsPanel({
         <h2 id="need-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
           What you need
         </h2>
-        <span className="tabular text-[13px] text-home-ink-2">
-          {count} {count === 1 ? 'ingredient' : 'ingredients'}
-        </span>
+        <div className="flex items-baseline gap-4">
+          <span className="tabular text-[13px] text-home-ink-2">
+            {count} {count === 1 ? 'ingredient' : 'ingredients'}
+          </span>
+          {onSectionEdit && <SectionEditButton onClick={onSectionEdit} label="Edit ingredients" />}
+        </div>
       </div>
       <div className="mt-2.5">
         {edit ? <EditableIngredientList groups={listGroups} edit={edit} /> : <IngredientList groups={listGroups} />}

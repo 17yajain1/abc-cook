@@ -39,6 +39,8 @@ export interface RenderTask {
   durationTypical: number
   donenessCue: string | null
   attention: Node['attention']
+  /** The scheduler's `occupies_cook` for this node: hands-on, as opposed to a timer. Never inferred from `attention`. */
+  occupiesCook: boolean
   /** How `durationTypical` was arrived at, or `null` when no provenance was supplied. */
   durationProvenance: ProvenanceSource | null
   /** Position in `graph.stages` of the stage this task actually belongs to — always its
@@ -218,6 +220,7 @@ function toTask(
   provenance: GraphProvenance | null,
   source: CookingGraph['source'],
   ingredients: readonly Ingredient[],
+  occupiesCook: boolean,
 ): RenderTask {
   const consumes = new Set(node.consumes ?? [])
   return {
@@ -227,6 +230,7 @@ function toTask(
     durationTypical: node.duration_typical,
     donenessCue: displayCue(node.doneness_cue ?? null),
     attention: node.attention,
+    occupiesCook,
     durationProvenance: provenance?.nodes?.[node.id]?.fields?.duration ?? null,
     homeStageIndex,
     tip: node.tip ?? null,
@@ -348,6 +352,7 @@ export function derivePlan(
   const scheduledByNode = new Map<string, ScheduledNode>(
     plan.scheduled.map((entry) => [entry.node_id, entry]),
   )
+  const occupiesOf = (nodeId: string): boolean => scheduledByNode.get(nodeId)?.occupies_cook ?? false
   const spanByStage = new Map(stages.map((span) => [span.stage_id, span]))
 
   const homeIndexOf = (nodeId: string): number =>
@@ -373,7 +378,7 @@ export function derivePlan(
       tasks: window.assigned.map((nodeId) => {
         const node = nodes.get(nodeId)!
         return {
-          ...toTask(node, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients),
+          ...toTask(node, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients, occupiesOf(nodeId)),
           rankInWindow: scheduledByNode.get(nodeId)?.rank_in_window ?? 0,
         }
       }),
@@ -420,7 +425,7 @@ export function derivePlan(
       // a stage with no nodes at all.
       span: spanByStage.get(run.stageId)!,
       inlineTasks: run.nodeIds.map((nodeId) =>
-        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients),
+        toTask(nodes.get(nodeId)!, homeIndexOf(nodeId), provenance, graph.source, graph.ingredients, occupiesOf(nodeId)),
       ),
       windows: run.nodeIds
         .map((nodeId) => windowByHostNodeId.get(nodeId))

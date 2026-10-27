@@ -9,7 +9,7 @@ import { current } from '@/cooking/select'
 import { createSessionStore, type StorageLike } from '@/cooking/store'
 import { applyEdits, stepAnchor, type RecipeEdit } from '@/library/recipeEdits'
 import type { ServingsChoice } from '@/lib/servings'
-import { STEP_AMOUNT_NOTE, STEP_TIME_NOTE } from '@/lib/stepNote'
+import { STEP_AMOUNT_NOTE, stepTimeNote } from '@/lib/stepNote'
 
 import { ingredientsById } from './quantity'
 import { buildCookingView, type CookingView } from './viewModel'
@@ -17,6 +17,15 @@ import { buildCookingView, type CookingView } from './viewModel'
 const KADHI = kadhiFixture as RecipePlanResponse
 const PIZZA = pizzaFixture as RecipePlanResponse
 const T0 = 1_700_000_000_000
+
+/** The note a screen should carry: the recipe's own length for the step on screen (CP5.1 U2). */
+function expectedTimeNote(v: CookingView): string | null {
+  for (const raw of [KADHI, PIZZA]) {
+    const n = v.nodeId == null ? undefined : deriveCookingModel(raw).nodes[v.nodeId]
+    if (n != null) return stepTimeNote(n.durationTypical, n.occupiesCook)
+  }
+  return null
+}
 const AT = '2026-10-20T08:00:00.000Z'
 
 type MutNode = { id: string; instruction: string }
@@ -47,7 +56,7 @@ function taskView(raw: RecipePlanResponse, edits: RecipeEdit[], nodeId: string, 
       store.dispatch({ type: 'markDone', model, nodeId: run, now: T0 })
       continue
     }
-    const v = buildCookingView(model, s, T0, ings, { recipeTitle: raw.graph.title, leaving: false, choice, editedSteps: overlay.editedSteps, importedSteps: overlay.importedSteps })
+    const v = buildCookingView(model, s, T0, ings, { recipeTitle: raw.graph.title, choice, editedSteps: overlay.editedSteps, importedSteps: overlay.importedSteps })
     if (cur === nodeId && (v.screenId === 'task' || v.screenId === 'handsoff_pending')) return v
     store.dispatch({ type: model.nodes[cur].occupiesCook ? 'markDone' : 'startNode', model, nodeId: cur, now: T0 })
   }
@@ -60,13 +69,13 @@ const COOK_ID = nodesOf(KADHI)[COOK].id
 describe('B3 (ii): the cooking-mode time note', () => {
   it('shows on an edited step whose text has a time phrase', () => {
     const v = taskView(KADHI, [stepEdit('s1', KADHI, COOK, 'Stir till it boils, then lower the heat and cook for 40 minutes.')], COOK_ID)
-    expect(v.stepTimeNote).toBe('Timers stay as planned. Changing times comes later.')
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toMatch(/^The (timer|plan) uses the recipe's \d/)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
   })
 
   it('shows for a time written in words too (B10)', () => {
     const v = taskView(KADHI, [stepEdit('s1', KADHI, COOK, 'Stir till it boils, then cook for forty minutes.')], COOK_ID)
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
   })
 
   it('does not show on an edited step with no time phrase', () => {
@@ -106,7 +115,7 @@ describe('B21: the R4 amount note and the time note on one screen', () => {
     const text = 'Measure 4 cups flour in a large bowl, then rest it for 10 minutes.'
     const v = taskView(PIZZA, [stepEdit('s1', PIZZA, at, text)], nodesOf(PIZZA)[at].id, { mode: 'servings', chosen: 16, original: 8 })
     expect(v.servingsNote).not.toBeNull()
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
     expect(v.servingsNote).not.toBe(v.stepTimeNote)
   })
 })
@@ -126,17 +135,18 @@ describe('D10: a linked add shows as a chip on its step, with no marks', () => {
 })
 
 describe('non-task screens', () => {
-  it('the entry-style views carry a null stepTimeNote', () => {
+  it('a non-step view (CP4: the stale screen; the leaving screen is gone) carries a null stepTimeNote', () => {
     const overlay = applyEdits(KADHI, [stepEdit('s1', KADHI, COOK, 'Cook for 40 minutes.')])
     const model = deriveCookingModel(overlay.payload)
     const store = createSessionStore(memoryStorage(), () => T0)
     store.dispatch({ type: 'start', model, planKey: 't', now: T0, recipeTitle: 'k', servingsChoice: null })
-    const v = buildCookingView(model, store.getState()!, T0, ingredientsById(overlay.payload.graph.ingredients), {
+    const later = T0 + 3 * 24 * 60 * 60_000
+    const v = buildCookingView(model, store.getState()!, later, ingredientsById(overlay.payload.graph.ingredients), {
       recipeTitle: 'k',
-      leaving: true,
       choice: null,
       editedSteps: overlay.editedSteps,
     })
+    expect(v.screenId).toBe('stale')
     expect(v.stepTimeNote).toBeNull()
   })
 })
@@ -173,7 +183,7 @@ describe('B26: the amount line in cooking mode', () => {
     const edited = text.replace('3 1/3 cups', '4 cups') + ' Rest it for 10 minutes.'
     const v = taskView(PIZZA, [stepEdit('s1', PIZZA, at, edited)], id, { mode: 'servings', chosen: 16, original: 8 })
     expect(v.servingsNote).not.toBeNull()
-    expect(v.stepTimeNote).toBe(STEP_TIME_NOTE)
+    expect(v.stepTimeNote).toBe(expectedTimeNote(v))
     expect(v.stepAmountNote).toBe(STEP_AMOUNT_NOTE)
   })
 })

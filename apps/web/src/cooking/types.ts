@@ -45,11 +45,19 @@ export interface CookingSession {
    * isn't one of the two shapes, all of which mean factor 1. Locked for the session's life
    * (Q9), so cooking mode reads the amounts it started with, never the plan view's state. */
   servingsChoice?: ServingsChoice
+  /** PR 2 CP1: the step the cook is looking at — navigation only, never completion. Absent
+   * or `null` means "follow the suggestion" (`current()`). Optional and additive, like
+   * `recipeTitle`/`totalMin`/`servingsChoice`, so there is no version bump; a stored value
+   * that isn't a string or `null` is dropped on read. `markDone`/`acknowledge` reset it to
+   * `null` when it named a step they just completed. */
+  viewing?: string | null
 }
 
-/** A hands-on node's lifecycle is `pending -> done` or `pending -> deferred -> done`,
- * and it never has a timer. A hands-off node's lifecycle is `pending -> running -> done`;
- * only `running` carries the absolute wall-clock `endsAt` (plan §C3, §C4). */
+/** A hands-on node's lifecycle is `pending -> done`, or the legacy `pending -> deferred
+ * -> done` (skip), and it never has a timer. A hands-off node's lifecycle is `pending ->
+ * running -> done`, or `pending -> done` without a timer (PR 2 CP1), and a running timer
+ * can be stopped back to `pending` (`stopNode`). Only `running` carries the absolute
+ * wall-clock `endsAt` (plan §C3, §C4). */
 export type NodeState =
   | { state: 'pending' }
   | { state: 'deferred'; at: number }
@@ -68,9 +76,13 @@ export interface TransitionEntry {
  * biryani t=20's two producers, and `undo` must reverse all of them or none).
  */
 export interface Transition {
-  kind: 'done' | 'skip' | 'acknowledge'
+  /** `start` (PR 2 CP2a): a `startNode`, undone back to not started. */
+  kind: 'done' | 'skip' | 'acknowledge' | 'stop' | 'start'
   at: number
   entries: TransitionEntry[]
+  /** PR 2 CP1: `session.viewing` before the action, restored by `undo`. Absent when the
+   * session had no `viewing` field (nothing to restore). */
+  viewing?: string | null
 }
 
 /**

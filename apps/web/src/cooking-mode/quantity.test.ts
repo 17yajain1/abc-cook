@@ -6,9 +6,10 @@ import { describe, expect, it } from 'vitest'
 
 import type { Ingredient, RecipePlanResponse } from '@abc-cook/schema'
 
-import { ingredientsById, quantityLine, quantityPhrases } from './quantity'
+import { ingredientsById, needRows, needShown, quantityLine, quantityPhrases } from './quantity'
 import golden from './quantityLine.golden.json'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
+import kadhiPakora from '@/__fixtures__/kadhi-pakora.plan-response.json'
 import { deriveCookingModel } from '@/cooking/model'
 import type { CookingNodeInfo } from '@/cooking/types'
 import { panelIngredientGroups } from '@/plan/ingredientGroups'
@@ -285,5 +286,97 @@ describe('chips share the Ingredients tab quantity text (FGC-42)', () => {
   it.each(cases)('$label: chip and tab agree', ({ item, factor, chip, tab }) => {
     expect(tabOf(item, factor)).toBe(tab)
     expect(chipOf(item, factor)).toEqual([chip])
+  })
+})
+
+describe('needRows (PR 2 CP3, You\'ll need)', () => {
+  const ing = (id: string, name: string, over: Partial<Ingredient> = {}): Ingredient => ({
+    group: null,
+    id,
+    name,
+    prep_note: null,
+    qty: null,
+    unit: null,
+    ...over,
+  })
+  const nodeConsuming = (...ids: string[]): CookingNodeInfo =>
+    ({ ...model.nodes.chop_onion, consumes: ids }) as CookingNodeInfo
+  const KADHI = kadhiPakora as RecipePlanResponse
+  const kadhiModel = deriveCookingModel(KADHI)
+  const kadhiIngredients = ingredientsById(KADHI.graph.ingredients)
+  const MIX = 'step_whisk_together_curd_besan_sliced_onions'
+
+  it('name as written on the left, the amount on its own; consumes order; comp_* skipped', () => {
+    expect(needRows(model.nodes.saute_onion, ingredients)).toEqual([
+      { name: 'Oil', amount: '3 tbsp', unscaled: false },
+      { name: 'Ginger-garlic paste', amount: '1 tbsp', unscaled: false },
+    ])
+    expect(needRows(model.nodes.add_veggies, ingredients)).toEqual([])
+  })
+
+  it('amounts as on the recipe page: formatQty, not the chips\' bare number (FGC-44)', () => {
+    const m = ingredientsById([ing('ing_a', 'Butter', { qty: 0.5, unit: 'cup' })])
+    expect(needRows(nodeConsuming('ing_a'), m)).toEqual([{ name: 'Butter', amount: '1/2 cup', unscaled: false }])
+    expect(quantityPhrases(nodeConsuming('ing_a'), m)).toEqual(['0.5 cup butter'])
+  })
+
+  it('"to taste" sits in the amount column; a name holding its amount gets none; no amount is null', () => {
+    const m = ingredientsById([
+      ing('ing_salt', 'Salt', { qty_text: 'to taste' }),
+      ing('ing_fold', 'A handful of fresh coriander leaves', { qty_text: 'a handful' }),
+      ing('ing_water', 'Water'),
+    ])
+    expect(needRows(nodeConsuming('ing_salt', 'ing_fold', 'ing_water'), m)).toEqual([
+      { name: 'Salt', amount: 'to taste', unscaled: false },
+      { name: 'A handful of fresh coriander leaves', amount: null, unscaled: false },
+      { name: 'Water', amount: null, unscaled: false },
+    ])
+  })
+
+  it('identical rows collapse; the same name with different amounts stays', () => {
+    const m = ingredientsById([
+      ing('ing_s1', 'Salt', { qty_text: 'to taste' }),
+      ing('ing_s2', 'Salt', { qty_text: 'to taste' }),
+      ing('ing_o1', 'Oil', { qty: 1, unit: 'tsp' }),
+      ing('ing_o2', 'Oil', { qty: 1, unit: 'tbsp' }),
+    ])
+    expect(needRows(nodeConsuming('ing_s1', 'ing_o1', 'ing_s2', 'ing_o2'), m).map((r) => `${r.name}|${r.amount}`)).toEqual([
+      'Salt|to taste',
+      'Oil|1 tsp',
+      'Oil|1 tbsp',
+    ])
+  })
+
+  it('scales with the session factor, and flags an amount the scaler could not scale', () => {
+    const rows = needRows(kadhiModel.nodes[MIX], kadhiIngredients, 2)
+    expect(rows[0]).toEqual({ name: 'Curd', amount: '3 cups', unscaled: false })
+    const m = ingredientsById([ing('ing_pk', 'Stock', { qty_text: '1 (400 g) can' })])
+    expect(needRows(nodeConsuming('ing_pk'), m, 2)).toEqual([{ name: 'Stock', amount: '1 (400 g) can', unscaled: true }])
+    expect(needRows(nodeConsuming('ing_pk'), m, 1)[0].unscaled).toBe(false)
+  })
+
+  it('the amount text is the chips\' trailing text with the recipe page\'s number format', () => {
+    for (const id of kadhiModel.order) {
+      const rows = needRows(kadhiModel.nodes[id], kadhiIngredients)
+      const chips = quantityPhrases(kadhiModel.nodes[id], kadhiIngredients)
+      expect(rows.length, id).toBe(chips.length)
+    }
+  })
+})
+
+describe('needShown (owner answer 4: threshold)', () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `I${i}`, amount: '1 tsp', unscaled: false }))
+
+  it('six or fewer: every row, no summary (never hide just one)', () => {
+    for (const n of [0, 1, 6]) expect(needShown(rows(n), false)).toEqual({ rows: rows(n), more: null })
+  })
+
+  it('seven or more: the first five in order, then "Show N more" (CP3.1)', () => {
+    expect(needShown(rows(7), false)).toEqual({ rows: rows(5), more: 'Show 2 more' })
+    expect(needShown(rows(11), false)).toEqual({ rows: rows(5), more: 'Show 6 more' })
+  })
+
+  it('expanded: every row, no summary', () => {
+    expect(needShown(rows(11), true)).toEqual({ rows: rows(11), more: null })
   })
 })

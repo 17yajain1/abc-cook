@@ -80,6 +80,54 @@ function quantityChip(ingredient: Ingredient, factor: number): QuantityChip {
   return { text, unscaled }
 }
 
+/** PR 2 CP3: one "You'll need" row — the ingredient's name as written, and its amount as the
+ * recipe page prints it (`null` when there is none to print). `unscaled` as on the chips. */
+export interface NeedRow {
+  name: string
+  amount: string | null
+  unscaled: boolean
+}
+
+/**
+ * The step page's "You'll need" rows, in `consumes` order, `ing_*` ids only. The amount is
+ * `quantityTrailingScaled` with its default `formatQty` (the recipe page's numbers, not the
+ * chips' `legacyNumber`, FGC-44), scaled by `factor`; "to taste" sits in the amount column;
+ * a name that already holds its amount ("A handful of ...") gets none. Identical rows collapse.
+ */
+export function needRows(
+  node: CookingNodeInfo,
+  ingredientsById: ReadonlyMap<string, Ingredient>,
+  factor = 1,
+): NeedRow[] {
+  const rows = new Map<string, NeedRow>()
+  for (const id of node.consumes) {
+    if (!id.startsWith('ing_')) continue
+    const ingredient = ingredientsById.get(id)
+    if (ingredient == null) continue
+    const lower = ingredient.name.toLowerCase()
+    const { text, unscaled } = quantityTrailingScaled(ingredient, factor, {
+      omitAmount: (amount) => startsWithWords(lower, amount.toLowerCase()),
+    })
+    const row: NeedRow = { name: ingredient.name, amount: text ? text.trim() : null, unscaled }
+    const key = `${row.name}\u0000${row.amount ?? ''}`
+    if (!rows.has(key)) rows.set(key, row)
+  }
+  return [...rows.values()]
+}
+
+/** Owner answer 4: up to this many rows, every row shows (never hide just one). */
+export const NEED_ALL_UP_TO = 6
+/** Past `NEED_ALL_UP_TO`, this many rows show before the "N more" row. */
+export const NEED_HEAD = 5
+
+/** The rows "You'll need" draws, and the "Show N more" link's text (`null` for none; CP3.1).
+ * Collapsed lists of seven or more show the first `NEED_HEAD` in recipe order; `expanded`
+ * shows all. */
+export function needShown<T>(rows: T[], expanded: boolean): { rows: T[]; more: string | null } {
+  if (expanded || rows.length <= NEED_ALL_UP_TO) return { rows, more: null }
+  return { rows: rows.slice(0, NEED_HEAD), more: `Show ${rows.length - NEED_HEAD} more` }
+}
+
 /** `text` starts with `prefix` on a word boundary ("a handful of x" / "a handful"). */
 function startsWithWords(text: string, prefix: string): boolean {
   return text === prefix || text.startsWith(`${prefix} `)

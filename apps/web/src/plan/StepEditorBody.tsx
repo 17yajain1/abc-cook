@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 
-import { STEP_TIME_NOTE, textHasTimePhrase } from '@/lib/stepNote'
+import { textHasTimePhrase } from '@/lib/stepNote'
 import type { StepFieldState } from '@/library/stepEditor'
 
 import { ErrorLine, LinkButton } from './editorParts'
@@ -12,6 +12,8 @@ export interface StepEditorBodyProps {
   factorLine: string | null
   /** The step as imported, when an edit changed it. */
   importedText: string | null
+  /** The length the plan uses for this step (`stepTimeNote`); shown under the text when it names a time. */
+  timeNote: string | null
   onRestore: (() => void) | null
   writeError: string | null
   onSave: () => void
@@ -77,7 +79,7 @@ export function StepEditorBody(p: StepEditorBodyProps) {
           />
           {f.errors.text && <ErrorLine id={`${id}-err`}>{f.errors.text}</ErrorLine>}
         </div>
-        {textHasTimePhrase(f.text) && <p className="text-[13px] leading-[1.4] text-home-ink-2">{STEP_TIME_NOTE}</p>}
+        {p.timeNote && textHasTimePhrase(f.text) && <p className="text-[13px] leading-[1.4] text-home-ink-2">{p.timeNote}</p>}
         {p.importedText != null && (
           <div>
             <div className="line-clamp-3 text-[13px] leading-[1.4] text-home-ink-2 [overflow-wrap:anywhere]">Imported: {p.importedText}</div>

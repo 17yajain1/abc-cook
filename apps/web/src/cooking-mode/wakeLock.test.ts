@@ -15,14 +15,11 @@ describe('shouldHoldWakeLock', () => {
     const table: Record<ScreenId, boolean> = {
       task: true,
       handsoff_pending: true,
+      step_running: true,
+      step_done: true,
       wait: true,
-      handover: true,
-      entry: false,
       long_wait: false,
-      leaving: false,
-      returning: false,
       sitting_break: false,
-      sitting_resume: false,
       stale: false,
       conflict: false,
       done: false,
@@ -32,25 +29,14 @@ describe('shouldHoldWakeLock', () => {
     }
   })
 
-  it('holds on the four active-cooking screens', () => {
+  it('holds on the active-cooking screens (PR 2 CP4: the handover takeover is gone)', () => {
     expect(shouldHoldWakeLock('task')).toBe(true)
     expect(shouldHoldWakeLock('handsoff_pending')).toBe(true)
     expect(shouldHoldWakeLock('wait')).toBe(true)
-    expect(shouldHoldWakeLock('handover')).toBe(true)
   })
 
-  it('releases on every away, terminal and pre-cook screen', () => {
-    const releasing: ScreenId[] = [
-      'entry',
-      'long_wait',
-      'leaving',
-      'returning',
-      'sitting_break',
-      'sitting_resume',
-      'stale',
-      'conflict',
-      'done',
-    ]
+  it('releases on every long-wait, terminal and conflict screen', () => {
+    const releasing: ScreenId[] = ['long_wait', 'sitting_break', 'stale', 'conflict', 'done']
     for (const id of releasing) expect(shouldHoldWakeLock(id)).toBe(false)
   })
 

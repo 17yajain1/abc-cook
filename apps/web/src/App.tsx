@@ -9,7 +9,8 @@ import { createSessionStore } from './cooking/store'
 import { canResolveConflictTarget, resolveConflictTarget } from './cooking-mode/conflictResolve'
 import { CookingModeScreen } from './cooking-mode/CookingModeScreen'
 import { planKeyFor, type PlanOrigin } from './cooking-mode/planKey'
-import { startIfNone } from './cooking-mode/startCooking'
+import { cookCtaLabel, cookCtaSubline, startIfNone } from './cooking-mode/startCooking'
+import { useTimerEndSignals } from './cooking-mode/timerEndSignals'
 import { ImportScreen } from './import/ImportScreen'
 import type { FinishedImport, ImportHandlers, SaveState } from './import/handOff'
 import type { ImportExtras } from './import/importExtras'
@@ -125,6 +126,8 @@ function planFields(raw: RecipePlanResponse, edits: readonly RecipeEdit[], prove
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'home' })
+  // PR 2 CP4: the timer-end sound and vibration, once per timer, on whatever screen is showing.
+  useTimerEndSignals(sessionStore)
 
   // Bumped by every navigation. A late `openSaved` check compares against it, so a slow
   // response can never overwrite a view the person has since moved to.
@@ -328,6 +331,14 @@ export default function App() {
     [],
   )
 
+  // PR 2 CP4: the conflict screen names the other cook's timer step from its saved recipe.
+  const foreignStepName = useCallback((targetPlanKey: string, nodeId: string) => {
+    if (!targetPlanKey.startsWith('library:')) return null
+    const entry = library.get(targetPlanKey.slice('library:'.length))
+    if (!entry) return null
+    return deriveCookingModel(entry.payload).nodes[nodeId]?.label ?? null
+  }, [])
+
   // Resolves only through paths the app already has: the library store, or `fetchPlan`
   // (the same call `openRecipe` already makes) — never a new endpoint. `import:` plan
   // keys are never passed here (`canGoToConflict` hides "Go to" for them); a `library:`
@@ -449,6 +460,7 @@ export default function App() {
           onExit={exitCooking}
           onGoTo={goToConflict}
           canGoTo={canGoToConflict}
+          foreignStepName={foreignStepName}
           onFinish={backToHome}
           emitCompletion={emitCompletion}
         />
@@ -544,6 +556,8 @@ function PlanRoute({
       plan={view.plan}
       onBack={onBack}
       onStartCooking={onStartCooking}
+      startLabel={cookCtaLabel(session, planKey(view.origin), now)}
+      startSubline={cookCtaSubline(session, planKey(view.origin), now)}
       save={saveControlFor(view.origin, view.saveState, onSave)}
       importMeta={view.importMeta}
       staleness={view.staleness}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { RecipePlanResponse } from '@abc-cook/schema'
 
-import { startIfNone } from './startCooking'
+import { cookCtaLabel, cookCtaSubline, startIfNone } from './startCooking'
 import kadaiPaneer from '@/__fixtures__/kadai-paneer.plan-response.json'
 import chickenBiryani from '@/__fixtures__/chicken-biryani.plan-response.json'
 import { deriveCookingModel } from '@/cooking/model'
@@ -98,5 +98,45 @@ describe('startIfNone — P1 #6 §C5', () => {
 
     expect(result).toEqual({ ok: false, reason: 'storage_write_failed' })
     expect(store.getState()).toBeNull()
+  })
+})
+
+describe('cookCtaLabel (CP5.1 U4)', () => {
+  const model = deriveCookingModel(KADAI)
+  const started = () => {
+    const store = createSessionStore(new MemoryStorage(), () => T0)
+    startIfNone(store, model, 'server:kadai', T0, 'Kadai Paneer')
+    const session = store.getState()
+    if (session == null) throw new Error('no session')
+    return session
+  }
+  const DAY = 24 * 60 * 60_000
+
+  it('no session, or a session for another plan: Start cooking', () => {
+    expect(cookCtaLabel(null, 'server:kadai', T0)).toBe('Start cooking')
+    expect(cookCtaLabel(started(), 'server:biryani', T0)).toBe('Start cooking')
+  })
+
+  it('an active session on this plan: Continue cooking', () => {
+    expect(cookCtaLabel(started(), 'server:kadai', T0 + 60_000)).toBe('Continue cooking')
+  })
+
+  it('a stale session on this plan still continues (the same rule as the Continue strip)', () => {
+    expect(cookCtaLabel(started(), 'server:kadai', T0 + 30 * DAY)).toBe('Continue cooking')
+  })
+
+  it('a finished session, or one with no totalMin snapshot: Start cooking', () => {
+    expect(cookCtaLabel({ ...started(), finishedAt: T0 + 1000 }, 'server:kadai', T0 + 2000)).toBe('Start cooking')
+    expect(cookCtaLabel({ ...started(), totalMin: undefined }, 'server:kadai', T0 + 2000)).toBe('Start cooking')
+  })
+
+  it('the subline follows the button: "Pick up where you left off." only while continuing', () => {
+    const line = 'Pick up where you left off.'
+    expect(cookCtaSubline(null, 'server:kadai', T0)).toBeNull()
+    expect(cookCtaSubline(started(), 'server:biryani', T0)).toBeNull()
+    expect(cookCtaSubline(started(), 'server:kadai', T0 + 60_000)).toBe(line)
+    expect(cookCtaSubline(started(), 'server:kadai', T0 + 30 * DAY)).toBe(line)
+    expect(cookCtaSubline({ ...started(), finishedAt: T0 + 1000 }, 'server:kadai', T0 + 2000)).toBeNull()
+    expect(cookCtaSubline({ ...started(), totalMin: undefined }, 'server:kadai', T0 + 2000)).toBeNull()
   })
 })

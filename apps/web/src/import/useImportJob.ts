@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { SavedRecipe } from '@abc-cook/schema'
 
-import { ApiError, pollImport, startImport, startImportText } from '../api/client'
+import { ApiError, pollImport, startImport, startImportText, UNREACHABLE_MESSAGE } from '../api/client'
 import { fetchOEmbed } from '../api/oembed'
 import { derivePlan } from '../plan/derive'
 import type { FindSaved } from './duplicate'
@@ -43,10 +43,16 @@ export interface ImportJobOptions {
   skipDuplicateCheck?: boolean
 }
 
+/** A failed attempt's message belongs to that attempt: closing the sheet or changing the link ends it.
+ * Every other phase (a job in flight, a paste prompt, a failure the server explained) is kept as is. */
+export function clearError(phase: Phase): Phase {
+  return phase.kind === 'error' ? { kind: 'entry' } : phase
+}
+
 export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions = {}) {
   const { initialUrl = '' } = options
   const [phase, setPhase] = useState<Phase>({ kind: 'entry' })
-  const [url, setUrl] = useState(initialUrl)
+  const [url, setUrlState] = useState(initialUrl)
   const [text, setText] = useState('')
   // The header a YouTube link can show before the API has answered (thumbnail at once,
   // title and channel when oEmbed does). Held beside the phase, not in it, because oEmbed
@@ -242,10 +248,16 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
   const reset = () => {
     tokenRef.current += 1
     window.clearTimeout(timerRef.current)
-    setUrl('')
+    setUrlState('')
     setText('')
     setInstant(null)
     setPhase({ kind: 'entry' })
+  }
+
+  /** A changed link is a new attempt, so an old error goes. */
+  const setUrl = (next: string) => {
+    setUrlState(next)
+    setPhase(clearError)
   }
 
   const markThumbnail = () => timerObj.current.mark('thumbnail')
@@ -268,12 +280,18 @@ export function useImportJob(handlers: ImportHandlers, options: ImportJobOptions
     submitText,
     keepWaiting,
     reset,
+    clearError: () => setPhase(clearError),
   }
 }
 
-function messageFor(err: unknown): string {
+export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 0 || err.status === 422) return err.message
+    if (err.status === 0) {
+      // The technical detail (which address, "is it running?") is for the console, not the cook.
+      console.warn('[import]', err.message)
+      return UNREACHABLE_MESSAGE
+    }
+    if (err.status === 422) return err.message
     return `The server had a problem (${err.status}).`
   }
   return 'Something went wrong starting the import.'

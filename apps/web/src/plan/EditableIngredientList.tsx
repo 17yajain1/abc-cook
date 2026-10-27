@@ -33,7 +33,7 @@ export function EditToolbar({ edit, hint }: { edit: IngredientsEdit; hint: strin
   const { api } = edit
   if (api.session.mode !== 'edit') return null
   return (
-    <div className="sticky top-[var(--plan-bar-h,0px)] z-10 flex items-center justify-between gap-3 border-b border-home-rule bg-home-ground px-5 pb-2 pt-3">
+    <div data-edit-toolbar className="sticky top-[var(--plan-bar-h,0px)] z-10 flex items-center justify-between gap-3 border-b border-home-rule bg-home-ground px-5 pb-2 pt-3">
       <p className="min-w-0 flex-1 text-[13px] leading-[1.4] text-home-ink-2">{hint}</p>
       <button
         type="button"

@@ -1,7 +1,7 @@
 import { isOriginalChoice, type ServingsChoice } from '@/lib/servings'
 
 import { EXTEND_MS } from './constants'
-import { current, foreignLifecycle, handover, lifecycle, skipAllowed } from './select'
+import { current, foreignLifecycle, handover, lifecycle, running, skipAllowed } from './select'
 import type {
   CookingModel,
   CookingSession,
@@ -21,7 +21,9 @@ import type {
  * Rejection reasons (the `Rejected.reason` vocabulary this file produces):
  * `session_exists`, `session_stale`, `not_left`, `not_current`, `hands_on_node`,
  * `hands_off_node`, `not_pending`, `not_running`, `no_handover`, `no_alternative`,
- * `nothing_to_undo`. Never thrown, never a bare string message. (`session_finished` is
+ * `nothing_to_undo`, `already_done`, `unknown_node`. Never thrown, never a bare string
+ * message. `not_current` is produced only by `skip` (PR 2 CP1: the cook may Done or
+ * start any step, so nothing else is gated on `current`). (`session_finished` is
  * producible only by `leave`, below — `resume` no longer produces it; see the
  * 2026-09-22 audit clarification on `resume`.)
  *
@@ -140,23 +142,25 @@ export function end(): null {
 // ---------------------------------------------------------------------------
 
 /** `startNode(id, now)` (plan §E/§C4/§K2): the one explicit action that creates a
- * hands-off node's timer. Rejected for any node that is not `current`, for a hands-on
- * node (it never has a timer), or for one already running/done. */
+ * hands-off node's timer. Allowed on any *pending* hands-off node, even one whose earlier
+ * steps aren't done (PR 2 CP1: never a gate, no warning). Rejected for a hands-on node
+ * (it never has a timer), or for one already running/done. Undoable for `UNDO_WINDOW_MS`
+ * like Done (PR 2 CP2a, owner option A — reverses §E's "lastTransition = null" and §L's
+ * "undo allowed iff no startNode has happened since"): `undo` takes the step back to
+ * not started and restores the `viewing` from before the start. */
 export function startNode(session: CookingSession, model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
-  if (current(model, session) !== nodeId) return reject('not_current')
   const info = model.nodes[nodeId]
   if (info.occupiesCook) return reject('hands_on_node')
-  const state = session.nodes[nodeId]
-  if (state.state !== 'pending') return reject('not_pending')
+  const prev = session.nodes[nodeId]
+  if (prev.state !== 'pending') return reject('not_pending')
   return {
     ...session,
+    lastSeenAt: now,
     nodes: {
       ...session.nodes,
       [nodeId]: { state: 'running', startedAt: now, endsAt: now + info.durationTypical * 60_000, extendedMs: 0 },
     },
-    // §E: "lastTransition = null" — starting a node clears undo history (§L "undo
-    // allowed iff no startNode has happened since").
-    lastTransition: null,
+    lastTransition: { kind: 'start', at: now, entries: [{ nodeId, prev }], ...viewingBefore(session) },
   }
 }
 
@@ -164,49 +168,116 @@ export function startNode(session: CookingSession, model: CookingModel, nodeId: 
 // markDone / acknowledge — plan §E / §C3 / §C5
 // ---------------------------------------------------------------------------
 
-/** `markDone(id, now)` (plan §E/§C3): a hands-on node must be `current`; a hands-off
- * node must be `running` (at any time — the cue governs, the clock is advisory, §C4).
- * Sets `finishedAt` when `id` is the sink. */
-export function markDone(session: CookingSession, model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
-  const info = model.nodes[nodeId]
-  const prev = session.nodes[nodeId]
+/** `session.viewing` as the transition records it (`Transition.viewing`), so `undo` can
+ * restore it — omitted when the session has no `viewing` field, so a session that never
+ * navigated stays byte-identical to one from before PR 2 CP1. */
+function viewingBefore(session: CookingSession): Pick<Transition, 'viewing'> {
+  return session.viewing !== undefined ? { viewing: session.viewing } : {}
+}
 
-  if (info.occupiesCook) {
-    if (current(model, session) !== nodeId) return reject('not_current')
-  } else if (prev.state !== 'running') {
-    return reject('not_running')
+/** "Done = finish and move on": a view naming a step just completed goes back to
+ * following the suggestion. Any other view (or none) is left as it is. */
+function viewingAfter(session: CookingSession, completed: string[]): Pick<CookingSession, 'viewing'> {
+  if (session.viewing == null || !completed.includes(session.viewing)) return {}
+  return { viewing: null }
+}
+
+/** What completing `ids` does, shared by `markDone` and `acknowledge` so the two can
+ * never disagree about finishing. Each id becomes `done` (keeping its timer's `endsAt`,
+ * or `null` if it never ran). If one of them is the finish step, the cook finishes
+ * (`finishedAt`) and every other timer still running stops (running -> `pending`) in
+ * the same transition, so nothing rings after the cook has finished (owner decision 1;
+ * CP1.1 for the handover path). Every change is an entry, so `undo` restores all of it,
+ * the stopped timers' original `startedAt`/`endsAt`/`extendedMs` included. */
+function complete(
+  session: CookingSession,
+  model: CookingModel,
+  ids: string[],
+  now: number,
+): { nodes: Record<string, NodeState>; entries: TransitionEntry[]; finishedAt: number | null } {
+  const entries: TransitionEntry[] = []
+  let nodes = { ...session.nodes }
+  for (const id of ids) {
+    const prev = nodes[id]
+    entries.push({ nodeId: id, prev })
+    nodes = { ...nodes, [id]: { state: 'done', at: now, endsAt: prev.state === 'running' ? prev.endsAt : null } }
   }
+  if (!ids.some((id) => model.nodes[id].isSink)) return { nodes, entries, finishedAt: session.finishedAt }
 
-  const endsAt = prev.state === 'running' ? prev.endsAt : null
-  const transition: Transition = { kind: 'done', at: now, entries: [{ nodeId, prev }] }
+  for (const id of running(model, session)) {
+    if (ids.includes(id)) continue
+    entries.push({ nodeId: id, prev: session.nodes[id] })
+    nodes = { ...nodes, [id]: { state: 'pending' } }
+  }
+  return { nodes, entries, finishedAt: now }
+}
+
+/** `markDone(id, now)` (plan §E/§C3, PR 2 CP1): allowed on any node that is `pending`,
+ * `deferred` or `running`, in any order; only an already-done node rejects
+ * (`already_done`). A hands-off node done without ever starting its timer stores
+ * `endsAt: null`. Done on the sink finishes the cook and stops every other running
+ * timer, undoably (`complete`). */
+export function markDone(session: CookingSession, model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
+  if (session.nodes[nodeId].state === 'done') return reject('already_done')
+
+  const { nodes, entries, finishedAt } = complete(session, model, [nodeId], now)
   return {
     ...session,
-    nodes: { ...session.nodes, [nodeId]: { state: 'done', at: now, endsAt } },
-    lastTransition: transition,
-    finishedAt: info.isSink ? now : session.finishedAt,
+    lastSeenAt: now,
+    nodes,
+    lastTransition: { kind: 'done', at: now, entries, ...viewingBefore(session) },
+    finishedAt,
+    ...viewingAfter(session, [nodeId]),
   }
 }
 
 /** `acknowledge(now)` (plan §E/§C5/§L2): `markDone` for every producer named by the
  * pending handover, in execution order, as one multi-entry transition (§L1 — supersedes
- * the single-entry `Transition` shape so `undo` can reverse all of them or none). */
+ * the single-entry `Transition` shape so `undo` can reverse all of them or none). It
+ * completes exactly those producers; when one is the finish step it finishes the cook
+ * exactly like Done on it, other running timers stopped (`complete`, CP1.1). */
 export function acknowledge(session: CookingSession, model: CookingModel, now: number): CookingSession | Rejected {
   const h = handover(model, session, now)
   if (h == null) return reject('no_handover')
 
-  const entries: TransitionEntry[] = []
-  let nodes = { ...session.nodes }
-  let finishedAt = session.finishedAt
-
-  for (const producerId of h.producers) {
-    const prev = nodes[producerId]
-    entries.push({ nodeId: producerId, prev })
-    const endsAt = prev.state === 'running' ? prev.endsAt : null
-    nodes = { ...nodes, [producerId]: { state: 'done', at: now, endsAt } }
-    if (model.nodes[producerId].isSink) finishedAt = now
+  const { nodes, entries, finishedAt } = complete(session, model, h.producers, now)
+  return {
+    ...session,
+    lastSeenAt: now,
+    nodes,
+    lastTransition: { kind: 'acknowledge', at: now, entries, ...viewingBefore(session) },
+    finishedAt,
+    ...viewingAfter(session, h.producers),
   }
+}
 
-  return { ...session, nodes, lastTransition: { kind: 'acknowledge', at: now, entries }, finishedAt }
+// ---------------------------------------------------------------------------
+// stopNode / view — PR 2 CP1
+// ---------------------------------------------------------------------------
+
+/** `stopNode(id, now)` (PR 2 CP1): a running timer goes back to not started (running ->
+ * `pending`). No other node, `viewing` or `finishedAt` changes. Undoable for
+ * `UNDO_WINDOW_MS` like Done: `undo` restores the running state verbatim (original
+ * `startedAt`/`endsAt`/`extendedMs`, which may already be expired by then). Rejects
+ * `not_running`. */
+export function stopNode(session: CookingSession, _model: CookingModel, nodeId: string, now: number): CookingSession | Rejected {
+  const prev = session.nodes[nodeId]
+  if (prev.state !== 'running') return reject('not_running')
+  return {
+    ...session,
+    lastSeenAt: now,
+    nodes: { ...session.nodes, [nodeId]: { state: 'pending' } },
+    lastTransition: { kind: 'stop', at: now, entries: [{ nodeId, prev }], ...viewingBefore(session) },
+  }
+}
+
+/** `view(id | null, now)` (PR 2 CP1): navigation only — which step the cook is looking
+ * at. `null` means "follow the suggestion". Never touches `nodes`, `lastTransition` or
+ * `finishedAt`, so going to a step never completes it. An unknown id rejects
+ * `unknown_node`. Like every cook action it refreshes `lastSeenAt` (PR 2 CP4.0). */
+export function view(session: CookingSession, model: CookingModel, nodeId: string | null, now: number): CookingSession | Rejected {
+  if (nodeId != null && !(nodeId in model.nodes)) return reject('unknown_node')
+  return { ...session, viewing: nodeId, lastSeenAt: now }
 }
 
 // ---------------------------------------------------------------------------
@@ -225,37 +296,48 @@ export function skip(session: CookingSession, model: CookingModel, nodeId: strin
   const prev = session.nodes[nodeId]
   return {
     ...session,
+    lastSeenAt: now,
     nodes: { ...session.nodes, [nodeId]: { state: 'deferred', at: now } },
     lastTransition: { kind: 'skip', at: now, entries: [{ nodeId, prev }] },
   }
 }
 
-/** `extend(id, now)` (plan §E/§C4/§K5 "Give it longer"): adds `EXTEND_MS` whether or
- * not the node has expired; does not touch `lastTransition` (§E lists no undo effect —
- * only `done`/`skip`/`acknowledge` do). Per §C4's own wording, the increment is a fixed
- * `EXTEND_MS` added to the *existing* `endsAt` — not `now + EXTEND_MS` — so neither
- * `model` nor `now` is read; both stay in the signature only for parity with every
- * other action in §E, which is `(session, model, ..., now)` throughout. */
-export function extend(session: CookingSession, _model: CookingModel, nodeId: string, _now: number): CookingSession | Rejected {
+/** `extend(id, now, ms?)` (plan §E/§C4/§K5 "Give it longer"): adds `ms` (`EXTEND_MS` by
+ * default; "Add 5 min" / "+5 min" pass `ADD_TIME_MS`, PR 2 CP3.0) whether or not the node
+ * has expired; does not touch `lastTransition` (§E lists no undo effect — only
+ * `done`/`skip`/`acknowledge`/`stop`/`start` do). PR 2 CP4.0 replaces §C4's "added to the
+ * existing `endsAt`": the new end is `max(endsAt, now) + ms`, so "+5 min" on a timer that
+ * ended 4 min ago means 5 min from now, not 1. Before the end nothing changes. `extendedMs`
+ * grows by the same amount as `endsAt`, so `endsAt = startedAt + planned + extendedMs`
+ * still holds. `model` stays in the signature only for parity with every other action. */
+export function extend(
+  session: CookingSession,
+  _model: CookingModel,
+  nodeId: string,
+  now: number,
+  ms: number = EXTEND_MS,
+): CookingSession | Rejected {
   const prev = session.nodes[nodeId]
   if (prev.state !== 'running') return reject('not_running')
+  const endsAt = Math.max(prev.endsAt, now) + ms
   return {
     ...session,
+    lastSeenAt: now,
     nodes: {
       ...session.nodes,
-      [nodeId]: { ...prev, endsAt: prev.endsAt + EXTEND_MS, extendedMs: prev.extendedMs + EXTEND_MS },
+      [nodeId]: { ...prev, endsAt, extendedMs: prev.extendedMs + (endsAt - prev.endsAt) },
     },
   }
 }
 
 /** `undo(now)` (plan §E/§L1): reverses every entry of `lastTransition` — one
- * `done`/`skip`/`acknowledge` action, all its nodes or none — then clears
- * `lastTransition` (so a second `undo` rejects, and so does one after a `startNode`,
- * which already clears it). Clears `finishedAt` when the sink's completion is among the
- * entries being undone. `now` is unused: restoring `prev` verbatim, including its own
- * timestamp, is the entire effect — kept as a parameter only for signature parity with
- * every other action in §E. */
-export function undo(session: CookingSession, model: CookingModel, _now: number): CookingSession | Rejected {
+ * `done`/`skip`/`acknowledge`/`stop`/`start` action, all its nodes or none (an early
+ * finish's stopped timers included; a `start` takes its step back to not started, CP2a)
+ * — then clears `lastTransition` (so a second `undo` rejects). Clears `finishedAt` when
+ * the sink's completion is among the entries being undone, and restores the `viewing`
+ * the transition recorded. Restoring `prev` verbatim, including its own timestamp, is the
+ * entire effect on nodes; `now` only refreshes `lastSeenAt` (PR 2 CP4.0). */
+export function undo(session: CookingSession, model: CookingModel, now: number): CookingSession | Rejected {
   const t = session.lastTransition
   if (t == null) return reject('nothing_to_undo')
 
@@ -266,7 +348,14 @@ export function undo(session: CookingSession, model: CookingModel, _now: number)
     if (model.nodes[entry.nodeId].isSink && entry.prev.state !== 'done') finishedAt = null
   }
 
-  return { ...session, nodes, lastTransition: null, finishedAt }
+  return {
+    ...session,
+    lastSeenAt: now,
+    nodes,
+    lastTransition: null,
+    finishedAt,
+    ...(t.viewing !== undefined ? { viewing: t.viewing } : {}),
+  }
 }
 
 // ---------------------------------------------------------------------------

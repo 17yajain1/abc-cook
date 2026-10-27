@@ -1,4 +1,5 @@
 import { hasNumber } from './amountNumber'
+import { formatMinutes, roundMin } from './duration'
 
 /**
  * Which cooking steps get "Amounts in this step's text are for N servings." (A4, W1-8).
@@ -46,8 +47,17 @@ export function stepNeedsAmountNote(label: string | null, instruction: string): 
 
 // ---- R6b: times in an edited step ---------------------------------------------------------
 
-/** Cooking mode and the Plan tab, under an edited step whose text has a time (B3 (ii), Q4 (b)). */
-export const STEP_TIME_NOTE = 'Timers stay as planned. Changing times comes later.'
+/**
+ * Cooking mode and the Plan tab, under an edited step whose text has a time (B3 (ii), Q4 (b)): what the
+ * plan still uses, which is the recipe's length, not the edited text's (CP5.1 U2). A hands-off step has a
+ * timer, so it says "timer"; a hands-on step has none and says "plan". The length is the one the timer
+ * names (`roundMin`). `null` under a minute, or with no length: there is nothing to say the plan uses.
+ */
+export function stepTimeNote(durationMin: number, occupiesCook: boolean): string | null {
+  const m = roundMin(durationMin)
+  if (m < 1) return null
+  return `The ${occupiesCook ? 'plan' : 'timer'} uses the recipe's ${formatMinutes(m)}.`
+}
 
 /** Under a saved step whose amounts moved while the ingredient rows did not (B20). */
 export const STEP_AMOUNT_HINT = "Ingredient amounts don't change with the step. Edit the ingredient if you like."

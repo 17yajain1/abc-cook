@@ -14,6 +14,7 @@ import type { AlreadySaved } from './AlreadySavedNotice'
 import { EndOfPageSection, type RemoveControl } from './EndOfPageSection'
 import type { EndOfPageBlock } from './endOfPage'
 import { EditToolbar, type IngredientsEdit } from './EditableIngredientList'
+import { SectionEditButton } from './SectionEditButton'
 import { IngredientsPanel } from './IngredientsPanel'
 import { multitaskNote } from './multitaskNote'
 import { OrphanReview } from './OrphanReview'
@@ -86,6 +87,8 @@ export function PlanScreen({
   plan,
   onBack,
   onStartCooking,
+  startLabel = 'Start cooking',
+  startSubline = null,
   save,
   importMeta,
   staleness,
@@ -104,6 +107,10 @@ export function PlanScreen({
    *  the shell, which reopens the tab the person was on. */
   onBack: () => void
   onStartCooking: () => void
+  /** The primary button's label: "Continue cooking" while a cook on this plan is under way. */
+  startLabel?: string
+  /** Replaces the outline's line under the button ("Pick up where you left off."); `null` keeps the outline's. */
+  startSubline?: string | null
   save?: SaveControl
   importMeta?: ImportMeta | null
   staleness?: StalenessMarker
@@ -233,6 +240,22 @@ export function PlanScreen({
       ),
     )
   }
+  // CP5.1 U1: a section's Edit enters edit mode (as the header pill does), then scrolls that section's
+  // heading to just below the compact bar and the sticky toolbar, once both are laid out.
+  const editSection = (anchor: 'need' | 'steps') => {
+    edit.enter()
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const scroller = scrollRef.current
+        const target = scroller?.querySelector<HTMLElement>(`[data-anchor="${anchor}"]`)
+        if (!scroller || !target) return
+        const bar = barSpacerRef.current?.offsetHeight ?? 0
+        const toolbar = scroller.querySelector<HTMLElement>('[data-edit-toolbar]')?.offsetHeight ?? 0
+        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+        scroller.scrollTo({ top: top - bar - toolbar, behavior: 'smooth' })
+      }),
+    )
+  }
   const stepGroups = useMemo(() => stepChoiceGroups(plan), [plan])
   const numbers = useMemo(() => stepNumbers(plan.stages), [plan.stages])
   const ordinals = useMemo(() => stageOrdinals(plan.stages), [plan.stages])
@@ -324,12 +347,12 @@ export function PlanScreen({
             disabled={editMode}
             className="flex h-14 w-full items-center justify-center rounded-full bg-home-terracotta text-[17px] font-bold text-home-ground disabled:bg-home-disabled disabled:text-home-disabled-ink"
           >
-            Start cooking
+            {startLabel}
           </button>
           {/* R2: what "Start cooking" begins, in one line. Absent without `summary.phases`. */}
-          {plan.outline && (
+          {(startSubline ?? plan.outline?.ctaSubline) && (
             <p className="mt-1.5 line-clamp-2 text-balance text-center text-[12px] leading-[1.35] text-home-ink-2">
-              {plan.outline.ctaSubline}
+              {startSubline ?? plan.outline?.ctaSubline}
             </p>
           )}
         </>
@@ -370,13 +393,21 @@ export function PlanScreen({
 
       {ingredientsEdit && <EditToolbar edit={ingredientsEdit} hint="Tap an ingredient or a step to change it." />}
 
-      <IngredientsPanel groups={plan.ingredientGroups} servings={servings} edit={ingredientsEdit} />
+      <IngredientsPanel
+        groups={plan.ingredientGroups}
+        servings={servings}
+        edit={ingredientsEdit}
+        onSectionEdit={editPill && !editMode ? () => editSection('need') : undefined}
+      />
 
       <StepEditContext.Provider value={stepApi}>
         <section className="px-5 pt-[18px]" aria-labelledby="steps-heading" data-anchor="steps">
-          <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
-            Steps
-          </h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="steps-heading" className="text-[20px] font-extrabold leading-[1.2] text-home-ink">
+              Steps
+            </h2>
+            {editPill && !editMode && <SectionEditButton onClick={() => editSection('steps')} label="Edit steps" />}
+          </div>
           <div className="mt-3">
             {(waitRowsAfter.get(-1) ?? []).map((row, i) => (
               <WaitRow key={`wait-pre-${i}`} row={row} />

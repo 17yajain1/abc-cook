@@ -1,96 +1,108 @@
 /**
- * Copy helpers ported from the M3.4 design handoff's prototype (`Cooking Mode - M3.4
- * UI.dc.html`) — phrasing only, no scheduling or session logic. Every function here is
- * a pure string formatter over values the real selectors already computed.
+ * Cooking-mode copy helpers — phrasing only, no scheduling or session logic. Every function
+ * here is a pure string formatter over values the real selectors already computed.
  */
 
-const WORDS = [
-  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
-  'eighteen', 'nineteen', 'twenty',
-]
+import type { Node } from '@abc-cook/schema'
 
-export function wordFor(n: number): string {
-  return WORDS[n] ?? String(n)
-}
+import { formatMinutes, roundMin } from '@/lib/duration'
 
-export function cap(text: string): string {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
-}
-
-/** "about ‹n› minutes" phrasing (§6): spelled out to twenty, then 5-minute buckets,
- * then hours, then days — the wait-window / whisper / away-shell register, never a
- * bare minute count. */
-export function aboutMinutes(ms: number): string {
-  const n = Math.round(ms / 60_000)
-  if (n <= 0) return 'no time'
-  if (n <= 20) return `${wordFor(n)} ${n === 1 ? 'minute' : 'minutes'}`
-  if (n < 90) return `${Math.round(n / 5) * 5} minutes`
-  if (n >= 1440) {
-    const d = Math.round(n / 1440)
-    return `${wordFor(d)} ${d === 1 ? 'day' : 'days'}`
-  }
-  const h = Math.round(n / 60)
-  return `${wordFor(h)} ${h === 1 ? 'hour' : 'hours'}`
-}
-
-/** "About N min left" phrasing for a wait screen's time-left line (P0 #4, owner
- * decision 2026-09-27) — rounded, human-readable, and never m:ss. `Math.ceil`, not
- * `Math.round`: as time passes the displayed number must never go up (89s -> 1 min,
- * 90s -> 2 min would be a jump under `round`). Under a minute reads as its own phrase
- * rather than "0 min left". */
-export function minutesLeft(ms: number): string {
-  if (ms < 60_000) return 'Less than a minute left'
-  return `About ${Math.ceil(ms / 60_000)} min left`
-}
-
-/** "4:18 pm" with a no-break space (U+00A0), so a time never splits from its am/pm across lines. */
-export function clockStr(ms: number): string {
-  const d = new Date(ms)
-  const h = d.getHours() % 12 || 12
-  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'am' : 'pm'}`
-}
-
-/** The `long_wait` / `sitting_break` wall-clock line (§6, §8.1): "4:18 pm", "tomorrow,
- * 7:00 am", or "in 3 days, 9:00 am", by calendar-day difference from `now`. */
-export function dayClock(now: number, target: number): string {
+/** Whole calendar days from `now`'s date to `target`'s, in local time (never "under 24 h"). */
+function calendarDays(now: number, target: number): number {
   const a = new Date(now)
   const b = new Date(target)
-  const days = Math.round(
-    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
-      Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
+  return Math.round(
+    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
       86_400_000,
   )
-  if (days === 0) return clockStr(target)
-  if (days === 1) return `tomorrow, ${clockStr(target)}`
-  return `in ${days} days, ${clockStr(target)}`
 }
 
-function firstClause(text: string): string {
-  const cuts = ['. ', ', ', ' and ', ' then ', ' until ', ' with ']
-  let best = text.length
-  for (const cut of cuts) {
-    const i = text.indexOf(cut)
-    if (i > 12 && i < best) best = i
+/** PR 2 CP4: "Ready around ‹this›", the time first in the device locale's clock: "1:42 PM",
+ * "7:00 AM tomorrow", "7:00 AM in 3 days". "Tomorrow" is the next calendar day. Every space
+ * inside the time is a no-break space, so a time never splits from its am/pm. `locale` is
+ * for tests. */
+export function readyClock(now: number, target: number, locale?: string): string {
+  const format = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' })
+  const time = format.format(target).replace(/\s/gu, ' ')
+  const days = calendarDays(now, target)
+  if (days <= 0) return time
+  if (days === 1) return `${time} tomorrow`
+  return `${time} in ${days} days`
+}
+
+/** PR 2 CP4: how long ago a timer ended, as the banner says it: "just now" under a minute,
+ * then whole minutes ("4 min ago", `Math.round`, at least 1), then `formatMinutes` from an
+ * hour ("1 hr 5 min ago"). Never seconds. */
+export function endedAgo(ms: number): string {
+  if (ms < 60_000) return 'just now'
+  return `${formatMinutes(Math.max(1, Math.round(ms / 60_000)))} ago`
+}
+
+/** PR 2 CP4: a time since, in `formatMinutes` style ("45 min", "7 hr", "7 hr 20 min"), each
+ * number joined to its unit by a no-break space so "7 / hr" never splits across lines in the
+ * stale screen's 34px title. */
+export function sinceText(ms: number): string {
+  return formatMinutes(Math.max(0, ms) / 60_000).replace(/(\d) /g, '$1 ')
+}
+
+/** PR 2 CP4: `text` as a sentence: trimmed, with a full stop added unless it already ends in
+ * `.`, `!`, `?` or `…` (a closing quote or bracket after the mark still counts). Every
+ * cooking-mode sentence that ends in stored text goes through this, so none ends "..". */
+export function sentence(text: string): string {
+  const t = text.trim()
+  return /[.!?…]["'”’)\]]*$/u.test(t) ? t : `${t}.`
+}
+
+/** PR 2 CP4.1: `text` cut into pieces, every word with an inner hyphen ("2-Minute",
+ * "ginger-garlic") marked `nowrap`, so a headline never breaks it across lines. A no-wrap
+ * span, not U+2011: the self-hosted font subset may not have the non-breaking hyphen. A word
+ * is a run without ordinary spaces (a no-break space keeps its words together anyway). The
+ * pieces join back to `text` exactly. */
+export function noBreakWords(text: string): Array<{ text: string; nowrap: boolean }> {
+  const out: Array<{ text: string; nowrap: boolean }> = []
+  for (const part of text.split(/( +)/)) {
+    if (part === '') continue
+    const nowrap = /[\p{L}\p{N}]-[\p{L}\p{N}]/u.test(part)
+    const last = out[out.length - 1]
+    if (!nowrap && last != null && !last.nowrap) last.text += part
+    else out.push({ text: part, nowrap })
   }
-  return text.slice(0, best).replace(/[.,]$/, '')
+  return out
 }
 
-export interface SplitCopy {
-  title: string
-  body: string | null
+/** PR 2 CP3: a timer's time left, as the rail, the timer sheet and All steps say it. Whole
+ * minutes rounded up (`Math.ceil`, so the number never goes up as time passes), never
+ * seconds; from an hour, `formatMinutes`' hours and minutes. At or past the end it is
+ * "Time's up", with no count (CP4's banner takes that case over). `big` + `unit` is the
+ * sheet's split ("52" + "min left"); `text` is the one-line form. */
+export function timeLeft(ms: number): { big: string; unit: string | null; text: string } {
+  if (ms <= 0) return { big: "Time's up", unit: null, text: "Time's up" }
+  const min = Math.ceil(ms / 60_000)
+  if (min < 60) return { big: String(min), unit: 'min left', text: `${min} min left` }
+  const big = formatMinutes(min)
+  return { big, unit: 'left', text: `${big} left` }
 }
 
-/**
- * Title and body from one instruction (design decision §8.7 / handoff §3): the first
- * sentence is the title, the remainder is the body, so nothing is ever printed twice.
- * A first sentence too long for a 30px title falls back to its first clause, and then
- * the whole instruction carries the body.
- */
-export function splitCopy(instruction: string): SplitCopy {
-  const t = instruction.trim()
-  const i = t.indexOf('. ')
-  const first = i > 0 ? t.slice(0, i + 1) : t
-  if (first.length <= 92) return { title: first.replace(/\.$/, ''), body: i > 0 ? t.slice(i + 2) : null }
-  return { title: firstClause(first), body: t }
+/** PR 2 CP3: a timer's length as an adjective ("Start 12-min timer", "Start 1-hr timer",
+ * "Start 1 hr 30 min timer"): one unit is hyphenated, mixed units are not. Rounded with
+ * `roundMin`, the same number `startNode` times; `null` under one minute (no length to name). */
+export function timerLength(min: number): string | null {
+  const m = roundMin(min)
+  if (m < 1) return null
+  if (m < 60) return `${m}-min`
+  return m % 60 === 0 ? `${m / 60}-hr` : formatMinutes(m)
 }
+
+/** PR 2 CP3: the not-started hands-off step's line, by its tag (CP3.1): "Hands-off" says
+ * "About 1 hr. Start a timer, or just move on."; "Low attention" (`periodic`, which wants
+ * the cook now and then) says "About 12 min. Check on it now and then." The length is the
+ * plain `formatMinutes`; `null` when the step has no length to name. */
+export function handsOffLine(min: number, attention: Node['attention']): string | null {
+  if (roundMin(min) < 1) return null
+  const tail = attention === 'periodic' ? 'Check on it now and then.' : 'Start a timer, or just move on.'
+  return `About ${formatMinutes(min)}. ${tail}`
+}
+
+/** PR 2 CP3: the lead-in of the doneness cue line ("Ready when: golden brown"). One
+ * constant, for later translation. */
+export const READY_WHEN = 'Ready when:'

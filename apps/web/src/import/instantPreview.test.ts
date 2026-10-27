@@ -15,7 +15,7 @@ describe('instantPreviewFor', () => {
   ])('derives the thumbnail and oEmbed URL from a %s link', (_name, url) => {
     const preview = instantPreviewFor(url)
     expect(preview).not.toBeNull()
-    expect(preview?.thumbnailUrl).toBe(`https://i.ytimg.com/vi/${ID}/hqdefault.jpg`)
+    expect(preview?.thumbnailUrl).toBe(`https://i.ytimg.com/vi/${ID}/mqdefault.jpg`)
   })
 
   it('builds the oEmbed URL from the canonical watch URL, encoded', () => {

@@ -2,12 +2,11 @@ import { roundUpTo5 } from './duration'
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-/** "8:45 pm": 12-hour, lower-case am/pm, no leading zero on the hour. Local time. The space is a no-break
- * space (U+00A0) so a line never ends on "7:05" with "pm" on the next. */
-function clock(at: Date): string {
-  const h = at.getHours()
-  const m = at.getMinutes()
-  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`
+/** The clock time in the device's own format ("8:45 PM", or "20:45" where that is the habit), as cooking
+ * mode's `readyClock` writes it. Every space is a no-break space so a line never ends on "7:05" with
+ * "PM" on the next. `locale` is for tests (default: the device's). */
+function clock(at: Date, locale?: string): string {
+  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(at).replace(/\s/gu, ' ')
 }
 
 /** Calendar days from `from` to `to`, by local date (not by 24-hour spans). */
@@ -25,11 +24,11 @@ function dayGap(from: Date, to: Date): number {
  *
  * `now` is passed in, never read here, so a test or a screenshot can freeze the clock.
  */
-export function readyAroundText(now: Date, upperMin: number): string {
+export function readyAroundText(now: Date, upperMin: number, locale?: string): string {
   const ready = new Date(now.getTime() + roundUpTo5(upperMin) * 60_000)
   const extra = (5 - (ready.getMinutes() % 5)) % 5
   const rounded = new Date(ready.getTime() + extra * 60_000)
   const gap = dayGap(now, rounded)
   const day = gap <= 0 ? '' : gap === 1 ? ' tomorrow' : ` on ${WEEKDAYS[rounded.getDay()]}`
-  return `Start now and it's ready around ${clock(rounded)}${day}.`
+  return `Start now and it's ready around ${clock(rounded, locale)}${day}.`
 }
