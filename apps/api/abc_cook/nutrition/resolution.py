@@ -11,7 +11,7 @@ MissReason = Literal[
     "off_shortlist",  # the model named a food outside the line's shortlist; rejected
     "no_candidates",  # nothing in the table shares a word with the line
     "llm_failed",  # the call failed or returned nothing usable
-    "spend_guard",  # the call was refused to stay under the ₹ cap
+    "spend_guard",  # the call was refused to stay under the INR cap
     "cached_none",  # an earlier run already found no food for this name
     "no_food_by_curation",  # curation says USDA has no honest row for this name (no LLM call)
 ]
@@ -25,3 +25,5 @@ class LineResolution:
     food_source: FoodSource | None = None
     llm_grams: float | None = None
     miss: MissReason | None = None
+    reviewed: bool = False
+    """The owner has reviewed this mapping: a reviewed alias row or a reviewed cache row."""

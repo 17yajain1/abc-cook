@@ -53,6 +53,7 @@ LOG_PATH = REPO_ROOT / "notes" / "3a-nutrition" / "b1-capture-log.json"
 FIXTURE_DIR = API_ROOT / "tests" / "fixtures" / "3a-eval"
 INGREDIENTS_MD = REPO_ROOT / "notes" / "3a-nutrition" / "test-30-ingredients.md"
 
+MIN_INGREDIENT_LINES = 5  # a capture with fewer lines is a failed parse, not a recipe
 BUDGET_INR = 70.0
 RESERVE_INR = 5.0  # headroom for one import: stop if spent + this would exceed the budget
 _STAGES = ("acquire", "extract", "build_graph", "repair", "schedule")
@@ -195,6 +196,15 @@ def _video_attribution(url: str) -> dict[str, Any]:
 # --- one import ----------------------------------------------------------------------
 
 
+def capture_status(status: str, n_lines: int) -> str:
+    """`done` only for a finished import with enough ingredient lines, else `failed: N lines`."""
+    if status == "done" and n_lines >= MIN_INGREDIENT_LINES:
+        return "done"
+    if status == "done":
+        return f"failed: {n_lines} lines"
+    return status
+
+
 def _import_row(
     row: dict[str, str], adapter: Any
 ) -> tuple[dict[str, Any], ImportOriginal | None]:
@@ -241,7 +251,8 @@ def _import_row(
     log["wall_s"] = round(time.monotonic() - t0, 1)
     if not log["title"] and result.graph is not None:
         log["title"] = result.graph.title  # a list without a title column
-    log["status"] = result.status
+    n_lines = len(result.graph.ingredients) if result.graph is not None else 0
+    log["status"] = capture_status(result.status, n_lines)
     log["failure"] = result.failure
     log["warnings"] = result.warnings
     log["review_recommended"] = result.review_recommended
@@ -263,7 +274,7 @@ def _import_row(
         log["attribution_acquired"] = _blog_attribution(raw_box[0])
     if _is_video(url):
         log["attribution_ytdlp"] = _video_attribution(url)  # after the import, by design
-    return log, result.original if result.status == "done" else None
+    return log, result.original if log["status"] == "done" else None
 
 
 # --- capture -------------------------------------------------------------------------

@@ -7,7 +7,10 @@ full `RecipeNutrition` per recipe plus ₹, latency and counts; default `b2-resu
 `<lines-name>` (every line: food, grams, basis, kcal, portion, hint, flags, fat working).
 
 Resumable: matches are cached in `apps/api/data/food_map.json` (gitignored), so a re-run makes
-no calls. The mapping spend is capped (default ₹40); a refused call stops the run.
+no calls. The mapping spend is capped (default 40 INR); a refused call stops the run. Every
+call's cost is appended to `--spend-log` (flushed and fsynced) before anything is printed, and
+all progress text is ASCII ("INR", never the rupee sign). `--carry-from <foods_version>` copies
+the food and null mappings of an older table first; `--refresh` re-asks cached nulls.
 
 This script reads no reference values at all: the comparison is Step 6's job.
 
@@ -20,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import UTC, datetime
@@ -37,14 +41,16 @@ from abc_cook.extract.adapters.routing import build_default_adapter  # noqa: E40
 from abc_cook.extract.postprocess import reprocess  # noqa: E402
 from abc_cook.nutrition import NUTRITION_VERSION  # noqa: E402
 from abc_cook.nutrition.calc import compute_nutrition  # noqa: E402
-from abc_cook.nutrition.foods import load_foods  # noqa: E402
+from abc_cook.nutrition.foods import FoodTable, load_foods  # noqa: E402
 from abc_cook.nutrition.match import (  # noqa: E402
     MATCH_MODEL,
     SHORTLIST_METHOD,
     SPEND_CAP_INR,
+    CallRecord,
     JsonFileFoodMapStore,
     ShortlistIndex,
     SpendGuard,
+    carry_forward,
     resolve_recipe,
 )
 from abc_cook.schema.normalized import ImportOriginal  # noqa: E402
@@ -56,6 +62,34 @@ FOOD_MAP_PATH = API_ROOT / "data" / "food_map.json"
 
 def _fixture_id(path: Path) -> int:
     return int(path.name.split("-")[0])
+
+
+def append_spend_log(path: Path, record: CallRecord, row_id: int) -> None:
+    """Append one call's cost as a JSON line, flushed and fsynced before the caller prints."""
+    line = {
+        "at": datetime.now(UTC).isoformat(),
+        "recipe_id": row_id,
+        "cost_inr": record.cost_inr,
+        "input_tokens": record.input_tokens,
+        "output_tokens": record.output_tokens,
+        "model": record.model,
+        "n_lines": record.n_lines,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(line) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def progress_line(
+    row_id: int, kcal: float, confidence: str, calls: int, inr: float, total_inr: float
+) -> str:
+    """One ASCII progress line: money is written "INR", so a cp1252 console never fails on it."""
+    return (
+        f"{row_id}: {kcal:.0f} kcal/serving, {confidence}, calls {calls}, "
+        f"INR {inr:.3f}, total INR {total_inr:.2f}"
+    )
 
 
 def _cell(value: Any) -> str:
@@ -75,12 +109,13 @@ def _lines_md(recipes: list[dict[str, Any]], title: str) -> str:
             f"{nutrition['per_serving']['carbs_g']:.1f} g carbs, "
             f"{nutrition['per_serving']['fat_g']:.1f} g fat, "
             f"{nutrition['per_serving']['fibre_g']:.1f} g fibre",
-            f"- Confidence: {nutrition['confidence']} (shadow {nutrition['confidence_proposed']}); "
+            f"- Confidence: {nutrition['confidence']} (v2 {nutrition['confidence_v2']}"
+            f"{', guard demoted' if nutrition['guard_demoted'] else ''}); "
             f"diet: {nutrition['diet']}",
             "",
-            "| # | line | food | grams | basis | kcal | portion | hint | flags | miss "
-            "| fat_method | fat_rule | fried_g |",
-            "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+            "| # | line | food | source | reviewed | grams | basis | kcal | portion | hint | flags "
+            "| miss | fat_method | fat_rule | fried_g |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
         ]
         for row, miss in zip(nutrition["rows"], rec["misses"], strict=True):
             grams = "" if row["grams"] is None else f"{row['grams']:.1f}"
@@ -96,6 +131,8 @@ def _lines_md(recipes: list[dict[str, Any]], title: str) -> str:
                 row["ingredient_index"],
                 row["line_text"],
                 row["food"]["name"] if row["food"] else "",
+                row["food_source"],
+                "yes" if row["food_reviewed"] else "",
                 grams,
                 row["grams_basis"],
                 f"{row['est_kcal']:.0f}",
@@ -123,6 +160,12 @@ def main() -> int:
     parser.add_argument("--results-name", default="b2-results.json")
     parser.add_argument("--lines-name", default="b2-lines.md")
     parser.add_argument("--food-map", type=Path, default=FOOD_MAP_PATH)
+    parser.add_argument("--spend-log", type=Path, help="append one JSON line per mapping call")
+    parser.add_argument("--carry-from", help="foods_version whose mappings to carry forward")
+    parser.add_argument(
+        "--carry-from-foods", type=Path, help="that version's foods.json (macro check)"
+    )
+    parser.add_argument("--refresh", action="store_true", help="re-ask cached null mappings")
     args = parser.parse_args()
     if args.env_file:
         load_dotenv(args.env_file)
@@ -130,6 +173,19 @@ def main() -> int:
     table = load_foods()
     index = ShortlistIndex(table)
     store = JsonFileFoodMapStore(args.food_map)
+    if args.carry_from:
+        previous = (
+            FoodTable.from_document(json.loads(args.carry_from_foods.read_text(encoding="utf-8")))
+            if args.carry_from_foods
+            else None
+        )
+        report = carry_forward(store, args.carry_from, table, previous)
+        print(
+            f"carry-forward from {args.carry_from}: carried {report.carried}, "
+            f"null-carried {report.null_carried}, dropped {len(report.dropped)}"
+        )
+        for name, reason in report.dropped:
+            print(f"  dropped {name!r}: {reason}")
     guard = SpendGuard(args.cap_inr)
     adapter: LLMAdapter | None = None if args.no_llm else build_default_adapter()
 
@@ -147,8 +203,20 @@ def main() -> int:
             print(f"{row_id}: skipped (status {result.status})")
             continue
         started = time.perf_counter()
+
+        def on_call(record: CallRecord, row_id: int = row_id) -> None:
+            if args.spend_log:
+                append_spend_log(args.spend_log, record, row_id)
+
         resolutions, stats = resolve_recipe(
-            graph.ingredients, table=table, store=store, adapter=adapter, guard=guard, index=index
+            graph.ingredients,
+            table=table,
+            store=store,
+            adapter=adapter,
+            guard=guard,
+            index=index,
+            on_call=on_call,
+            refresh_nulls=args.refresh,
         )
         match_s = time.perf_counter() - started
         started = time.perf_counter()
@@ -161,6 +229,7 @@ def main() -> int:
             computed_at=datetime.now(UTC),
             table=table,
             nodes=graph.nodes,
+            yield_text=graph.yield_text,
         )
         compute_ms = (time.perf_counter() - started) * 1000
         recipes.append(
@@ -193,11 +262,17 @@ def main() -> int:
             }
         )
         print(
-            f"{row_id}: {nutrition.per_serving.kcal:.0f} kcal/serving, {nutrition.confidence}, "
-            f"calls {stats.llm_calls}, ₹{stats.inr:.3f}, total ₹{guard.spent_inr:.2f}"
+            progress_line(
+                row_id,
+                nutrition.per_serving.kcal,
+                nutrition.confidence,
+                stats.llm_calls,
+                stats.inr,
+                guard.spent_inr,
+            )
         )
         if stats.guard_refused:
-            print(f"STOP: the spend guard refused a call (cap ₹{args.cap_inr})")
+            print(f"STOP: the spend guard refused a call (cap INR {args.cap_inr})")
             stopped = True
             break
 
@@ -221,7 +296,7 @@ def main() -> int:
     )
     title = f"3a: per-line working (nutrition v{NUTRITION_VERSION}, {args.results_name})"
     (args.out_dir / args.lines_name).write_text(_lines_md(recipes, title), encoding="utf-8")
-    print(f"wrote {len(recipes)} recipes; mapping spend ₹{guard.spent_inr:.2f}")
+    print(f"wrote {len(recipes)} recipes; mapping spend INR {guard.spent_inr:.2f}")
     return 2 if stopped else 0
 
 

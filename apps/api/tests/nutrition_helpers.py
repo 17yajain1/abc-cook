@@ -21,12 +21,13 @@ def food(
     fibre: float = 0.0,
     aliases: list[str] | None = None,
     portions: list[tuple[str, str, float]] | None = None,
+    reviewed: bool = False,
 ) -> dict[str, Any]:
-    """A `foods.json` food entry."""
+    """A `foods.json` food entry; `reviewed` marks all its aliases as owner-reviewed."""
     return {
-        "id": f"fdc:{food_id}",
+        "id": food_id if ":" in food_id else f"fdc:{food_id}",
         "name": name,
-        "aliases": [{"alias": a, "source": "test", "reviewed": False} for a in aliases or []],
+        "aliases": [{"alias": a, "source": "test", "reviewed": reviewed} for a in aliases or []],
         "food_group": group,
         "veg": veg,
         "divisible": True,
@@ -42,9 +43,9 @@ def food(
     }
 
 
-def table(*foods: dict[str, Any]) -> FoodTable:
-    """A `FoodTable` of the given foods."""
-    return FoodTable.from_document({"foods_version": "test-1", "foods": list(foods)})
+def table(*foods: dict[str, Any], **extra: Any) -> FoodTable:
+    """A `FoodTable` of the given foods; `extra` adds document keys (`no_food`, ...)."""
+    return FoodTable.from_document({"foods_version": "test-1", "foods": list(foods), **extra})
 
 
 def line(

@@ -41,6 +41,9 @@ MAX_TOKENS = 4000
 SPEND_CAP_INR = 40.0
 
 STATE_WORDS = ("cooked", "boiled", "soaked", "canned", "roasted", "fried", "dry", "raw")
+STATE_SPELLINGS = {"dried": "dry"}
+"""Another spelling of a state word. The name keeps the written word (so "dried oregano" still
+finds its alias); only the reported state is normalised."""
 _COOKED_STATES = {"cooked", "boiled", "soaked", "canned"}
 _COOKED_NAME_RE = re.compile(r"\b(?:cooked|boiled|canned|fried|roasted|steamed)\b", re.IGNORECASE)
 _RAW_NAME_RE = re.compile(r"\b(?:raw|dry|dried|uncooked)\b", re.IGNORECASE)
@@ -116,7 +119,14 @@ def clean_name(raw: str, *, before: str = "") -> CleanName:
     text = _LEADING_AMOUNT_RE.sub("", text.strip())
     words = [w for w in re.findall(r"[a-z]+|/", text) if w not in _PREP_WORDS]
     cleaned = " ".join(words).replace(" / ", " / ").strip(" /")
-    state = next((w for w in re.findall(r"[a-z]+", cleaned) if w in STATE_WORDS), None)
+    state = next(
+        (
+            STATE_SPELLINGS.get(w, w)
+            for w in re.findall(r"[a-z]+", cleaned)
+            if w in STATE_WORDS or w in STATE_SPELLINGS
+        ),
+        None,
+    )
     if canned:
         state = "canned"
     return CleanName(re.sub(r"\s+", " ", cleaned), state)
@@ -137,17 +147,30 @@ def deterministic_match(cleaned: str, table: FoodTable) -> tuple[str | None, str
     """(food_id, "alias" | "exact") for the first candidate the table knows, or None.
 
     A name the curation lists as having no honest food returns (None, "no_food") before any
-    alias or exact match is tried, so it stays unmatched and costs no LLM call.
+    alias or exact match is tried, so it stays unmatched and costs no LLM call. A listed name
+    also matches with a trailing " powder" ("chaat masala powder").
     """
+    found = deterministic_match_full(cleaned, table)
+    return None if found is None else (found[0], found[1])
+
+
+def deterministic_match_full(cleaned: str, table: FoodTable) -> tuple[str | None, str, bool] | None:
+    """Like `deterministic_match`, plus whether the matched alias is owner-reviewed."""
     names = candidates(cleaned)
-    if any(name in table.no_food for name in names):
-        return None, "no_food"
+    if any(_is_no_food(name, table) for name in names):
+        return None, "no_food", True
     for name in names:
         if name in table.by_alias:
-            return table.by_alias[name], "alias"
+            return table.by_alias[name], "alias", table.alias_reviewed.get(name, False)
         if name in table.by_name:
-            return table.by_name[name], "exact"
+            return table.by_name[name], "exact", False
     return None
+
+
+def _is_no_food(name: str, table: FoodTable) -> bool:
+    if name in table.no_food:
+        return True
+    return name.endswith(" powder") and name.removesuffix(" powder") in table.no_food
 
 
 def _stem(token: str) -> str:
@@ -163,6 +186,15 @@ def _stem(token: str) -> str:
 
 def _tokens(text: str) -> set[str]:
     return {_stem(t) for t in _TOKEN_RE.findall(text.lower()) if t not in _STOP_TOKENS}
+
+
+def blocked_food_ids(cleaned: str, table: FoodTable) -> set[str]:
+    """Foods the curation keeps off this name's shortlist (and out of a carried-forward row)."""
+    blocked: set[str] = set()
+    for block in table.shortlist_block:
+        if any(re.search(rf"\b{re.escape(n)}\b", cleaned) for n in block.names):
+            blocked |= block.food_ids
+    return blocked
 
 
 class ShortlistIndex:
@@ -187,9 +219,12 @@ class ShortlistIndex:
     def shortlist(self, cleaned: str, state: str | None, size: int = SHORTLIST_SIZE) -> list[Food]:
         """Up to `size` foods ranked by overlap with the name, raw/dry first unless cooked."""
         line_tokens = _tokens(cleaned)
+        blocked = blocked_food_ids(cleaned, self._table)
         scores: dict[str, float] = {}
         for token in line_tokens:
             for food_id in self._by_token.get(token, ()):
+                if food_id in blocked:
+                    continue
                 bonus = 2.0 if token in self._alias_tokens[food_id] else 1.0
                 scores[food_id] = scores.get(food_id, 0.0) + bonus
         wants_cooked = state in _COOKED_STATES
@@ -273,6 +308,9 @@ class InMemoryFoodMapStore:
             "reviewed": False,
         }
 
+    def save(self) -> None:
+        """Persist the store; the in-memory store has nothing to write."""
+
     def has_grams(self, key: str) -> bool:
         """Whether an answer (a number or null) is stored for this line."""
         return key in self.grams
@@ -307,6 +345,10 @@ class JsonFileFoodMapStore(InMemoryFoodMapStore):
             self.foods = dict(document.get("foods", {}))
             self.grams = dict(document.get("grams", {}))
 
+    def save(self) -> None:
+        """Write the whole store to its file."""
+        self._save()
+
     def _save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(
@@ -326,6 +368,75 @@ class JsonFileFoodMapStore(InMemoryFoodMapStore):
         """Store an LLM gram answer, then persist."""
         super().put_grams(key, grams, model=model, now=now)
         self._save()
+
+
+@dataclass
+class CarryReport:
+    """What `carry_forward` did, for the run's printout and the report."""
+
+    carried: int = 0
+    null_carried: int = 0
+    dropped: list[tuple[str, str]] = field(default_factory=list)
+    """(key name, reason) for each row left behind."""
+
+
+def _same_macros(old: Food, new: Food) -> bool:
+    return (old.kcal, old.protein_g, old.carbs_g, old.fat_g, old.fibre_g) == (
+        new.kcal,
+        new.protein_g,
+        new.carbs_g,
+        new.fat_g,
+        new.fibre_g,
+    )
+
+
+def carry_forward(
+    store: InMemoryFoodMapStore,
+    from_version: str,
+    table: FoodTable,
+    previous: FoodTable | None = None,
+) -> CarryReport:
+    """Copy mapping rows (foods and nulls) from an older `foods_version` to the table's.
+
+    A row is carried when the new key is free, curation does not now decide the name
+    deterministically, and, for a food row, the food is still in the new table (with the same
+    macros as in `previous`, when given). A null row carries under the same deterministic check.
+    Carried rows keep their `reviewed` flag and gain `carried_from`.
+    """
+    report = CarryReport()
+    carried: dict[str, dict[str, Any]] = {}
+    for encoded, row in store.foods.items():
+        name, state, version = encoded.rsplit("|", 2)
+        if version != from_version:
+            continue
+        new_key = FoodKey(name, state or None, table.foods_version)
+        if new_key.encode() in store.foods or new_key.encode() in carried:
+            report.dropped.append((name, "new key already present"))
+            continue
+        if deterministic_match(name, table) is not None:
+            report.dropped.append((name, "decided by curation now"))
+            continue
+        food_id = row.get("food_id")
+        if food_id is not None:
+            food = table.get(food_id)
+            if food is None:
+                report.dropped.append((name, f"{food_id} not in the new table"))
+                continue
+            if food_id in blocked_food_ids(name, table):
+                report.dropped.append((name, f"{food_id} is blocked for this name"))
+                continue
+            old = previous.get(food_id) if previous is not None else None
+            if old is not None and not _same_macros(old, food):
+                report.dropped.append((name, f"{food_id} macros changed"))
+                continue
+        carried[new_key.encode()] = {**row, "carried_from": from_version}
+        if food_id is None:
+            report.null_carried += 1
+        else:
+            report.carried += 1
+    store.foods.update(carried)
+    store.save()
+    return report
 
 
 def grams_key(ing: Ingredient) -> str:
@@ -430,6 +541,17 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+@dataclass(frozen=True)
+class CallRecord:
+    """One mapping call's measured cost, handed to `on_call` the moment the call returns."""
+
+    cost_inr: float | None
+    input_tokens: int | None
+    output_tokens: int | None
+    model: str
+    n_lines: int
+
+
 def resolve_recipe(
     ingredients: list[Ingredient],
     *,
@@ -440,11 +562,16 @@ def resolve_recipe(
     index: ShortlistIndex | None = None,
     model: str = MATCH_MODEL,
     now: Callable[[], datetime] = _now,
+    on_call: Callable[[CallRecord], None] | None = None,
+    refresh_nulls: bool = False,
 ) -> tuple[list[LineResolution], MatchStats]:
     """Resolve every line to a food (and, where the resolver needs it, a gram estimate).
 
     At most one LLM call per recipe. With no `adapter` the LLM step is skipped and the lines it
-    would have placed stay unmatched (`llm_failed`).
+    would have placed stay unmatched (`llm_failed`). Lines sharing a (name, state) key are asked
+    once and all take that answer. A cached null is not re-asked unless `refresh_nulls` is set
+    (a reviewed null is never re-asked). `on_call` fires right after the adapter returns, before
+    any store write.
     """
     index = index or ShortlistIndex(table)
     stats = MatchStats()
@@ -453,20 +580,23 @@ def resolve_recipe(
     sources: list[str | None] = [None] * n
     misses: list[MissReason | None] = [None] * n
     llm_grams: list[float | None] = [None] * n
+    reviewed: list[bool] = [False] * n
     cleaned = [
         clean_name(ing.name, before=f"{ing.qty_text or ''} {ing.unit or ''}") for ing in ingredients
     ]
     keys = [FoodKey(c.name, c.state, table.foods_version) for c in cleaned]
 
     pending_food: dict[int, list[Food]] = {}
+    groups: dict[int, list[int]] = {}  # representative line -> every line with its key
+    rep_by_key: dict[str, int] = {}
     for i, (c, key) in enumerate(zip(cleaned, keys, strict=True)):
         # Curation first (no_food, then alias/exact): it beats any cached LLM pick or cached null.
-        found = deterministic_match(c.name, table)
+        found = deterministic_match_full(c.name, table)
         if found is not None:
             if found[0] is None:
                 misses[i] = "no_food_by_curation"
                 continue
-            food_ids[i], sources[i] = found[0], found[1]
+            food_ids[i], sources[i], reviewed[i] = found[0], found[1], found[2]
             if found[1] == "alias":
                 stats.alias_hits += 1
             else:
@@ -475,16 +605,23 @@ def resolve_recipe(
         row = store.get_food(key)
         if row is not None and row.get("food_id") and table.get(row["food_id"]):
             food_ids[i], sources[i] = row["food_id"], "cache"
+            reviewed[i] = bool(row.get("reviewed"))
             stats.cache_hits += 1
             continue
-        if row is not None and row.get("food_id") is None:
+        if (
+            row is not None
+            and row.get("food_id") is None
+            and not (refresh_nulls and not row.get("reviewed"))
+        ):
             misses[i] = "cached_none"
             continue
         short = index.shortlist(c.name, c.state)
-        if short:
-            pending_food[i] = short
-        else:
+        if not short:
             misses[i] = "no_candidates"
+            continue
+        pending_food[i] = short
+        rep = rep_by_key.setdefault(key.encode(), i)
+        groups.setdefault(rep, []).append(i)
 
     # Lines the model should also give a gram estimate for: the resolver cannot convert them
     # (a count with no matching FDC portion, a garbled amount). For a line still waiting on its
@@ -503,19 +640,27 @@ def resolve_recipe(
         else:
             pending_grams.add(i)
 
-    asked = sorted({*pending_food, *pending_grams})
+    # One question per unique key: the representative asks for the food; a follower is only
+    # asked when it also needs a gram estimate, and its own food answer is ignored.
+    asked = sorted({*groups, *pending_grams})
     if asked:
         _ask_llm(
             ingredients, asked, pending_food, pending_grams, food_ids, sources, misses, llm_grams,
-            keys, table=table, store=store, adapter=adapter, guard=guard, stats=stats,
-            model=model, now=now,
+            keys, groups, table=table, store=store, adapter=adapter, guard=guard,
+            stats=stats, model=model, now=now, on_call=on_call,
         )  # fmt: skip
 
     for i in range(n):
         if food_ids[i] is None and misses[i] is not None:
             stats.misses[misses[i] or ""] = stats.misses.get(misses[i] or "", 0) + 1
     resolutions = [
-        LineResolution(food_ids[i], sources[i], llm_grams[i], misses[i])  # type: ignore[arg-type]
+        LineResolution(
+            food_ids[i],
+            sources[i],  # type: ignore[arg-type]
+            llm_grams[i],
+            misses[i],
+            reviewed[i],
+        )
         for i in range(n)
     ]
     return resolutions, stats
@@ -531,6 +676,7 @@ def _ask_llm(
     misses: list[MissReason | None],
     llm_grams: list[float | None],
     keys: list[FoodKey],
+    groups: dict[int, list[int]],
     *,
     table: FoodTable,
     store: FoodMapStore,
@@ -539,6 +685,7 @@ def _ask_llm(
     stats: MatchStats,
     model: str,
     now: Callable[[], datetime],
+    on_call: Callable[[CallRecord], None] | None,
 ) -> None:
     """Make the recipe's one batched call and fold the answers into the line state."""
     lines: list[dict[str, Any]] = []
@@ -570,29 +717,49 @@ def _ask_llm(
             effort="minimal",
         )
         stats.llm_calls += 1
+        cost: float | None = None
         if result.usage is not None:
             stats.latency_ms += result.usage.latency_ms
             cost = call_cost_inr(result.usage)
             if cost is not None:
                 stats.inr += cost
                 guard.record(cost)
+        if on_call is not None:  # before any store write or print: the spend is on record first
+            usage = result.usage
+            on_call(
+                CallRecord(
+                    cost,
+                    usage.input_tokens if usage else None,
+                    usage.output_tokens if usage else None,
+                    model,
+                    len(asked),
+                )
+            )
         if result.recipe is not None:
             answers = {a.idx: a for a in result.recipe.answers}
     stamp = now()
+    for rep, members in groups.items():
+        answer = answers.get(rep)
+        miss: MissReason | None = None
+        food_id: str | None = None
+        if answer is None:
+            miss = fail
+        elif answer.food_id is None:
+            miss = "llm_none"
+            store.put_food(keys[rep], None, model=model, now=stamp)
+        elif answer.food_id not in {f.id for f in pending_food[rep]}:
+            miss = "off_shortlist"
+        else:
+            food_id = answer.food_id
+            store.put_food(keys[rep], food_id, model=model, now=stamp)
+        for i in members:
+            if food_id is None:
+                misses[i] = miss
+            else:
+                food_ids[i], sources[i] = food_id, "llm"
+                stats.llm_matches += 1
     for i in asked:
         answer = answers.get(i)
-        if i in pending_food:
-            if answer is None:
-                misses[i] = fail
-            elif answer.food_id is None:
-                misses[i] = "llm_none"
-                store.put_food(keys[i], None, model=model, now=stamp)
-            elif answer.food_id not in {f.id for f in pending_food[i]}:
-                misses[i] = "off_shortlist"
-            else:
-                food_ids[i], sources[i] = answer.food_id, "llm"
-                stats.llm_matches += 1
-                store.put_food(keys[i], answer.food_id, model=model, now=stamp)
         if i not in pending_grams:
             continue
         stats.grams_requested += 1

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from nutrition_helpers import food, line, table
 
-from abc_cook.nutrition.foods import Food
+from abc_cook.nutrition.foods import Food, load_foods
 from abc_cook.nutrition.grams import (
     PINCH_GRAMS,
     density,
@@ -250,3 +250,44 @@ def test_garbled_amount_asks_the_llm_and_is_flagged() -> None:
     assert result.grams is None
     assert result.needs_llm
     assert "unparseable_amount" in result.flags
+
+
+# --- v3: dried whole spices use their own per-piece weight (the bundled table) -----------------
+
+
+def test_dry_red_chillies_use_the_sun_dried_row_and_half_a_gram_a_piece() -> None:
+    real = load_foods()
+    chilli = real.foods[real.by_alias["dry red chilies"]]
+    assert chilli.id == "fdc:168570"
+    assert chilli.kcal == 324.0
+    result = line_grams(line("dry red chilies", "2 to 3"), chilli)
+    assert result.grams == pytest.approx(1.25)  # 2.5 pieces x 0.5 g, not 112 g of fresh chilli
+    assert result.portion is not None
+    assert result.portion.unit == "piece"
+    assert "range_midpoint" in result.flags  # a range is still an estimate
+
+
+@pytest.mark.parametrize(
+    ("name", "qty", "grams"),
+    [
+        ("cloves", "4", 0.4),
+        ("green cardamom pods", "6", 1.2),
+        ("bay leaf", "2", 0.4),
+    ],
+)
+def test_whole_dried_spices_counted_by_piece_come_from_the_table(
+    name: str, qty: str, grams: float
+) -> None:
+    real = load_foods()
+    result = line_grams(line(name, qty), real.foods[real.by_alias[name.removesuffix(" pods")]])
+    assert result.grams == pytest.approx(grams)
+    assert result.basis == "table"
+    assert result.portion is not None
+    assert result.portion.raw_modifier.startswith("curation|")
+
+
+def test_a_poha_cup_is_60_grams_not_the_rice_cup() -> None:
+    real = load_foods()
+    result = line_grams(line("poha", "2 1/2", "cups"), real.foods[real.by_alias["poha"]])
+    assert result.grams == pytest.approx(150.0)
+    assert result.basis == "table"

@@ -41,7 +41,7 @@ SOURCES = {
         "Foundation (2026-04-30)",
     ),
 }
-FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b3-1"
+FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
 _CSV_FILES = (
     "food.csv",
     "food_category.csv",
@@ -318,14 +318,26 @@ def build(curation: dict[str, Any]) -> dict[str, Any]:
             "portions": sorted(food["portions"], key=lambda p: (p["unit"], p["prep"], p["grams"])),
         }
 
-    missing = []
+    add_proxy_foods(foods, curation.get("proxy_foods", []))
+    add_extra_portions(foods, curation.get("extra_portions", []))
+
+    review = curation.get("reviewed_aliases", {"source": "", "aliases": []})
+    to_review = set(review["aliases"])
+    unknown = to_review - {row["alias"] for row in curation["aliases"]}
+    missing = [f"reviewed alias {name!r} is not in the alias list" for name in sorted(unknown)]
     for row in curation["aliases"]:
-        target = foods.get(f"fdc:{row['fdc_id']}")
+        food_id = row["food_id"] if "food_id" in row else f"fdc:{row['fdc_id']}"
+        target = foods.get(food_id)
         if target is None:
-            missing.append(f"{row['alias']!r} -> fdc:{row['fdc_id']}")
+            missing.append(f"{row['alias']!r} -> {food_id}")
             continue
+        flipped = row["alias"] in to_review
         target["aliases"].append(
-            {"alias": row["alias"], "source": row["source"], "reviewed": row["reviewed"]}
+            {
+                "alias": row["alias"],
+                "source": review["source"] if flipped else row["source"],
+                "reviewed": True if flipped else row["reviewed"],
+            }
         )
     if missing:
         raise SystemExit("aliases pointing at foods not in the list:\n  " + "\n  ".join(missing))
@@ -336,8 +348,69 @@ def build(curation: dict[str, Any]) -> dict[str, Any]:
         "source": "USDA FoodData Central SR Legacy (April 2018) + Foundation (2026-04-30)",
         "licence": "CC0 1.0, public domain; credit USDA FDC",
         "no_food": [n.casefold() for n in curation.get("no_food", [])],
+        "shortlist_block": [
+            {
+                "names": [n.casefold() for n in block["names"]],
+                "food_ids": [f"fdc:{i}" for i in block["fdc_ids"]],
+            }
+            for block in curation.get("shortlist_block", [])
+        ],
         "foods": sorted(foods.values(), key=lambda f: f["id"]),
     }
+
+
+def add_proxy_foods(foods: dict[str, dict[str, Any]], proxies: list[dict[str, Any]]) -> None:
+    """Add curated stand-in foods whose per-100 g nutrients are copied from an FDC food, in place.
+
+    A proxy names the FDC food it copies (`copy_macros_from`) and carries its own portions, so a
+    different ingredient (flattened rice) is never given the source food's cup weight.
+    """
+    problems = []
+    for proxy in proxies:
+        source = foods.get(f"fdc:{proxy['copy_macros_from']}")
+        if source is None:
+            problems.append(f"{proxy['id']}: fdc:{proxy['copy_macros_from']} not in the food list")
+            continue
+        foods[proxy["id"]] = {
+            "id": proxy["id"],
+            "name": proxy["name"],
+            "aliases": [],
+            "food_group": proxy["food_group"],
+            "veg": proxy["veg"],
+            "divisible": proxy["divisible"],
+            **{k: source[k] for k in ("kcal", "protein_g", "carbs_g", "fat_g", "fibre_g")},
+            "portions": [
+                {
+                    "unit": p["unit"],
+                    "prep": p.get("prep", ""),
+                    "grams": p["grams"],
+                    "raw_modifier": f"curation|{p['source']}",
+                }
+                for p in proxy["portions"]
+            ],
+        }
+    if problems:
+        raise SystemExit("proxy_foods:\n  " + "\n  ".join(problems))
+
+
+def add_extra_portions(foods: dict[str, dict[str, Any]], extras: list[dict[str, Any]]) -> None:
+    """Append curated per-piece weights (`{fdc_id, unit, grams, source}`) to their foods."""
+    problems = []
+    for extra in extras:
+        food = foods.get(f"fdc:{extra['fdc_id']}")
+        if food is None:
+            problems.append(f"fdc:{extra['fdc_id']}: not in the food list")
+            continue
+        food["portions"].append(
+            {
+                "unit": extra["unit"],
+                "prep": "",
+                "grams": extra["grams"],
+                "raw_modifier": f"curation|{extra['source']}",
+            }
+        )
+    if problems:
+        raise SystemExit("extra_portions:\n  " + "\n  ".join(problems))
 
 
 def apply_veg_overrides(foods: dict[str, dict[str, Any]], overrides: list[dict[str, Any]]) -> None:

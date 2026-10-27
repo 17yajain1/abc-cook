@@ -30,6 +30,9 @@ LineFlag = Literal[
     "fry_method_uncertain",
     "deep_fry_fallback",
 ]
+FoodSourceName = Literal["cache", "alias", "exact", "llm"]
+"""How a line got its food: the food-map cache, a curated alias, an exact name match, or a fresh
+model pick."""
 FatMethod = Literal["deep_fry", "shallow_or_plain"]
 FatRule = Literal[
     "stated",
@@ -84,6 +87,13 @@ class IngredientNutrition(BaseModel):
     ingredient_index: int = Field(ge=0)
     line_text: str
     food: FoodRef | None = None
+    food_source: FoodSourceName | None = Field(
+        default=None, description="How the food was found; None when the line has no food."
+    )
+    food_reviewed: bool = Field(
+        default=False,
+        description="Whether the owner has reviewed this mapping (a reviewed alias or cache row).",
+    )
     grams: float | None = None
     grams_basis: GramsBasis
     nutrients: NutrientAmounts | None = None
@@ -113,19 +123,29 @@ class RecipeNutrition(BaseModel):
     nutrition_version: int
     computed_at: datetime
     servings_basis: int = Field(ge=1, description="Servings the per-serving numbers divide by.")
-    servings_basis_source: Literal["stated", "assumed"] = Field(
+    servings_basis_source: Literal["stated", "assumed", "yield_text"] = Field(
         description="`assumed` when extraction defaulted the servings; it caps the label at "
-        "`estimated`.",
+        "`estimated`. `yield_text` means the yield text gave the servings (not capped).",
+    )
+    yield_pieces: int | None = Field(
+        default=None,
+        description='A piece count read from the yield text ("12 chillas"). Not used in the '
+        "maths; set only while the servings are assumed.",
     )
     per_serving: NutrientAmounts
     total: NutrientAmounts = Field(
         description="Whole recipe (all servings), not per serving: `per_serving` times "
         "`servings_basis`."
     )
-    confidence: Confidence
-    confidence_proposed: Confidence = Field(
-        description="Shadow label under the B2 report's proposed thresholds. `confidence` stays "
-        "the official one until the owner decides."
+    confidence: Confidence = Field(
+        description="The B3 shadow thresholds plus the guard: never `calculated` when a top-5 "
+        "line by kcal got its food from an unreviewed pick."
+    )
+    confidence_v2: Confidence = Field(
+        description="The v2 official label (placeholder thresholds, no guard), kept to compare."
+    )
+    guard_demoted: bool = Field(
+        default=False, description="The guard turned a `calculated` label into `estimated`."
     )
     optional_extras_kcal_per_serving: float | None = Field(
         default=None,

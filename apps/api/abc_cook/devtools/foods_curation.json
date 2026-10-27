@@ -388,9 +388,83 @@
     {"alias": "chicken broth", "fdc_id": 172924, "source": "b2-proposed", "reviewed": false},
     {"alias": "beef stock", "fdc_id": 172923, "source": "b2-proposed", "reviewed": false},
     {"alias": "vegetable broth", "fdc_id": 171583, "source": "b2-proposed", "reviewed": false},
-    {"alias": "beef bouillon cubes", "fdc_id": 171561, "source": "b2-proposed", "reviewed": false}
+    {"alias": "beef bouillon cubes", "fdc_id": 171561, "source": "b2-proposed", "reviewed": false},
+    {"alias": "peanut", "fdc_id": 172430, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "poha", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "thick poha", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "thin poha", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "medium poha", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "flattened rice", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "beaten rice", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "rice flakes", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "aval", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "avalakki", "food_id": "proxy:poha", "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dry red chili", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dry red chilli", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dry red chilies", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dry red chillies", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dried red chili", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dried red chilli", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dried red chilies", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "dried red chillies", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "whole dry red chillies", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true},
+    {"alias": "sukhi lal mirch", "fdc_id": 168570, "source": "owner review 2026-10-27", "reviewed": true}
   ],
-  "no_food": ["kasuri methi", "dried fenugreek leaves"],
+  "reviewed_aliases": {
+    "source": "owner review 2026-10-27",
+    "aliases": [
+      "oil", "milk", "olive oil", "basmati rice", "potatoes", "wheat flour", "chocolate chips",
+      "beef mince / ground beef", "butter", "eggs",
+      "pav", "extra virgin olive oil", "paneer", "stewing beef", "besan", "pasta", "spaghetti",
+      "whole wheat flour", "unsalted butter", "moong dal",
+      "potato", "rajma", "rava", "cooking oil", "onions", "sugar", "bacon", "all purpose flour",
+      "coconut oil", "brown sugar",
+      "cooked white rice", "onion", "raw shrimp", "dried chickpeas", "almonds", "white sugar",
+      "toor dal", "cashew nuts", "rice", "ghee",
+      "egg", "feta cheese", "vegetable oil", "banana", "ripe bananas", "red wine", "green chilies",
+      "chicken breast", "cashewnuts", "tomatoes",
+      "chia seeds", "boiled potato", "cornflour", "hot oil", "sweet potato", "parmesan cheese",
+      "strawberries", "mixed vegetables", "sesame oil", "semolina",
+      "cashews", "honey", "cauliflower", "green chili", "maple syrup", "cucumber", "yogurt",
+      "carrots", "garlic cloves", "kashmiri chilli powder",
+      "curd", "green bell pepper", "garlic", "plain pumpkin puree", "tomato", "coriander powder",
+      "parsley", "kashmiri red chili powder", "roasted cumin powder", "turmeric powder",
+      "pumpkin pie spice"
+    ]
+  },
+  "proxy_foods": [
+    {
+      "id": "proxy:poha",
+      "name": "Rice flakes (poha), dry; nutrients of FDC 169756",
+      "copy_macros_from": 169756,
+      "food_group": "Cereal Grains and Pasta",
+      "veg": "veg",
+      "divisible": true,
+      "portions": [
+        {"unit": "cup", "grams": 60, "source": "Tarla Dalal glossary (beaten rice, 1 cup ~ 60 g); Fitia Poha Medium (1 cup = 60 g)"}
+      ]
+    }
+  ],
+  "shortlist_block": [
+    {
+      "names": ["poha", "thick poha", "thin poha", "medium poha", "flattened rice", "beaten rice", "rice flakes", "aval", "avalakki"],
+      "fdc_ids": [173043]
+    }
+  ],
+  "extra_portions": [
+    {"fdc_id": 168570, "unit": "piece", "grams": 0.5, "source": "FDC portion for 168570: 1 pepper = 0.5 g"},
+    {"fdc_id": 171321, "unit": "clove", "grams": 0.1, "source": "clove cultivation deck: 8,000-10,000 dried buds/kg = 0.10-0.125 g"},
+    {"fdc_id": 170919, "unit": "pod", "grams": 0.2, "source": "supplier listing: 0.2-0.5 g per pod, lower end (weak source)"},
+    {"fdc_id": 170919, "unit": "piece", "grams": 0.2, "source": "supplier listing: 0.2-0.5 g per pod, lower end (weak source)"},
+    {"fdc_id": 170917, "unit": "leaf", "grams": 0.2, "source": "Trade East whole bay leaves label: 2 leaves = 0.4 g"},
+    {"fdc_id": 170917, "unit": "piece", "grams": 0.2, "source": "Trade East whole bay leaves label: 2 leaves = 0.4 g"}
+  ],
+  "no_food": [
+    "kasuri methi", "dried fenugreek leaves",
+    "chaat masala", "garam masala", "pav bhaji masala", "biryani masala", "achar masala",
+    "sambar masala", "italian seasoning", "kitchen king", "kitchen king masala",
+    "charcoal", "natural charcoal"
+  ],
   "veg_overrides": [
     {"fdc_id": 174158, "veg": "veg", "note": "plain water"},
     {"fdc_id": 746784, "veg": "veg", "note": "sugar, granulated"},

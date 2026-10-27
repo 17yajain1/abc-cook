@@ -1,10 +1,11 @@
 """`compute_nutrition`: per-serving nutrition from matched ingredient lines (part-a-plan §6-§7).
 
 Pure: the same ingredients, servings and resolutions give the same result, and `computed_at` is
-passed in rather than read from a clock. Confidence labels follow §6, rules in order, first match
-wins; the thresholds are placeholders until the owner decides. A second, shadow label
-(`confidence_proposed`) follows the B2 report's proposed thresholds. Fat lines get their amount
-from how the fat is used (`fat.py`), not from one flat default (b3-plan 2A).
+passed in rather than read from a clock. The official label (v3) follows the B2 report's
+proposed thresholds, then a guard: a recipe is never `calculated` when one of its top-5 lines by
+kcal got its food from an unreviewed pick. The v2 label (§6 placeholder thresholds, no guard) is
+kept as `confidence_v2`. Fat lines get their amount from how the fat is used (`fat.py`), not
+from one flat default (b3-plan 2A). Servings come from the graph, else from the yield text.
 """
 
 from __future__ import annotations
@@ -43,6 +44,7 @@ from abc_cook.schema.nutrition import (
     FatMethod,
     FatRule,
     FoodRef,
+    FoodSourceName,
     GramsBasis,
     IngredientNutrition,
     LineFlag,
@@ -68,10 +70,23 @@ STATED_TABLE_KCAL_CALCULATED_SHARE = 0.90
 TOP_LINES_CHECKED = 5
 DRIVER_COUNT = 3
 
-# The B2 report's proposals, computed as a shadow label (b3-plan 2E).
+# The B2 report's proposals: the official thresholds from v3 (b3-plan 2E, b35-plan 2F).
 PROPOSED_ESTIMATED_KCAL_ROUGH_SHARE = 0.35
 PROPOSED_UNMATCHED_GRAMS_ROUGH_SHARE = 0.20
 
+_SERVINGS_WORDS = {
+    "serves", "serve", "serving", "servings", "people", "persons", "person", "portions",
+    "portion", "pax", "makes", "make",
+}  # fmt: skip
+_YIELD_FILLER = {
+    "about", "approx", "approximately", "around", "roughly", "for", "to", "or", "and", "a", "an",
+    "the", "of", "upto", "up",
+}  # fmt: skip
+_YIELD_MEASURES = {
+    "g", "gm", "gms", "kg", "ml", "l", "litre", "litres", "liter", "liters", "cup", "cups",
+}  # fmt: skip
+_DASHES = chr(0x2013) + chr(0x2014)  # ASCII-safe in source (RUF001)
+_YIELD_NUMBER_RE = re.compile(rf"(\d+)\s*(?:(?:-|[{_DASHES}]|to|or)\s*(\d+))?")
 _TO_TASTE_RE = re.compile(r"\bto taste\b|\bas needed\b|\bas required\b", re.IGNORECASE)
 _OPTIONAL_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _SALT_PEPPER_RE = re.compile(r"\b(?:salt|pepper)\b", re.IGNORECASE)
@@ -100,6 +115,8 @@ class _Row:
     index: int
     ing: Ingredient
     food: Food | None
+    source: FoodSourceName | None = None
+    reviewed: bool = False
     grams: float | None = None
     basis: GramsBasis = "missing"
     flags: list[LineFlag] = field(default_factory=list)
@@ -121,11 +138,40 @@ class _Row:
             self.flags.append(flag)
 
 
-def servings_basis_source(servings_stated: bool, warnings: list[str]) -> str:
+def servings_basis_source(
+    servings_stated: bool, warnings: list[str]
+) -> Literal["stated", "assumed"]:
     """`stated` or `assumed`; the legacy warning counts as assumed (part-a-plan §7)."""
     if not servings_stated or SERVINGS_DEFAULTED_WARNING in warnings:
         return "assumed"
     return "stated"
+
+
+def servings_from_yield(text: str | None) -> tuple[int | None, int | None]:
+    """(servings, pieces) read from a yield text; at most one is set.
+
+    Takes the first number, or the lower bound of the first range. If the words left over are
+    only servings words ("serves", "people", "makes"...) and filler, the number is servings.
+    Any other noun ("12 chillas", "makes 12-13 cookies") makes it a piece count instead, which
+    is reported but never used in the maths. A text with no number, or a measure ("250 g"),
+    gives neither.
+    """
+    if not text:
+        return None, None
+    body = re.sub(r"\([^)]*\)", " ", text.lower())
+    match = _YIELD_NUMBER_RE.search(body)
+    if match is None:
+        return None, None
+    value = int(match.group(1))
+    if value < 1:
+        return None, None
+    words = re.findall(r"[a-z]+", body[: match.start()] + " " + body[match.end() :])
+    rest = [w for w in words if w not in _SERVINGS_WORDS and w not in _YIELD_FILLER]
+    if not rest:
+        return value, None
+    if any(w in _YIELD_MEASURES for w in rest):
+        return None, None
+    return None, value
 
 
 def line_text(ing: Ingredient) -> str:
@@ -197,7 +243,7 @@ def _spoon_grams(food: Food, unit: str) -> float:
 
 def _resolve_row(index: int, ing: Ingredient, resolution: LineResolution, table: FoodTable) -> _Row:
     food = table.get(resolution.food_id) if resolution.food_id else None
-    row = _Row(index, ing, food)
+    row = _Row(index, ing, food, resolution.food_source if food else None, resolution.reviewed)
     row.impact = impact_class(food, line_text(ing))
     result = line_grams(ing, food)
     row.result = result
@@ -362,8 +408,33 @@ def _label(rows: list[_Row], assumed: bool) -> Confidence:
     return _calculated_or_estimated(counted, total_kcal, assumed)
 
 
+def _is_unreviewed_pick(row: _Row) -> bool:
+    """Whether the line's food is a pick nobody has reviewed.
+
+    A pick is a food from the food-map cache, a fresh model answer, or a curated alias; an exact
+    name match is not a pick. It is unreviewed unless the cache row or alias row is reviewed.
+    """
+    return row.food is not None and row.source in ("cache", "llm", "alias") and not row.reviewed
+
+
+def _label_official(rows: list[_Row], assumed: bool) -> tuple[Confidence, bool]:
+    """The official v3 label and whether the guard demoted it.
+
+    The B2-proposal rules, then: `calculated` becomes `estimated` when any of the top-5 counted
+    lines by kcal is an unreviewed pick.
+    """
+    label = _label_proposed(rows, assumed)
+    if label != "calculated":
+        return label, False
+    counted = [r for r in rows if r.excluded is None]
+    top = sorted(counted, key=lambda r: r.kcal, reverse=True)[:TOP_LINES_CHECKED]
+    if any(_is_unreviewed_pick(r) for r in top):
+        return "estimated", True
+    return label, False
+
+
 def _label_proposed(rows: list[_Row], assumed: bool) -> Confidence:
-    """The shadow label under the B2 report's proposals (b3-plan 2E).
+    """The label under the B2 report's proposals (b3-plan 2E), before the guard.
 
     A range midpoint no longer counts as estimated for the kcal-share rule, whose limit is 35%;
     the unmatched rule is measured in grams, not lines. The "calculated" rule and the
@@ -396,26 +467,39 @@ def compute_nutrition(
     computed_at: datetime,
     table: FoodTable | None = None,
     nodes: Sequence[Node] | None = None,
+    yield_text: str | None = None,
 ) -> RecipeNutrition:
     """Per-serving nutrition for `ingredients`, one `LineResolution` per line.
 
     Args:
         ingredients: `CookingGraph.ingredients`.
         servings: `CookingGraph.servings` (at least 1).
-        servings_stated: `CookingGraph.servings_stated`; False caps the label at `estimated`.
+        servings_stated: `CookingGraph.servings_stated`; False caps the label at `estimated`,
+            unless the yield text gives the servings.
         warnings: The import warnings; the legacy defaulted-servings warning counts as assumed.
         resolutions: What the matcher decided, in the same order as `ingredients`.
         computed_at: Stamped on the result (passed in so the function stays pure).
         table: The food table; defaults to the bundled one.
         nodes: `CookingGraph.nodes`. Without them a fat line is classified from its own text only,
             and a deep-fry line falls back to a flat amount (nothing says what is being fried).
+        yield_text: `CookingGraph.yield_text`. Read only when the servings would be assumed: a
+            bare number or a servings phrase gives the servings (source `yield_text`); a piece
+            noun gives `yield_pieces` and the servings stay assumed.
 
     Returns:
-        The per-serving numbers, a confidence label (official and shadow), the top drivers and
+        The per-serving numbers, a confidence label (official and v2), the top drivers and
         every line's working.
     """
     table = table or load_foods()
     servings = max(1, servings)
+    source: Literal["stated", "assumed", "yield_text"] = servings_basis_source(
+        servings_stated, warnings
+    )
+    yield_pieces: int | None = None
+    if source == "assumed":
+        from_yield, yield_pieces = servings_from_yield(yield_text)
+        if from_yield is not None:
+            servings, source = from_yield, "yield_text"
     rows = [
         _resolve_row(i, ing, res, table)
         for i, (ing, res) in enumerate(zip(ingredients, resolutions, strict=True))
@@ -445,6 +529,8 @@ def compute_nutrition(
                 food=FoodRef(food_id=r.food.id, name=r.food.name, foods_version=table.foods_version)
                 if r.food
                 else None,
+                food_source=r.source if r.food else None,
+                food_reviewed=r.reviewed if r.food else False,
                 grams=r.grams,
                 grams_basis=r.basis,
                 nutrients=counted,
@@ -459,7 +545,7 @@ def compute_nutrition(
             )
         )
 
-    assumed = servings_basis_source(servings_stated, warnings) == "assumed"
+    assumed = source == "assumed"
     per = NutrientAmounts(
         kcal=total.kcal / servings,
         protein_g=total.protein_g / servings,
@@ -482,15 +568,18 @@ def compute_nutrition(
     extras_kcal = (
         sum(r.potential_kcal or 0.0 for r in computable) / servings if computable else None
     )
+    confidence, guard_demoted = _label_official(rows, assumed)
     return RecipeNutrition(
         nutrition_version=NUTRITION_VERSION,
         computed_at=computed_at,
         servings_basis=servings,
-        servings_basis_source="assumed" if assumed else "stated",
+        servings_basis_source=source,
+        yield_pieces=yield_pieces,
         per_serving=per,
         total=total,
-        confidence=_label(rows, assumed),
-        confidence_proposed=_label_proposed(rows, assumed),
+        confidence=confidence,
+        confidence_v2=_label(rows, assumed),
+        guard_demoted=guard_demoted,
         optional_extras_kcal_per_serving=extras_kcal,
         optional_extras_unmatched=[
             line_text(r.ing) for r in optional_rows if r.potential_kcal is None

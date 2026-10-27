@@ -15,6 +15,7 @@ from nutrition_helpers import food, line, table
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
 from abc_cook.nutrition.foods import FoodTable
 from abc_cook.nutrition.match import (
+    CallRecord,
     FoodKey,
     InMemoryFoodMapStore,
     JsonFileFoodMapStore,
@@ -22,6 +23,7 @@ from abc_cook.nutrition.match import (
     MatchProposal,
     ShortlistIndex,
     SpendGuard,
+    carry_forward,
     clean_name,
     deterministic_match,
     resolve_recipe,
@@ -499,3 +501,253 @@ def test_a_cached_pick_still_serves_a_name_with_no_deterministic_result() -> Non
     resolutions, stats = _resolve([line("kidney beans", "1", "cup")], FakeAdapter(None), store)
     assert resolutions[0].food_id == "fdc:6"
     assert stats.cache_hits == 1
+
+
+# --- v3: batching, null carry-forward, blends, poha, dried state, spend callback -----------------
+
+
+def test_a_shared_key_is_asked_once_and_every_line_takes_the_answer() -> None:
+    adapter = FakeAdapter(lambda e: ("fdc:6", None))
+    store = InMemoryFoodMapStore()
+    lines = [line("kidney beans", "1", "cup"), line("kidney beans", "2", "tbsp")]
+    resolutions, stats = _resolve(lines, adapter, store)
+    assert [e["idx"] for e in adapter.calls[0]] == [0]  # one question for the one key
+    assert [r.food_id for r in resolutions] == ["fdc:6", "fdc:6"]
+    assert [r.food_source for r in resolutions] == ["llm", "llm"]
+    assert stats.llm_matches == 2
+    assert len(store.foods) == 1
+
+
+def test_a_shared_key_that_gets_null_leaves_every_line_unmatched() -> None:
+    adapter = FakeAdapter(lambda e: (None, None))
+    lines = [line("kidney beans", "1", "cup"), line("kidney beans", "2", "tbsp")]
+    resolutions, _ = _resolve(lines, adapter)
+    assert [r.miss for r in resolutions] == ["llm_none", "llm_none"]
+
+
+def test_a_follower_that_needs_grams_is_sent_but_its_food_answer_is_ignored() -> None:
+    def respond(entry: dict[str, Any]) -> tuple[str | None, float | None]:
+        # the follower (idx 1) gets a different food answer than the representative (idx 0)
+        return ("fdc:6", None) if entry["idx"] == 0 else ("fdc:7", 120.0)
+
+    adapter = FakeAdapter(respond)
+    lines = [line("kidney beans", "1", "cup"), line("kidney beans", "2")]
+    resolutions, _ = _resolve(lines, adapter)
+    assert [r.food_id for r in resolutions] == ["fdc:6", "fdc:6"]
+    assert resolutions[1].llm_grams == 120.0
+
+
+def test_a_cached_null_is_carried_forward_and_not_asked_again() -> None:
+    old = InMemoryFoodMapStore()
+    old.put_food(FoodKey("kidney beans", None, "old-1"), None, model="m", now=NOW)
+    old.put_food(FoodKey("cumin powder", None, "old-1"), "fdc:7", model="m", now=NOW)
+    report = carry_forward(old, "old-1", T)
+    assert (report.carried, report.null_carried, report.dropped) == (1, 1, [])
+    carried = old.get_food(FoodKey("kidney beans", None, "test-1"))
+    assert carried is not None
+    assert carried["carried_from"] == "old-1"
+    adapter = FakeAdapter(lambda e: ("fdc:6", None))
+    resolutions, _ = _resolve([line("kidney beans", "1", "cup")], adapter, old)
+    assert adapter.calls == []
+    assert resolutions[0].miss == "cached_none"
+
+
+def test_refresh_nulls_asks_a_cached_null_again_but_not_a_reviewed_one() -> None:
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("kidney beans", None, "test-1"), None, model="m", now=NOW)
+    adapter = FakeAdapter(lambda e: ("fdc:6", None))
+    resolutions, _ = resolve_recipe(
+        [line("kidney beans", "1", "cup")],
+        table=T,
+        store=store,
+        adapter=adapter,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+        refresh_nulls=True,
+    )
+    assert len(adapter.calls) == 1
+    assert resolutions[0].food_id == "fdc:6"
+    store.foods[FoodKey("kidney beans", None, "test-1").encode()] = {
+        "food_id": None,
+        "reviewed": True,
+    }
+    again = FakeAdapter(lambda e: ("fdc:6", None))
+    second, _ = resolve_recipe(
+        [line("kidney beans", "1", "cup")],
+        table=T,
+        store=store,
+        adapter=again,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+        refresh_nulls=True,
+    )
+    assert again.calls == []
+    assert second[0].miss == "cached_none"
+
+
+def test_carry_forward_leaves_behind_what_curation_decides_or_the_table_lost() -> None:
+    blocked = FoodTable.from_document(
+        {
+            "foods_version": "test-2",
+            "no_food": ["chaat masala"],
+            "shortlist_block": [{"names": ["poha"], "food_ids": ["fdc:30"]}],
+            "foods": [
+                food("30", "Groundcherries (poha), raw"),
+                food("31", "Spices, curry powder", group="Spices and Herbs", aliases=["curry"]),
+            ],
+        }
+    )
+    store = InMemoryFoodMapStore()
+    for name, food_id in [
+        ("chaat masala", "fdc:31"),  # a blend now decided by curation
+        ("curry", "fdc:31"),  # an alias now
+        ("thick poha flakes", "fdc:30"),  # a food blocked for this name
+        ("mystery", "fdc:99"),  # a food the new table lost
+        ("kept", "fdc:31"),
+    ]:
+        store.put_food(FoodKey(name, None, "old-1"), food_id, model="m", now=NOW)
+    report = carry_forward(store, "old-1", blocked)
+    assert report.carried == 1
+    assert dict(report.dropped) == {
+        "chaat masala": "decided by curation now",
+        "curry": "decided by curation now",
+        "thick poha flakes": "fdc:30 is blocked for this name",
+        "mystery": "fdc:99 not in the new table",
+    }
+    assert store.get_food(FoodKey("kept", None, "test-2")) is not None
+
+
+def test_carry_forward_checks_macros_against_the_previous_table() -> None:
+    previous = table(food("7", "Spices, cumin seed", group="Spices and Herbs", kcal=375))
+    current = table(food("7", "Spices, cumin seed", group="Spices and Herbs", kcal=380))
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("cumin powder", None, "old-1"), "fdc:7", model="m", now=NOW)
+    report = carry_forward(store, "old-1", current, previous)
+    assert report.carried == 0
+    assert report.dropped == [("cumin powder", "fdc:7 macros changed")]
+
+
+BLENDS = FoodTable.from_document(
+    {
+        "foods_version": "test-1",
+        "no_food": ["chaat masala", "natural charcoal"],
+        "foods": [
+            food("40", "Spices, curry powder", group="Spices and Herbs"),
+            food("41", "Rice flakes (poha), dry", group="Cereal Grains and Pasta"),
+        ],
+    }
+)
+
+
+def test_a_blend_is_no_food_with_or_without_powder_and_a_cached_curry_pick_loses() -> None:
+    assert deterministic_match("chaat masala powder", BLENDS) == (None, "no_food")
+    assert deterministic_match("natural charcoal", BLENDS) == (None, "no_food")
+    store = InMemoryFoodMapStore()
+    store.put_food(FoodKey("chaat masala", None, "test-1"), "fdc:40", model="m", now=NOW)
+    adapter = FakeAdapter(lambda e: ("fdc:40", None))
+    resolutions, _ = resolve_recipe(
+        [line("chaat masala", "1", "tsp"), line("chaat masala powder", "1", "tsp")],
+        table=BLENDS,
+        store=store,
+        adapter=adapter,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+    )
+    assert adapter.calls == []
+    assert [r.miss for r in resolutions] == ["no_food_by_curation"] * 2
+
+
+POHA = FoodTable.from_document(
+    {
+        "foods_version": "test-1",
+        "shortlist_block": [{"names": ["poha", "beaten rice"], "food_ids": ["fdc:173043"]}],
+        "foods": [
+            food("173043", "Groundcherries, (cape-gooseberries or poha), raw", group="Fruits"),
+            food(
+                "proxy:poha",
+                "Rice flakes (poha), dry",
+                group="Cereal Grains and Pasta",
+                aliases=["poha", "beaten rice"],
+                reviewed=True,
+                portions=[("cup", "", 60.0)],
+            ),
+        ],
+    }
+)
+
+
+def test_poha_maps_to_the_proxy_and_the_groundcherry_row_never_shortlists() -> None:
+    assert deterministic_match("poha", POHA) == ("proxy:poha", "alias")
+    resolutions, _ = resolve_recipe(
+        [line("poha", "2", "cups")],
+        table=POHA,
+        store=InMemoryFoodMapStore(),
+        adapter=None,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+    )
+    assert resolutions[0].food_id == "proxy:poha"
+    assert resolutions[0].reviewed is True
+    ids = [f.id for f in ShortlistIndex(POHA).shortlist("thick poha flakes", None)]
+    assert "fdc:173043" not in ids
+    assert "proxy:poha" in ids
+    # words that name no blocked item still find the groundcherry row
+    assert "fdc:173043" in [f.id for f in ShortlistIndex(POHA).shortlist("cape gooseberries", None)]
+
+
+def test_dried_is_a_dry_state_but_the_name_keeps_the_written_word() -> None:
+    for raw, name in [
+        ("dried oregano", "dried oregano"),
+        ("2 to 3 dry red chilies", "dry red chilies"),
+        ("dried red chillies", "dried red chillies"),
+    ]:
+        cleaned = clean_name(raw)
+        assert (cleaned.name, cleaned.state) == (name, "dry"), raw
+
+
+def test_on_call_fires_before_any_store_write_and_carries_the_cost() -> None:
+    store = InMemoryFoodMapStore()
+    seen: list[tuple[int, CallRecord]] = []
+
+    def on_call(record: CallRecord) -> None:
+        seen.append((len(store.foods), record))
+
+    resolve_recipe(
+        [line("kidney beans", "1", "cup")],
+        table=T,
+        store=store,
+        adapter=FakeAdapter(lambda e: ("fdc:6", None)),
+        guard=SpendGuard(),
+        now=lambda: NOW,
+        on_call=on_call,
+    )
+    assert len(seen) == 1
+    stored_at_call, record = seen[0]
+    assert stored_at_call == 0  # the spend is on record before the mapping is saved
+    assert record.cost_inr is not None
+    assert record.cost_inr > 0
+    assert (record.input_tokens, record.output_tokens, record.n_lines) == (1000, 200, 1)
+    assert len(store.foods) == 1
+
+
+def test_alias_and_cache_rows_report_whether_they_are_reviewed() -> None:
+    reviewed_table = table(
+        food("1", "Rice, white, raw", aliases=["rice"], reviewed=True),
+        food("2", "Potatoes, raw", aliases=["potato"]),
+        food("6", "Beans, kidney, raw"),
+    )
+    store = InMemoryFoodMapStore()
+    store.foods[FoodKey("kidney beans", None, "test-1").encode()] = {
+        "food_id": "fdc:6",
+        "reviewed": True,
+    }
+    resolutions, _ = resolve_recipe(
+        [line("rice", "1", "cup"), line("potato", "1"), line("kidney beans", "1", "cup")],
+        table=reviewed_table,
+        store=store,
+        adapter=None,
+        guard=SpendGuard(),
+        now=lambda: NOW,
+    )
+    assert [r.reviewed for r in resolutions] == [True, False, True]
+    assert [r.food_source for r in resolutions] == ["alias", "alias", "cache"]

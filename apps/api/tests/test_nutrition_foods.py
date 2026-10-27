@@ -56,7 +56,7 @@ def test_bundled_table_is_well_formed() -> None:
     assert 1000 <= len(table.foods) <= 2500
     assert table.foods_version
     for food in table.foods.values():
-        assert food.id.startswith("fdc:")
+        assert food.id.startswith(("fdc:", "proxy:"))  # v3 adds the curated poha proxy
         assert food.veg in {"veg", "egg", "non_veg", "unknown"}
         assert food.kcal >= 0
         assert food.protein_g >= 0
@@ -115,5 +115,96 @@ def test_a_veg_override_only_flips_unknown_to_veg() -> None:
         apply_veg_overrides(foods, [{"fdc_id": 99, "veg": "veg"}])
 
 
-def test_foods_version_is_b3() -> None:
-    assert load_foods().foods_version.endswith("/b3-1")
+def test_foods_version_is_b35() -> None:
+    assert load_foods().foods_version.endswith("/b35-1")
+
+
+# --- v3 curation (b35-plan D1-D6) ---------------------------------------------------------------
+
+
+def test_poha_is_a_proxy_of_rice_nutrients_with_its_own_cup_weight() -> None:
+    table = load_foods()
+    poha = table.foods["proxy:poha"]
+    rice = table.foods["fdc:169756"]
+    assert (poha.kcal, poha.protein_g, poha.carbs_g, poha.fat_g, poha.fibre_g) == (
+        rice.kcal,
+        rice.protein_g,
+        rice.carbs_g,
+        rice.fat_g,
+        rice.fibre_g,
+    )
+    assert [p.grams for p in poha.portions if p.unit == "cup"] == [60.0]  # never rice's 185 g
+    for alias in (
+        "poha", "thick poha", "thin poha", "medium poha", "flattened rice", "beaten rice",
+        "rice flakes", "aval", "avalakki",
+    ):  # fmt: skip
+        assert table.by_alias[alias] == "proxy:poha", alias
+        assert table.alias_reviewed[alias] is True, alias
+
+
+def test_the_groundcherry_poha_row_is_blocked_from_poha_shortlists() -> None:
+    table = load_foods()
+    (block,) = table.shortlist_block
+    assert "fdc:173043" in block.food_ids
+    assert "poha" in block.names
+
+
+def test_paneer_stays_on_whole_milk_mozzarella_and_is_reviewed() -> None:
+    table = load_foods()
+    assert table.by_alias["paneer"] == "fdc:170845"
+    assert table.alias_reviewed["paneer"] is True
+    assert table.foods["fdc:170845"].name == "Cheese, mozzarella, whole milk"
+
+
+def test_peanut_is_a_reviewed_alias_of_the_peanuts_row() -> None:
+    table = load_foods()
+    assert table.by_alias["peanut"] == table.by_alias["peanuts"] == "fdc:172430"
+    assert table.alias_reviewed["peanut"] is True
+
+
+@pytest.mark.parametrize(
+    ("food_id", "unit", "grams"),
+    [
+        ("fdc:168570", "piece", 0.5),  # dried red chilli
+        ("fdc:171321", "clove", 0.1),
+        ("fdc:170919", "pod", 0.2),
+        ("fdc:170919", "piece", 0.2),
+        ("fdc:170917", "leaf", 0.2),
+        ("fdc:170917", "piece", 0.2),
+    ],
+)
+def test_dried_whole_spices_have_a_curated_per_piece_weight(
+    food_id: str, unit: str, grams: float
+) -> None:
+    portions = [p for p in load_foods().foods[food_id].portions if p.unit == unit]
+    assert grams in {p.grams for p in portions}
+    assert any(p.raw_modifier.startswith("curation|") for p in portions)
+
+
+def test_dried_red_chillies_map_to_the_sun_dried_row_not_the_fresh_one() -> None:
+    table = load_foods()
+    for alias in ("dry red chilies", "dried red chilli", "sukhi lal mirch"):
+        assert table.by_alias[alias] == "fdc:168570", alias
+        assert table.alias_reviewed[alias] is True
+    assert "sun-dried" in table.foods["fdc:168570"].name
+
+
+def test_spice_blends_and_charcoal_are_no_food() -> None:
+    table = load_foods()
+    blends = {
+        "chaat masala", "garam masala", "pav bhaji masala", "biryani masala", "achar masala",
+        "sambar masala", "italian seasoning", "kitchen king", "kitchen king masala",
+        "charcoal", "natural charcoal",
+    }  # fmt: skip
+    assert blends <= table.no_food
+    assert not blends & set(table.by_alias)
+    assert table.by_alias["curry powder"] == "fdc:170924"  # an honest row: not listed
+
+
+def test_the_owner_reviewed_aliases_are_flipped_and_the_rest_stay_unreviewed() -> None:
+    table = load_foods()
+    for alias in ("oil", "milk", "onion", "kashmiri red chili powder", "pumpkin pie spice", "ghee"):
+        assert table.alias_reviewed[alias] is True, alias
+    for alias in ("chicken", "soya", "kalamata olives", "chicken boneless", "boneless chicken"):
+        assert table.alias_reviewed[alias] is False, alias
+    assert sum(table.alias_reviewed.values()) == 101  # 81 flipped + peanut + 9 poha + 10 chilli

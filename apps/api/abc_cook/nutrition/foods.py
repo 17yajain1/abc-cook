@@ -46,6 +46,14 @@ class Food:
 
 
 @dataclass(frozen=True)
+class ShortlistBlock:
+    """Foods kept off the shortlist for any line whose cleaned name contains one of `names`."""
+
+    names: tuple[str, ...]
+    food_ids: frozenset[str]
+
+
+@dataclass(frozen=True)
 class FoodTable:
     """All foods plus the lookups the matcher needs."""
 
@@ -55,6 +63,10 @@ class FoodTable:
     by_alias: dict[str, str]
     no_food: frozenset[str] = frozenset()
     """Names with no honest USDA row (curation): they stay unmatched without an LLM call."""
+    alias_reviewed: dict[str, bool] = field(default_factory=dict)
+    """Per alias: whether the owner has reviewed that mapping."""
+    shortlist_block: tuple[ShortlistBlock, ...] = ()
+    """Curated exclusions from the model's shortlist (a wrong food that shares a word)."""
 
     @classmethod
     def from_document(cls, document: dict[str, Any]) -> FoodTable:
@@ -62,6 +74,7 @@ class FoodTable:
         foods: dict[str, Food] = {}
         by_name: dict[str, str] = {}
         by_alias: dict[str, str] = {}
+        alias_reviewed: dict[str, bool] = {}
         for raw in document["foods"]:
             portions = tuple(
                 FoodPortion(p["unit"], p["prep"], float(p["grams"]), p.get("raw_modifier", ""))
@@ -85,9 +98,22 @@ class FoodTable:
             foods[food.id] = food
             by_name.setdefault(food.name.casefold(), food.id)
             for alias in aliases:
-                by_alias.setdefault(alias, food.id)
+                if alias not in by_alias:
+                    by_alias[alias] = food.id
+                    alias_reviewed[alias] = False
+            for entry in raw.get("aliases", []):
+                if by_alias.get(entry["alias"].casefold()) == food.id:
+                    alias_reviewed[entry["alias"].casefold()] = bool(entry.get("reviewed", False))
         no_food = frozenset(n.casefold() for n in document.get("no_food", []))
-        return cls(document["foods_version"], foods, by_name, by_alias, no_food)
+        blocks = tuple(
+            ShortlistBlock(
+                tuple(n.casefold() for n in block["names"]), frozenset(block["food_ids"])
+            )
+            for block in document.get("shortlist_block", [])
+        )
+        return cls(
+            document["foods_version"], foods, by_name, by_alias, no_food, alias_reviewed, blocks
+        )
 
     def get(self, food_id: str) -> Food | None:
         """The food with this id, or None."""

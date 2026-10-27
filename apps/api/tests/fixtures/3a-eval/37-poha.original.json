@@ -1,0 +1,489 @@
+{
+  "recipe": {
+    "title": "Poha Recipe | Maharastrian Aloo Kanda Pohe",
+    "channel": "hebbarskitchen.com",
+    "method_grounded": true,
+    "servings": 2,
+    "servings_source": "stated",
+    "yield_text": "2 Servings",
+    "cuisine": "maharashtra",
+    "stated_total_min": 20,
+    "ingredients": [
+      {
+        "name": "poha",
+        "qty": "2½ cup",
+        "unit": null,
+        "prep_note": "rinsed, do not soak",
+        "group": null
+      },
+      {
+        "name": "oil",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "peanut",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": "fried",
+        "group": null
+      },
+      {
+        "name": "potato",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "chopped, fried till golden and crisp",
+        "group": null
+      },
+      {
+        "name": "mustard",
+        "qty": "½ tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "cumin",
+        "qty": "½ tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "hing",
+        "qty": "pinch",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "chilli",
+        "qty": "2",
+        "unit": null,
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "ginger",
+        "qty": "1 inch",
+        "unit": null,
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "curry leaves",
+        "qty": "few",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "onion",
+        "qty": "1",
+        "unit": null,
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "turmeric",
+        "qty": "½ tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "salt",
+        "qty": "1 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "sugar",
+        "qty": "1 tsp",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "lemon",
+        "qty": "½",
+        "unit": null,
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "coriander",
+        "qty": "2 tbsp",
+        "unit": null,
+        "prep_note": "finely chopped",
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Place a sieve in a bowl and rinse 2½ cups of poha till the water runs clean. Do not soak the poha.",
+        "label": "Rinse poha",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "poha"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Keep the poha aside for 10 minutes, and it will become non-sticky and soft.",
+        "label": "Soften poha",
+        "attention": "unattended",
+        "attention_cue": "Keep the poha aside for 10 minutes",
+        "duration_typical_min": 10.0,
+        "duration_min": 9.0,
+        "duration_max": 12.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "poha"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "it will become non-sticky and soft"
+      },
+      {
+        "origin": "source",
+        "text": "In a wok heat 2 tbsp oil and fry 2 tbsp peanut till they turn crunchy. Keep aside.",
+        "label": "Fry peanuts",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 4.0,
+        "duration_min": 3.0,
+        "duration_max": 6.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil",
+          "peanut"
+        ],
+        "produces_component": "fried peanut",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till they turn crunchy"
+      },
+      {
+        "origin": "source",
+        "text": "Also, fry 1 potato till it turns golden and crisp. Keep aside.",
+        "label": "Fry potato",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 6.0,
+        "duration_min": 5.0,
+        "duration_max": 9.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "potato",
+          "oil"
+        ],
+        "produces_component": "fried potato",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till it turns golden and crisp"
+      },
+      {
+        "origin": "source",
+        "text": "In the same oil, add ½ tsp mustard, ½ tsp cumin, pinch hing, 2 chilli, 1 inch ginger, few curry leaves and splutter the tempering.",
+        "label": "Temper spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2,
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "mustard",
+          "cumin",
+          "hing",
+          "chilli",
+          "ginger",
+          "curry leaves",
+          "oil"
+        ],
+        "produces_component": "tempering",
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "splutter the tempering"
+      },
+      {
+        "origin": "source",
+        "text": "Add 1 onion, and saute till the onions softens.",
+        "label": "Saute onions",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 3.0,
+        "duration_min": 2.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "onion",
+          "tempering"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the onions softens"
+      },
+      {
+        "origin": "source",
+        "text": "Now add ½ tsp turmeric, 1 tsp salt, 1 tsp sugar and saute till the spices turn aromatic.",
+        "label": "Cook spices",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.5,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "turmeric",
+          "salt",
+          "sugar"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "till the spices turn aromatic"
+      },
+      {
+        "origin": "source",
+        "text": "Further add fried peanut and potato and mix well.",
+        "label": "Add fried items",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2,
+          3,
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "fried peanut",
+          "fried potato"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Now add in poha and mix gently.",
+        "label": "Mix poha",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 4.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1,
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "poha"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Also add ½ lemon and 2 tbsp coriander. Mix gently.",
+        "label": "Finish seasoning",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "lemon",
+          "coriander"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cover and simmer for 5 minutes, or until the poha is cooked fully.",
+        "label": "Simmer covered",
+        "attention": "unattended",
+        "attention_cue": "Cover and simmer for 5 minutes",
+        "duration_typical_min": 5.0,
+        "duration_min": 4.0,
+        "duration_max": 6.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "until the poha is cooked fully"
+      },
+      {
+        "origin": "source",
+        "text": "Finally, enjoy Kanda Poha Recipe with chivda.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 1.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Method and ingredients taken from linked blog schema.org Recipe JSON-LD. Durations for non-stated steps are estimates; stated durations were used verbatim for the 10-minute rest and 5-minute simmer. 'poha' ingredient line included prep note 'rinsed, do not soak' derived from the step text."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Poha Recipe | Maharastrian Aloo Kanda Pohe\n\nChannel: hebbarskitchen.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Poha Recipe | Maharastrian Aloo Kanda Pohe\",\n  \"author\": {\n    \"@id\": \"https://hebbarskitchen.com/#/schema/person/fdf1122d98e52197bd94fb5ac0366736\"\n  },\n  \"description\": \"Easy Poha Recipe | Aloo Kanda Poha | Maharashtrian Style Kanda Poha Recipe\",\n  \"datePublished\": \"2025-06-30T14:13:50+00:00\",\n  \"image\": [\n    \"https://hebbarskitchen.com/wp-content/uploads/2025/06/Poha-Recipe-Maharastrian-Aloo-Kanda-Pohe-2-scaled.jpeg\",\n    \"https://hebbarskitchen.com/wp-content/uploads/2025/06/Poha-Recipe-Maharastrian-Aloo-Kanda-Pohe-2-500x500.jpeg\",\n    \"https://hebbarskitchen.com/wp-content/uploads/2025/06/Poha-Recipe-Maharastrian-Aloo-Kanda-Pohe-2-500x375.jpeg\",\n    \"https://hebbarskitchen.com/wp-content/uploads/2025/06/Poha-Recipe-Maharastrian-Aloo-Kanda-Pohe-2-480x270.jpeg\"\n  ],\n  \"recipeYield\": [\n    \"2\",\n    \"2 Servings\"\n  ],\n  \"prepTime\": \"PT10M\",\n  \"cookTime\": \"PT10M\",\n  \"totalTime\": \"PT20M\",\n  \"recipeIngredient\": [\n    \"2½ cup poha\",\n    \"2 tbsp oil\",\n    \"2 tbsp peanut\",\n    \"1  potato (chopped)\",\n    \"½ tsp mustard\",\n    \"½ tsp cumin\",\n    \"pinch hing\",\n    \"2  chilli (finely chopped)\",\n    \"1 inch ginger (finely chopped)\",\n    \"few curry leaves\",\n    \"1  onion (finely chopped)\",\n    \"½ tsp turmeric\",\n    \"1 tsp salt\",\n    \"1 tsp sugar\",\n    \"½  lemon\",\n    \"2 tbsp coriander (finely chopped)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Firstly, place a sieve in a bowl and rinse 2½ cups of poha till the water runs clean. Do not soak the poha in water.\",\n      \"name\": \"Firstly, place a sieve in a bowl and rinse 2½ cups of poha till the water runs clean. Do not soak the poha in water.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-0\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Keep the poha aside for 10 minutes, and it will become non-sticky and soft.\",\n      \"name\": \"Keep the poha aside for 10 minutes, and it will become non-sticky and soft.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-1\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"In a wok heat 2 tbsp oil and fry 2 tbsp peanut till they turn crunchy. Keep aside.\",\n      \"name\": \"In a wok heat 2 tbsp oil and fry 2 tbsp peanut till they turn crunchy. Keep aside.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-2\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Also, fry 1 potato till it turns golden and crisp. Keep aside.\",\n      \"name\": \"Also, fry 1 potato till it turns golden and crisp. Keep aside.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-3\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"In the same oil, add ½ tsp mustard, ½ tsp cumin, pinch hing, 2 chilli, 1 inch ginger, few curry leaves and splutter the tempering.\",\n      \"name\": \"In the same oil, add ½ tsp mustard, ½ tsp cumin, pinch hing, 2 chilli, 1 inch ginger, few curry leaves and splutter the tempering.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-4\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Add 1 onion, and saute till the onions softens.\",\n      \"name\": \"Add 1 onion, and saute till the onions softens.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-5\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Now add ½ tsp turmeric, 1 tsp salt, 1 tsp sugar and saute till the spices turn aromatic.\",\n      \"name\": \"Now add ½ tsp turmeric, 1 tsp salt, 1 tsp sugar and saute till the spices turn aromatic.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-6\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Further add fried peanut and potato and mix well.\",\n      \"name\": \"Further add fried peanut and potato and mix well.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-7\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Now add in poha and mix gently.\",\n      \"name\": \"Now add in poha and mix gently.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-8\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Also add ½ lemon and 2 tbsp coriander. Mix gently.\",\n      \"name\": \"Also add ½ lemon and 2 tbsp coriander. Mix gently.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-9\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Cover and simmer for 5 minutes, or until the poha is cooked fully.\",\n      \"name\": \"Cover and simmer for 5 minutes, or until the poha is cooked fully.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-10\"\n    },\n    {\n      \"@type\": \"HowToStep\",\n      \"text\": \"Finally, enjoy Kanda Poha Recipe with chivda.\",\n      \"name\": \"Finally, enjoy Kanda Poha Recipe with chivda.\",\n      \"url\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#wprm-recipe-177982-step-0-11\"\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"5\",\n    \"ratingCount\": \"4\"\n  },\n  \"recipeCategory\": [\n    \"Breakfast\"\n  ],\n  \"recipeCuisine\": [\n    \"maharashtra\"\n  ],\n  \"keywords\": \"Aloo Kanda Poha, Indori Poha Recipe, Maharastrian Aloo Kanda Pohe\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"249 kcal\",\n    \"carbohydrateContent\": \"17 g\",\n    \"proteinContent\": \"5 g\",\n    \"fatContent\": \"20 g\",\n    \"saturatedFatContent\": \"2 g\",\n    \"transFatContent\": \"0.1 g\",\n    \"sodiumContent\": \"1191 mg\",\n    \"fiberContent\": \"4 g\",\n    \"sugarContent\": \"8 g\",\n    \"unsaturatedFatContent\": \"17 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#recipe\",\n  \"isPartOf\": {\n    \"@id\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/#article\"\n  },\n  \"mainEntityOfPage\": \"https://hebbarskitchen.com/poha-recipe-2-ways-kanda-poha-aloo-poha/\"\n}",
+  "raw_title": "Poha Recipe | Maharastrian Aloo Kanda Pohe",
+  "blog_name": "Poha Recipe | Maharastrian Aloo Kanda Pohe",
+  "source": {
+    "kind": "url",
+    "value": "https://hebbarskitchen.com/kanda-poha-recipe-maharashtrian-poha/",
+    "imported_at": "2026-10-26T16:14:32.106524Z"
+  },
+  "graph_id": "g_3a_37",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

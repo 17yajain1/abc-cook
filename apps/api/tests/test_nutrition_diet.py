@@ -78,6 +78,8 @@ def _unmatched(text: str, index: int = 1) -> IngredientNutrition:
         "1/4 cup sev",
         "2 tbsp green chutney",
         "1 tsp italian seasoning",
+        "1 small piece natural charcoal",  # dhungar smoking: no_food and veg-safe (v3)
+        "1 piece charcoal",
         "1 tsp garam masala (for the chicken)",  # the parenthetical is ignored
     ],
 )
@@ -103,6 +105,16 @@ def test_veg_safe_unmatched_lines_do_not_hide_a_non_veg_or_egg_food() -> None:
 )
 def test_any_other_unmatched_line_still_gives_none(text: str) -> None:
     assert derive_diet([_row("fdc:1"), _unmatched(text)], TABLE) is None
+
+
+def test_a_dal_tadka_shape_with_charcoal_and_blends_is_veg_not_none() -> None:
+    # 31-shape: matched veg foods, an unmatched garam masala and the dhungar charcoal
+    rows = [
+        _row("fdc:1"),
+        _unmatched("1 tsp garam masala", 1),
+        _unmatched("1 small piece natural charcoal", 2),
+    ]
+    assert derive_diet(rows, TABLE) == "veg"
 
 
 def test_only_veg_safe_lines_are_not_enough_to_call_a_diet() -> None:

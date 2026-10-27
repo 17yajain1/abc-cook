@@ -1,0 +1,579 @@
+{
+  "recipe": {
+    "title": "Moong Dal Chilla",
+    "channel": "vegrecipesofindia.com",
+    "method_grounded": true,
+    "servings": null,
+    "servings_source": "defaulted",
+    "yield_text": "12 Moong Dal Chilla",
+    "cuisine": "Indian",
+    "stated_total_min": null,
+    "ingredients": [
+      {
+        "name": "moong dal ((split & husked yellow moong lentils))",
+        "qty": "1",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "water (– for soaking)",
+        "qty": "2 to 3",
+        "unit": "cups",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "water (– for grinding lentils or add as required)",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "turmeric powder",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "red chili powder (or cayenne pepper)",
+        "qty": "¼",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "roasted cumin powder ( or cumin powder (ground cumin))",
+        "qty": "½",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "hing ((asafoetida), optional)",
+        "qty": "1",
+        "unit": "pinch",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "coriander leaves (– chopped (cilantro))",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": "chopped",
+        "group": null
+      },
+      {
+        "name": "onions (– finely chopped)",
+        "qty": "¼",
+        "unit": "cup",
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "grated ginger (or finely chopped ginger)",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "green chilies (– finely chopped)",
+        "qty": "1 to 2 or ½ to 1",
+        "unit": "teaspoon",
+        "prep_note": "finely chopped",
+        "group": null
+      },
+      {
+        "name": "salt (or add as required)",
+        "qty": "1",
+        "unit": "teaspoon",
+        "prep_note": null,
+        "group": null
+      },
+      {
+        "name": "oil (– for cooking chilla or add as required)",
+        "qty": "2 to 3",
+        "unit": "tablespoons",
+        "prep_note": null,
+        "group": null
+      }
+    ],
+    "steps": [
+      {
+        "origin": "source",
+        "text": "Rinse the moong dal 3 to 4 times in water.",
+        "label": "Rinse dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "moong dal ((split & husked yellow moong lentils))"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Soak the lentils with 2 to 3 cups of water for 3 to 4 hours or overnight if you plan to make the chilla for breakfast.",
+        "label": "Soak dal",
+        "attention": "unattended",
+        "attention_cue": "for 3 to 4 hours or overnight if you plan to make the chilla for breakfast",
+        "duration_typical_min": 180.0,
+        "duration_min": 180.0,
+        "duration_max": 480.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          0
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "moong dal ((split & husked yellow moong lentils))",
+          "water (– for soaking)"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "The moong dal will swell or double up in size"
+      },
+      {
+        "origin": "source",
+        "text": "The moong dal will swell or double up in size. Discard the water. Rinse the mung lentils again a few times in water. Drain all the water.",
+        "label": "Drain dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          1
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "moong dal ((split & husked yellow moong lentils))"
+        ],
+        "produces_component": null,
+        "station": "sink",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "In a grinder, add the soaked moong lentils and ¼ cup of water. Grind to a smooth and fine consistency. Don't add too much water as the lentils might not grind evenly. We need a smooth and lump free batter for moong dal chilla.",
+        "label": "Grind dal",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": null,
+        "duration_min": null,
+        "duration_max": null,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          2
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "moong dal ((split & husked yellow moong lentils))",
+          "water (– for grinding lentils or add as required)"
+        ],
+        "produces_component": "batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "smooth and lump free batter"
+      },
+      {
+        "origin": "source",
+        "text": "Take the finely ground batter in a bowl. Add turmeric powder, red chili powder, cumin powder and salt or as required. Mix very well.",
+        "label": "Season batter",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          3
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "turmeric powder",
+          "red chili powder (or cayenne pepper)",
+          "roasted cumin powder ( or cumin powder (ground cumin))",
+          "salt (or add as required)",
+          "batter"
+        ],
+        "produces_component": "seasoned batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Then add the chopped coriander leaves, chopped onions, grated ginger, finely chopped green chilies and a pinch of asafoetida. Again mix very well.",
+        "label": "Add mix-ins",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          4
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "coriander leaves (– chopped (cilantro))",
+          "onions (– finely chopped)",
+          "grated ginger (or finely chopped ginger)",
+          "green chilies (– finely chopped)",
+          "hing ((asafoetida), optional)",
+          "seasoned batter"
+        ],
+        "produces_component": "batter",
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "The onions will leave some moisture"
+      },
+      {
+        "origin": "source",
+        "text": "Allow the batter to rest for 15 to 20 mins.",
+        "label": "Rest batter",
+        "attention": "unattended",
+        "attention_cue": "Allow the batter to rest for 15 to 20 mins.",
+        "duration_typical_min": 17.0,
+        "duration_min": 15.0,
+        "duration_max": 20.0,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          5
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "none",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Check the consistency of the batter. If it's too thick, then add 1 to 2 tablespoons more water. The consistency of the batter has to be of pouring consistency, neither too thick nor too thin.",
+        "label": "Adjust consistency",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          6
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "water (– for grinding lentils or add as required)",
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "pouring consistency"
+      },
+      {
+        "origin": "source",
+        "text": "Heat a well seasoned pan. This is important as the pan has to be hot before you make the cheelas. If using a cast iron pan, spread ½ teaspoon of oil evenly on the pan. If using a non-stick pan, do not spread oil on it.",
+        "label": "Heat pan",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          7
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil (– for cooking chilla or add as required)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "pan has to be hot"
+      },
+      {
+        "origin": "source",
+        "text": "Add a scoopful of batter towards the center of the pan. The batter will spread a little on its own. Just rotate the batter with the back of spatula giving a round and even shape.",
+        "label": "Spread chilla",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          8
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Cook the chilla on medium heat. After a minute they will look crisp and brown from the bottom.",
+        "label": "Cook first side",
+        "attention": "hands_on",
+        "attention_cue": "After a minute they will look crisp and brown from the bottom",
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          9
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "look crisp and brown from the bottom"
+      },
+      {
+        "origin": "source",
+        "text": "At this point drizzle a bit of oil around the edges and in the center of the chilla. Spread the oil drops with a spoon all over the cooked chilla.",
+        "label": "Oil edges",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 0.5,
+        "duration_min": 0.5,
+        "duration_max": 2.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          10
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "oil (– for cooking chilla or add as required)"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Flip the chilla and cook the other side for a minute.",
+        "label": "Cook other side",
+        "attention": "hands_on",
+        "attention_cue": "for a minute",
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 1.5,
+        "duration_stated": true,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          11
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "appear crisp and golden"
+      },
+      {
+        "origin": "source",
+        "text": "Once the moong dal chilla appear crisp and golden, remove and place aside. Similarly make all other chilla.",
+        "label": "Finish chillas",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 10.0,
+        "duration_min": 5.0,
+        "duration_max": 30.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          12
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [
+          "batter"
+        ],
+        "produces_component": null,
+        "station": "burner",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": "appear crisp and golden"
+      },
+      {
+        "origin": "source",
+        "text": "You can opt to stuff the chilla with some grated paneer if you want.",
+        "label": "Stuffing option",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 2.0,
+        "duration_min": 1.0,
+        "duration_max": 5.0,
+        "duration_stated": false,
+        "depends_on_previous": false,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "optional",
+        "role_cue": "You can opt to stuff the chilla with some grated paneer if you want.",
+        "attach_to_step": 13,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": true,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      },
+      {
+        "origin": "source",
+        "text": "Serve moong dal chilla with tomato ketchup or green chutney.",
+        "label": "Serve",
+        "attention": "hands_on",
+        "attention_cue": null,
+        "duration_typical_min": 1.0,
+        "duration_min": 1.0,
+        "duration_max": 3.0,
+        "duration_stated": false,
+        "depends_on_previous": true,
+        "depends_on_steps": [
+          13
+        ],
+        "role": "required",
+        "role_cue": null,
+        "attach_to_step": null,
+        "consumes_ingredients": [],
+        "produces_component": null,
+        "station": "counter",
+        "interruptible": false,
+        "freshness": "none",
+        "freshness_cue": null,
+        "max_lead_min": null,
+        "doneness_cue": null
+      }
+    ],
+    "chapters": [],
+    "notes": [
+      "Steps and wording taken from the linked recipe JSON-LD (vegrecipesofindia.com). I kept ingredient names and quantities exactly as listed there. I created a produced component label \"batter\" for the grinding/seasoning steps so later steps can reference it. The soaking step includes the written alternative \"or overnight\"; durations reflect the stated 3\u00134 hours and allow a wide max to cover overnight rather than inventing a precise overnight length. The optional stuffing instruction was marked optional with the exact source phrase as role_cue."
+    ]
+  },
+  "repair": null,
+  "source_text": "Title: Moong Dal Chilla Recipe\n\nChannel: vegrecipesofindia.com\n\nLinked recipe blog structured data (schema.org Recipe JSON-LD) — prefer this for method text when it has instructions:\n\n{\n  \"@type\": \"Recipe\",\n  \"name\": \"Moong Dal Chilla Recipe\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Dassana Amit\"\n  },\n  \"description\": \"Moong Dal Chilla is a savory Indian pancake prepared with soaked and ground yellow moong lentils. The batter is seasoned with onions, herbs and spices before being cooked on a skillet. Serve them hot with green chutney or yogurt for breakfast or brunch.\",\n  \"datePublished\": \"2022-07-06T21:19:35+00:00\",\n  \"image\": [\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2016/11/moong-dal-chilla-3u.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2016/11/moong-dal-chilla-3u-500x500.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2016/11/moong-dal-chilla-3u-500x375.jpg\",\n    \"https://www.vegrecipesofindia.com/wp-content/uploads/2016/11/moong-dal-chilla-3u-480x270.jpg\"\n  ],\n  \"recipeYield\": [\n    \"12\",\n    \"12 Moong Dal Chilla\"\n  ],\n  \"prepTime\": \"PT240M\",\n  \"cookTime\": \"PT30M\",\n  \"totalTime\": \"PT270M\",\n  \"recipeIngredient\": [\n    \"1 cup moong dal ((split &amp; husked yellow moong lentils))\",\n    \"2 to 3 cups water (– for soaking)\",\n    \"¼ cup water (– for grinding lentils or add as required)\",\n    \"¼ teaspoon turmeric powder\",\n    \"¼ teaspoon red chili powder (or cayenne pepper)\",\n    \"½ teaspoon roasted cumin powder ( or cumin powder (ground cumin))\",\n    \"1 pinch hing ((asafoetida), optional)\",\n    \"¼ cup coriander leaves (– chopped (cilantro))\",\n    \"¼ cup onions (– finely chopped)\",\n    \"1 teaspoon grated ginger (or finely chopped ginger)\",\n    \"1 to 2 or ½ to 1 teaspoon  green chilies (– finely chopped)\",\n    \"1 teaspoon salt (or add as required)\",\n    \"2 to 3 tablespoons oil (– for cooking chilla or add as required)\"\n  ],\n  \"recipeInstructions\": [\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Soaking &amp; Grinding Moong Dal\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Rinse the moong dal 3 to 4 times in water.\",\n          \"name\": \"Rinse the moong dal 3 to 4 times in water.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-0-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Soak the lentils with 2 to 3 cups of water for 3 to 4 hours or overnight if you plan to make the chilla for breakfast.\",\n          \"name\": \"Soak the lentils with 2 to 3 cups of water for 3 to 4 hours or overnight if you plan to make the chilla for breakfast.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-0-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"The moong dal will swell or double up in size. Discard the water. Rinse the mung lentils again a few times in water. Drain all the water.\",\n          \"name\": \"The moong dal will swell or double up in size. Discard the water. Rinse the mung lentils again a few times in water. Drain all the water.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-0-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"In a grinder, add the soaked moong lentils and ¼ cup of water. Grind to a smooth and fine consistency.\",\n          \"name\": \"In a grinder, add the soaked moong lentils and ¼ cup of water. Grind to a smooth and fine consistency.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-0-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Don&#039;t add too much water as the lentils might not grind evenly. We need a smooth and lump free batter for moong dal chilla.\",\n          \"name\": \"Don&#039;t add too much water as the lentils might not grind evenly. We need a smooth and lump free batter for moong dal chilla.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-0-4\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Seasoning Batter\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Take the finely ground batter in a bowl. Add turmeric powder, red chili powder, cumin powder and salt or as required.\",\n          \"name\": \"Take the finely ground batter in a bowl. Add turmeric powder, red chili powder, cumin powder and salt or as required.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Mix very well.&nbsp;\",\n          \"name\": \"Mix very well.&nbsp;\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Then add the chopped coriander leaves, chopped onions, grated ginger, finely chopped green chilies and a pinch of asafoetida. \",\n          \"name\": \"Then add the chopped coriander leaves, chopped onions, grated ginger, finely chopped green chilies and a pinch of asafoetida. \",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Again mix very well.&nbsp;\",\n          \"name\": \"Again mix very well.&nbsp;\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Allow the batter to rest for 15 to 20 mins.\",\n          \"name\": \"Allow the batter to rest for 15 to 20 mins.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"The onions will leave some moisture. Check the consistency of the batter. If its too thick, then add 1 to 2 tablespoons more water. But remember not to add too much of water as the batter will not spread evenly on the skillet or tawa.\",\n          \"name\": \"The onions will leave some moisture. Check the consistency of the batter. If its too thick, then add 1 to 2 tablespoons more water. But remember not to add too much of water as the batter will not spread evenly on the skillet or tawa.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"The consistency of the batter has to be of pouring consistency, neither too thick nor too thin.\",\n          \"name\": \"The consistency of the batter has to be of pouring consistency, neither too thick nor too thin.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-1-6\"\n        }\n      ]\n    },\n    {\n      \"@type\": \"HowToSection\",\n      \"name\": \"Making Moong Dal Chilla\",\n      \"itemListElement\": [\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Heat a well seasoned pan. This is important as the pan has to be hot before you make the cheelas.If using a cast iron pan, spread ½ teaspoon of oil evenly on the pan.If using a non-stick pan, do not spread oil on it.\",\n          \"name\": \"Heat a well seasoned pan. This is important as the pan has to be hot before you make the cheelas.If using a cast iron pan, spread ½ teaspoon of oil evenly on the pan.If using a non-stick pan, do not spread oil on it.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-0\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Add a scoopful of batter towards the center of the pan.\",\n          \"name\": \"Add a scoopful of batter towards the center of the pan.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-1\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"The batter will spread a little on its own.\",\n          \"name\": \"The batter will spread a little on its own.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-2\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Just rotate the batter with the back of spatula giving a round and even shape.\",\n          \"name\": \"Just rotate the batter with the back of spatula giving a round and even shape.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-3\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Cook the chilla on medium heat. After a minute they will look crisp and brown from the bottom.\",\n          \"name\": \"Cook the chilla on medium heat. After a minute they will look crisp and brown from the bottom.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-4\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"At this point drizzle a bit of oil around the edges and in the center of the chilla. Spread the oil drops with a spoon all over the cooked chilla.\",\n          \"name\": \"At this point drizzle a bit of oil around the edges and in the center of the chilla. Spread the oil drops with a spoon all over the cooked chilla.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-5\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Flip the chilla and cook the other side for a minute.\",\n          \"name\": \"Flip the chilla and cook the other side for a minute.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-6\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Once the moong dal chilla appear crisp and golden, remove and place aside. \",\n          \"name\": \"Once the moong dal chilla appear crisp and golden, remove and place aside. \",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-7\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Similarly make all other chilla. You can opt to stuff the chilla with some grated paneer if you want. \",\n          \"name\": \"Similarly make all other chilla. You can opt to stuff the chilla with some grated paneer if you want. \",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-8\"\n        },\n        {\n          \"@type\": \"HowToStep\",\n          \"text\": \"Serve moong dal chilla with tomato ketchup or green chutney.\",\n          \"name\": \"Serve moong dal chilla with tomato ketchup or green chutney.\",\n          \"url\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#wprm-recipe-139150-step-2-9\"\n        }\n      ]\n    }\n  ],\n  \"aggregateRating\": {\n    \"@type\": \"AggregateRating\",\n    \"ratingValue\": \"4.98\",\n    \"ratingCount\": \"46\",\n    \"reviewCount\": \"7\"\n  },\n  \"review\": [\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Perfect breakfast recipe. Very tasty and mild.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Maria\"\n      },\n      \"datePublished\": \"2026-05-23\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Can I add other vegetables in this recipe of cheela?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Falguni\"\n      },\n      \"datePublished\": \"2025-05-22\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Can we store cooked chilla or the batter in the fridge? And for how long?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"R\"\n      },\n      \"datePublished\": \"2022-12-09\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Thank you!\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Swati\"\n      },\n      \"datePublished\": \"2020-08-29\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Delicious.  Thank you.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Susan R\"\n      },\n      \"datePublished\": \"2019-07-14\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Love this recipe. Can I make the batter in advance and make it for the next day when required? My family members have different schedules so would love to serve them fresh chillas.\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Prem\"\n      },\n      \"datePublished\": \"2017-11-17\"\n    },\n    {\n      \"@type\": \"Review\",\n      \"reviewRating\": {\n        \"@type\": \"Rating\",\n        \"ratingValue\": \"5\"\n      },\n      \"reviewBody\": \"Is there any need for adding bean as binding agent?\",\n      \"author\": {\n        \"@type\": \"Person\",\n        \"name\": \"Divya\"\n      },\n      \"datePublished\": \"2017-11-11\"\n    }\n  ],\n  \"recipeCategory\": [\n    \"Side Dish\",\n    \"Snacks\"\n  ],\n  \"recipeCuisine\": [\n    \"Indian\",\n    \"North Indian\"\n  ],\n  \"suitableForDiet\": [\n    \"https://schema.org/VeganDiet\"\n  ],\n  \"keywords\": \"moong dal cheela, moong dal chilla\",\n  \"nutrition\": {\n    \"@type\": \"NutritionInformation\",\n    \"calories\": \"84 kcal\",\n    \"carbohydrateContent\": \"11 g\",\n    \"proteinContent\": \"4 g\",\n    \"fatContent\": \"3 g\",\n    \"saturatedFatContent\": \"0.2 g\",\n    \"sodiumContent\": \"215 mg\",\n    \"fiberContent\": \"2 g\",\n    \"sugarContent\": \"1 g\",\n    \"unsaturatedFatContent\": \"2.1 g\",\n    \"servingSize\": \"1 serving\"\n  },\n  \"@id\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#recipe\",\n  \"mainEntityOfPage\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#webpage\",\n  \"isPartOf\": {\n    \"@id\": \"https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/#richSnippet\"\n  }\n}",
+  "raw_title": "Moong Dal Chilla Recipe",
+  "blog_name": "Moong Dal Chilla Recipe",
+  "source": {
+    "kind": "url",
+    "value": "https://www.vegrecipesofindia.com/moong-dal-chilla-recipe/",
+    "imported_at": "2026-10-26T16:13:57.658461Z"
+  },
+  "graph_id": "g_3a_36",
+  "acquisition_warnings": [],
+  "sources": [
+    "blog"
+  ]
+}

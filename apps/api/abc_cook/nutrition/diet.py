@@ -37,6 +37,7 @@ VEG_SAFE_PHRASES = (
     "sev",
     "green chutney",
     "italian seasoning",
+    "charcoal",  # dhungar smoking: a lump of coal, no food and no meat
 )
 _VEG_SAFE_RE = re.compile(r"\b(?:" + "|".join(re.escape(p) for p in VEG_SAFE_PHRASES) + r")\b")
 _MEAT_FISH_EGG_RE = re.compile(
