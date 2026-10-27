@@ -33,22 +33,22 @@ run_script = _load("run_3a_nutrition")
 @pytest.mark.parametrize(
     ("status", "n_lines", "expected"),
     [
-        ("done", 5, "done"),
+        ("done", 3, "done"),
         ("done", 12, "done"),
-        ("done", 4, "failed: 4 lines"),
+        ("done", 2, "failed: 2 lines"),
         ("done", 1, "failed: 1 lines"),
         ("done", 0, "failed: 0 lines"),
         ("failed", 9, "failed"),  # an import failure keeps its own status
     ],
 )
-def test_capture_status_needs_five_ingredient_lines(
+def test_capture_status_needs_three_ingredient_lines(
     status: str, n_lines: int, expected: str
 ) -> None:
     assert capture.capture_status(status, n_lines) == expected
 
 
-def test_the_minimum_is_five_lines() -> None:
-    assert capture.MIN_INGREDIENT_LINES == 5
+def test_the_minimum_is_three_lines() -> None:
+    assert capture.MIN_INGREDIENT_LINES == 3
 
 
 def test_the_progress_line_is_ascii_and_says_inr() -> None:

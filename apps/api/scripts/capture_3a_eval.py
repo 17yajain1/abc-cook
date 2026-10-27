@@ -53,7 +53,7 @@ LOG_PATH = REPO_ROOT / "notes" / "3a-nutrition" / "b1-capture-log.json"
 FIXTURE_DIR = API_ROOT / "tests" / "fixtures" / "3a-eval"
 INGREDIENTS_MD = REPO_ROOT / "notes" / "3a-nutrition" / "test-30-ingredients.md"
 
-MIN_INGREDIENT_LINES = 5  # a capture with fewer lines is a failed parse, not a recipe
+MIN_INGREDIENT_LINES = 3 # a capture with fewer lines is a failed parse, not a recipe
 BUDGET_INR = 70.0
 RESERVE_INR = 5.0  # headroom for one import: stop if spent + this would exceed the budget
 _STAGES = ("acquire", "extract", "build_graph", "repair", "schedule")

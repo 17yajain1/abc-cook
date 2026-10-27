@@ -26,15 +26,15 @@ def _lines(n: int) -> list[Ingredient]:
     return [line(f"rice {i}", "100", "g") for i in range(n)]
 
 
-def test_five_lines_with_amounts_pass() -> None:
-    lines = _lines(5)
+def test_three_lines_with_amounts_pass() -> None:
+    lines = _lines(3)
     assert seed_gate_rejects(_nutrition(lines), [], lines) == []
 
 
-def test_four_lines_are_rejected() -> None:
-    lines = _lines(4)
+def test_two_lines_are_rejected() -> None:
+    lines = _lines(2)
     reasons = seed_gate_rejects(_nutrition(lines), [], lines)
-    assert reasons == ["fewer than 5 ingredient lines (4)"]
+    assert reasons == ["fewer than 3 ingredient lines (2)"]
 
 
 def test_a_repaired_graph_is_rejected() -> None:

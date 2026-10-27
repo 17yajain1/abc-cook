@@ -4,7 +4,7 @@
   "shortlist_method": "token-overlap-25+alias-neighbours",
   "model": "gpt-5-mini",
   "nutrition_version": 3,
-  "generated_at": "2026-10-27T08:17:56.162084+00:00",
+  "generated_at": "2026-10-27T08:42:35.704755+00:00",
   "mapping_spend_inr": 0.0,
   "cap_inr": 5.0,
   "recipes": 32,
@@ -37,7 +37,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.002,
+    "match_wall_s": 0.009,
     "cache_hits": 0,
     "alias_hits": 16,
     "exact_hits": 0,
@@ -50,7 +50,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.064,
+   "compute_ms": 2.059,
    "misses": [
     "",
     "",
@@ -73,7 +73,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:50.665183Z",
+    "computed_at": "2026-10-27T08:42:26.166959Z",
     "servings_basis": 2,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -547,7 +547,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.75,
       "grams_basis": "estimated",
       "nutrients": {
@@ -699,7 +699,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.877,
+   "compute_ms": 1.121,
    "misses": [
     "",
     "",
@@ -718,7 +718,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:50.743499Z",
+    "computed_at": "2026-10-27T08:42:26.288610Z",
     "servings_basis": 2,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -1048,7 +1048,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 1.7499999999999998,
       "grams_basis": "estimated",
       "nutrients": null,
@@ -1196,7 +1196,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.002,
     "cache_hits": 0,
     "alias_hits": 17,
     "exact_hits": 0,
@@ -1208,7 +1208,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.011,
+   "compute_ms": 2.293,
    "misses": [
     "",
     "",
@@ -1231,7 +1231,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:50.872288Z",
+    "computed_at": "2026-10-27T08:42:26.589612Z",
     "servings_basis": 3,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -1525,7 +1525,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.75,
       "grams_basis": "estimated",
       "nutrients": null,
@@ -1964,7 +1964,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.081,
+   "compute_ms": 1.543,
    "misses": [
     "",
     "",
@@ -1987,7 +1987,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:52.334833Z",
+    "computed_at": "2026-10-27T08:42:28.927943Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -2453,7 +2453,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": {
@@ -2609,7 +2609,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.003,
     "cache_hits": 1,
     "alias_hits": 15,
     "exact_hits": 0,
@@ -2623,7 +2623,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.052,
+   "compute_ms": 3.06,
    "misses": [
     "",
     "no_candidates",
@@ -2649,7 +2649,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:52.373211Z",
+    "computed_at": "2026-10-27T08:42:29.107964Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -2865,7 +2865,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": {
@@ -3374,7 +3374,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.997,
+   "compute_ms": 1.736,
    "misses": [
     "",
     "",
@@ -3397,7 +3397,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:52.649530Z",
+    "computed_at": "2026-10-27T08:42:29.585803Z",
     "servings_basis": 2,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -3686,7 +3686,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": {
@@ -4029,7 +4029,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.002,
     "cache_hits": 1,
     "alias_hits": 17,
     "exact_hits": 0,
@@ -4042,7 +4042,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.596,
+   "compute_ms": 3.699,
    "misses": [
     "",
     "cached_none",
@@ -4069,7 +4069,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.109486Z",
+    "computed_at": "2026-10-27T08:42:30.355741Z",
     "servings_basis": 4,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -4205,7 +4205,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.75,
       "grams_basis": "estimated",
       "nutrients": {
@@ -4643,7 +4643,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": null,
@@ -4787,7 +4787,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.626,
+   "compute_ms": 1.139,
    "misses": [
     "",
     "",
@@ -4801,7 +4801,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.177403Z",
+    "computed_at": "2026-10-27T08:42:30.451538Z",
     "servings_basis": 4,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -4819,9 +4819,9 @@
      "fat_g": 115.7764,
      "fibre_g": 17.146
     },
-    "confidence": "estimated",
+    "confidence": "calculated",
     "confidence_v2": "calculated",
-    "guard_demoted": true,
+    "guard_demoted": false,
     "optional_extras_kcal_per_serving": 0.15625,
     "optional_extras_unmatched": [],
     "drivers": [
@@ -4886,7 +4886,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 12.0,
       "grams_basis": "table",
       "nutrients": {
@@ -5015,7 +5015,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": {
@@ -5157,7 +5157,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.002,
     "cache_hits": 0,
     "alias_hits": 15,
     "exact_hits": 0,
@@ -5167,7 +5167,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.864,
+   "compute_ms": 1.774,
    "misses": [
     "",
     "",
@@ -5187,7 +5187,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.197466Z",
+    "computed_at": "2026-10-27T08:42:30.478738Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -5442,7 +5442,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -5643,7 +5643,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 1.5,
       "grams_basis": "table",
       "nutrients": {
@@ -5776,7 +5776,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.953,
+   "compute_ms": 1.385,
    "misses": [
     "",
     "",
@@ -5797,7 +5797,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.312621Z",
+    "computed_at": "2026-10-27T08:42:30.664004Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -6414,7 +6414,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.01,
+   "compute_ms": 2.454,
    "misses": [
     "",
     "",
@@ -6439,7 +6439,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.396744Z",
+    "computed_at": "2026-10-27T08:42:30.852650Z",
     "servings_basis": 5,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -7073,7 +7073,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 9.0,
       "grams_basis": "table",
       "nutrients": {
@@ -7186,7 +7186,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.543,
+   "compute_ms": 1.166,
    "misses": [
     "",
     "",
@@ -7200,7 +7200,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:53.463369Z",
+    "computed_at": "2026-10-27T08:42:31.063521Z",
     "servings_basis": 2,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -7577,7 +7577,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.842,
+   "compute_ms": 2.609,
    "misses": [
     "",
     "",
@@ -7623,7 +7623,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.173770Z",
+    "computed_at": "2026-10-27T08:42:32.235542Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -8170,7 +8170,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": {
@@ -8329,7 +8329,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 18.0,
       "grams_basis": "table",
       "nutrients": {
@@ -8984,7 +8984,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.0,
+    "match_wall_s": 0.001,
     "cache_hits": 0,
     "alias_hits": 9,
     "exact_hits": 0,
@@ -8996,7 +8996,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.732,
+   "compute_ms": 0.855,
    "misses": [
     "",
     "",
@@ -9012,7 +9012,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.200095Z",
+    "computed_at": "2026-10-27T08:42:32.339125Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -9360,7 +9360,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -9416,7 +9416,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.825,
+   "compute_ms": 1.064,
    "misses": [
     "",
     "",
@@ -9437,7 +9437,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.274048Z",
+    "computed_at": "2026-10-27T08:42:32.445189Z",
     "servings_basis": 5,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -9969,7 +9969,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -10027,7 +10027,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.033,
+   "compute_ms": 1.63,
    "misses": [
     "",
     "",
@@ -10051,7 +10051,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.308892Z",
+    "computed_at": "2026-10-27T08:42:32.555241Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -10136,7 +10136,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -10709,7 +10709,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.866,
+   "compute_ms": 1.204,
    "misses": [
     "",
     "",
@@ -10730,7 +10730,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.361377Z",
+    "computed_at": "2026-10-27T08:42:32.652757Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -10820,7 +10820,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 9.0,
       "grams_basis": "table",
       "nutrients": {
@@ -11040,7 +11040,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": {
@@ -11324,7 +11324,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.908,
+   "compute_ms": 1.086,
    "misses": [
     "",
     "",
@@ -11341,7 +11341,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.376735Z",
+    "computed_at": "2026-10-27T08:42:32.692649Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -11601,7 +11601,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -11791,7 +11791,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.002,
     "cache_hits": 1,
     "alias_hits": 18,
     "exact_hits": 0,
@@ -11801,7 +11801,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.352,
+   "compute_ms": 1.406,
    "misses": [
     "",
     "",
@@ -11825,7 +11825,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.424682Z",
+    "computed_at": "2026-10-27T08:42:32.769984Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -11910,7 +11910,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": {
@@ -12447,7 +12447,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -12536,7 +12536,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.874,
+   "compute_ms": 1.13,
    "misses": [
     "",
     "",
@@ -12559,7 +12559,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.595921Z",
+    "computed_at": "2026-10-27T08:42:33.035525Z",
     "servings_basis": 6,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -12681,7 +12681,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -13236,7 +13236,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.0,
+    "match_wall_s": 0.001,
     "cache_hits": 0,
     "alias_hits": 9,
     "exact_hits": 0,
@@ -13246,7 +13246,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.511,
+   "compute_ms": 0.903,
    "misses": [
     "",
     "",
@@ -13260,7 +13260,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.611743Z",
+    "computed_at": "2026-10-27T08:42:33.114641Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": 18,
@@ -13555,7 +13555,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 1.5,
       "grams_basis": "table",
       "nutrients": {
@@ -13657,7 +13657,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.448,
+   "compute_ms": 0.577,
    "misses": [
     "",
     "",
@@ -13670,7 +13670,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.695483Z",
+    "computed_at": "2026-10-27T08:42:33.254329Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -13884,7 +13884,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 0.36,
       "grams_basis": "table",
       "nutrients": {
@@ -14002,7 +14002,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.522,
+   "compute_ms": 0.659,
    "misses": [
     "",
     "",
@@ -14017,7 +14017,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.730632Z",
+    "computed_at": "2026-10-27T08:42:33.299224Z",
     "servings_basis": 10,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -14397,7 +14397,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.0,
+    "match_wall_s": 0.001,
     "cache_hits": 0,
     "alias_hits": 8,
     "exact_hits": 0,
@@ -14407,7 +14407,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.471,
+   "compute_ms": 0.585,
    "misses": [
     "",
     "",
@@ -14420,7 +14420,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.746563Z",
+    "computed_at": "2026-10-27T08:42:33.320769Z",
     "servings_basis": 2,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -14615,7 +14615,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 1.5,
       "grams_basis": "table",
       "nutrients": {
@@ -14775,7 +14775,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.001,
+    "match_wall_s": 0.0,
     "cache_hits": 1,
     "alias_hits": 2,
     "exact_hits": 0,
@@ -14785,7 +14785,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.26,
+   "compute_ms": 0.324,
    "misses": [
     "",
     "",
@@ -14793,7 +14793,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.762256Z",
+    "computed_at": "2026-10-27T08:42:33.337341Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": 12,
@@ -14973,7 +14973,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.335,
+   "compute_ms": 0.443,
    "misses": [
     "",
     "",
@@ -14984,7 +14984,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.768993Z",
+    "computed_at": "2026-10-27T08:42:33.348401Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -15250,7 +15250,7 @@
     "llm_calls": 0,
     "inr": 0.0,
     "latency_ms": 0.0,
-    "match_wall_s": 0.0,
+    "match_wall_s": 0.001,
     "cache_hits": 1,
     "alias_hits": 7,
     "exact_hits": 0,
@@ -15262,7 +15262,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.505,
+   "compute_ms": 0.748,
    "misses": [
     "",
     "",
@@ -15276,7 +15276,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:54.774669Z",
+    "computed_at": "2026-10-27T08:42:33.359897Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": null,
@@ -15544,7 +15544,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -15644,7 +15644,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.281,
+   "compute_ms": 4.687,
    "misses": [
     "",
     "",
@@ -15671,7 +15671,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:55.404710Z",
+    "computed_at": "2026-10-27T08:42:34.351943Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -16070,7 +16070,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": null,
       "grams_basis": "missing",
       "nutrients": null,
@@ -16434,7 +16434,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 1.064,
+   "compute_ms": 1.343,
    "misses": [
     "",
     "",
@@ -16457,7 +16457,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:55.693367Z",
+    "computed_at": "2026-10-27T08:42:34.876946Z",
     "servings_basis": 2,
     "servings_basis_source": "yield_text",
     "yield_pieces": null,
@@ -16746,7 +16746,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": {
@@ -17101,7 +17101,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.671,
+   "compute_ms": 0.839,
    "misses": [
     "",
     "",
@@ -17117,7 +17117,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:55.953941Z",
+    "computed_at": "2026-10-27T08:42:35.306120Z",
     "servings_basis": 4,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -17207,7 +17207,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 3.0,
       "grams_basis": "table",
       "nutrients": {
@@ -17442,7 +17442,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": null,
@@ -17561,7 +17561,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.798,
+   "compute_ms": 1.082,
    "misses": [
     "",
     "",
@@ -17579,7 +17579,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:56.089792Z",
+    "computed_at": "2026-10-27T08:42:35.540688Z",
     "servings_basis": 4,
     "servings_basis_source": "assumed",
     "yield_pieces": 12,
@@ -18004,7 +18004,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": null,
@@ -18099,7 +18099,7 @@
     "grams_received": 0,
     "guard_refused": false
    },
-   "compute_ms": 0.81,
+   "compute_ms": 1.043,
    "misses": [
     "",
     "",
@@ -18120,7 +18120,7 @@
    ],
    "nutrition": {
     "nutrition_version": 3,
-    "computed_at": "2026-10-27T08:17:56.162084Z",
+    "computed_at": "2026-10-27T08:42:35.704755Z",
     "servings_basis": 2,
     "servings_basis_source": "stated",
     "yield_pieces": null,
@@ -18553,7 +18553,7 @@
        "foods_version": "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
       },
       "food_source": "alias",
-      "food_reviewed": false,
+      "food_reviewed": true,
       "grams": 6.0,
       "grams_basis": "table",
       "nutrients": {

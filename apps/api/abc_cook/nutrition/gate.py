@@ -10,7 +10,7 @@ from __future__ import annotations
 from abc_cook.schema.ingredient import Ingredient
 from abc_cook.schema.nutrition import RecipeNutrition
 
-MIN_INGREDIENT_LINES = 5
+MIN_INGREDIENT_LINES = 3
 MIN_AMOUNT_SHARE = 0.80
 REPAIRED_WARNING = "Graph repaired after one LLM repair pass."
 

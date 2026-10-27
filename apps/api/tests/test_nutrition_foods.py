@@ -207,4 +207,8 @@ def test_the_owner_reviewed_aliases_are_flipped_and_the_rest_stay_unreviewed() -
         assert table.alias_reviewed[alias] is True, alias
     for alias in ("chicken", "soya", "kalamata olives", "chicken boneless", "boneless chicken"):
         assert table.alias_reviewed[alias] is False, alias
-    assert sum(table.alias_reviewed.values()) == 101  # 81 flipped + peanut + 9 poha + 10 chilli
+    # 81 flipped + peanut + 9 poha + 10 chilli + 4 salt
+    assert sum(table.alias_reviewed.values()) == 105
+    for alias in ("salt", "sea salt", "salt and pepper", "cooking salt / kosher salt"):
+        assert table.alias_reviewed[alias] is True, alias
+        assert table.by_alias[alias] == "fdc:173468"
