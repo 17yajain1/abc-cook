@@ -41,7 +41,7 @@ SOURCES = {
         "Foundation (2026-04-30)",
     ),
 }
-FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b35-1"
+FOODS_VERSION = "usda-fdc-sr2018-04+foundation2026-04-30/b36-1"
 _CSV_FILES = (
     "food.csv",
     "food_category.csv",
@@ -394,7 +394,7 @@ def add_proxy_foods(foods: dict[str, dict[str, Any]], proxies: list[dict[str, An
 
 
 def add_extra_portions(foods: dict[str, dict[str, Any]], extras: list[dict[str, Any]]) -> None:
-    """Append curated per-piece weights (`{fdc_id, unit, grams, source}`) to their foods."""
+    """Append curated weights (`{fdc_id, unit, grams, source}`, optional `prep`) to their foods."""
     problems = []
     for extra in extras:
         food = foods.get(f"fdc:{extra['fdc_id']}")
@@ -404,7 +404,7 @@ def add_extra_portions(foods: dict[str, dict[str, Any]], extras: list[dict[str, 
         food["portions"].append(
             {
                 "unit": extra["unit"],
-                "prep": "",
+                "prep": extra.get("prep", ""),
                 "grams": extra["grams"],
                 "raw_modifier": f"curation|{extra['source']}",
             }

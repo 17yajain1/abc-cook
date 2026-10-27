@@ -29,6 +29,7 @@ LineFlag = Literal[
     "absorbed_estimate",
     "fry_method_uncertain",
     "deep_fry_fallback",
+    "default_density",
 ]
 FoodSourceName = Literal["cache", "alias", "exact", "llm"]
 """How a line got its food: the food-map cache, a curated alias, an exact name match, or a fresh

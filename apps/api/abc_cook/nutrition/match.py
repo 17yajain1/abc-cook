@@ -66,6 +66,7 @@ _LEADING_AMOUNT_RE = re.compile(
 )
 _ALT_SPLIT_RE = re.compile(r"\s*(?:/|,|\bor\b)\s*")
 _TOKEN_RE = re.compile(r"[a-z]{3,}")
+_SHARED_HEAD_FUNCTION_WORDS = {"for", "with", "to", "in", "of", "and"}
 
 
 @dataclass(frozen=True)
@@ -133,14 +134,35 @@ def clean_name(raw: str, *, before: str = "") -> CleanName:
 
 
 def candidates(cleaned: str) -> list[str]:
-    """Names to try in order: the whole name, each "/" or "or" alternative, then singulars."""
+    """Names to try in order: the whole name, each "/" or "or" alternative, then singulars.
+
+    "A or B C" (A one word, B two or more) means "A C or B C": the candidates are the whole name,
+    "A C" and B, and bare A is never tried ("chicken or vegetable broth" is not chicken).
+    """
     parts = [p.strip() for p in _ALT_SPLIT_RE.split(cleaned) if p.strip()]
-    ordered = [cleaned, *parts]
+    shared = _shared_head_parts(cleaned)
+    ordered = [cleaned, *(shared if shared else parts)]
     singular = [re.sub(r"(?:es|s)$", "", c) for c in ordered if len(c) > 4 and c.endswith("s")]
     seen: dict[str, None] = {}
     for c in [*ordered, *singular]:
         seen.setdefault(c, None)
     return list(seen)
+
+
+def _shared_head_parts(cleaned: str) -> list[str] | None:
+    """["A H", "B"] for an "A or B" name whose first side is a bare modifier of the last word."""
+    if "/" in cleaned or "," in cleaned:
+        return None
+    sides = cleaned.split(" or ")
+    if len(sides) != 2:
+        return None
+    first, second = sides[0].strip(), sides[1].strip()
+    words = second.split()
+    if len(first.split()) != 1 or len(words) < 2:
+        return None
+    if _SHARED_HEAD_FUNCTION_WORDS & set(words) or words[-1] == first:
+        return None
+    return [f"{first} {words[-1]}", second]
 
 
 def deterministic_match(cleaned: str, table: FoodTable) -> tuple[str | None, str] | None:

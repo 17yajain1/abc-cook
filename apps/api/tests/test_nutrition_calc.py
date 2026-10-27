@@ -262,6 +262,15 @@ def test_top_five_lines_must_not_be_estimated_for_calculated() -> None:
     assert result.confidence != "calculated"
 
 
+def test_a_default_density_top_line_is_not_calculated() -> None:
+    # B3.6: food 9 has no cup portion, so "1 cup" runs at 1.0 g/ml and is a guess
+    lines = [line("rice", "1000", "g"), line("cashews", "1", "cup")]
+    result = _run(lines, ["1", "9"])
+    assert result.rows[1].grams_basis == "estimated"
+    assert "default_density" in result.rows[1].flags
+    assert result.confidence != "calculated"
+
+
 def test_drivers_are_the_top_three_lines_by_kcal() -> None:
     lines = [
         line("rice", "300", "g"),

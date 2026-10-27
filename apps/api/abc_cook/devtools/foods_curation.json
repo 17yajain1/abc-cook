@@ -286,6 +286,8 @@
     {"alias": "fresh grated coconut", "fdc_id": 170169, "source": "b2-proposed", "reviewed": false},
     {"alias": "unsweetened shredded coconut", "fdc_id": 170170, "source": "b2-proposed", "reviewed": false},
     {"alias": "desiccated coconut", "fdc_id": 170170, "source": "b2-proposed", "reviewed": false},
+    {"alias": "unsweetened coconut", "fdc_id": 170170, "source": "b3.6-proposed", "reviewed": false},
+    {"alias": "unsweetened desiccated coconut", "fdc_id": 170170, "source": "b3.6-proposed", "reviewed": false},
     {"alias": "coconut milk", "fdc_id": 170173, "source": "b2-proposed", "reviewed": false},
     {"alias": "lemon juice", "fdc_id": 167747, "source": "b2-proposed", "reviewed": false},
     {"alias": "lime juice", "fdc_id": 168156, "source": "b2-proposed", "reviewed": false},
@@ -430,7 +432,9 @@
       "curd", "green bell pepper", "garlic", "plain pumpkin puree", "tomato", "coriander powder",
       "parsley", "kashmiri red chili powder", "roasted cumin powder", "turmeric powder",
       "pumpkin pie spice",
-      "salt", "sea salt", "salt and pepper", "cooking salt / kosher salt"
+      "salt", "sea salt", "salt and pepper", "cooking salt / kosher salt",
+      "desiccated coconut", "unsweetened shredded coconut", "unsweetened coconut",
+      "unsweetened desiccated coconut", "chicken broth", "vegetable broth"
     ]
   },
   "proxy_foods": [
@@ -458,7 +462,13 @@
     {"fdc_id": 170919, "unit": "pod", "grams": 0.2, "source": "supplier listing: 0.2-0.5 g per pod, lower end (weak source)"},
     {"fdc_id": 170919, "unit": "piece", "grams": 0.2, "source": "supplier listing: 0.2-0.5 g per pod, lower end (weak source)"},
     {"fdc_id": 170917, "unit": "leaf", "grams": 0.2, "source": "Trade East whole bay leaves label: 2 leaves = 0.4 g"},
-    {"fdc_id": 170917, "unit": "piece", "grams": 0.2, "source": "Trade East whole bay leaves label: 2 leaves = 0.4 g"}
+    {"fdc_id": 170917, "unit": "piece", "grams": 0.2, "source": "Trade East whole bay leaves label: 2 leaves = 0.4 g"},
+    {"fdc_id": 170170, "unit": "cup", "prep": "", "grams": 85, "source": "King Arthur Baking ingredient weight chart (fetched 2026-10-27): coconut, unsweetened, desiccated, 1 cup = 85 g"},
+    {"fdc_id": 170170, "unit": "cup", "prep": "shredded", "grams": 53, "source": "King Arthur Baking ingredient weight chart (fetched 2026-10-27): coconut, unsweetened, shredded, 1 cup = 53 g"},
+    {"fdc_id": 2346393, "unit": "cup", "prep": "whole", "grams": 143, "source": "FDC 170567 portion '1 cup, whole'"},
+    {"fdc_id": 2346393, "unit": "cup", "prep": "sliced", "grams": 92, "source": "FDC 170567 portion '1 cup, sliced'"},
+    {"fdc_id": 2346393, "unit": "cup", "prep": "slivered", "grams": 108, "source": "FDC 170567 portion '1 cup, slivered'"},
+    {"fdc_id": 2346393, "unit": "cup", "prep": "ground", "grams": 95, "source": "FDC 170567 portion '1 cup, ground'"}
   ],
   "no_food": [
     "kasuri methi", "dried fenugreek leaves",

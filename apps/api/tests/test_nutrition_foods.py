@@ -115,8 +115,8 @@ def test_a_veg_override_only_flips_unknown_to_veg() -> None:
         apply_veg_overrides(foods, [{"fdc_id": 99, "veg": "veg"}])
 
 
-def test_foods_version_is_b35() -> None:
-    assert load_foods().foods_version.endswith("/b35-1")
+def test_foods_version_is_b36() -> None:
+    assert load_foods().foods_version.endswith("/b36-1")
 
 
 # --- v3 curation (b35-plan D1-D6) ---------------------------------------------------------------
@@ -207,8 +207,35 @@ def test_the_owner_reviewed_aliases_are_flipped_and_the_rest_stay_unreviewed() -
         assert table.alias_reviewed[alias] is True, alias
     for alias in ("chicken", "soya", "kalamata olives", "chicken boneless", "boneless chicken"):
         assert table.alias_reviewed[alias] is False, alias
-    # 81 flipped + peanut + 9 poha + 10 chilli + 4 salt
-    assert sum(table.alias_reviewed.values()) == 105
+    # 81 flipped + peanut + 9 poha + 10 chilli + 4 salt + 4 coconut + 2 broth (b36)
+    assert sum(table.alias_reviewed.values()) == 111
     for alias in ("salt", "sea salt", "salt and pepper", "cooking salt / kosher salt"):
         assert table.alias_reviewed[alias] is True, alias
         assert table.by_alias[alias] == "fdc:173468"
+
+
+# --- B3.6 curation -----------------------------------------------------------------------
+
+
+def test_coconut_and_almond_curated_cup_portions() -> None:
+    table = load_foods()
+    coconut = [(p.prep, p.grams) for p in table.foods["fdc:170170"].portions if p.unit == "cup"]
+    assert coconut == [("", 85.0), ("shredded", 53.0)]
+    almonds = [(p.prep, p.grams) for p in table.foods["fdc:2346393"].portions if p.unit == "cup"]
+    assert almonds == [("whole", 143.0), ("sliced", 92.0), ("slivered", 108.0), ("ground", 95.0)]
+
+
+def test_b36_aliases_are_reviewed() -> None:
+    table = load_foods()
+    for alias in (
+        "desiccated coconut",
+        "unsweetened shredded coconut",
+        "unsweetened coconut",
+        "unsweetened desiccated coconut",
+    ):
+        assert table.by_alias[alias] == "fdc:170170", alias
+        assert table.alias_reviewed[alias] is True, alias
+    assert table.by_alias["chicken broth"] == "fdc:172924"
+    assert table.by_alias["vegetable broth"] == "fdc:171583"
+    assert table.alias_reviewed["chicken broth"] is True
+    assert table.alias_reviewed["vegetable broth"] is True

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,7 +14,7 @@ import pytest
 from nutrition_helpers import food, line, table
 
 from abc_cook.extract.adapters.base import CallUsage, EffortLevel, ExtractResult
-from abc_cook.nutrition.foods import FoodTable
+from abc_cook.nutrition.foods import FoodTable, load_foods
 from abc_cook.nutrition.match import (
     CallRecord,
     FoodKey,
@@ -23,9 +24,11 @@ from abc_cook.nutrition.match import (
     MatchProposal,
     ShortlistIndex,
     SpendGuard,
+    candidates,
     carry_forward,
     clean_name,
     deterministic_match,
+    deterministic_match_full,
     resolve_recipe,
 )
 
@@ -751,3 +754,68 @@ def test_alias_and_cache_rows_report_whether_they_are_reviewed() -> None:
     )
     assert [r.reviewed for r in resolutions] == [True, False, True]
     assert [r.food_source for r in resolutions] == ["alias", "alias", "cache"]
+
+
+# --- "A or B C" shares the head noun (B3.6) --------------------------------------------------
+
+_OR_T = table(
+    food("20", "Soup, chicken broth", aliases=["chicken broth"]),
+    food("21", "Soup, vegetable broth", aliases=["vegetable broth"]),
+    food("22", "Chicken, meat", aliases=["chicken"]),
+    food("23", "Cheese, parmesan", aliases=["parmesan", "parmigiano reggiano"]),
+    food("24", "Oil, vegetable", aliases=["oil"]),
+    food("25", "Milk, whole", aliases=["milk"]),
+    food("26", "Honey", aliases=["honey"]),
+    food("27", "Syrup, maple", aliases=["maple syrup"]),
+    food("28", "Beef, meat", aliases=["beef"]),
+)
+
+
+def test_a_or_b_c_tries_a_c_and_never_bare_a() -> None:
+    assert deterministic_match("chicken or vegetable broth", _OR_T) == ("fdc:20", "alias")
+    assert candidates("chicken or vegetable broth") == [
+        "chicken or vegetable broth",
+        "chicken broth",
+        "vegetable broth",
+    ]
+    assert deterministic_match("parmesan or parmigiano reggiano", _OR_T) == ("fdc:23", "alias")
+
+
+def test_a_or_b_c_with_neither_side_known_never_returns_bare_a() -> None:
+    assert deterministic_match("beef or vegetable stock", _OR_T) is None
+    assert "beef" not in candidates("beef or vegetable stock")
+
+
+def test_a_or_b_c_falls_to_b_when_a_c_is_unknown() -> None:
+    assert deterministic_match("honey or maple syrup", _OR_T) == ("fdc:27", "alias")
+
+
+@pytest.mark.parametrize(
+    "cleaned",
+    [
+        "oil or ghee for frying",  # B has a function word
+        "milk or coconut milk",  # H == A
+        "chinese cooking wine or mirin",  # A is three words
+        "curd / yogurt or dahi",  # has a "/"
+        "salt or pepper",  # B is one word
+    ],
+)
+def test_the_shared_head_rule_does_not_fire(cleaned: str) -> None:
+    parts = [p.strip() for p in re.split(r"\s*(?:/|,|\bor\b)\s*", cleaned) if p.strip()]
+    assert candidates(cleaned)[: 1 + len(parts)] == [cleaned, *parts]
+
+
+def test_oil_or_ghee_for_frying_still_finds_oil() -> None:
+    assert deterministic_match("oil or ghee for frying", _OR_T) == ("fdc:24", "alias")
+
+
+def test_the_real_table_maps_the_or_broth_line_to_chicken_broth() -> None:
+    real = load_foods()
+    found = deterministic_match_full("chicken or vegetable broth", real)
+    assert found == ("fdc:172924", "alias", True)
+
+
+def test_the_real_table_maps_unsweetened_shredded_coconut_to_desiccated() -> None:
+    real = load_foods()
+    cleaned = clean_name("unsweetened shredded coconut").name
+    assert deterministic_match_full(cleaned, real) == ("fdc:170170", "alias", True)

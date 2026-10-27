@@ -111,7 +111,8 @@ def test_spoon_and_cup_table(
     qty: str, unit: str, food_id: str, expected: float, has_portion: bool
 ) -> None:
     result = line_grams(line("x", qty, unit), _food(food_id))
-    assert result.basis == "table"
+    # food 1 has no volume portion, so its rows run at the default density: a guess (B3.6)
+    assert result.basis == ("table" if has_portion or food_id == "4" else "estimated")
     assert result.grams == pytest.approx(expected)
     assert (result.portion is not None) is has_portion
 
@@ -129,7 +130,8 @@ def test_hint_in_the_unit_field_is_the_total() -> None:
     # '4 Tablespoons (60ml)' coconut oil -> 60 ml total, not 4 x 60
     result = line_grams(line("Coconut Oil", "4", "Tablespoons (60ml)"), _food("1"))
     assert result.grams == pytest.approx(60.0)
-    assert result.basis == "stated"
+    assert result.basis == "estimated"  # food 1 has no volume portion: ml at density 1.0
+    assert "default_density" in result.flags
     assert result.hint_reading == "total"
     assert "hint_conflict" not in result.flags
 
@@ -291,3 +293,81 @@ def test_a_poha_cup_is_60_grams_not_the_rice_cup() -> None:
     result = line_grams(line("poha", "2 1/2", "cups"), real.foods[real.by_alias["poha"]])
     assert result.grams == pytest.approx(150.0)
     assert result.basis == "table"
+
+
+# --- default density (B3.6 Amendment A) ------------------------------------------------------
+
+_DRY = _food("1")  # no volume portion: every volume line runs at the default 1.0 g/ml
+_FLOURY = _food("4")  # has a cup and a tbsp portion
+
+
+@pytest.mark.parametrize(
+    ("qty", "unit", "name"),
+    [
+        ("1", "cup", "cashews"),
+        ("250", "ml", "stock"),
+        ("2", "tbsp", "ghee"),
+        ("1.5", "l", "stock"),
+        ("1", "glass", "stock"),
+    ],
+)
+def test_a_volume_at_the_default_density_is_an_estimate(qty: str, unit: str, name: str) -> None:
+    result = line_grams(line(name, qty, unit), _DRY)
+    assert result.basis == "estimated"
+    assert "default_density" in result.flags
+
+
+def test_a_volume_with_no_food_is_an_estimate() -> None:
+    result = line_grams(line("stock", "1", "cup"), None)
+    assert result.basis == "estimated"
+    assert "default_density" in result.flags
+
+
+def test_an_ml_hint_at_the_default_density_is_an_estimate() -> None:
+    total = line_grams(line("red wine", "1", "cup (240ml)"), _DRY)
+    assert total.grams == pytest.approx(240.0)
+    assert total.basis == "estimated"
+    assert "default_density" in total.flags
+    amountless = line_grams(line("water (750 ml)", None, None), _DRY)
+    assert amountless.grams == pytest.approx(750.0)
+    assert amountless.basis == "estimated"
+    assert "default_density" in amountless.flags
+
+
+@pytest.mark.parametrize(
+    ("qty", "unit"), [("1", "cup"), ("250", "ml"), ("2", "tbsp"), ("1", "cup (240ml)")]
+)
+def test_a_volume_with_a_real_portion_is_not_flagged(qty: str, unit: str) -> None:
+    result = line_grams(line("flour", qty, unit), _FLOURY)
+    assert "default_density" not in result.flags
+    assert result.basis != "estimated"
+
+
+def test_grams_and_a_gram_hint_are_never_default_density() -> None:
+    assert "default_density" not in line_grams(line("x", "200", "g"), _DRY).flags
+    hinted = line_grams(line("besan", "2", "cups (220 grams)"), _DRY)
+    assert hinted.basis == "stated"
+    assert "default_density" not in hinted.flags
+
+
+# --- curated cup weights (B3.6) ------------------------------------------------------------
+
+
+def test_curated_coconut_cup_weights() -> None:
+    coconut = load_foods().foods["fdc:170170"]
+    shredded = line_grams(line("unsweetened shredded coconut", "2", "cups"), coconut)
+    assert shredded.grams == pytest.approx(106.0)
+    assert shredded.basis == "table"
+    assert shredded.portion is not None
+    assert shredded.portion.prep == "shredded"
+    desiccated = line_grams(line("desiccated coconut", "1", "cup"), coconut)
+    assert desiccated.grams == pytest.approx(85.0)
+    assert desiccated.basis == "table"
+
+
+def test_curated_almond_cup_weight() -> None:
+    almonds = load_foods().foods["fdc:2346393"]
+    result = line_grams(line("Almonds", "1/4", "cup"), almonds)
+    assert result.grams == pytest.approx(35.75)
+    assert result.basis == "table"
+    assert "default_density" not in result.flags

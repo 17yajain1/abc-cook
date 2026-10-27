@@ -9,6 +9,10 @@
 5. Otherwise `needs_llm`: the caller may ask the model for an estimate (basis `estimated`).
 
 Pure: no I/O, no LLM. Ranges resolve to their midpoint and the basis drops to `estimated`.
+
+A volume converted at the default density of 1.0 g/ml (the food has no cup, tablespoon or
+teaspoon portion, or there is no food) is a guess about the food, not a table or stated figure:
+its basis is `estimated` and it carries the `default_density` flag.
 """
 
 from __future__ import annotations
@@ -202,14 +206,24 @@ def _unit_info(ing: Ingredient, rest: str) -> _UnitInfo:
     return _UnitInfo(canonical, noun, sizes)
 
 
-def density(food: Food | None) -> float:
-    """Grams per millilitre from the food's own cup, tablespoon or teaspoon portion, else 1.0."""
+def _volume_density(food: Food | None) -> float | None:
     if food is not None:
         for unit in ("cup", "tbsp", "tsp"):
             for portion in food.portions:
                 if portion.unit == unit and portion.grams > 0:
                     return portion.grams / ML_PER_UNIT[unit]
-    return 1.0
+    return None
+
+
+def density(food: Food | None) -> float:
+    """Grams per millilitre from the food's own cup, tablespoon or teaspoon portion, else 1.0."""
+    found = _volume_density(food)
+    return 1.0 if found is None else found
+
+
+def is_default_density(food: Food | None) -> bool:
+    """Whether `density(food)` is the 1.0 g/ml fallback rather than the food's own portion."""
+    return _volume_density(food) is None
 
 
 def _tiebreak(candidates: list[FoodPortion], prep_words: set[str]) -> FoodPortion:
@@ -236,24 +250,30 @@ def _prep_words(ing: Ingredient) -> set[str]:
 
 def _convert(
     amount: Amount, info: _UnitInfo, food: Food | None, ing: Ingredient
-) -> tuple[float | None, GramsBasis, PortionRef | None]:
-    """Metric arithmetic, then the table, then FDC portions. (None, ...) when none applies."""
+) -> tuple[float | None, GramsBasis, PortionRef | None, bool]:
+    """Metric arithmetic, then the table, then FDC portions. (None, ...) when none applies.
+
+    The last item is True when the figure used the default density (basis `estimated`).
+    """
     unit = info.canonical
+    guessed = is_default_density(food)
     if unit in METRIC_GRAMS:
-        return amount.value * METRIC_GRAMS[unit], "stated", None
+        return amount.value * METRIC_GRAMS[unit], "stated", None, False
     if unit in METRIC_ML:
-        return amount.value * METRIC_ML[unit] * density(food), "stated", None
+        grams = amount.value * METRIC_ML[unit] * density(food)
+        return grams, "estimated" if guessed else "stated", None, guessed
     if unit == "pinch":
-        return amount.value * PINCH_GRAMS, "table", None
+        return amount.value * PINCH_GRAMS, "table", None, False
     prep_words = _prep_words(ing)
     if unit in ML_PER_UNIT:
         if food is not None and unit in ("tsp", "tbsp", "cup"):
             portion = _pick_portion(food, [unit], prep_words)
             if portion is not None:
-                return amount.value * portion.grams, "table", _ref(portion)
-        return amount.value * ML_PER_UNIT[unit] * density(food), "table", None
+                return amount.value * portion.grams, "table", _ref(portion), False
+        grams = amount.value * ML_PER_UNIT[unit] * density(food)
+        return grams, "estimated" if guessed else "table", None, guessed
     if food is None:
-        return None, "missing", None
+        return None, "missing", None, False
     size = info.sizes[0] if info.sizes else None
     wanted: list[str] = []
     if info.noun:
@@ -265,11 +285,11 @@ def _convert(
     if unit in (None, "count") and info.noun in (None, "whole", "piece"):
         wanted += ["medium", "piece", "whole", "fruit"]
     if not wanted:
-        return None, "missing", None
+        return None, "missing", None, False
     portion = _pick_portion(food, wanted, prep_words)
     if portion is None:
-        return None, "missing", None
-    return amount.value * portion.grams, "table", _ref(portion)
+        return None, "missing", None, False
+    return amount.value * portion.grams, "table", _ref(portion), False
 
 
 def _ref(portion: FoodPortion) -> PortionRef:
@@ -283,6 +303,8 @@ class _Hint:
     grams: float
     per_unit: bool
     is_range: bool
+    guessed: bool = False
+    """True when a millilitre or litre figure was turned into grams at the default density."""
 
 
 def _find_hint(ing: Ingredient, rest: str, food: Food | None) -> _Hint | None:
@@ -297,16 +319,19 @@ def _find_hint(ing: Ingredient, rest: str, food: Food | None) -> _Hint | None:
     high = float(match.group("b")) if match.group("b") else None
     value = low if high is None else (low + high) / 2
     unit = match.group("unit").lower()
+    guessed = False
     if unit == "ml":
         factor = density(food)
+        guessed = is_default_density(food)
     elif unit == "kg":
         factor = 1000.0
     elif unit in _LITRE_WORDS:
         factor = 1000.0 * density(food)
+        guessed = is_default_density(food)
     else:
         factor = 1.0
     per_unit = bool(_PER_UNIT_RE.search(text[match.end() : match.end() + 24]))
-    return _Hint(value * factor, per_unit, high is not None)
+    return _Hint(value * factor, per_unit, high is not None, guessed)
 
 
 def line_grams(ing: Ingredient, food: Food | None) -> GramsResult:
@@ -319,7 +344,10 @@ def line_grams(ing: Ingredient, food: Food | None) -> GramsResult:
     if amount is None:
         if hint is not None:  # "water (750 ml)" with no leading number: the hint is the amount
             flags: tuple[LineFlag, ...] = ("range_midpoint",) if hint.is_range else ()
-            return GramsResult(hint.grams, "estimated" if hint.is_range else "stated", flags)
+            if hint.guessed:
+                flags += ("default_density",)
+            guess = hint.is_range or hint.guessed
+            return GramsResult(hint.grams, "estimated" if guess else "stated", flags)
         return GramsResult(None, "missing")
     info = _unit_info(ing, rest)
     flags_list: list[LineFlag] = ["range_midpoint"] if amount.is_range else []
@@ -329,14 +357,19 @@ def line_grams(ing: Ingredient, food: Food | None) -> GramsResult:
     reading: HintReading | None = None
     metric = info.canonical in METRIC_GRAMS or info.canonical in METRIC_ML
     if metric or hint is None:
-        grams, basis, portion = _convert(amount, info, food, ing)
+        grams, basis, portion, guessed = _convert(amount, info, food, ing)
+        if guessed:
+            flags_list.append("default_density")
     else:
         reading = "per_unit" if hint.per_unit else "total"
         grams = hint.grams * (amount.value if hint.per_unit else 1.0)
         basis = "stated"
         if hint.is_range and "range_midpoint" not in flags_list:
             flags_list.append("range_midpoint")
-        alt, _alt_basis, _alt_portion = _convert(amount, info, food, ing)
+        if hint.guessed:
+            basis = "estimated"
+            flags_list.append("default_density")
+        alt, _alt_basis, _alt_portion, _alt_guess = _convert(amount, info, food, ing)
         if alt and grams and max(grams / alt, alt / grams) > HINT_CONFLICT_RATIO:
             flags_list.append("hint_conflict")
     if grams is None:
