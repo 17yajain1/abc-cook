@@ -84,3 +84,11 @@ have not been run.
 - That adjacency has **not** been swept on a device.
 - On the screens that were tested, the strip link's hit-test band stops 3 px above the strip's bottom edge. That
   says nothing measured about the finish step.
+
+## Backlog: recipe page can disagree with what "Continue cooking" resumes (found in CP5.1 review, 2026-10-27)
+- Servings lock only while a cook is active (within a day). Once it goes stale the control unlocks, so the cook can pick a
+  new choice (e.g. 6) on the recipe page while "Continue cooking" still resumes the stored session's old batch (4).
+- Wanted: whenever "Continue cooking" would resume (active or stale session on this plan), the page shows the session's
+  servings, or locks the control. Same rule as `cookCtaLabel` / `rowServingsChoice`.
+- CP5.1 only fixed the Cookbook row (`library/rowServings.ts`). Not done: the page, and the library write in `App.tsx`
+  `setServingsChoice` (it persists when not locked).
