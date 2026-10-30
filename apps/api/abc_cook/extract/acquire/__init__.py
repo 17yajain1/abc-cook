@@ -103,6 +103,15 @@ class RawAcquisition(BaseModel):
         description='The caption track\'s language code, e.g. "en", "hi".',
     )
 
+    caption_transient_failure: bool = Field(
+        default=False,
+        description=(
+            "True when a caption track exists but its fetch was blocked or rate-limited "
+            "(429/5xx/transport error, or a bot-check page). Read by the result cache: a "
+            "result built without captions we could not reach must never be stored."
+        ),
+    )
+
     acquisition_warnings: list[str] = Field(
         default_factory=list,
         description=(
