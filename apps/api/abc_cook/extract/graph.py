@@ -100,6 +100,9 @@ _UNATTENDED_PASSIVE_VERBS = (
 )
 _COMBINE_VERBS = ("mix", "combine", "fold", "toss", "add", "stir together", "blend")
 
+_SAME_DEFAULT_WARN_AT = 3
+"""Required nodes sharing one defaulted (min, typical, max) triple before a warning fires."""
+
 _DEFAULT_DURATION_MIN = {
     "prep": (3, 5, 8),
     "combine": (2, 3, 5),
@@ -1976,6 +1979,25 @@ def build_graph(
                 origin=step.origin,
             )
         )
+
+    # -- Honest timings: say so when durations are estimates, whatever the attention ----
+    # A defaulted duration is a guess by kind, and mostly-inferred timings are the model's
+    # estimates, not the source's. Review only: no duration is changed here.
+    estimated = [d.duration_source for d in decisions if d.duration_source != "extracted"]
+    if "defaulted" in estimated or (nodes and 2 * len(estimated) >= len(nodes)):
+        review_recommended = True
+    defaulted_triples = Counter(
+        (node.duration_min, node.duration_typical, node.duration_max)
+        for node, decision in zip(nodes, decisions, strict=True)
+        if decision.duration_source == "defaulted"
+    )
+    for triple, count in sorted(defaulted_triples.items()):
+        if count >= _SAME_DEFAULT_WARN_AT:
+            warnings.append(
+                f"{count} steps share the same default timing ({triple[1]} min); the source "
+                "gave none, so these are placeholders, not measured times."
+            )
+            review_recommended = True
 
     # -- Optional/alternative notes onto the step they modify (CP2 decision B) -------
     # Verbatim, prefixed, never deleted: the Plan renders `Node.tip`.
