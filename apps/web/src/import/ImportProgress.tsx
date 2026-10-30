@@ -243,7 +243,7 @@ function NotGroundedResult({
     <div className="flex h-full flex-col overflow-y-auto bg-home-ground px-5 pb-8 pt-16 text-home-ink">
       <h1 className={TITLE}>No method found</h1>
       <p className="mt-1 text-[15px] text-home-ink-2">
-        {notGroundedCopy(result?.sources ?? [], groups.length > 0)}
+        {notGroundedCopy(result?.sources ?? [], groups.length > 0, result?.transcript_kind)}
         {groups.length > 0 ? ' — but here’s the shopping list.' : ''}
       </p>
       {truncationWarning && <p className="mt-1 text-[13px] text-home-ink-2">{truncationWarning}</p>}

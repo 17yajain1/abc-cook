@@ -10,10 +10,19 @@
  * A separate module from `ImportScreen.tsx` so this pure selection logic is testable
  * without pulling in `api/client.ts`'s browser-only module-scope `window` read.
  */
-export function notGroundedCopy(sources: readonly string[], hasIngredients: boolean): string {
+export function notGroundedCopy(
+  sources: readonly string[],
+  hasIngredients: boolean,
+  transcriptKind?: 'manual' | 'auto' | null,
+): string {
   const hasTranscript = sources.includes('transcript')
   const hasBlog = sources.includes('blog')
-  if (hasTranscript) return "We read this video's captions but couldn't find the method in them."
+  if (hasTranscript) {
+    // Auto-captions are machine-made; say which kind we read rather than imply the creator wrote them.
+    return transcriptKind === 'auto'
+      ? "We read this video's auto-captions, but they don't describe how it's made."
+      : "We read this video's captions but couldn't find the method in them."
+  }
   if (hasBlog) return 'The linked recipe page had no instructions we could use.'
   if (hasIngredients) {
     return "This video has no captions, and its description lists ingredients without saying how the dish is made."

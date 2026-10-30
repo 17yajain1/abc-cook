@@ -765,6 +765,10 @@ export interface ImportResult {
     | 'no_recipe_found'
     | 'failed';
   summary?: PlanSummary | null;
+  /**
+   * Set on Tier 0 only, and only when `sources` includes `transcript`: whether the captions were creator-written (`manual`) or auto-generated (`auto`). Lets the refusal say what kind of captions we read.
+   */
+  transcript_kind?: ('manual' | 'auto') | null;
   warnings?: string[];
 }
 /**
