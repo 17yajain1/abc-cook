@@ -497,3 +497,11 @@ class ImportResult(BaseModel):
         default=None,
         description="`POSTPROCESS_VERSION` of the code that produced this result. Set on `done`.",
     )
+    transcript_kind: Literal["manual", "auto"] | None = Field(
+        default=None,
+        description=(
+            "Set on Tier 0 only, and only when `sources` includes `transcript`: whether the "
+            "captions were creator-written (`manual`) or auto-generated (`auto`). Lets the "
+            "refusal say what kind of captions we read."
+        ),
+    )

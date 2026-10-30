@@ -29,6 +29,7 @@ from typing import Literal, Protocol
 import pydantic
 
 from abc_cook.extract import normalize, repair
+from abc_cook.extract.acquire.transcript import TRANSCRIPT_GATE_VERSION
 from abc_cook.extract.adapters.base import (
     EffortLevel,
     added_steps_enabled,
@@ -40,11 +41,14 @@ from abc_cook.schema.normalized import ImportResult, NormalizedRecipe
 
 _logger = logging.getLogger(__name__)
 
-CacheTier = Literal["clean", "repaired"]
-"""The only tiers a result can be cached at. Degraded/Tier 0 are never stored."""
+CacheTier = Literal["clean", "repaired", "tier0"]
+"""The only tiers a result can be cached at. `tier0` is solely the "model returned a recipe
+but none of its steps came from the source" refusal; degraded results and every other
+Tier 0 (runaway, truncation, extraction failed) are never stored."""
 
-ENVELOPE_FORMAT = 1
-"""Version of the on-disk envelope (not of the pipeline -- that is the fingerprint)."""
+ENVELOPE_FORMAT = 2
+"""Version of the on-disk envelope (not of the pipeline -- that is the fingerprint). 2 adds
+`tier0` entries and the server-only `source_text`; a format-1 file is a clean miss."""
 
 
 @dataclass(frozen=True)
@@ -58,6 +62,9 @@ class CachedResult:
     result: ImportResult
     tier: CacheTier
     step_count: int
+    source_text: str | None = None
+    """Server-only: the rendered source a `tier0` entry was refused from. Never part of the
+    returned `ImportResult`, so it never reaches a client."""
 
 
 class ResultCache(Protocol):
@@ -85,6 +92,23 @@ def is_cacheable(result: ImportResult, tier: str) -> bool:
     return result.status == "done" and tier in ("clean", "repaired")
 
 
+def is_cacheable_tier0(result: ImportResult, *, grounded_recipe_without_source_steps: bool,
+                       caption_transient_failure: bool) -> bool:
+    """True only for the refusal "a recipe came back but none of its steps are the source's".
+
+    That outcome is a property of the source text, so it is stable. Never the runaway /
+    truncation / extraction-failed Tier 0s (those are model or budget accidents, and a retry
+    may succeed), and never when a caption track was blocked: the source we saw was
+    incomplete, so the refusal may be wrong on the next try. Reads the typed flag, never a
+    warning's text.
+    """
+    return (
+        result.status == "method_not_grounded"
+        and grounded_recipe_without_source_steps
+        and not caption_transient_failure
+    )
+
+
 def is_cacheable_source(source_key: SourceKey) -> bool:
     """False for pasted text and for any fallback-derived key -- those never cache.
 
@@ -98,6 +122,8 @@ def is_cacheable_source(source_key: SourceKey) -> bool:
 
 
 DEFAULT_TTL = timedelta(days=7)
+TIER0_TTL = timedelta(hours=24)
+"""Tier 0 refusals expire sooner: the creator may add a method to the description."""
 DEFAULT_MAX_ENTRIES = 500
 DEFAULT_MAX_BYTES = 200 * 1024 * 1024
 
@@ -119,6 +145,7 @@ class DiskResultCache:
         directory: Path,
         *,
         ttl: timedelta = DEFAULT_TTL,
+        tier0_ttl: timedelta = TIER0_TTL,
         max_entries: int = DEFAULT_MAX_ENTRIES,
         max_bytes: int = DEFAULT_MAX_BYTES,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
@@ -126,6 +153,7 @@ class DiskResultCache:
         """Configure the cache. The directory is created lazily on first `put`."""
         self._dir = directory
         self._ttl = ttl
+        self._tier0_ttl = tier0_ttl
         self._max_entries = max_entries
         self._max_bytes = max_bytes
         self._now = now
@@ -141,15 +169,23 @@ class DiskResultCache:
             if envelope.get("format") != ENVELOPE_FORMAT or envelope.get("identity") != identity:
                 return None
             tier = envelope["tier"]
-            if tier not in ("clean", "repaired"):
+            if tier not in ("clean", "repaired", "tier0"):
                 return None
             stored_at = datetime.fromisoformat(envelope["stored_at"])
-            if self._now() - stored_at > self._ttl:
+            if self._now() - stored_at > (self._tier0_ttl if tier == "tier0" else self._ttl):
                 with contextlib.suppress(OSError):
                     path.unlink()
                 return None
             result = ImportResult.model_validate(envelope["result"])
-            return CachedResult(result=result, tier=tier, step_count=int(envelope["step_count"]))
+            source_text = envelope.get("source_text")
+            if source_text is not None and not isinstance(source_text, str):
+                return None
+            return CachedResult(
+                result=result,
+                tier=tier,
+                step_count=int(envelope["step_count"]),
+                source_text=source_text,
+            )
         except FileNotFoundError:
             return None
         except (OSError, ValueError, KeyError, TypeError, AttributeError, pydantic.ValidationError):
@@ -168,6 +204,7 @@ class DiskResultCache:
                 "tier": entry.tier,
                 "step_count": entry.step_count,
                 "result": entry.result.model_dump(mode="json"),
+                "source_text": entry.source_text,
             }
             payload = json.dumps(envelope)  # ASCII-escaped: a source key may hold a lone surrogate
             with tempfile.NamedTemporaryFile(
@@ -246,6 +283,7 @@ class PipelineFingerprint:
     escalated_max_tokens: int
     repair_max_tokens: int
     postprocess_version: int
+    transcript_gate_version: int
     burner_capacity: int
     result_schema_sha256: str
 
@@ -266,6 +304,7 @@ def current_fingerprint(
     escalated_max_tokens: int | None = None,
     repair_max_tokens: int | None = None,
     postprocess_version: int | None = None,
+    transcript_gate_version: int | None = None,
     burner_capacity: int | None = None,
     result_type: type[pydantic.BaseModel] = ImportResult,
 ) -> PipelineFingerprint:
@@ -291,6 +330,7 @@ def current_fingerprint(
         escalated_max_tokens: Test override; defaults to `normalize.ESCALATED_MAX_TOKENS`.
         repair_max_tokens: Test override; defaults to `repair.MAX_TOKENS`.
         postprocess_version: Test override; defaults to `POSTPROCESS_VERSION`.
+        transcript_gate_version: Test override; defaults to `TRANSCRIPT_GATE_VERSION`.
         burner_capacity: Test override; defaults to the pipeline's `DEFAULT_BURNER_CAPACITY`.
         result_type: Test override for the stored result's schema.
 
@@ -337,6 +377,11 @@ def current_fingerprint(
         repair_max_tokens=repair_max_tokens if repair_max_tokens is not None else repair.MAX_TOKENS,
         postprocess_version=(
             postprocess_version if postprocess_version is not None else POSTPROCESS_VERSION
+        ),
+        transcript_gate_version=(
+            transcript_gate_version
+            if transcript_gate_version is not None
+            else TRANSCRIPT_GATE_VERSION
         ),
         burner_capacity=burner_capacity if burner_capacity is not None else DEFAULT_BURNER_CAPACITY,
         result_schema_sha256=_sha256(json.dumps(result_type.model_json_schema(), sort_keys=True)),

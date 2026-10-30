@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from abc_cook.extract import cache as cache_mod
+from abc_cook.extract.acquire.transcript import TRANSCRIPT_GATE_VERSION
 from abc_cook.extract.cache import (
     CachedResult,
     DiskResultCache,
@@ -253,6 +254,7 @@ _ONE_CHANGE: dict[str, dict[str, Any]] = {
     "escalated_max_tokens": {"escalated_max_tokens": 32_001},
     "repair_max_tokens": {"repair_max_tokens": 8_001},
     "postprocess_version": {"postprocess_version": cache_mod.POSTPROCESS_VERSION + 1},
+    "transcript_gate_version": {"transcript_gate_version": 99},
     "burner_capacity": {"burner_capacity": 2},
     "result_schema": {"result_type": _AlteredResult},
 }
@@ -282,6 +284,7 @@ def test_fingerprint_defaults_read_the_live_pipeline_constants() -> None:
     assert _BASE.escalated_max_tokens == normalize.ESCALATED_MAX_TOKENS
     assert _BASE.repair_max_tokens == repair.MAX_TOKENS
     assert _BASE.postprocess_version == cache_mod.POSTPROCESS_VERSION
+    assert _BASE.transcript_gate_version == TRANSCRIPT_GATE_VERSION
     assert _BASE.burner_capacity == DEFAULT_BURNER_CAPACITY
 
 
@@ -314,6 +317,7 @@ def test_every_fingerprint_field_has_an_invalidation_case() -> None:
         "escalated_max_tokens",
         "repair_max_tokens",
         "postprocess_version",
+        "transcript_gate_version",
         "burner_capacity",
         "result_schema_sha256",
     }
@@ -343,3 +347,40 @@ def test_strict_off_has_no_response_format_hash_and_on_has_one() -> None:
     assert on.extraction_strict is True
     assert on.extraction_response_format_sha256 is not None
     assert _identity(extraction_strict=True) != _identity(extraction_strict=False)
+
+
+def test_a_format_1_envelope_is_a_clean_miss(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    """A pre-PR-A cache file (format 1) must be a plain miss: no exception, no warning."""
+    c = DiskResultCache(tmp_path, now=_Clock())
+    identity = _identity()
+    c.put(identity, _entry())
+    path = c._path(identity)
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    assert envelope["format"] == cache_mod.ENVELOPE_FORMAT == 2
+    envelope["format"] = 1
+    envelope.pop("source_text", None)
+    path.write_text(json.dumps(envelope), encoding="utf-8")
+    with caplog.at_level("WARNING"):
+        assert c.get(identity) is None
+    assert caplog.records == []
+
+
+def test_tier0_entry_round_trips_with_server_only_source_text(tmp_path: Path) -> None:
+    c = DiskResultCache(tmp_path, now=_Clock())
+    result = ImportResult(status="method_not_grounded", source_title="t", warnings=["w"])
+    c.put(_identity(), cache_mod.CachedResult(result, "tier0", 0, source_text="the source"))
+    hit = c.get(_identity())
+    assert hit is not None
+    assert (hit.tier, hit.source_text, hit.result) == ("tier0", "the source", result)
+    assert "the source" not in hit.result.model_dump_json()
+
+
+def test_tier0_entry_expires_after_24_hours_while_done_entries_last_7_days(tmp_path: Path) -> None:
+    clock = _Clock()
+    c = DiskResultCache(tmp_path, now=clock)
+    tier0 = ImportResult(status="method_not_grounded")
+    c.put(_identity(), cache_mod.CachedResult(tier0, "tier0", 0))
+    c.put(_identity(extraction_effort="medium"), _entry())
+    clock.t = clock.t + timedelta(hours=25)
+    assert c.get(_identity()) is None
+    assert c.get(_identity(extraction_effort="medium")) is not None

@@ -33,6 +33,7 @@ from abc_cook.extract.cache import (
     current_fingerprint,
     is_cacheable,
     is_cacheable_source,
+    is_cacheable_tier0,
 )
 from abc_cook.extract.normalize import EXTRACTION_EFFORT, normalize, render_source_text
 from abc_cook.extract.postprocess import (
@@ -372,12 +373,29 @@ def run_import(
             windows=0,
             saved_min=0.0,
         )
-        return outcome.tier0_result.model_copy(
+        tier0_result = outcome.tier0_result.model_copy(
             update={
                 "sources": sources,
                 "warnings": [*outcome.tier0_result.warnings, *raw.acquisition_warnings],
+                "transcript_kind": raw.transcript_kind if "transcript" in sources else None,
             }
         )
+        if (
+            cache is not None
+            and identity is not None
+            and raw.source_kind != "text"
+            and is_cacheable_tier0(
+                tier0_result,
+                grounded_recipe_without_source_steps=outcome.grounded_recipe_without_source_steps,
+                caption_transient_failure=raw.caption_transient_failure,
+            )
+        ):
+            _store(
+                cache,
+                identity,
+                CachedResult(tier0_result, "tier0", 0, source_text=render_source_text(raw)),
+            )
+        return tier0_result
     recipe = outcome.recipe
     assert recipe is not None  # NormalizeOutcome: exactly one of recipe/tier0_result is set
 
