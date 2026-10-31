@@ -74,7 +74,7 @@ _JUNK_TAG_RE = re.compile(
 in several scripts. Only these exact words are stripped: an unknown bracketed tag stays,
 because deleting text we don't recognise is how real speech gets lost."""
 
-TRANSCRIPT_GATE_VERSION = 1
+TRANSCRIPT_GATE_VERSION = 2
 """Version of the caption selection + speech-quality gate in this module. Part of the cache
 identity (`PipelineFingerprint`): `extract/acquire/` is outside the POSTPROCESS_VERSION
 hash, but a plan built from captions the old gate let through (or dropped) is stale.
