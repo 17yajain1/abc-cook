@@ -808,3 +808,24 @@ def test_long_signal_free_text_is_junk_with_no_token_cap() -> None:
 def test_sofr_is_weak_so_suffering_is_not_a_cooking_signal() -> None:
     hits = signal_hits("vou sofrer com o sofrimento")
     assert hits.strong == 0 and hits.weak_unconfirmed == 2
+
+
+def test_only_decimal_digits_and_vulgar_fractions_are_quantities() -> None:
+    from abc_cook.extract.acquire.transcript import _has_quantity
+
+    for token in ("2", "25g", "२", "०", "½", "⅓", "¾", "⅕", "1/2"):
+        assert _has_quantity(token), token
+    for token in ("一", "二", "十", "万", "Ⅻ", "①", "²", "④", "word"):
+        assert not _has_quantity(token), token
+
+
+def test_cjk_lyric_with_numerals_is_dropped() -> None:
+    text = "一緒に二人で 歩こう 十 万 夢"
+    assert signal_hits(text).quantities == 0
+    assert junk_reason(text) == "no_cooking_signal"
+
+
+def test_devanagari_digit_and_fraction_quantities_are_kept() -> None:
+    assert junk_reason("२ कप पानी") is None  # २ = 2
+    assert junk_reason("½ tsp salt") is None
+    assert signal_hits("① ② song").quantities == 0
