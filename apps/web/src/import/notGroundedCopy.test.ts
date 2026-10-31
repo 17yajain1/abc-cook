@@ -30,6 +30,29 @@ describe('notGroundedCopy (A5 / A1.1)', () => {
     )
   })
 
+  it('says auto-captions when the transcript was auto-generated', () => {
+    expect(notGroundedCopy(['transcript'], true, 'auto')).toBe(
+      "We read this video's auto-captions, but they don't describe how it's made.",
+    )
+    expect(notGroundedCopy(['transcript'], false, 'auto')).toBe(
+      "We read this video's auto-captions, but they don't describe how it's made.",
+    )
+  })
+
+  it('keeps the existing line for manual or unknown caption kinds', () => {
+    for (const kind of ['manual', null, undefined] as const) {
+      expect(notGroundedCopy(['transcript'], true, kind)).toBe(
+        "We read this video's captions but couldn't find the method in them.",
+      )
+    }
+  })
+
+  it('never claims captions when the transcript is not a source, whatever the kind', () => {
+    expect(notGroundedCopy(['description'], true, 'auto')).toBe(
+      'This video has no captions, and its description lists ingredients without saying how the dish is made.',
+    )
+  })
+
   it('names the blog-present case when there is no transcript, regardless of ingredients', () => {
     expect(notGroundedCopy(['blog'], true)).toBe(
       'The linked recipe page had no instructions we could use.',

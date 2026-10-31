@@ -455,8 +455,9 @@ def test_fetch_ignores_a_junk_transcript_and_warns_instead(
     assert acquisition.transcript_kind is None
     assert len(acquisition.acquisition_warnings) == 1
     warning = acquisition.acquisition_warnings[0]
-    assert "junk" in warning.lower()
+    assert "no cooking content" in warning.lower()  # was: "junk" in the old warning text
     assert "transient" not in warning.lower()
+    assert acquisition.caption_transient_failure is False
 
 
 def test_fetch_surfaces_a_distinguishable_warning_on_transient_caption_failure(
@@ -482,6 +483,42 @@ def test_fetch_surfaces_a_distinguishable_warning_on_transient_caption_failure(
     warning = acquisition.acquisition_warnings[0]
     assert "transient" in warning.lower()
     assert "no captions" not in warning.lower()  # must not read like genuine absence
+    assert acquisition.caption_transient_failure is True  # the cache reads this flag
+
+
+def test_fetch_flags_a_bot_check_page_as_transient(monkeypatch: pytest.MonkeyPatch) -> None:
+    info = _base_info(
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+
+    class _BotCheck:
+        status_code = 200
+        text = "<html>Sign in to confirm you're not a bot</html>"
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> object:
+            raise ValueError("html")
+
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _BotCheck())
+
+    acquisition = fetch("https://www.youtube.com/shorts/fake-botcheck")
+
+    assert acquisition.transcript is None
+    assert acquisition.caption_transient_failure is True
+
+
+def test_fetch_clean_404_is_not_flagged_transient(monkeypatch: pytest.MonkeyPatch) -> None:
+    info = _base_info(
+        automatic_captions={"hi": [{"ext": "json3", "url": "https://example.test/caps.json3"}]}
+    )
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", lambda opts: _FakeYDL(opts, info))
+    monkeypatch.setattr(
+        httpx, "get", lambda url, timeout=15.0: _FakeCaptionResponse({}, status_code=404)
+    )
+    assert fetch("https://www.youtube.com/shorts/fake-404").caption_transient_failure is False
 
 
 # ---------------------------------------------------------------------------
@@ -544,12 +581,14 @@ def _extract_info(url: str) -> dict[str, object]:
 
 
 @pytest.mark.network
-def test_select_track_live_shahi_tukda_yields_manual_english() -> None:
-    """Creator-uploaded English subtitles, live -- matches the frozen fixture."""
+def test_select_track_live_shahi_tukda_prefers_the_original_speech_track() -> None:
+    """Was `("manual", "en")` (creator English subtitles beat everything). Under Track Ruling A
+    a manual track in ANOTHER language loses to the spoken language's `-orig` captions, and a
+    live run returned ("auto", "hi"). Live data, so only the ruling-A shape is asserted."""
     track = select_track(_extract_info(SHAHI_TUKDA_URL))
     assert track is not None
     kind, lang, _url = track
-    assert (kind, lang) == ("manual", "en")
+    assert (kind, lang) == ("auto", "hi")
 
 
 @pytest.mark.network

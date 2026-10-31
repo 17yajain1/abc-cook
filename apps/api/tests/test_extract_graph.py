@@ -127,7 +127,10 @@ def test_unattended_claim_rejected_without_a_grounded_cue() -> None:
     first = result.graph.nodes[0]
     assert first.attention == "hands_on"
     assert result.node_decisions[0].attention_source == "defaulted"
-    assert result.review_recommended is False  # nothing to review; no window was ever claimed
+    # Was `is False` ("no window was ever claimed"). Now True, and only because neither step
+    # has a source-backed duration, so both are estimates.
+    assert result.review_recommended is True
+    assert all(d.duration_source != "extracted" for d in result.node_decisions)
 
 
 def test_unattended_claim_rejected_when_no_cue_given_at_all() -> None:
@@ -2090,7 +2093,9 @@ def test_backstop_is_silent_on_a_plain_required_step() -> None:
     steps = [_step(text="Heat the pan."), _step(text="Cook the eggs.")]
     result = _build(_recipe(steps, ingredients=[]), "Heat the pan. Cook the eggs.")
     assert result.graph is not None
-    assert result.review_recommended is False
+    # Was `is False`. Now True because "Heat the pan." / "Cook the eggs." state no duration;
+    # the backstop itself stays silent (next assertion).
+    assert result.review_recommended is True
     assert not any("flagged for review" in w for w in result.warnings)
 
 
@@ -2459,7 +2464,9 @@ def test_explicit_empty_claim_is_a_source_and_list_claim_is_exact() -> None:
     assert deps["Combine the onion and eggs."] == ["Chop the onion.", "Whisk the eggs."]
     assert deps["Serve with the cheese."] == ["Grate the cheese.", "Combine the onion and eggs."]
     assert [d.depends_on_previous_source for d in result.node_decisions] == ["extracted"] * 5
-    assert result.review_recommended is False
+    # Was `is False`. Now True: five steps, none with a stated duration, so all are estimates
+    # (the dependency claims above are all `extracted`).
+    assert result.review_recommended is True
     assert result.graph is not None
     assert validate(result.graph) == []
 
@@ -2640,7 +2647,9 @@ def test_explicit_pairwise_shared_staples_do_not_force_an_edge() -> None:
     result = _explicit_build(steps, "Egg", "Rice", "Salt", "Water", "Oil")
     deps = _deps_by_label(result)
     assert deps["Rinse the rice."] == []
-    assert result.review_recommended is False
+    # Was `is False`. Now True: three steps with no stated duration are all estimates; the
+    # edge assertion above is what this test is about.
+    assert result.review_recommended is True
 
 
 def test_explicit_produced_component_named_oil_still_wires() -> None:
@@ -3363,3 +3372,52 @@ def test_serving_lead_not_in_the_source_adds_nothing() -> None:
     result = _build(recipe, source.replace("Ten minutes", "A little while"))
     assert result.graph is not None
     assert len(result.graph.nodes) == 4
+
+
+# ---------------------------------------------------------------------------
+# Honest timings (PR-A): estimates set review whatever the attention; identical
+# defaulted timings warn. Warning only -- no duration is changed.
+# ---------------------------------------------------------------------------
+
+
+def _stated(text: str) -> NormalizedStep:
+    return _step(
+        text=text,
+        duration_min=4,
+        duration_typical_min=5,
+        duration_max=6,
+        duration_stated=True,
+    )
+
+
+def test_a_defaulted_duration_recommends_review_even_on_a_hands_on_step() -> None:
+    result = _build(_recipe([_step(text="Chop the onion.")]), "Chop the onion.")
+    assert [d.duration_source for d in result.node_decisions] == ["defaulted"]
+    assert result.review_recommended is True
+
+
+def test_review_is_not_set_by_timings_when_every_duration_is_extracted() -> None:
+    source = "Stir for 5 minutes. Simmer for 5 minutes."
+    steps = [_stated("Stir for 5 minutes."), _stated("Simmer for 5 minutes.")]
+    result = _build(_recipe(steps, ingredients=[]), source)
+    assert all(d.duration_source == "extracted" for d in result.node_decisions)
+    assert not any("share the same default timing" in w for w in result.warnings)
+
+
+def test_three_steps_with_one_defaulted_triple_warn_without_changing_durations() -> None:
+    names = ["onion", "tomato", "chilli", "carrot", "garlic"]
+    steps = [_step(text=f"Chop the {n}.") for n in names]
+    result = _build(_recipe(steps, ingredients=[]), " ".join(s.text for s in steps))
+    assert result.graph is not None
+    from abc_cook.extract.graph import _DEFAULT_DURATION_MIN
+
+    triples = {(n.duration_min, n.duration_typical, n.duration_max) for n in result.graph.nodes}
+    assert triples <= set(_DEFAULT_DURATION_MIN.values())  # still the by-kind defaults
+    assert any("steps share the same default timing" in w for w in result.warnings)
+    assert result.review_recommended is True
+
+
+def test_two_steps_with_the_same_defaulted_triple_do_not_warn() -> None:
+    steps = [_step(text="Chop the onion."), _step(text="Chop the tomato.")]
+    result = _build(_recipe(steps, ingredients=[]), "Chop the onion. Chop the tomato.")
+    assert not any("share the same default timing" in w for w in result.warnings)

@@ -688,6 +688,22 @@
           ],
           "default": null
         },
+        "transcript_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "manual",
+                "auto"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set on Tier 0 only, and only when `sources` includes `transcript`: whether the captions were creator-written (`manual`) or auto-generated (`auto`). Lets the refusal say what kind of captions we read."
+        },
         "warnings": {
           "items": {
             "type": "string"

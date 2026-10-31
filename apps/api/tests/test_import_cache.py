@@ -299,12 +299,95 @@ def test_clean_and_repaired_results_are_stored() -> None:
         assert len(spy.puts) == 1, scenario
 
 
-@pytest.mark.parametrize("scenario", ["degraded", "tier0"])
-def test_degraded_and_tier0_results_are_never_stored(scenario: str) -> None:
+def test_degraded_results_are_never_stored() -> None:
+    # Was parametrized over ["degraded", "tier0"]: the "recipe returned, no source steps"
+    # Tier 0 is now the one Tier 0 that IS stored (see the tier0 tests below).
     spy = _SpyCache(store=True)
-    _run(scenario, cache=spy)
+    _run("degraded", cache=spy)
     assert spy.puts == []
     assert len(spy.gets) == 1  # still looked up: only the put is gated on the result
+
+
+def _run_tier0(raw: RawAcquisition, results: list[ExtractResult], cache: Any) -> tuple[Any, _Adapter, _Acquire]:
+    adapter, acquire = _Adapter(results), _Acquire(raw)
+    result = run_import(
+        URL,
+        adapter,  # type: ignore[arg-type]
+        graph_id="g_t0",
+        acquire_fn=acquire,
+        cache=cache,
+    )
+    return result, adapter, acquire
+
+
+def test_recipe_without_source_steps_tier0_is_stored_and_served_on_repeat(tmp_path: Path) -> None:
+    cache = DiskResultCache(tmp_path)
+    raw, results = _scenario("tier0")
+    first, adapter, _ = _run_tier0(raw, results, cache)
+    assert first.status == "method_not_grounded"
+    assert adapter.calls == 1
+    adapter2, acquire2 = _Adapter([]), _Acquire(raw)
+    telemetry: list[ImportTelemetry] = []
+    again = run_import(
+        URL,
+        adapter2,  # type: ignore[arg-type]
+        graph_id="g_other",
+        acquire_fn=acquire2,
+        cache=cache,
+        on_telemetry=telemetry.append,
+    )
+    assert again == first
+    assert (adapter2.calls, acquire2.calls) == (0, 0)
+    assert telemetry[0].cache_hit is True
+    assert telemetry[0].tier == "tier0"
+
+
+def test_tier0_entry_keeps_server_only_source_text_off_the_result() -> None:
+    spy = _SpyCache(store=True)
+    _run("tier0", cache=spy)
+    ((identity, entry),) = list(spy._data.items())
+    assert entry.tier == "tier0"
+    assert entry.source_text and "onion" in entry.source_text.lower()
+    assert entry.source_text not in entry.result.model_dump_json()
+
+
+def test_tier0_is_not_stored_after_a_transient_caption_failure() -> None:
+    raw, results = _scenario("tier0")
+    spy = _SpyCache(store=True)
+    _run_tier0(raw.model_copy(update={"caption_transient_failure": True}), results, spy)
+    assert spy.puts == []
+
+
+def test_tier0_is_stored_when_only_the_warning_text_mentions_transient() -> None:
+    """The exclusion reads the typed flag, never the warning text."""
+    raw, results = _scenario("tier0")
+    raw = raw.model_copy(update={"acquisition_warnings": ["fetch failed transiently (note)"]})
+    spy = _SpyCache(store=True)
+    _run_tier0(raw, results, spy)
+    assert len(spy.puts) == 1
+
+
+def test_extraction_failed_tier0_is_never_stored() -> None:
+    raw, _ = _scenario("tier0")
+    spy = _SpyCache(store=True)
+    failures = [ExtractResult(recipe=None, error="bad"), ExtractResult(recipe=None, error="bad")]
+    result, _, _ = _run_tier0(raw, failures, spy)
+    assert result.status != "done"
+    assert spy.puts == []
+
+
+def test_tier0_result_carries_the_caption_kind_only_when_captions_are_a_source() -> None:
+    raw, results = _scenario("tier0")
+    with_captions = raw.model_copy(
+        update={"transcript": "add salt and mix well", "transcript_kind": "auto"}
+    )
+    result, _, _ = _run_tier0(with_captions, results, None)
+    assert "transcript" in result.sources
+    assert result.transcript_kind == "auto"
+    raw2, results2 = _scenario("tier0")
+    result2, _, _ = _run_tier0(raw2, results2, None)
+    assert "transcript" not in result2.sources
+    assert result2.transcript_kind is None
 
 
 def test_method_not_grounded_after_normalize_is_never_stored(

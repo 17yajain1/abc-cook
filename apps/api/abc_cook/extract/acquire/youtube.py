@@ -19,11 +19,10 @@ import yt_dlp
 from abc_cook.extract.acquire import MetadataCallback, RawAcquisition, SourceMetadata
 from abc_cook.extract.acquire.instagram import clean_placeholder_title
 from abc_cook.extract.acquire.transcript import (
-    JUNK_WORD_THRESHOLD,
     TranscriptSegment,
     fetch_segments,
     flatten,
-    is_junk_transcript,
+    junk_reason,
     select_track,
 )
 from abc_cook.schema.normalized import NormalizedChapter
@@ -119,24 +118,29 @@ def fetch(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquis
     transcript_kind = None
     transcript_lang = None
     acquisition_warnings: list[str] = []
+    caption_transient_failure = False
 
     track = select_track(info)
     if track is not None:
         kind, lang, track_url = track
         segments, transient_failure = fetch_segments(track_url)
         text, truncated = flatten(segments)
-        if text and is_junk_transcript(text):
+        reason = junk_reason(text) if text else None
+        if reason is not None:
             # A caption track exists and fetched cleanly, but the text itself is
-            # non-speech/near-silent/wrong-language junk (Phase 1 speech-quality
-            # gate, transcript.py) -- never a transient_failure case (that branch
-            # below is for the fetch itself failing, not the text being unusable).
-            # transcript stays None: CLAUDE.md's "never invent" rule means junk text
-            # must not reach the LLM as if it were a real spoken method.
+            # music/lyrics/near-silent/wrong-language junk (speech-quality gate,
+            # transcript.py) -- never a transient_failure case (that branch below is for
+            # the fetch itself failing, not the text being unusable). transcript stays
+            # None: CLAUDE.md's "never invent" rule means junk text must not reach the LLM
+            # as if it were a real spoken method, and `_sources()` must not claim captions.
+            detail = (
+                "too short to be a spoken method"
+                if reason == "too_short"
+                else "has no cooking content (music, lyrics or unrelated speech)"
+            )
             acquisition_warnings.append(
-                f"Caption track ({kind}/{lang}) fetched but looks like non-speech or "
-                f"wrong-language junk (fewer than {JUNK_WORD_THRESHOLD} real words "
-                "after stripping filler tags); ignored rather than risking an "
-                "invented recipe from it."
+                f"Caption track ({kind}/{lang}) fetched but {detail}; ignored rather than "
+                "risking an invented recipe from it."
             )
         elif text:
             transcript = text
@@ -148,6 +152,7 @@ def fetch(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquis
                     f"Transcript truncated to {len(text)} characters (source was longer)."
                 )
         elif transient_failure:
+            caption_transient_failure = True
             # A caption track exists (`select_track` found one) but every fetch
             # attempt hit a retryable failure (429/5xx/transport error) -- this is
             # NOT the same as "this video has no captions" and must not be read as
@@ -170,5 +175,6 @@ def fetch(url: str, *, on_metadata: MetadataCallback | None = None) -> RawAcquis
         transcript_segments=transcript_segments,
         transcript_kind=transcript_kind,
         transcript_lang=transcript_lang,
+        caption_transient_failure=caption_transient_failure,
         acquisition_warnings=acquisition_warnings,
     )

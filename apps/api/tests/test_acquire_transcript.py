@@ -14,12 +14,15 @@ import pytest
 
 from abc_cook.extract.acquire import transcript as transcript_module
 from abc_cook.extract.acquire.transcript import (
-    JUNK_WORD_THRESHOLD,
+    JUNK_MIN_TOKENS,
     TranscriptSegment,
     fetch_segments,
     flatten,
     is_junk_transcript,
+    junk_reason,
     select_track,
+    signal_hits,
+    strip_junk_tags,
 )
 
 # ---------------------------------------------------------------------------
@@ -41,12 +44,15 @@ def test_manual_in_video_language_wins_over_everything() -> None:
 
 
 def test_manual_en_wins_over_auto_when_video_language_has_no_manual_track() -> None:
+    """Ruling A. Was: ("manual", "en", "manual-en") -- manual `en` beat the Hindi video's own
+    auto `hi-orig`. Now: the original speech's captions win; a manual track in another
+    language is only a fallback (see the "wins when no -orig" test below)."""
     info = {
         "language": "hi",
         "subtitles": {"en": _json3("manual-en")},
         "automatic_captions": {"hi-orig": _json3("auto-hi-orig")},
     }
-    assert select_track(info) == ("manual", "en", "manual-en")
+    assert select_track(info) == ("auto", "hi", "auto-hi-orig")
 
 
 def test_auto_orig_beats_plain_auto_language_key() -> None:
@@ -73,17 +79,161 @@ def test_auto_language_key_used_when_no_orig_variant_exists() -> None:
     assert select_track(info) == ("auto", "en", "auto-en")
 
 
-def test_auto_en_fallback_when_no_language_specific_track() -> None:
+def test_bare_auto_en_is_never_a_fallback_for_another_language() -> None:
+    """Was: a `fr` video with only auto `en` returned ("auto", "en", ...). A bare auto `en`
+    next to a non-English video is a machine translation, so it is no longer chosen."""
     info = {
         "language": "fr",
         "subtitles": {},
         "automatic_captions": {"en": _json3("auto-en")},
     }
-    assert select_track(info) == ("auto", "en", "auto-en")
+    assert select_track(info) is None
 
 
-def test_no_language_key_still_tries_manual_and_auto_en() -> None:
+def test_unknown_language_never_takes_a_plain_auto_key() -> None:
+    """Was: no `language` + plain auto `en` returned ("auto", "en", ...). With the language
+    unknown only a `-orig` track is trustworthy; the plain key may be a translation."""
     info = {"subtitles": {}, "automatic_captions": {"en": _json3("auto-en")}}
+    assert select_track(info) is None
+
+
+def test_unknown_language_takes_the_single_orig_track() -> None:
+    info = {
+        "subtitles": {},
+        "automatic_captions": {"hi-orig": _json3("auto-hi-orig"), "en": _json3("auto-en")},
+    }
+    assert select_track(info) == ("auto", "hi", "auto-hi-orig")
+
+
+def test_unknown_language_with_several_orig_tracks_picks_none() -> None:
+    """Several `-orig` keys and no language: some may be dubs, so none is chosen."""
+    info = {
+        "subtitles": {},
+        "automatic_captions": {"hi-orig": _json3("a"), "en-orig": _json3("b")},
+    }
+    assert select_track(info) is None
+
+
+def test_known_language_without_its_orig_never_takes_another_languages_orig() -> None:
+    """Ruling A step 4 is "nothing": the lone-`-orig` shortcut is for an UNKNOWN language only.
+    (Earlier in this PR this returned ("auto", "en", ...).)"""
+    info = {
+        "language": "fr",
+        "subtitles": {},
+        "automatic_captions": {"en-orig": _json3("auto-en-orig")},
+    }
+    assert select_track(info) is None
+
+
+def test_lone_orig_step_does_not_fire_when_the_spoken_language_has_an_orig() -> None:
+    info = {
+        "language": "hi",
+        "subtitles": {},
+        "automatic_captions": {"hi-orig": _json3("hi"), "en-orig": _json3("en")},
+    }
+    assert select_track(info) == ("auto", "hi", "hi")
+
+
+def test_regional_language_tries_the_base_orig() -> None:
+    """Frozen link 5's shape: language `en-US`, only `en-orig` (no `en-US-orig`), plus a
+    plain translated `en` that must lose."""
+    info = {
+        "language": "en-US",
+        "subtitles": {},
+        "automatic_captions": {"en-orig": _json3("auto-en-orig"), "en": _json3("auto-en")},
+    }
+    assert select_track(info) == ("auto", "en", "auto-en-orig")
+
+
+def test_manual_other_language_loses_to_orig() -> None:
+    """Link 5's shape (ruling A): a creator Hindi track on an English video loses to the
+    spoken language's own `en-orig`. (Earlier in this PR the manual `hi` won.)"""
+    info = {
+        "language": "en-US",
+        "subtitles": {"hi": _json3("manual-hi")},
+        "automatic_captions": {"en-orig": _json3("auto-en-orig")},
+    }
+    assert select_track(info) == ("auto", "en", "auto-en-orig")
+
+
+def test_manual_other_language_wins_when_no_orig_for_the_spoken_language() -> None:
+    """No `en-US-orig` / `en-orig`; the only plain `en` is a `tlang=` translation, so step 2
+    yields nothing and the creator's Hindi track is the fallback. A foreign `hi-orig` does
+    not count as an `-orig` for the spoken language."""
+    info = {
+        "language": "en-US",
+        "subtitles": {"hi": _json3("manual-hi")},
+        "automatic_captions": {
+            "hi-orig": _json3("auto-hi-orig"),
+            "en": _json3("https://x.test/t?lang=en&tlang=en"),
+        },
+    }
+    assert select_track(info) == ("manual", "hi", "manual-hi")
+
+
+def test_manual_other_language_wins_over_nothing_when_no_auto_at_all() -> None:
+    info = {"language": "hi", "subtitles": {"en": _json3("manual-en")}, "automatic_captions": {}}
+    assert select_track(info) == ("manual", "en", "manual-en")
+
+
+def test_unknown_language_with_no_orig_at_all_takes_a_manual_track() -> None:
+    info = {"subtitles": {"hi": _json3("manual-hi")}, "automatic_captions": {}}
+    assert select_track(info) == ("manual", "hi", "manual-hi")
+
+
+def test_unknown_language_with_several_orig_keys_does_not_fall_to_a_manual_track() -> None:
+    info = {
+        "subtitles": {"hi": _json3("manual-hi")},
+        "automatic_captions": {"hi-orig": _json3("a"), "en-orig": _json3("b")},
+    }
+    assert select_track(info) is None
+
+
+def test_en_us_prefers_en_orig_over_translated_en() -> None:
+    info = {
+        "language": "en-US",
+        "subtitles": {},
+        "automatic_captions": {
+            "en-orig": _json3("https://x.test/t?lang=en"),
+            "en": _json3("https://x.test/t?lang=en&tlang=en"),
+        },
+    }
+    assert select_track(info) == ("auto", "en", "https://x.test/t?lang=en")
+
+
+def test_manual_in_the_listed_language_outranks_manual_in_another() -> None:
+    info = {
+        "language": "hi",
+        "subtitles": {"bn": _json3("manual-bn"), "hi": _json3("manual-hi")},
+        "automatic_captions": {},
+    }
+    assert select_track(info) == ("manual", "hi", "manual-hi")
+
+
+def test_translated_url_is_never_chosen() -> None:
+    """A `tlang=` URL is a machine translation: skipped at every step, so `-orig` wins."""
+    info = {
+        "language": "hi",
+        "subtitles": {},
+        "automatic_captions": {
+            "hi": _json3("https://x.test/api/timedtext?lang=hi&tlang=hi&v=1"),
+            "hi-orig": _json3("https://x.test/api/timedtext?lang=hi&v=1"),
+        },
+    }
+    assert select_track(info) == ("auto", "hi", "https://x.test/api/timedtext?lang=hi&v=1")
+
+
+def test_only_a_translated_url_available_returns_none() -> None:
+    info = {
+        "language": "en",
+        "subtitles": {},
+        "automatic_captions": {"en": _json3("https://x.test/t?lang=en&tlang=en")},
+    }
+    assert select_track(info) is None
+
+
+def test_plain_auto_key_used_when_language_known_and_not_translated() -> None:
+    info = {"language": "en", "subtitles": {}, "automatic_captions": {"en": _json3("auto-en")}}
     assert select_track(info) == ("auto", "en", "auto-en")
 
 
@@ -376,9 +526,9 @@ def test_transcript_char_cap_is_24000() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_junk_word_threshold_is_8() -> None:
-    """The exact Phase 0-justified value -- see the constant's docstring."""
-    assert JUNK_WORD_THRESHOLD == 8
+def test_junk_min_tokens_is_3() -> None:
+    """Was `JUNK_WORD_THRESHOLD == 8` (regex "words"). Now fewer than 3 whitespace tokens."""
+    assert JUNK_MIN_TOKENS == 3
 
 
 def test_genuine_transcript_is_not_junk() -> None:
@@ -412,17 +562,111 @@ def test_empty_text_is_junk() -> None:
     assert is_junk_transcript("") is True
 
 
-def test_boundary_exactly_at_threshold_is_not_junk() -> None:
-    """Exactly `JUNK_WORD_THRESHOLD` real words clears the gate -- the check is
-    strictly "fewer than", never "at or below"."""
-    text = " ".join(["word"] * JUNK_WORD_THRESHOLD)
-    assert len(text.split()) == JUNK_WORD_THRESHOLD
-    assert is_junk_transcript(text) is False
+def test_boundary_exactly_at_min_tokens_with_a_signal_is_not_junk() -> None:
+    """Was: 8 filler words cleared the gate. Now 3 tokens clear the length rule, and the
+    cooking-signal rule decides; "2 cups water" has a quantity and a unit."""
+    text = "2 cups water"
+    assert len(text.split()) == JUNK_MIN_TOKENS
+    assert junk_reason(text) is None
 
 
-def test_boundary_one_below_threshold_is_junk() -> None:
-    text = " ".join(["word"] * (JUNK_WORD_THRESHOLD - 1))
-    assert is_junk_transcript(text) is True
+def test_boundary_one_below_min_tokens_is_junk_even_with_a_signal() -> None:
+    assert junk_reason("2 cups") == "too_short"
+    assert junk_reason("[Music] हाँ") == "too_short"
+
+
+def test_long_text_without_a_signal_is_junk() -> None:
+    """Was kept at 8+ words. Length alone no longer keeps a transcript."""
+    assert junk_reason(" ".join(["word"] * 40)) == "no_cooking_signal"
+
+
+def test_no_upper_cap_a_long_signal_free_transcript_is_still_junk() -> None:
+    assert is_junk_transcript("la " * 500) is True
+
+
+@pytest.mark.parametrize(
+    "tag", ["[Music]", "[संगीत]", "[Applause]", "[música]", "[音楽]", "[موسيقى]", "[MUSIC]"]
+)
+def test_multilingual_non_speech_tags_are_stripped(tag: str) -> None:
+    assert strip_junk_tags(f"a {tag} b").split() == ["a", "b"]
+
+
+def test_unknown_bracketed_tag_is_not_stripped() -> None:
+    assert "[Whistling]" in strip_junk_tags("add [Whistling] salt")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "दो प्याज़ मिला दें",  # number word within 3 tokens before a weak stem
+        "दो कप पानी मिलाएं",  # unit alone is enough
+        "2 चम्मच चीनी डालें",  # digit + unit + strong stem
+        "25 ग्राम चीनी",  # digits and a unit, no verb at all
+        "10 मिनट तक पकाएं",
+        "add salt now",
+        "तेल डाल दें",  # डाल + दें
+        "पैन में तेल डालकर",  # exact verb form
+        "बर्तन में नमक डाल कर",  # डाल + कर
+        "पैन गरम करें",  # borrowed verb + कर-family
+        "ओवन को बेक करके",  # borrowed verb + कर-family
+        "दो कली लहसुन",  # counted unit after a number word
+        "2 कली लहसुन",  # counted unit after a digit
+        "दो मिनट तक",  # time unit after a number word
+        "chopped onions and fried garlic",  # English inflections
+        "grating the cheese now",
+        "he baked it at 180",
+    ],
+)
+def test_real_cooking_speech_is_kept(text: str) -> None:
+    assert junk_reason(text) is None, signal_hits(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "दो पल के लिए तुम मिले",  # number word is more than 3 tokens before the weak stem
+        "तुम मिले तो दिल मिला प्यार मिला",  # love lyric: only weak stems, no second signal
+        "Det er et stort problem.",
+        "la la la la",
+        "eu vou sofrer sem você meu sofrimento é grande",  # Portuguese lyric: sofrer / sofrimento
+        "फूलों की डाली",  # डाली = "branch"
+        "गरमी का मौसम बेकार",  # गरमी / बेकार
+        "कली कली खिल गई",  # lyric: कली = "flower bud", no number before it
+        "मिनट मिनट याद आया",  # time unit with no number before it
+        "I am so grateful for your temper",  # grateful / temper
+        "roll the dice you addicted drained soul",  # dice / addicted / drained
+        "the daily grind and the sizzle",  # grind / sizzle are weak
+        "this mixture is cute",  # mixture / cute are not mix / cut
+        "ये कहना गंगा कह दो ना मैं शर्मा के कह दूंगी मैंने भी दिल दिया आंखों का मसला",  # मसला = "issue"
+        "वो बेकार बेकरार दिल गरमी में डाली से टूटा",  # बेक/गरम/डाल prefix everyday words
+        "तुम्हारा मसलन ये काटा हुआ वक़्त",  # मसलन = "for example"
+    ],
+)
+def test_lyrics_and_unrelated_speech_are_dropped(text: str) -> None:
+    assert junk_reason(text) == "no_cooking_signal", signal_hits(text)
+
+
+def test_digits_count_in_every_script() -> None:
+    assert signal_hits("मुझे २ चाहिए").quantities == 1
+    assert signal_hits("½ cup").quantities == 1
+    assert signal_hits("25g").quantities == 1
+
+
+def test_one_is_not_a_number_word_for_a_weak_stem() -> None:
+    assert junk_reason("एक पल को तुम मिले") == "no_cooking_signal"
+    assert junk_reason("one day we met mix") == "no_cooking_signal"
+
+
+def test_number_word_must_be_within_three_tokens_before_the_weak_stem() -> None:
+    assert junk_reason("two a b mix") is None  # distance 3
+    assert junk_reason("two a b c mix") == "no_cooking_signal"  # distance 4
+    assert junk_reason("mix two things") == "no_cooking_signal"  # after, not before
+
+
+def test_weak_stem_alone_is_not_a_signal() -> None:
+    assert junk_reason("mix mix mix") == "no_cooking_signal"
+    hits = signal_hits("mix mix mix")
+    assert (hits.weak_unconfirmed, hits.weak_confirmed) == (3, 0)
 
 
 # ---------------------------------------------------------------------------
@@ -453,3 +697,114 @@ def test_transient_failure_never_reaches_the_junk_gate(monkeypatch: pytest.Monke
 
     assert transient_failure is True
     assert text == ""  # nothing for is_junk_transcript to see -- the gate never fires
+
+
+# ---------------------------------------------------------------------------
+# bot-check page: a 200 that is not JSON but says "confirm you're not a bot" is a
+# transient block (Q4), not "this video has no captions".
+# ---------------------------------------------------------------------------
+
+
+class _HtmlResp:
+    status_code = 200
+
+    def __init__(self, body: str) -> None:
+        self.text = body
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> object:
+        raise ValueError("not json")
+
+
+def test_bot_check_page_is_a_transient_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = "<html>Sign in to confirm you’re not a bot</html>"
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _HtmlResp(body))
+    assert fetch_segments("https://example.test/c") == ([], True)
+
+
+def test_unparseable_non_bot_page_is_not_transient(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=15.0: _HtmlResp("<html>hello</html>"))
+    assert fetch_segments("https://example.test/c") == ([], False)
+
+
+def test_dal_is_strong_only_in_verb_forms() -> None:
+    assert signal_hits("तेल डाल दें").strong == 1
+    assert signal_hits("तेल डालें").strong == 1
+    assert signal_hits("फूलों की डाली").strong == 0
+    assert signal_hits("डालर में बात").strong == 0
+    assert signal_hits("डाल रही थी").strong == 0  # डाल followed by an unlisted token
+
+
+def test_borrowed_verb_needs_a_kar_family_token_next() -> None:
+    assert signal_hits("पैन गरम करें").strong == 1
+    assert signal_hits("गरम पानी").strong == 0
+    assert signal_hits("गरमी करें की").strong == 0
+    assert signal_hits("बेकार करें की").strong == 0
+
+
+def test_container_and_time_units_count_only_after_a_number() -> None:
+    assert signal_hits("दो कली लहसुन").units == 1
+    assert signal_hits("कली कली खिल गई").units == 0
+    assert signal_hits("कली कली खिल गई").units_unconfirmed == 2
+    assert signal_hits("एक कली लहसुन").units == 0  # एक is not a number word
+    assert signal_hits("500 ग्राम आटा").units == 1  # weights count alone
+    assert signal_hits("चुटकी भर नमक").units == 1  # pinch counts alone
+
+
+def test_english_stems_match_inflections_not_prefixes() -> None:
+    for word in ("added", "adds", "adding", "chopped", "chopping", "fried", "fries", "frying",
+                 "grated", "grating", "baking", "baked", "sprinkled", "minced"):
+        assert signal_hits(f"we {word} it").strong == 1, word
+    for word in ("grateful", "addicted", "address", "temperature", "mixture", "cute", "heater"):
+        hits = signal_hits(f"we {word} it")
+        assert hits.strong == 0 and hits.weak_confirmed == 0, word
+
+
+def test_unknown_language_single_orig_defines_the_spoken_language_for_manual_tracks() -> None:
+    """Amendment 5: spoken language = the single -orig key's language when `language` is
+    missing, so a manual track in THAT language (step 1) outranks the auto -orig."""
+    info = {
+        "subtitles": {"hi": _json3("manual-hi")},
+        "automatic_captions": {"hi-orig": _json3("auto-hi-orig")},
+    }
+    assert select_track(info) == ("manual", "hi", "manual-hi")
+
+
+def test_unknown_language_single_orig_beats_a_manual_track_in_another_language() -> None:
+    info = {
+        "subtitles": {"en": _json3("manual-en")},
+        "automatic_captions": {"hi-orig": _json3("auto-hi-orig")},
+    }
+    assert select_track(info) == ("auto", "hi", "auto-hi-orig")
+
+
+def test_derived_spoken_language_never_trusts_a_plain_auto_key() -> None:
+    """Only a LISTED language makes the plain auto key trustworthy; a derived one does not."""
+    info = {"subtitles": {}, "automatic_captions": {"en": _json3("auto-en")}}
+    assert select_track(info) is None
+
+
+def test_no_track_is_ever_taken_from_a_tlang_url_whatever_the_language_source() -> None:
+    translated = "https://x.test/t?lang=hi&tlang=hi"
+    info = {"subtitles": {"hi": _json3(translated)}, "automatic_captions": {}}
+    assert select_track(info) is None
+
+
+def test_seconds_are_a_time_unit_counted_only_after_a_number() -> None:
+    assert signal_hits("दो सेकंड रुकें").units == 1
+    assert signal_hits("सेकंड सेकंड सेकंड").units == 0
+    assert junk_reason("सेकंड सेकंड सेकंड") == "no_cooking_signal"
+
+
+def test_long_signal_free_text_is_junk_with_no_token_cap() -> None:
+    """Amendment 6: no ~60-token cut. A long lyric stays junk; a long transcript with a
+    measurement unit stays kept."""
+    assert junk_reason("la la la tum hi ho " * 100) == "no_cooking_signal"
+    assert junk_reason("la la la tum hi ho " * 100 + "ek 25 gram") is None
+
+
+def test_sofr_is_weak_so_suffering_is_not_a_cooking_signal() -> None:
+    hits = signal_hits("vou sofrer com o sofrimento")
+    assert hits.strong == 0 and hits.weak_unconfirmed == 2

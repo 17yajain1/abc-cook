@@ -151,6 +151,10 @@ class NormalizeOutcome:
     calls: list[CallUsage] = field(default_factory=list)
     escalated: bool = False
     truncations: int = 0
+    grounded_recipe_without_source_steps: bool = False
+    """True only for the Tier 0 where the model returned a recipe but none of its steps came
+    from the source. A property of the source text, so the one Tier 0 the result cache may
+    keep (`cache.is_cacheable_tier0`); the runaway / truncation / failed Tier 0s leave it False."""
 
     @property
     def method_grounded(self) -> bool:
@@ -455,6 +459,7 @@ def normalize(
             calls=calls,
             escalated=escalated,
             truncations=truncations,
+            grounded_recipe_without_source_steps=True,
         )
 
     return NormalizeOutcome(
