@@ -74,7 +74,7 @@ _JUNK_TAG_RE = re.compile(
 in several scripts. Only these exact words are stripped: an unknown bracketed tag stays,
 because deleting text we don't recognise is how real speech gets lost."""
 
-TRANSCRIPT_GATE_VERSION = 1
+TRANSCRIPT_GATE_VERSION = 2
 """Version of the caption selection + speech-quality gate in this module. Part of the cache
 identity (`PipelineFingerprint`): `extract/acquire/` is outside the POSTPROCESS_VERSION
 hash, but a plan built from captions the old gate let through (or dropped) is stale.
@@ -243,9 +243,18 @@ def _norm_token(raw: str) -> str:
     return token[start:end]
 
 
+def _is_quantity_char(ch: str) -> bool:
+    """A decimal digit in any script (category Nd, so Devanagari ०-९ counts) or a vulgar
+    fraction (½ ⅓ ¾ ...). CJK numerals (一 十 万), Roman numerals (Ⅻ), circled (①) and
+    superscript (²) characters are NOT quantities: they appear in lyrics and prose."""
+    if unicodedata.category(ch) == "Nd":
+        return True
+    return unicodedata.category(ch) == "No" and "FRACTION" in unicodedata.name(ch, "")
+
+
 def _has_quantity(token: str) -> bool:
-    """A digit in any script, or a fraction character such as ½."""
-    return any(ch.isdigit() or unicodedata.numeric(ch, None) is not None for ch in token)
+    """Whether `token` contains a decimal digit in any script or a vulgar-fraction character."""
+    return any(_is_quantity_char(ch) for ch in token)
 
 
 def _starts_with_any(token: str, stems: tuple[str, ...]) -> bool:
